@@ -12,5 +12,7 @@ namespace CoreService.Application.Interfaces
     {
         Task<ApiResponse<string>> LoginAsync(LoginRequest request);
         Task<ApiResponse<string>> RegisterAsync(RegisterRequest request);
+        Task<ApiResponse<string>> ConfirmEmailAsync(string token);
+        Task<ApiResponse<string>> ResendConfirmationAsync(string email);
     }
 }

@@ -31,5 +31,18 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [HttpGet("register-confirm")]
+        public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+        {
+            var response = await _authApplication.ConfirmEmailAsync(token);
+            return StatusCode(response.StatusCode, response);
+        }
+
+        [HttpPost("register-resend-confirm")]
+        public async Task<IActionResult> ResendConfirmation( string email)
+        {
+            var response = await _authApplication.ResendConfirmationAsync(email);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

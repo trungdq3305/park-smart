@@ -28,6 +28,10 @@ namespace CoreService.Repository.Models
 
         public DateTime? LastLoginAt { get; set; }
 
+        public string EmailConfirmToken { get; set; }
+
+        public DateTime? EmailConfirmTokenExpiresAt { get; set; }
+
         public string RefreshToken { get; set; }
 
         public DateTime CreatedAt { get; set; }
