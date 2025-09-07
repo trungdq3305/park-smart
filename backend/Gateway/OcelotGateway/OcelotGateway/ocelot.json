@@ -2,7 +2,7 @@
   "Routes": [
     // ===== CoreService (AuthController) =====
     {
-      "DownstreamPathTemplate": "/api/auth/login",
+      "DownstreamPathTemplate": "/auth/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -10,20 +10,8 @@
           "Port": 3000
         }
       ],
-      "UpstreamPathTemplate": "/core/auth/login",
-      "UpstreamHttpMethod": ["POST"]
-    },
-    {
-      "DownstreamPathTemplate": "/api/auth/register",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 3000
-        }
-      ],
-      "UpstreamPathTemplate": "/core/auth/register",
-      "UpstreamHttpMethod": ["POST"]
+      "UpstreamPathTemplate": "/core/auth/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
 
     // ===== Swagger cho CoreService =====
