@@ -1,0 +1,99 @@
+{
+  "Routes": [
+    // ===== CoreService (AuthController) =====
+    {
+      "DownstreamPathTemplate": "/api/auth/login",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 3000
+        }
+      ],
+      "UpstreamPathTemplate": "/core/auth/login",
+      "UpstreamHttpMethod": ["POST"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/auth/register",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 3000
+        }
+      ],
+      "UpstreamPathTemplate": "/core/auth/register",
+      "UpstreamHttpMethod": ["POST"]
+    },
+
+    // ===== Swagger cho CoreService =====
+    {
+      "DownstreamPathTemplate": "/swagger/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 3000
+        }
+      ],
+      "UpstreamPathTemplate": "/core/swagger/{everything}",
+      "UpstreamHttpMethod": ["GET"]
+    },
+    // ===== ParkingService (AddressController, WardController) =====
+    {
+      // Route này sẽ bắt tất cả các request đến /addresses, /addresses/{id}, ...
+      "DownstreamPathTemplate": "/addresses/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/addresses/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+    },
+    {
+      // Route cho WardController
+      "DownstreamPathTemplate": "/wards",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/wards",
+      "UpstreamHttpMethod": ["GET"]
+    },
+    {
+      // Route cho AppController (health check)
+      "DownstreamPathTemplate": "/",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/",
+      "UpstreamHttpMethod": ["GET"]
+    },
+    // ===== Swagger cho ParkingService =====
+    {
+      "DownstreamPathTemplate": "/swagger/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/swagger/{everything}",
+      "UpstreamHttpMethod": ["GET"]
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://localhost:1000"
+  }
+}
