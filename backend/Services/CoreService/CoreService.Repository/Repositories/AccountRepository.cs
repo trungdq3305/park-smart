@@ -39,5 +39,11 @@ namespace CoreService.Repository.Repositories
 
         public async Task DeleteAsync(string id) =>
             await _users.DeleteOneAsync(u => u.Id == id);
+
+        public async Task<Account> GetByRefreshTokenAsync(string emailConfirmToken)
+        {
+            return await _users.Find(x => x.EmailConfirmToken == emailConfirmToken).FirstOrDefaultAsync();
+        }
+
     }
 }

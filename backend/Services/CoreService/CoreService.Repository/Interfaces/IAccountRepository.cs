@@ -15,5 +15,7 @@ namespace CoreService.Repository.Interfaces
         Task AddAsync(Account user);
         Task UpdateAsync(Account user);
         Task DeleteAsync(string id);
+        Task<Account> GetByRefreshTokenAsync(string emailConfirmToken);
+
     }
 }

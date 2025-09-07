@@ -16,7 +16,7 @@ namespace CoreService.Application
         public static IServiceCollection AddService(this IServiceCollection services)
         {
             services.AddScoped<IAuthApplication, AuthApplication>();
-
+            services.AddScoped<IEmailApplication, EmailApplication>();
             return services;
         }
     }

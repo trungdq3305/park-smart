@@ -1,18 +1,19 @@
 using CoreService.Application;
 using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.EmailDtos;
 using CoreService.Common.Helpers;
 using CoreService.Repository;
+using Dotnet.Shared.Extensions;
+using Dotnet.Shared.Mongo;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
-using Dotnet.Shared.Extensions;
-using Dotnet.Shared.Mongo;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 // Add services to the container.
 builder.Services
 .AddRepository()
