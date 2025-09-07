@@ -2,7 +2,7 @@
 using CoreService.Repository.Models;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using Shared.Mongo;
+using Dotnet.Shared.Mongo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
