@@ -1,0 +1,37 @@
+{
+	"info": {
+		"_postman_id": "aeb4c7ab-9299-4c49-9ebd-c8ab7b70a654",
+		"name": "ParkSmart",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45297038",
+		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-aeb4c7ab-9299-4c49-9ebd-c8ab7b70a654?action=share&source=collection_link&creator=45297038"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:1000/core/auth/login",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "1000",
+							"path": [
+								"core",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
