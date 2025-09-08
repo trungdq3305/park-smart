@@ -11,6 +11,7 @@ namespace CoreService.Application.DTOs.AuthDtos
     {
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; } = string.Empty;
+
         [MinLength(8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự")]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
             ErrorMessage = "Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt")]
