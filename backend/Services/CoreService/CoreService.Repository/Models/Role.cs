@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Dotnet.Shared.Helpers;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace CoreService.Repository.Models
 
         public string RoleName { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
         public DateTime? UpdatedAt { get; set; }
 

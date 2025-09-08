@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CoreService.Common.Helpers
+namespace Dotnet.Shared.Helpers
 {
     public static class TimeConverter
     {

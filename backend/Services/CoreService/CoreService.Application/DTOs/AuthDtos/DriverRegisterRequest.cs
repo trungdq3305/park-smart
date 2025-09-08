@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CoreService.Application.DTOs.AuthDtos
 {
-    public class RegisterRequest
+    public class DriverRegisterRequest
     {
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; } = string.Empty; 
@@ -17,6 +17,14 @@ namespace CoreService.Application.DTOs.AuthDtos
             ErrorMessage = "Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt")]
         public string Password { get; set; } = string.Empty;
 
-        public string Role { get; set; } = "Driver";
+        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+        [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0")]
+        public string PhoneNumber { get; set; }
+
+        public string FullName { get; set; }
+
+        public bool Gender { get; set; }
+
+        public string DrivingLicenseNumber { get; set; }
     }
 }

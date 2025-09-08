@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Dotnet.Shared.Helpers;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -18,15 +19,17 @@ namespace CoreService.Repository.Models
 
         public string FullName { get; set; }
 
+        public bool Gender { get; set; }
+
         public string DrivingLicenseNumber { get; set; }
 
-        public bool IsVerified { get; set; }
+        public bool IsVerified { get; set; } = false;
 
-        public int CreditPoint { get; set; }
+        public int CreditPoint { get; set; } = 100;
 
-        public decimal AccumulatedPoints { get; set; }
+        public decimal AccumulatedPoints { get; set; } = 0;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
         public DateTime? UpdatedAt { get; set; }
 

@@ -24,10 +24,10 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterRequest request)
+        [HttpPost("driver-register")]
+        public async Task<IActionResult> DriverRegister(DriverRegisterRequest request)
         {
-            var response = await _authApplication.RegisterAsync(request);
+            var response = await _authApplication.DriverRegisterAsync(request);
             return StatusCode(response.StatusCode, response);
         }
 
