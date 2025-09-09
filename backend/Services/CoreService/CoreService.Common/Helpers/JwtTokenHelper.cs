@@ -24,9 +24,9 @@ namespace CoreService.Common.Helpers
         {
             string roleName = acc.RoleId switch
             {
-                "68ad78d5caf7a683b6229df2" => "Driver",
-                "68ad7904caf7a683b6229df3" => "Operator",
-                "68ad7923caf7a683b6229df4" => "Admin",
+                "68bee20c00a9410adb97d3a1" => "Driver",
+                "68bee1f500a9410adb97d3a0" => "Operator",
+                "68bee1c000a9410adb97d39f" => "Admin",
                 _ => null
             };
             var claims = new[]
