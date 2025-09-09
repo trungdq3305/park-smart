@@ -11,11 +11,15 @@ namespace CoreService.Repository.Interfaces
     {
         Task<Account?> GetByIdAsync(string id);
         Task<Account?> GetByEmailAsync(string email);
+        Task<Account?> GetActivedByEmailAsync(string email);
+        Task<Account?> GetByPhoneAsync(string phone);
         Task<IEnumerable<Account>> GetAllAsync();
         Task AddAsync(Account user);
         Task UpdateAsync(Account user);
         Task DeleteAsync(string id);
         Task<Account> GetByRefreshTokenAsync(string emailConfirmToken);
+        Task<Account?> GetByPasswordResetTokenAsync(string token);
+
 
     }
 }
