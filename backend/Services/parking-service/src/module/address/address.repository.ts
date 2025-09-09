@@ -28,11 +28,23 @@ export class AddressRepository implements IAddressRepository {
   }
 
   async findAllAddresses(): Promise<Address[]> {
-    return this.addressModel.find().exec()
+    return this.addressModel
+      .find()
+      .populate({
+        path: 'wardId',
+        select: 'ward_name',
+      })
+      .exec()
   }
 
   async findAddressById(id: string): Promise<Address | null> {
-    return this.addressModel.findById(id).exec()
+    return this.addressModel
+      .findById(id)
+      .populate({
+        path: 'wardId',
+        select: 'ward_name -_id',
+      })
+      .exec()
   }
 
   async updateAddress(
