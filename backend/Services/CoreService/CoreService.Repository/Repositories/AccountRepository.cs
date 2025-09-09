@@ -27,7 +27,10 @@ namespace CoreService.Repository.Repositories
 
         public async Task<Account?> GetByEmailAsync(string email) =>
             await _users.Find(u => u.Email == email).FirstOrDefaultAsync();
-
+        public async Task<Account?> GetByPhoneAsync(string phone) =>
+            await _users.Find(u => u.PhoneNumber == phone).FirstOrDefaultAsync();
+        public async Task<Account?> GetActivedByEmailAsync(string email) =>
+            await _users.Find(u => u.Email == email && u.IsActive == true).FirstOrDefaultAsync();
         public async Task<IEnumerable<Account>> GetAllAsync() =>
             await _users.Find(_ => true).ToListAsync();
 
@@ -43,6 +46,10 @@ namespace CoreService.Repository.Repositories
         public async Task<Account> GetByRefreshTokenAsync(string emailConfirmToken)
         {
             return await _users.Find(x => x.EmailConfirmToken == emailConfirmToken).FirstOrDefaultAsync();
+        }
+        public async Task<Account?> GetByPasswordResetTokenAsync(string token)
+        {
+            return await _users.Find(x => x.PasswordResetToken == token).FirstOrDefaultAsync();
         }
 
     }

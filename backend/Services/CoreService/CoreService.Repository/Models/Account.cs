@@ -31,6 +31,10 @@ namespace CoreService.Repository.Models
 
         public DateTime? EmailConfirmTokenExpiresAt { get; set; }
 
+        public string PasswordResetToken { get; set; }
+
+        public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
         public string RefreshToken { get; set; }
 
         public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
