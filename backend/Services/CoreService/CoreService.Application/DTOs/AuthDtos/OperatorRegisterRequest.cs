@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CoreService.Application.DTOs.AuthDtos
 {
-    public class LoginRequest
+    public class OperatorRegisterRequest
     {
         [EmailAddress(ErrorMessage = "Email không hợp lệ")]
         public string Email { get; set; } = string.Empty;
@@ -16,5 +16,20 @@ namespace CoreService.Application.DTOs.AuthDtos
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
             ErrorMessage = "Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt")]
         public string Password { get; set; } = string.Empty;
+
+        [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+        [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0")]
+        public string PhoneNumber { get; set; }
+
+        public string FullName { get; set; }
+
+        public string Address { get; set; }
+
+        public string TaxCode { get; set; }
+
+        public string CompanyName { get; set; }
+
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        public string ContactEmail { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Dotnet.Shared.Helpers;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -24,17 +25,19 @@ namespace CoreService.Repository.Models
 
         public bool IsActive { get; set; }
 
-        public bool Gender { get; set; }
-
         public DateTime? LastLoginAt { get; set; }
 
         public string EmailConfirmToken { get; set; }
 
         public DateTime? EmailConfirmTokenExpiresAt { get; set; }
 
+        public string PasswordResetToken { get; set; }
+
+        public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
         public string RefreshToken { get; set; }
 
-        public DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
         public DateTime? UpdatedAt { get; set; }
 
