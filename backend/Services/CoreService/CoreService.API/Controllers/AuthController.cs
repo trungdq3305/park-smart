@@ -2,9 +2,14 @@
 using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
 using CoreService.Application.Interfaces;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
+using System.Security.Claims;
 
 namespace KLTN.CoreService.API.Controllers
 {
@@ -13,9 +18,11 @@ namespace KLTN.CoreService.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthApplication _authApplication;
-        public AuthController(IAuthApplication authApplication)
+        private readonly IMemoryCache _memoryCache;
+        public AuthController(IAuthApplication authApplication, IMemoryCache memoryCache)
         {
             _authApplication = authApplication;
+            _memoryCache = memoryCache;
         }
 
         [HttpPost("login")]
@@ -25,6 +32,22 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [HttpGet("google-login")]
+        public IActionResult GoogleLogin()
+        {
+            var state = Guid.NewGuid().ToString("N");
+            _memoryCache.Set(state, true, TimeSpan.FromMinutes(10));
+
+            var redirectUrl = Url.Action("GoogleCallback", "Auth", null, Request.Scheme, Request.Host.Value);
+
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = redirectUrl,
+                Items = { { "state", state } }
+            };
+
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
         [HttpPost("driver-register")]
         public async Task<IActionResult> DriverRegister(DriverRegisterRequest request)
         {
@@ -82,11 +105,42 @@ namespace KLTN.CoreService.API.Controllers
             var response = await _authApplication.ConfirmForgotAsync(request);
             return StatusCode(response.StatusCode, response);
         }
-        [Authorize]
-        [HttpGet("whoami")]
-        public IActionResult WhoAmI()
+
+        [HttpGet("google-callback")]
+        public async Task<IActionResult> GoogleCallback()
         {
-            return Ok(User.Claims.Select(c => new { c.Type, c.Value }));
+            // Đọc thông tin từ Cookie (middleware đã set)
+            var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            if (!authenticateResult.Succeeded)
+            {
+                return Unauthorized("Authentication failed.");
+            }
+
+            var claims = authenticateResult.Principal.Claims.ToList();
+            var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+            if (string.IsNullOrEmpty(email))
+                return BadRequest("Email not provided by Google");
+
+            var response = await _authApplication.HandleGoogleLoginAsync(email, name);
+
+            // Nếu cần, bạn có thể re-sign cookie để extend session
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties
+            {
+                IsPersistent = true,
+                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
+            };
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity),
+                authProperties
+            );
+
+            return StatusCode(response.StatusCode, response);
         }
+
     }
 }
