@@ -368,7 +368,54 @@ namespace CoreService.Application.Applications
             );
         }
 
+        public async Task<ApiResponse<string>> HandleGoogleLoginAsync(string email, string name)
+        {
+            var account = await _accountRepo.GetByEmailAsync(email);
+            if (account == null)
+            {
+                account = new Account
+                {
+                    Id = null,
+                    Email = email,
+                    Password = HashPassword(Guid.NewGuid().ToString()),
+                    PhoneNumber = null,
+                    RoleId = "68bee20c00a9410adb97d3a1",
+                    IsActive = true,
+                    CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+                    UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow)
+                };
+                await _accountRepo.AddAsync(account);
 
+                var driver = new Driver
+                {
+                    Id = null,
+                    FullName = name,
+                    Gender = false,
+                    DrivingLicenseNumber = null,
+                    AccountId = account.Id
+                };
+                await _driverRepo.AddAsync(driver);
+            }
+            else if (!account.IsActive)
+            {
+                throw new ApiException("Tài khoản chưa được xác thực", StatusCodes.Status401Unauthorized);
+            }
+
+            var token = _jwtHelper.GenerateToken(account);
+            account.LastLoginAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            account.RefreshToken = token;
+
+            await _accountRepo.UpdateAsync(account);
+
+            return new ApiResponse<string>
+            (
+                data: token,
+                success: true,
+                message: "Đăng nhập bằng Google thành công",
+                statusCode: StatusCodes.Status200OK
+            );
+        }
     }
 
 }

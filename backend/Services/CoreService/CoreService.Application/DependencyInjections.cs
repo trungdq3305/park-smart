@@ -17,6 +17,7 @@ namespace CoreService.Application
         {
             services.AddScoped<IAuthApplication, AuthApplication>();
             services.AddScoped<IEmailApplication, EmailApplication>();
+            services.AddScoped<IAccountApplication, AccountApplication>();
             return services;
         }
     }
