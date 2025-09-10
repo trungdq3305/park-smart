@@ -11,6 +11,6 @@ namespace CoreService.Application.Interfaces
 {
     public interface IAdminApplication
     {
-        Task<ApiResponse<CityAdmin>> UpdateAsync(AdminUpdateDto dto, string accountId);
+        Task<ApiResponse<AdminUpdateDto>> UpdateAsync(AdminUpdateDto dto, string accountId);
     }
 }

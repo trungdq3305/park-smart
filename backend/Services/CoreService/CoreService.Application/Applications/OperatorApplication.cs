@@ -23,7 +23,7 @@ namespace CoreService.Application.Applications
             _accountRepo = accountRepo;
         }
 
-        public async Task<ApiResponse<ParkingLotOperator>> UpdateAsync(OperatorUpdateDto dto, string accountId)
+        public async Task<ApiResponse<OperatorUpdateDto>> UpdateAsync(OperatorUpdateDto dto, string accountId)
         {
             var operatorEntity = await _operatorRepo.GetByAccountIdAsync(accountId);
             if (operatorEntity == null)
@@ -66,7 +66,7 @@ namespace CoreService.Application.Applications
             await _accountRepo.UpdateAsync(account);
             await _operatorRepo.UpdateAsync(operatorEntity);
 
-            return new ApiResponse<ParkingLotOperator>(operatorEntity, true, "Cập nhật thông tin operator thành công", StatusCodes.Status200OK);
+            return new ApiResponse<OperatorUpdateDto>(dto, true, "Cập nhật thông tin operator thành công", StatusCodes.Status200OK);
         }
     }
 

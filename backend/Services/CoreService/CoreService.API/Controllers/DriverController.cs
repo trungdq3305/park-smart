@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace CoreService.API.Controllers
 {
-    [Route("api/driver")]
+    [Route("api/drivers")]
     [ApiController]
     public class DriverController : ControllerBase
     {

@@ -11,6 +11,6 @@ namespace CoreService.Application.Interfaces
 {
     public interface IOperatorApplication
     {
-        Task<ApiResponse<ParkingLotOperator>> UpdateAsync(OperatorUpdateDto dto, string accountId);
+        Task<ApiResponse<OperatorUpdateDto>> UpdateAsync(OperatorUpdateDto dto, string accountId);
     }
 }
