@@ -46,32 +46,34 @@ namespace CoreService.Application.Applications
             {
                 var dto = _mapper.Map<AccountDetailDto>(account);
 
-                switch (account.RoleId)
+                // Ưu tiên check Driver trước
+                var driver = await _driverRepo.GetByAccountIdAsync(account.Id);
+                if (driver != null)
                 {
-                    case "68bee20c00a9410adb97d3a1": // Driver
-                        dto.RoleName = "Driver";
-                        var driver = await _driverRepo.GetByAccountIdAsync(account.Id);
-                        if (driver != null)
-                            dto.DriverDetail = _mapper.Map<DriverDto>(driver);
-                        break;
-
-                    case "68bee1f500a9410adb97d3a0": // Operator
+                    dto.RoleName = "Driver";
+                    dto.DriverDetail = _mapper.Map<DriverDto>(driver);
+                }
+                else
+                {
+                    var op = await _operatorRepo.GetByAccountIdAsync(account.Id);
+                    if (op != null)
+                    {
                         dto.RoleName = "Operator";
-                        var op = await _operatorRepo.GetByAccountIdAsync(account.Id);
-                        if (op != null)
-                            dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
-                        break;
-
-                    case "68bee1c000a9410adb97d39f": // Admin
-                        dto.RoleName = "Admin";
+                        dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
+                    }
+                    else
+                    {
                         var admin = await _adminRepo.GetByAccountIdAsync(account.Id);
                         if (admin != null)
+                        {
+                            dto.RoleName = "Admin";
                             dto.AdminDetail = _mapper.Map<AdminDto>(admin);
-                        break;
-
-                    default:
-                        dto.RoleName = "Unknown";
-                        break;
+                        }
+                        else
+                        {
+                            dto.RoleName = "Unknown"; // Không tìm thấy trong bảng nào
+                        }
+                    }
                 }
 
                 result.Add(dto);
@@ -86,6 +88,7 @@ namespace CoreService.Application.Applications
                 StatusCodes.Status200OK
             );
         }
+
 
         public async Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetByRoleAsync(string role, int? page, int? pageSize)
         {
@@ -152,36 +155,46 @@ namespace CoreService.Application.Applications
 
             var dto = _mapper.Map<AccountDetailDto>(account);
 
-            switch (account.RoleId)
+            // Check Driver
+            var driver = await _driverRepo.GetByAccountIdAsync(account.Id);
+            if (driver != null)
             {
-                case "68bee20c00a9410adb97d3a1": // Driver
-                    dto.RoleName = "Driver";
-                    var driver = await _driverRepo.GetByAccountIdAsync(account.Id);
-                    if (driver != null)
-                        dto.DriverDetail = _mapper.Map<DriverDto>(driver);
-                    break;
-
-                case "68bee1f500a9410adb97d3a0": // Operator
+                dto.RoleName = "Driver";
+                dto.DriverDetail = _mapper.Map<DriverDto>(driver);
+            }
+            else
+            {
+                // Check Operator
+                var op = await _operatorRepo.GetByAccountIdAsync(account.Id);
+                if (op != null)
+                {
                     dto.RoleName = "Operator";
-                    var op = await _operatorRepo.GetByAccountIdAsync(account.Id);
-                    if (op != null)
-                        dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
-                    break;
-
-                case "68bee1c000a9410adb97d39f": // Admin
-                    dto.RoleName = "Admin";
+                    dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
+                }
+                else
+                {
+                    // Check Admin
                     var admin = await _adminRepo.GetByAccountIdAsync(account.Id);
                     if (admin != null)
+                    {
+                        dto.RoleName = "Admin";
                         dto.AdminDetail = _mapper.Map<AdminDto>(admin);
-                    break;
-
-                default:
-                    dto.RoleName = "Unknown";
-                    break;
+                    }
+                    else
+                    {
+                        dto.RoleName = "Unknown";
+                    }
+                }
             }
 
-            return new ApiResponse<AccountDetailDto>(dto, true, "Lấy thông tin account thành công", StatusCodes.Status200OK);
+            return new ApiResponse<AccountDetailDto>(
+                dto,
+                true,
+                "Lấy thông tin account thành công",
+                StatusCodes.Status200OK
+            );
         }
+
 
         public async Task<ApiResponse<AccountDetailDto>> GetByDriverIdAsync(string driverId)
         {
