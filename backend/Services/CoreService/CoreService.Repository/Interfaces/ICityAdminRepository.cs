@@ -14,5 +14,6 @@ namespace CoreService.Repository.Interfaces
         Task AddAsync(CityAdmin entity);
         Task UpdateAsync(CityAdmin entity);
         Task DeleteAsync(string id);
+        Task<CityAdmin?> GetByAccountIdAsync(string accountId);
     }
 }

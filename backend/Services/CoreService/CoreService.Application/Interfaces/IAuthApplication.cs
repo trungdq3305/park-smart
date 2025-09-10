@@ -1,4 +1,5 @@
-﻿using CoreService.Application.DTOs.ApiResponse;
+﻿using CoreService.Application.DTOs.AccountDtos;
+using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
 using System;
 using System.Collections.Generic;
@@ -20,5 +21,6 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<string>> ForgotPasswordAsync(string email);
         Task<ApiResponse<string>> ConfirmForgotAsync(ConfirmForgotRequest request);
         Task<ApiResponse<string>> HandleGoogleLoginAsync(string email, string name);
+        Task<ApiResponse<bool>> ChangePasswordAsync(string accountId, ChangePasswordDto dto);
     }
 }

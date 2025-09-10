@@ -1,4 +1,5 @@
-﻿using CoreService.Application.DTOs.ApiResponse;
+﻿using CoreService.Application.DTOs.AccountDtos;
+using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
@@ -413,6 +414,35 @@ namespace CoreService.Application.Applications
                 data: token,
                 success: true,
                 message: "Đăng nhập bằng Google thành công",
+                statusCode: StatusCodes.Status200OK
+            );
+        }
+        public async Task<ApiResponse<bool>> ChangePasswordAsync(string accountId, ChangePasswordDto dto)
+        {
+
+            var account = await _accountRepo.GetByIdAsync(accountId);
+            if (account == null)
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
+
+            if (dto.NewPassword != dto.ConfirmPassword)
+                throw new ApiException("Mật khẩu xác nhận không khớp", StatusCodes.Status400BadRequest);
+
+            // ✅ So sánh bằng hash, không so sánh plaintext
+            var oldPasswordHash = HashPassword(dto.OldPassword);
+            if (account.Password != oldPasswordHash)
+                throw new ApiException("Mật khẩu cũ không đúng", StatusCodes.Status400BadRequest);
+
+            // ✅ Hash mật khẩu mới trước khi lưu
+            account.Password = HashPassword(dto.NewPassword);
+            account.UpdatedAt = DateTime.UtcNow;
+            account.UpdatedBy = accountId;
+
+            await _accountRepo.UpdateAsync(account);
+
+            return new ApiResponse<bool>(
+                data: true,
+                success: true,
+                message: "Đổi mật khẩu thành công",
                 statusCode: StatusCodes.Status200OK
             );
         }
