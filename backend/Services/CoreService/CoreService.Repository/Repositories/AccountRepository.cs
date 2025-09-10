@@ -50,6 +50,7 @@ namespace CoreService.Repository.Repositories
         {
             return await _users.Find(x => x.PasswordResetToken == token).FirstOrDefaultAsync();
         }
-
+        public async Task<Account?> GetByPhoneNumberAsync(string phoneNumber) =>
+    await _users.Find(a => a.PhoneNumber == phoneNumber).FirstOrDefaultAsync();
     }
 }

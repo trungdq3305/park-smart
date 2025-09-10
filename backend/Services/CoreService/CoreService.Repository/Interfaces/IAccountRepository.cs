@@ -20,6 +20,6 @@ namespace CoreService.Repository.Interfaces
         Task<Account> GetByRefreshTokenAsync(string emailConfirmToken);
         Task<Account?> GetByPasswordResetTokenAsync(string token);
 
-
+        Task<Account?> GetByPhoneNumberAsync(string phoneNumber);
     }
 }
