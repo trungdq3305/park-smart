@@ -19,5 +19,6 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<string>> ConfirmOperatorAsync(string id);
         Task<ApiResponse<string>> ForgotPasswordAsync(string email);
         Task<ApiResponse<string>> ConfirmForgotAsync(ConfirmForgotRequest request);
+        Task<ApiResponse<string>> HandleGoogleLoginAsync(string email, string name);
     }
 }

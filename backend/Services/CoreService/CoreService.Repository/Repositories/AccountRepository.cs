@@ -24,7 +24,6 @@ namespace CoreService.Repository.Repositories
 
         public async Task<Account?> GetByIdAsync(string id) =>
             await _users.Find(u => u.Id == id).FirstOrDefaultAsync();
-
         public async Task<Account?> GetByEmailAsync(string email) =>
             await _users.Find(u => u.Email == email).FirstOrDefaultAsync();
         public async Task<Account?> GetByPhoneAsync(string phone) =>

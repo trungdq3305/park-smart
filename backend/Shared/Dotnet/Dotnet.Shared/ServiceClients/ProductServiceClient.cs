@@ -23,7 +23,5 @@ namespace Dotnet.Shared.ServiceClients
         //    var response = await _httpClient.GetFromJsonAsync<IEnumerable<ProductDto>>("/api/products");
         //    return response ?? Enumerable.Empty<ProductDto>();
         //}
-
-        
     }
 }

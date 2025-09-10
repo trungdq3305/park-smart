@@ -1,10 +1,13 @@
 using CoreService.Application;
 using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.AuthDtos;
 using CoreService.Application.DTOs.EmailDtos;
 using CoreService.Common.Helpers;
 using CoreService.Repository;
 using Dotnet.Shared.Extensions;
 using Dotnet.Shared.Mongo;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +17,9 @@ using System.Security.Claims;
 using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddMemoryCache();
+
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 // Add services to the container.
 builder.Services
@@ -21,24 +27,44 @@ builder.Services
 .AddService();
 builder.Services.AddScoped<JwtTokenHelper>();
 // Authentication + JWT
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true, // Nên b?t ?? ki?m tra token h?t h?n
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
 
-            RoleClaimType = ClaimTypes.Role,
-            NameClaimType = "email"   //User.Identity.Name = email
-        };
-    });
+// Authentication + JWT + Google + Cookie
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        RoleClaimType = ClaimTypes.Role,
+        NameClaimType = "email"
+    };
+})
+.AddGoogle(options =>
+{
+    var googleAuth = builder.Configuration.GetSection("Authentication:Google").Get<GoogleAuthSettings>();
+    options.ClientId = googleAuth.ClientId;
+    options.ClientSecret = googleAuth.ClientSecret;
+    options.CallbackPath = "/signin-google";
+    options.SaveTokens = true;
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.Cookie.Name = "AuthCookie";
+    options.LoginPath = "/api/auth/login"; // ???ng d?n m?c ??nh khi c?n ??ng nh?p
+    options.LogoutPath = "/api/auth/logout"; // ???ng d?n m?c ??nh khi ??ng xu?t
+});
 
 // Swagger + JWT support
 builder.Services.AddSwaggerGen(option =>
@@ -55,27 +81,9 @@ builder.Services.AddSwaggerGen(option =>
         Scheme = "bearer",
         BearerFormat = "JWT"
     });
-
-    //option.AddSecurityRequirement(new OpenApiSecurityRequirement
-    //{
-    //    {
-    //        new OpenApiSecurityScheme
-    //        {
-    //            Reference = new OpenApiReference
-    //            {
-    //                Type = ReferenceType.SecurityScheme,
-    //                Id = "Bearer"
-    //            }
-    //        },
-    //        Array.Empty<string>()
-    //    }
-    //});
     option.OperationFilter<AuthorizeCheckOperationFilter>(); // <-- Thêm dòng này
 
 });
-
-
-
 
 builder.Services.AddHttpClients(builder.Configuration);
 
