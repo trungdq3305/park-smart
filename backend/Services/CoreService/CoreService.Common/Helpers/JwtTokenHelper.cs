@@ -30,57 +30,56 @@ namespace CoreService.Common.Helpers
 
         public string GenerateToken(Account acc)
         {
-            string roleName = acc.RoleId switch
-            {
-                "68bee20c00a9410adb97d3a1" => "Driver",
-                "68bee1f500a9410adb97d3a0" => "Operator",
-                "68bee1c000a9410adb97d39f" => "Admin",
-                _ => null
-            };
-
             var claims = new List<Claim>
             {
                 new Claim("id", acc.Id.ToString()),
                 new Claim("email", acc.Email),
-                new Claim("role", roleName),
                 new Claim("phoneNumber", acc.PhoneNumber)
             };
-
+            var driver = _driverRepo.GetByAccountIdAsync(acc.Id).Result;
             // Gắn thêm thông tin chi tiết dựa vào role
-            if (roleName == "Driver")
+            if (driver != null)
             {
-                var driver = _driverRepo.GetByAccountIdAsync(acc.Id).Result;
+                
                 if (driver != null)
                 {
+                    claims.Add(new Claim("roleName", "Driver"));
                     claims.Add(new Claim("driverId", driver.Id ?? ""));
                     claims.Add(new Claim("fullName", driver.FullName ?? ""));
                     claims.Add(new Claim("gender", driver.Gender.ToString()));
                     claims.Add(new Claim("licenseNumber", driver.DrivingLicenseNumber ?? ""));
                 }
             }
-            else if (roleName == "Operator")
+            else
             {
                 var op = _operatorRepo.GetByAccountIdAsync(acc.Id).Result;
                 if (op != null)
                 {
+                    claims.Add(new Claim("role", "Operator"));
                     claims.Add(new Claim("operatorId", op.Id ?? ""));
                     claims.Add(new Claim("fullName", op.FullName ?? ""));
                     claims.Add(new Claim("taxCode", op.TaxCode ?? ""));
                     claims.Add(new Claim("companyName", op.CompanyName ?? ""));
                     claims.Add(new Claim("contactEmail", op.ContactEmail ?? ""));
                 }
-            }
-            else if (roleName == "Admin")
-            {
-                var admin = _adminRepo.GetByAccountIdAsync(acc.Id).Result;
-                if (admin != null)
+                else
                 {
-                    claims.Add(new Claim("adminId", admin.Id ?? ""));
-                    claims.Add(new Claim("fullName", admin.FullName ?? ""));
-                    claims.Add(new Claim("department", admin.Department ?? ""));
-                    claims.Add(new Claim("position", admin.Position ?? ""));
+                    var admin = _adminRepo.GetByAccountIdAsync(acc.Id).Result;
+                    if (admin != null)
+                    {
+                        claims.Add(new Claim("role", "Admin"));
+                        claims.Add(new Claim("adminId", admin.Id ?? ""));
+                        claims.Add(new Claim("fullName", admin.FullName ?? ""));
+                        claims.Add(new Claim("department", admin.Department ?? ""));
+                        claims.Add(new Claim("position", admin.Position ?? ""));
+                    }
+                    else
+                    {
+                        claims.Add(new Claim("role", "Unknown"));
+                    }
                 }
             }
+            
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -89,7 +88,7 @@ namespace CoreService.Common.Helpers
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(1),
+                expires: DateTime.Now.AddHours(168),
                 signingCredentials: creds
             );
 
