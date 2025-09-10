@@ -1,4 +1,9 @@
-import { HttpStatus, Inject, Injectable } from '@nestjs/common'
+import {
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common'
 import { IWardService } from './interfaces/iward.service'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { WardDto } from './dto/ward.dto'
@@ -12,10 +17,14 @@ export class WardService implements IWardService {
 
   async getWards(): Promise<ApiResponseDto<WardDto>> {
     const wards = await this.wardRepository.getWards()
+    if (!wards || wards.length === 0) {
+      throw new NotFoundException('Không tìm thấy khu vực nào')
+    }
     return new ApiResponseDto({
       data: wards,
       statusCode: HttpStatus.OK,
       message: 'Lấy danh sách khu vực thành công',
+      success: true,
     })
   }
 }
