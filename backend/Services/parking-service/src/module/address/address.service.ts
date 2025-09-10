@@ -105,7 +105,7 @@ export class AddressService implements IAddressService {
     }
     return {
       data: addresses.map((address) => new AddressResponseDto(address)),
-      message: 'Tìm thấy địa chỉ thành công',
+      message: 'Tìm thấy tất cả địa chỉ thành công',
       statusCode: HttpStatus.OK,
       success: true,
     }

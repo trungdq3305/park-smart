@@ -15,6 +15,7 @@ export class ApiResponseDto<T> {
 
   constructor(partial: Partial<ApiResponseDto<T>>) {
     this.data = partial.data ?? []
+    this.success = partial.success ?? true
     this.message = partial.message ?? 'Successful'
     this.statusCode = partial.statusCode ?? 200
   }

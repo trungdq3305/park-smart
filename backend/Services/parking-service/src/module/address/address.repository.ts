@@ -18,11 +18,12 @@ export class AddressRepository implements IAddressRepository {
     userId: string,
   ): Promise<Address> {
     const createdAddress = new this.addressModel({
-      ...createAddressDto,
+      fullAddress: createAddressDto.fullAddress,
+      wardId: createAddressDto.wardId,
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
-      created_at: new Date(),
-      created_by: new mongoose.Types.ObjectId(userId),
+      createdAt: new Date(),
+      createdBy: new mongoose.Types.ObjectId(userId),
     })
     return createdAddress.save()
   }
@@ -32,8 +33,9 @@ export class AddressRepository implements IAddressRepository {
       .find()
       .populate({
         path: 'wardId',
-        select: 'ward_name -_id',
+        select: 'wardName -_id',
       })
+      .lean()
       .exec()
   }
 
@@ -42,8 +44,9 @@ export class AddressRepository implements IAddressRepository {
       .findById(id)
       .populate({
         path: 'wardId',
-        select: 'ward_name',
+        select: 'wardName',
       })
+      .lean()
       .exec()
   }
 
@@ -60,8 +63,8 @@ export class AddressRepository implements IAddressRepository {
           ...updateAddressDto,
           latitude: coordinates.latitude,
           longitude: coordinates.longitude,
-          updated_at: new Date(),
-          updated_by: userId,
+          updatedAt: new Date(),
+          updatedBy: userId,
         },
         { new: true },
       )
@@ -71,8 +74,8 @@ export class AddressRepository implements IAddressRepository {
   async deleteAddress(id: string, userId: string): Promise<boolean> {
     const result = await this.addressModel
       .findByIdAndUpdate(id, {
-        deleted_at: new Date(),
-        deleted_by: new mongoose.Types.ObjectId(userId),
+        deletedAt: new Date(),
+        deletedBy: new mongoose.Types.ObjectId(userId),
       })
       .exec()
     return result !== null
