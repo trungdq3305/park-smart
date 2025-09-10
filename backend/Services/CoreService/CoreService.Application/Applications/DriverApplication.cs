@@ -23,7 +23,7 @@ namespace CoreService.Application.Applications
             _accountRepo = accountRepo;
         }
 
-        public async Task<ApiResponse<Driver>> UpdateAsync(DriverUpdateDto dto, string accountId)
+        public async Task<ApiResponse<DriverUpdateDto>> UpdateAsync(DriverUpdateDto dto, string accountId)
         {
             var driver = await _driverRepo.GetByAccountIdAsync(accountId);
             if (driver == null)
@@ -63,7 +63,7 @@ namespace CoreService.Application.Applications
             await _accountRepo.UpdateAsync(account);
             await _driverRepo.UpdateAsync(driver);
 
-            return new ApiResponse<Driver>(driver, true, "Cập nhật thông tin driver thành công", StatusCodes.Status200OK);
+            return new ApiResponse<DriverUpdateDto>(dto, true, "Cập nhật thông tin driver thành công", StatusCodes.Status200OK);
         }
     }
 }

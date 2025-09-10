@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace CoreService.API.Controllers
 {
-    [Route("api/operator")]
+    [Route("api/operators")]
     [ApiController]
     public class OperatorController : ControllerBase
     {
