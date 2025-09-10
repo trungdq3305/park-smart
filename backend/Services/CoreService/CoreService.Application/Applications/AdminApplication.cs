@@ -23,7 +23,7 @@ namespace CoreService.Application.Applications
             _accountRepo = accountRepo;
         }
 
-        public async Task<ApiResponse<CityAdmin>> UpdateAsync(AdminUpdateDto dto, string accountId)
+        public async Task<ApiResponse<AdminUpdateDto>> UpdateAsync(AdminUpdateDto dto, string accountId)
         {
             var adminEntity = await _adminRepo.GetByAccountIdAsync(accountId);
             if (adminEntity == null)
@@ -65,7 +65,7 @@ namespace CoreService.Application.Applications
             await _accountRepo.UpdateAsync(account);
             await _adminRepo.UpdateAsync(adminEntity);
 
-            return new ApiResponse<CityAdmin>(adminEntity, true, "Cập nhật thông tin admin thành công", StatusCodes.Status200OK);
+            return new ApiResponse<AdminUpdateDto>(dto, true, "Cập nhật thông tin admin thành công", StatusCodes.Status200OK);
         }
     }
 }

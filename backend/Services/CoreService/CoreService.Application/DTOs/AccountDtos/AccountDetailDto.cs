@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace CoreService.Application.DTOs.AccountDtos
@@ -9,6 +10,7 @@ namespace CoreService.Application.DTOs.AccountDtos
     public record AccountDetailDto
     {
         // Thông tin cơ bản từ Account
+        [JsonPropertyName("_id")]
         public string Id { get; set; }
         public string RoleId { get; set; }
         public string RoleName { get; set; }
