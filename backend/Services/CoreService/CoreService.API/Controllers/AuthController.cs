@@ -13,7 +13,7 @@ using System.Security.Claims;
 
 namespace KLTN.CoreService.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -38,7 +38,7 @@ namespace KLTN.CoreService.API.Controllers
             var state = Guid.NewGuid().ToString("N");
             _memoryCache.Set(state, true, TimeSpan.FromMinutes(10));
 
-            var redirectUrl = Url.Action("GoogleCallback", "Auth", null, Request.Scheme, Request.Host.Value);
+            var redirectUrl = Url.Action("GoogleCallback", "Auth");
 
             var properties = new AuthenticationProperties
             {
@@ -113,9 +113,7 @@ namespace KLTN.CoreService.API.Controllers
             var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             if (!authenticateResult.Succeeded)
-            {
                 return Unauthorized("Authentication failed.");
-            }
 
             var claims = authenticateResult.Principal.Claims.ToList();
             var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
@@ -124,9 +122,14 @@ namespace KLTN.CoreService.API.Controllers
             if (string.IsNullOrEmpty(email))
                 return BadRequest("Email not provided by Google");
 
+            // Xử lý đăng nhập / tạo account nếu cần
             var response = await _authApplication.HandleGoogleLoginAsync(email, name);
 
-            // Nếu cần, bạn có thể re-sign cookie để extend session
+            // Nếu login thành công, tạo URL để frontend redirect
+            // Ví dụ: gửi token qua query string
+            var frontendUrl = $"http://localhost:3000/login-success?token={response.Data}";
+
+            // Optionally: re-sign cookie để extend session
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties
             {
@@ -139,8 +142,10 @@ namespace KLTN.CoreService.API.Controllers
                 authProperties
             );
 
-            return StatusCode(response.StatusCode, response);
+            // Trả về JSON chứa URL
+            return Redirect(frontendUrl);
         }
+
 
     }
 }
