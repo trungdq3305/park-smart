@@ -36,5 +36,8 @@ namespace CoreService.Repository.Repositories
 
         public async Task DeleteAsync(string id) =>
             await _collection.DeleteOneAsync(e => e.Id == id);
+        public async Task<CityAdmin?> GetByAccountIdAsync(string accountId) =>
+    await _collection.Find(d => d.AccountId == accountId).FirstOrDefaultAsync();
+
     }
 }
