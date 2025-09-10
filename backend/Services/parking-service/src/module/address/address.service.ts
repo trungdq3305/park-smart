@@ -42,7 +42,10 @@ export class AddressService implements IAddressService {
     wardId: string,
   ): Promise<{ latitude: number; longitude: number }> {
     const wardName = await this.wardRepository.getWardNameById(wardId)
-    const fullAddress = this.cityName + ' ' + wardName + ' ' + address
+    if (!wardName) {
+      throw new NotFoundException('WardId không tồn tại')
+    }
+    const fullAddress = this.cityName + ', ' + wardName + ', ' + address
     const encodedAddress = encodeURIComponent(fullAddress)
     const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodedAddress}`
 
@@ -73,7 +76,7 @@ export class AddressService implements IAddressService {
       if (!locations || locations.length === 0) {
         // <-- Sửa ở đây
         throw new HttpException(
-          `Không thể tìm thấy địa chỉ: "${address}"`,
+          `Không thể tìm thấy địa chỉ: "${fullAddress}"`,
           HttpStatus.BAD_REQUEST,
         )
       }
@@ -102,7 +105,7 @@ export class AddressService implements IAddressService {
     }
     return {
       data: addresses.map((address) => new AddressResponseDto(address)),
-      message: 'Tìm thấy địa chỉ thành công',
+      message: 'Tìm thấy tất cả địa chỉ thành công',
       statusCode: HttpStatus.OK,
       success: true,
     }
@@ -149,7 +152,7 @@ export class AddressService implements IAddressService {
     }
     return {
       data: [new AddressResponseDto(address)],
-      message: 'Address created successfully',
+      message: 'Tạo địa chỉ thành công',
       statusCode: HttpStatus.OK,
       success: true,
     }

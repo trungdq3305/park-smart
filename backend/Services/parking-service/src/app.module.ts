@@ -9,6 +9,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
 import { JwtAuthGuard } from './guard/jwtAuth.guard'
 import { WardModule } from './module/ward/ward.module'
 import { AddressModule } from './module/address/address.module'
+import { BrandModule } from './module/brand/brand.module'
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -27,6 +28,7 @@ import { AddressModule } from './module/address/address.module'
     }),
     WardModule,
     AddressModule,
+    BrandModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],

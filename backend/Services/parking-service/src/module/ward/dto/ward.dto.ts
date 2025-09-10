@@ -8,9 +8,9 @@ export class WardDto {
   })
   @IsString()
   @IsNotEmpty()
-  ward_name: string
+  wardName: string
 
   constructor(partial: WardDto) {
-    this.ward_name = partial.ward_name
+    this.wardName = partial.wardName
   }
 }

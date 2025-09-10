@@ -14,6 +14,6 @@ export class WardRepository implements IWardRepository {
 
   async getWardNameById(id: string): Promise<string | null> {
     const ward = await this.wardModel.findById(id).lean().exec()
-    return ward ? ward.ward_name : null
+    return ward ? ward.wardName : null
   }
 }

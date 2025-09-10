@@ -1,37 +1,316 @@
 {
-	"info": {
-		"_postman_id": "aeb4c7ab-9299-4c49-9ebd-c8ab7b70a654",
-		"name": "ParkSmart",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "45297038",
-		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-aeb4c7ab-9299-4c49-9ebd-c8ab7b70a654?action=share&source=collection_link&creator=45297038"
-	},
-	"item": [
-		{
-			"name": "Auth",
-			"item": [
-				{
-					"name": "Login",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "http://localhost:1000/core/auth/login",
-							"protocol": "http",
-							"host": [
-								"localhost"
-							],
-							"port": "1000",
-							"path": [
-								"core",
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		}
-	]
+  "info": {
+    "_postman_id": "aeb4c7ab-9299-4c49-9ebd-c8ab7b70a654",
+    "name": "ParkSmart",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "45297038",
+    "_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-aeb4c7ab-9299-4c49-9ebd-c8ab7b70a654?action=share&source=collection_link&creator=45297038"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:1000/core/auth/login",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "1000",
+              "path": ["core", "auth", "login"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Address",
+      "item": [
+        {
+          "name": "Create New Address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"wardId\": \"682dbf1e3ecf256c0683b4d8\",\n  \"fullAddress\": \"29 Lê Duẩn, Phường Bến Nghé, Quận 1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/parking/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "addresses"]
+            },
+            "description": "Tạo một địa chỉ mới cho người dùng đã đăng nhập"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Addresses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/addresses",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "addresses"]
+            },
+            "description": "Lấy tất cả địa chỉ"
+          },
+          "response": []
+        },
+        {
+          "name": "Find Address by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/addresses/your_address_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "addresses", "your_address_id"]
+            },
+            "description": "Tìm một địa chỉ theo ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Address by ID",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"wardId\": \"682dbf1e3ecf256c0683b4d8\",\n  \"fullAddress\": \"30 Lê Duẩn, Phường Bến Nghé, Quận 1 (Địa chỉ mới)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/parking/addresses/your_address_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "addresses", "your_address_id"]
+            },
+            "description": "Cập nhật một địa chỉ theo ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Address by ID",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/addresses/your_address_id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "addresses", "your_address_id"]
+            },
+            "description": "Xóa một địa chỉ theo ID"
+          },
+          "response": []
+        }
+      ],
+      "auth": {
+        "type": "bearer",
+        "bearer": [
+          {
+            "key": "token",
+            "value": "{{your_jwt_token}}",
+            "type": "string"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [""]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wards",
+      "item": [
+        {
+          "name": "Get Wards in HCMC",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/wards",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "wards"]
+            },
+            "description": "Lấy danh sách phường/xã tại khu vực thành phố Hồ Chí Minh"
+          },
+          "response": []
+        }
+      ],
+      "description": "Các API liên quan đến phường/xã"
+    },
+    {
+      "name": "Brands",
+      "item": [
+        {
+          "name": "Tạo hãng xe mới",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"brandName\": \"Toyota\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/parking/brands",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "brands"]
+            },
+            "description": "Tạo một hãng xe mới. Yêu cầu xác thực Bearer Token."
+          },
+          "response": []
+        },
+        {
+          "name": "Lấy tất cả hãng xe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/brands",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "brands"]
+            },
+            "description": "Lấy danh sách tất cả các hãng xe."
+          },
+          "response": []
+        },
+        {
+          "name": "Lấy hãng xe theo ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/brands/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "brands", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your_brand_id_here",
+                  "description": "ID của hãng xe cần tìm"
+                }
+              ]
+            },
+            "description": "Tìm và trả về thông tin của một hãng xe dựa trên ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Xóa hãng xe theo ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parking/brands/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "brands", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your_brand_id_here",
+                  "description": "ID của hãng xe cần xóa"
+                }
+              ]
+            },
+            "description": "Xóa một hãng xe dựa trên ID. Yêu cầu xác thực Bearer Token."
+          },
+          "response": []
+        },
+        {
+          "name": "Khôi phục hãng xe theo ID",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parking/brands/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "brands", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your_brand_id_here",
+                  "description": "ID của hãng xe cần khôi phục"
+                }
+              ]
+            },
+            "description": "Khôi phục một hãng xe đã bị xóa dựa trên ID. Yêu cầu xác thực Bearer Token."
+          },
+          "response": []
+        }
+      ],
+      "description": "Các API liên quan đến hãng xe"
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:1000",
+      "type": "string"
+    },
+    {
+      "key": "your_jwt_token",
+      "value": "PASTE_YOUR_LOGIN_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
 }

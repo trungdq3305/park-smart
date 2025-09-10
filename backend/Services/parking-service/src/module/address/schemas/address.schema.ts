@@ -13,7 +13,7 @@ export class Address extends BaseEntity {
   })
   _id: mongoose.Schema.Types.ObjectId
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, required: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Ward' })
   wardId: mongoose.Schema.Types.ObjectId
 
   @Prop({ type: Number, required: true })
