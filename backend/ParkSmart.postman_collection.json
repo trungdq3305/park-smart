@@ -299,6 +299,26 @@
         }
       ],
       "description": "Các API liên quan đến hãng xe"
+    },
+    {
+      "name": "Vehicle Types",
+      "item": [
+        {
+          "name": "Get Vehicle Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/vehicle-types",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "vehicle-types"]
+            },
+            "description": "Lấy danh sách các loại xe"
+          },
+          "response": []
+        }
+      ],
+      "description": "Các API liên quan đến loại xe"
     }
   ],
   "variable": [
