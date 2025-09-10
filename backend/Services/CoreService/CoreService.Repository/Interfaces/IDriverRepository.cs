@@ -14,5 +14,6 @@ namespace CoreService.Repository.Interfaces
         Task AddAsync(Driver entity);
         Task UpdateAsync(Driver entity);
         Task DeleteAsync(string id);
+        Task<Driver?> GetByAccountIdAsync(string accountId);
     }
 }

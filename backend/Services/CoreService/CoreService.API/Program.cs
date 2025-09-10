@@ -1,4 +1,5 @@
 using CoreService.Application;
+using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
 using CoreService.Application.DTOs.EmailDtos;
@@ -22,9 +23,20 @@ builder.Services.AddMemoryCache();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 // Add services to the container.
+builder.Services.AddHttpContextAccessor();
 builder.Services
 .AddRepository()
 .AddService();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 builder.Services.AddScoped<JwtTokenHelper>();
 // Authentication + JWT
 
@@ -32,7 +44,7 @@ builder.Services.AddScoped<JwtTokenHelper>();
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
@@ -65,7 +77,7 @@ builder.Services.AddAuthentication(options =>
     options.LoginPath = "/api/auth/login"; // ???ng d?n m?c ??nh khi c?n ??ng nh?p
     options.LogoutPath = "/api/auth/logout"; // ???ng d?n m?c ??nh khi ??ng xu?t
 });
-
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Swagger + JWT support
 builder.Services.AddSwaggerGen(option =>
 {
@@ -118,6 +130,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();   // ? parse token tr??c

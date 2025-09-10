@@ -14,5 +14,6 @@ namespace CoreService.Repository.Interfaces
         Task AddAsync(ParkingLotOperator entity);
         Task UpdateAsync(ParkingLotOperator entity);
         Task DeleteAsync(string id);
+        Task<ParkingLotOperator?> GetByAccountIdAsync(string accountId);
     }
 }

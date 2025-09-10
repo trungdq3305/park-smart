@@ -1,4 +1,6 @@
-﻿using CoreService.Application.DTOs.ApiResponse;
+﻿using CoreService.Application.DTOs.AccountDtos;
+using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Common.Helpers;
 using CoreService.Repository.Models;
 using System;
 using System.Collections.Generic;
@@ -10,6 +12,15 @@ namespace CoreService.Application.Interfaces
 {
     public interface IAccountApplication
     {
-        Task<ApiResponse<IEnumerable<Account>>> GetAllAsync();
+        Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetAllAsync(int? page, int? pageSize);
+        Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetByRoleAsync(string role, int? page, int? pageSize);
+        Task<ApiResponse<AccountDetailDto>> GetByIdAsync(string id);
+        Task<ApiResponse<Account>> CreateAsync(Account account);
+        Task<ApiResponse<Account>> UpdateAsync(string id, Account update);
+        Task<ApiResponse<string>> DeleteAsync(string id);
+        Task<ApiResponse<Account>> GetMeAsync();
+        Task<ApiResponse<AccountDetailDto>> GetByDriverIdAsync(string driverId);
+        Task<ApiResponse<AccountDetailDto>> GetByOperatorIdAsync(string operatorId);
+        Task<ApiResponse<AccountDetailDto>> GetByAdminIdAsync(string adminId);
     }
 }
