@@ -8,7 +8,7 @@ export abstract class BaseEntity {
     index: true,
     default: null,
   })
-  created_by: string // Kiểu dữ liệu là string
+  createdBy: string // Kiểu dữ liệu là string
 
   @Prop({
     type: String,
@@ -16,16 +16,16 @@ export abstract class BaseEntity {
     index: true,
     default: null,
   })
-  updated_by: string
+  updatedBy: string
 
   @Prop({ type: Date, default: Date.now })
-  created_at: Date
+  createdAt: Date
 
   @Prop({ type: Date, default: null })
-  updated_at: Date
+  updatedAt: Date
 
   @Prop({ type: Date, default: null })
-  deleted_at: Date
+  deletedAt: Date
 
   @Prop({
     type: String,
@@ -33,5 +33,5 @@ export abstract class BaseEntity {
     required: false,
     index: true,
   })
-  deleted_by: string
+  deletedBy: string
 }
