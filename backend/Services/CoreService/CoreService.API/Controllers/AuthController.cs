@@ -14,7 +14,7 @@ using System.Security.Claims;
 
 namespace KLTN.CoreService.API.Controllers
 {
-    [Route("api/auth")]
+    [Route("api/auths")]
     [ApiController]
     public class AuthController : ControllerBase
     {

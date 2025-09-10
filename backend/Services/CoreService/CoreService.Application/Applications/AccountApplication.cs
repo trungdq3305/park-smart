@@ -195,7 +195,54 @@ namespace CoreService.Application.Applications
             );
         }
 
+        public async Task<ApiResponse<AccountDetailDto>> GetMeAsync()
+        {
+            var id = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
+            var account = await _accountRepo.GetByIdAsync(id);
+            if (account == null)
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
 
+            var dto = _mapper.Map<AccountDetailDto>(account);
+
+            // Check Driver
+            var driver = await _driverRepo.GetByAccountIdAsync(account.Id);
+            if (driver != null)
+            {
+                dto.RoleName = "Driver";
+                dto.DriverDetail = _mapper.Map<DriverDto>(driver);
+            }
+            else
+            {
+                // Check Operator
+                var op = await _operatorRepo.GetByAccountIdAsync(account.Id);
+                if (op != null)
+                {
+                    dto.RoleName = "Operator";
+                    dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
+                }
+                else
+                {
+                    // Check Admin
+                    var admin = await _adminRepo.GetByAccountIdAsync(account.Id);
+                    if (admin != null)
+                    {
+                        dto.RoleName = "Admin";
+                        dto.AdminDetail = _mapper.Map<AdminDto>(admin);
+                    }
+                    else
+                    {
+                        dto.RoleName = "Unknown";
+                    }
+                }
+            }
+
+            return new ApiResponse<AccountDetailDto>(
+                dto,
+                true,
+                "Lấy thông tin account thành công",
+                StatusCodes.Status200OK
+            );
+        }
         public async Task<ApiResponse<AccountDetailDto>> GetByDriverIdAsync(string driverId)
         {
             var driver = await _driverRepo.GetByIdAsync(driverId);
@@ -247,15 +294,7 @@ namespace CoreService.Application.Applications
             return new ApiResponse<AccountDetailDto>(dto, true, "Lấy thông tin admin thành công", StatusCodes.Status200OK);
         }
 
-        public async Task<ApiResponse<Account>> GetMeAsync()
-        {
-            var id = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
-            var account = await _accountRepo.GetByIdAsync(id);
-            if (account == null)
-                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
-
-            return new ApiResponse<Account>(account, true, "Lấy thông tin account thành công", StatusCodes.Status200OK);
-        }
+        
 
         public async Task<ApiResponse<Account>> CreateAsync(Account account)
         {
