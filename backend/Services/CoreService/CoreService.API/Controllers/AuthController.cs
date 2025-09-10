@@ -1,4 +1,5 @@
 ﻿using CoreService.Application.Applications;
+using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
 using CoreService.Application.Interfaces;
@@ -105,7 +106,14 @@ namespace KLTN.CoreService.API.Controllers
             var response = await _authApplication.ConfirmForgotAsync(request);
             return StatusCode(response.StatusCode, response);
         }
-
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+        {
+            var accountId = User.FindFirst("id")?.Value;
+            var response = await _authApplication.ChangePasswordAsync(accountId, dto);
+            return StatusCode(response.StatusCode, response);
+        }
         [HttpGet("google-callback")]
         public async Task<IActionResult> GoogleCallback()
         {

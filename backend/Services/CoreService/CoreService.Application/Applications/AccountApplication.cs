@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CoreService.Application.Applications
@@ -16,12 +15,19 @@ namespace CoreService.Application.Applications
     public class AccountApplication : IAccountApplication
     {
         private readonly IAccountRepository _accountRepo;
-        IHttpContextAccessor _httpContextAccessor;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IDriverRepository _driverRepo;
         private readonly IParkingLotOperatorRepository _operatorRepo;
         private readonly ICityAdminRepository _adminRepo;
         private readonly AutoMapper.IMapper _mapper;
-        public AccountApplication(IAccountRepository accountRepo, IHttpContextAccessor httpContextAccessor, IDriverRepository driverRepo, IParkingLotOperatorRepository operatorRepo, ICityAdminRepository adminRepo, AutoMapper.IMapper mapper)
+
+        public AccountApplication(
+            IAccountRepository accountRepo,
+            IHttpContextAccessor httpContextAccessor,
+            IDriverRepository driverRepo,
+            IParkingLotOperatorRepository operatorRepo,
+            ICityAdminRepository adminRepo,
+            AutoMapper.IMapper mapper)
         {
             _accountRepo = accountRepo;
             _httpContextAccessor = httpContextAccessor;
@@ -138,12 +144,11 @@ namespace CoreService.Application.Applications
             );
         }
 
-
         public async Task<ApiResponse<AccountDetailDto>> GetByIdAsync(string id)
         {
             var account = await _accountRepo.GetByIdAsync(id);
             if (account == null)
-                return new ApiResponse<AccountDetailDto>(null, false, "Account không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
 
             var dto = _mapper.Map<AccountDetailDto>(account);
 
@@ -177,15 +182,16 @@ namespace CoreService.Application.Applications
 
             return new ApiResponse<AccountDetailDto>(dto, true, "Lấy thông tin account thành công", StatusCodes.Status200OK);
         }
+
         public async Task<ApiResponse<AccountDetailDto>> GetByDriverIdAsync(string driverId)
         {
             var driver = await _driverRepo.GetByIdAsync(driverId);
             if (driver == null)
-                return new ApiResponse<AccountDetailDto>(null, false, "Driver không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Driver không tồn tại", StatusCodes.Status404NotFound);
 
             var account = await _accountRepo.GetByIdAsync(driver.AccountId);
             if (account == null)
-                return new ApiResponse<AccountDetailDto>(null, false, "Account không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
 
             var dto = _mapper.Map<AccountDetailDto>(account);
             dto.RoleName = "Driver";
@@ -198,11 +204,11 @@ namespace CoreService.Application.Applications
         {
             var op = await _operatorRepo.GetByIdAsync(operatorId);
             if (op == null)
-                return new ApiResponse<AccountDetailDto>(null, false, "Operator không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Operator không tồn tại", StatusCodes.Status404NotFound);
 
             var account = await _accountRepo.GetByIdAsync(op.AccountId);
             if (account == null)
-                return new ApiResponse<AccountDetailDto>(null, false, "Account không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
 
             var dto = _mapper.Map<AccountDetailDto>(account);
             dto.RoleName = "Operator";
@@ -215,11 +221,11 @@ namespace CoreService.Application.Applications
         {
             var admin = await _adminRepo.GetByIdAsync(adminId);
             if (admin == null)
-                return new ApiResponse<AccountDetailDto>(null, false, "Admin không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Admin không tồn tại", StatusCodes.Status404NotFound);
 
             var account = await _accountRepo.GetByIdAsync(admin.AccountId);
             if (account == null)
-                return new ApiResponse<AccountDetailDto>(null, false, "Account không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
 
             var dto = _mapper.Map<AccountDetailDto>(account);
             dto.RoleName = "Admin";
@@ -233,13 +239,14 @@ namespace CoreService.Application.Applications
             var id = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
             var account = await _accountRepo.GetByIdAsync(id);
             if (account == null)
-                return new ApiResponse<Account>(null, false, "Account không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
 
             return new ApiResponse<Account>(account, true, "Lấy thông tin account thành công", StatusCodes.Status200OK);
         }
+
         public async Task<ApiResponse<Account>> CreateAsync(Account account)
         {
-            account.Id = null; // MongoDB sẽ tự tạo Id
+            account.Id = null;
             account.CreatedAt = DateTime.UtcNow;
             account.UpdatedAt = DateTime.UtcNow;
             await _accountRepo.AddAsync(account);
@@ -251,9 +258,8 @@ namespace CoreService.Application.Applications
         {
             var account = await _accountRepo.GetByIdAsync(id);
             if (account == null)
-                return new ApiResponse<Account>(null, false, "Account không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
 
-            // Update các field cơ bản
             account.Email = update.Email ?? account.Email;
             account.PhoneNumber = update.PhoneNumber ?? account.PhoneNumber;
             account.RoleId = update.RoleId ?? account.RoleId;
@@ -268,10 +274,11 @@ namespace CoreService.Application.Applications
         {
             var account = await _accountRepo.GetByIdAsync(id);
             if (account == null)
-                return new ApiResponse<string>(null, false, "Account không tồn tại", StatusCodes.Status404NotFound);
+                throw new ApiException("Account không tồn tại", StatusCodes.Status404NotFound);
 
             await _accountRepo.DeleteAsync(id);
             return new ApiResponse<string>(null, true, "Xoá account thành công", StatusCodes.Status200OK);
         }
+
     }
 }
