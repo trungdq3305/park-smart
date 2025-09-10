@@ -32,7 +32,7 @@ export class AddressRepository implements IAddressRepository {
       .find()
       .populate({
         path: 'wardId',
-        select: 'ward_name',
+        select: 'ward_name -_id',
       })
       .exec()
   }
@@ -42,7 +42,7 @@ export class AddressRepository implements IAddressRepository {
       .findById(id)
       .populate({
         path: 'wardId',
-        select: 'ward_name -_id',
+        select: 'ward_name',
       })
       .exec()
   }
