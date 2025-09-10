@@ -11,7 +11,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/auth/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
 
     // ===== Swagger cho CoreService =====
@@ -53,6 +53,19 @@
       ],
       "UpstreamPathTemplate": "/parking/wards",
       "UpstreamHttpMethod": ["GET"]
+    },
+    {
+      // Route cho BrandController
+      "DownstreamPathTemplate": "/brands/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/brands/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
     {
       // Route cho AppController (health check)

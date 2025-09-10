@@ -11,7 +11,7 @@ class WardInAddressDto {
   _id: mongoose.Schema.Types.ObjectId
 
   @ApiProperty()
-  ward_name: string
+  WardName: string
 }
 
 export class AddressResponseDto {
@@ -25,8 +25,8 @@ export class AddressResponseDto {
   })
   fullAddress: string
 
-  @ApiProperty({ type: () => WardInAddressDto }) // Chỉ định type là DTO lồng nhau
-  @Type(() => WardInAddressDto) // Dùng @Type để class-transformer biết cách biến đổi
+  @ApiProperty({ type: () => WardInAddressDto })
+  @Type(() => WardInAddressDto)
   wardId: WardInAddressDto
 
   @ApiProperty({ example: 16.0544, type: Number })
@@ -36,7 +36,7 @@ export class AddressResponseDto {
   longitude: number
 
   @ApiProperty({ example: 'Thành phố Hồ Chí Minh', type: String })
-  city_name: string
+  cityName: string
 
   constructor(address: any) {
     this._id = address._id
@@ -44,6 +44,6 @@ export class AddressResponseDto {
     this.fullAddress = address.fullAddress
     this.latitude = address.latitude
     this.longitude = address.longitude
-    this.city_name = 'Thành phố Hồ Chí Minh'
+    this.cityName = 'Thành phố Hồ Chí Minh'
   }
 }
