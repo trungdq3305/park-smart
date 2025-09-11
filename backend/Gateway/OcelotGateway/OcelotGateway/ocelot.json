@@ -25,7 +25,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/swagger/{everything}",
-      "UpstreamHttpMethod": [ "GET" ]
+      "UpstreamHttpMethod": ["GET"]
     },
     {
       "DownstreamPathTemplate": "/signin-google",
@@ -37,7 +37,7 @@
         }
       ],
       "UpstreamPathTemplate": "/signin-google",
-      "UpstreamHttpMethod": [ "GET", "POST" ]
+      "UpstreamHttpMethod": ["GET", "POST"]
     },
     // ===== ParkingService (AddressController, WardController) =====
     {
@@ -77,6 +77,32 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/brands/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+    },
+    {
+      // Route cho VehicleTypeController
+      "DownstreamPathTemplate": "/vehicle-types/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/vehicle-types/{everything}",
+      "UpstreamHttpMethod": ["GET"]
+    },
+    {
+      // Route cho ColorController
+      "DownstreamPathTemplate": "/colors/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/colors/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
     {

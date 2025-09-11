@@ -53,7 +53,7 @@ export class BrandController {
     @Body() createBrandDto: CreateBrandDto,
     @Req() req,
   ): Promise<ApiResponseDto<BrandResponseDto>> {
-    return this.brandService.createBrand(createBrandDto, req.user.userId)
+    return this.brandService.createBrand(createBrandDto, req.user.id)
   }
 
   @Get()
@@ -101,7 +101,7 @@ export class BrandController {
     @Param('id') id: string,
     @Req() req,
   ): Promise<ApiResponseDto<boolean>> {
-    return this.brandService.deleteBrand(id, req.user.userId)
+    return this.brandService.deleteBrand(id, req.user.id)
   }
 
   @Patch(':id')
@@ -124,6 +124,6 @@ export class BrandController {
     @Param('id') id: string,
     @Req() req,
   ): Promise<ApiResponseDto<boolean>> {
-    return this.brandService.restoreBrand(id, req.user.userId)
+    return this.brandService.restoreBrand(id, req.user.id)
   }
 }

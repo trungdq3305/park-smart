@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import mongoose from 'mongoose'
+import { BaseEntity } from 'src/common/schema/baseEntity.schema'
 
-@Schema() // Không sử dụng _id cho Ward
-export class Ward {
+@Schema()
+export class VehicleType extends BaseEntity {
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId(),
@@ -10,7 +11,7 @@ export class Ward {
   _id: mongoose.Schema.Types.ObjectId
 
   @Prop({ required: true, unique: true })
-  wardName: string
+  typeName: string
 }
 
-export const WardSchema = SchemaFactory.createForClass(Ward)
+export const VehicleTypeSchema = SchemaFactory.createForClass(VehicleType)

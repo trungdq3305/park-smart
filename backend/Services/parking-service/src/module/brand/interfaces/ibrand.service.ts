@@ -7,6 +7,11 @@ export interface IBrandService {
     createBrandDto: CreateBrandDto,
     userId: string,
   ): Promise<ApiResponseDto<BrandResponseDto>>
+  /**
+   * Ví dụ về việc call API từ service khác
+   *
+   * Ví dụ về việc sử dụng Cache Manager trong phương thức findBrandById để cache dữ liệu
+   */
   findBrandById(id: string): Promise<ApiResponseDto<BrandResponseDto>>
   findAllBrands(): Promise<ApiResponseDto<BrandResponseDto>>
   deleteBrand(id: string, userId: string): Promise<ApiResponseDto<boolean>>
