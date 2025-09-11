@@ -12,6 +12,18 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
+      - name: Check if source files exist
+        run: |
+          echo "--- Checking current directory ---"
+          pwd
+          echo "--- Checking root directory content ---"
+          ls -la
+          echo "--- Checking existence of specific paths ---"
+          if [ -d "./backend" ]; then echo "'./backend' directory exists."; else echo "'./backend' directory NOT FOUND."; fi
+          if [ -f "./docker-compose.yml" ]; then echo "'./docker-compose.yml' file exists."; else echo "'./docker-compose.yml' file NOT FOUND."; fi
+          if [ -f "./backend/Gateway/OcelotGateway/OcelotGateway/ocelot.json" ]; then echo "Ocelot config exists at the specified path."; else echo "Ocelot config NOT FOUND at the specified path."; fi
+          echo "--- End of check ---"
+
       - name: Copy source to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
