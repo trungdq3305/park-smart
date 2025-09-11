@@ -17,8 +17,8 @@ RUN yarn global add @nestjs/cli
 # Copy toàn bộ source code
 COPY . .
 
-# Mở port 3000
-EXPOSE 3000
+# Mở port 5000
+EXPOSE 5000
 
 # ✅ Giữ nguyên lệnh CMD vì đã cài Nest CLI global
 CMD ["nest", "start"]
