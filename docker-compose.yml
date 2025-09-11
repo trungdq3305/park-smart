@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: backend/Services/CoreService/Dockerfile
+    image: coreservice 
     container_name: coreservice
     ports:
       - "5001:80"
@@ -15,6 +16,7 @@ services:
     build:
       context: ./backend/Services/parking-service
       dockerfile: Dockerfile
+    image: parkingservice
     container_name: parkingservice
     ports:
       - "5000:3000"
@@ -25,7 +27,8 @@ services:
   ocelotgateway:
     build:
       context: .
-      dockerfile: backend/Gateway/OcelotGateway/Dockerfile      # ✅ đây là .NET Gateway
+      dockerfile: backend/Gateway/OcelotGateway/Dockerfile
+    image: ocelotgateway      # ✅ đây là .NET Gateway
     container_name: ocelotgateway
     ports:
       - "80:80"
