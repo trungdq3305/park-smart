@@ -10,19 +10,7 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3
-
-      - name: Check if source files exist
-        run: |
-          echo "--- Checking current directory ---"
-          pwd
-          echo "--- Checking root directory content ---"
-          ls -la
-          echo "--- Checking existence of specific paths ---"
-          if [ -d "./backend" ]; then echo "'./backend' directory exists."; else echo "'./backend' directory NOT FOUND."; fi
-          if [ -f "./docker-compose.yml" ]; then echo "'./docker-compose.yml' file exists."; else echo "'./docker-compose.yml' file NOT FOUND."; fi
-          if [ -f "./backend/Gateway/OcelotGateway/OcelotGateway/ocelot.json" ]; then echo "Ocelot config exists at the specified path."; else echo "Ocelot config NOT FOUND at the specified path."; fi
-          echo "--- End of check ---"
+        uses: actions/checkout@v4
 
       - name: Copy source to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -30,27 +18,20 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
-          # SỬA LẠI: Dùng cú pháp list đúng và thêm file ocelot.json
-          source: |
-            ./backend
-            ./docker-compose.yml
-            ./backend/Gateway/OcelotGateway/OcelotGateway/ocelot.json
+          source: ./backend,./docker-compose.yml,./backend/Gateway/OcelotGateway/OcelotGateway/ocelot.json
           target: "~/park-smart"
           overwrite: true
 
       - name: Deploy on VPS
-        uses: appleboy/ssh-action@v0.1.10
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
-          # SỬA LẠI: Thêm bước tạo file .env
           script: |
             cd ~/park-smart
 
             echo ">>> Creating .env file for parkingservice..."
-            # THÊM MỚI: Tạo file .env từ GitHub Secrets
-            # Đường dẫn này phải khớp với cấu hình 'env_file' trong docker-compose.yml
             cat <<EOF > ./backend/Services/parking-service/.env
             PORT=${{ secrets.PORT }}
             MONGO_URI=${{ secrets.MONGO_URI }}
