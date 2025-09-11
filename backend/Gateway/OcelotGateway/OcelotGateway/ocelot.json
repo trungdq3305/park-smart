@@ -6,7 +6,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "coreservice",
           "Port": 8080
         }
       ],
@@ -20,7 +20,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "coreservice",
           "Port": 8080
         }
       ],
@@ -32,7 +32,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "coreservice",
           "Port": 8080
         }
       ],
