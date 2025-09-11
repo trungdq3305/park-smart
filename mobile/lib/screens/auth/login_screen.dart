@@ -56,6 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 controller: emailController,
                 decoration: InputDecoration(
                   labelText: "Email",
+                  prefixIcon: const Icon(Icons.email),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -71,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: true,
                 decoration: InputDecoration(
                   labelText: "Mật khẩu",
+                  prefixIcon: const Icon(Icons.lock_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -100,6 +102,19 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
+            const SizedBox(height: 20),
+
+            // Hoặc
+            const Row(
+              children: [
+                Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: Text("Hoặc đăng nhập bằng"),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
             const SizedBox(height: 20),
 
             // Đăng nhập bằng Google
