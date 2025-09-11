@@ -2,10 +2,10 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy solution và tất cả project cần thiết
-COPY Services/CoreService/CoreService.sln ./Services/CoreService/
-COPY Services/CoreService/ ./Services/CoreService/
-COPY Shared/Dotnet/ ./Shared/Dotnet/
+# Copy solution và project
+COPY backend/Services/CoreService/CoreService.sln ./Services/CoreService/
+COPY backend/Services/CoreService/ ./Services/CoreService/
+COPY backend/Shared/Dotnet/ ./Shared/Dotnet/
 
 # Restore
 WORKDIR /src/Services/CoreService
