@@ -30,19 +30,6 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
             cd ~/park-smart
-
-            # Tạo file .env từ GitHub Secrets
-            cat > .env <<EOL
-            PORT=${{ secrets.PORT }}
-            MONGO_URI=${{ secrets.MONGO_URI }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            EMAIL_USER=${{ secrets.EMAIL_USER }}
-            EMAIL_APP_PASSWORD=${{ secrets.EMAIL_APP_PASSWORD }}
-            SMTP_HOST=${{ secrets.SMTP_HOST }}
-            SMTP_PORT=${{ secrets.SMTP_PORT }}
-            APP_NAME=${{ secrets.APP_NAME }}
-            EOL
-
-                  docker compose down
-                  docker compose up -d --build
+            docker compose down
+            docker compose up -d --build
         
