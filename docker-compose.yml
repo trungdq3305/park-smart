@@ -18,6 +18,8 @@ services:
       dockerfile: Dockerfile
     image: parkingservice
     container_name: parkingservice
+    env_file:
+      - .env
     ports:
       - "5000:3000"
     networks:
