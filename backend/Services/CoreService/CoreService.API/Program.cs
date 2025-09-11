@@ -123,7 +123,7 @@ using (var scope = app.Services.CreateScope())
     MongoCollectionInitializer.InitializeCollections(database, "CoreService.Repository.Models");
 }
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || true)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
