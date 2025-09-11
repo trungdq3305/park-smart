@@ -8,7 +8,7 @@ services:
     image: coreservice 
     container_name: coreservice
     ports:
-      - "5001:80"
+      - "5001:8080"
     networks:
       - backend
 
