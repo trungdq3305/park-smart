@@ -2,7 +2,9 @@ version: "3.9"
 
 services:
   coreservice:
-    build: ./backend/Services/CoreService
+    build:
+      context: .
+      dockerfile: backend/Services/CoreService/Dockerfile
     container_name: coreservice
     ports:
       - "5001:80"
@@ -10,7 +12,9 @@ services:
       - backend
 
   parkingservice:
-    build: ./backend/Services/parking-service
+    build:
+      context: .
+      dockerfile: backend/Services/parking-service/Dockerfile
     container_name: parkingservice
     ports:
       - "5000:3000"
@@ -18,7 +22,9 @@ services:
       - backend
 
   ocelotgateway:
-    build: ./backend/Gateway/OcelotGateway
+    build:
+      context: .
+      dockerfile: backend/Gateway/OcelotGateway/Dockerfile
     container_name: ocelotgateway
     ports:
       - "80:80"
@@ -27,7 +33,7 @@ services:
       - coreservice
       - parkingservice
     volumes:
-      - ./certs:/https:ro   # chỗ để SSL cert
+      - ./certs:/https:ro   # Mount SSL certs để bật HTTPS trong Ocelot
     networks:
       - backend
 
