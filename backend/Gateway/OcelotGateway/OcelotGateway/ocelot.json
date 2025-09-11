@@ -6,8 +6,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "14.225.220.182",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5001
         }
       ],
       "UpstreamPathTemplate": "/core/auth/{everything}",
@@ -20,8 +20,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "14.225.220.182",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5001
         }
       ],
       "UpstreamPathTemplate": "/core/swagger/{everything}",
@@ -32,8 +32,8 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "14.225.220.182",
-          "Port": 8080
+          "Host": "localhost",
+          "Port": 5001
         }
       ],
       "UpstreamPathTemplate": "/signin-google",
