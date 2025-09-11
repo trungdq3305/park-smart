@@ -13,13 +13,14 @@ services:
 
   parkingservice:
     build:
-      context: .
-      dockerfile: backend/Services/parking-service/Dockerfile   # ✅ đây mới là NodeJS
+      context: ./backend/Services/parking-service
+      dockerfile: Dockerfile
     container_name: parkingservice
     ports:
       - "5000:3000"
     networks:
       - backend
+
 
   ocelotgateway:
     build:
