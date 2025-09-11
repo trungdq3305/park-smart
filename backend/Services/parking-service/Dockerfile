@@ -9,7 +9,7 @@ WORKDIR /usr/src/app
 COPY package.json yarn.lock* ./
 
 # ✅ Thay "npm install" bằng "yarn install"
-RUN yarn install --production
+RUN yarn install
 
 # ✅ Thay "npm install -g" bằng "yarn global add"
 RUN yarn global add @nestjs/cli
