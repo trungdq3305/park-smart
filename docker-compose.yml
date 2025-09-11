@@ -25,28 +25,27 @@ services:
     networks:
       - backend
 
-  ocelotgateway:
-    build:
-      context: .
-      dockerfile: backend/Gateway/OcelotGateway/Dockerfile
-    image: ocelotgateway
-    container_name: ocelotgateway
-    ports:
-      # Chỉ giữ lại port 80 cho HTTP
-      - "80:8080"
-      # - "443:8443" # <-- Vô hiệu hóa port 443
-    # volumes: # <-- Vô hiệu hóa việc mount thư mục certs
-      # - ./certs:/https/certs:ro
-    environment:
-      # Chỉ yêu cầu Kestrel lắng nghe trên HTTP (8080)
-      - ASPNETCORE_URLS=http://+:8080 # <-- Sửa lại dòng này
-      # - Kestrel__Certificates__Default__Path=/https/certs/your-certificate.pfx # <-- Vô hiệu hóa
-      # - Kestrel__Certificates__Default__Password=${CERT_PASSWORD} # <-- Vô hiệu hóa
-    networks:
-      - backend
-    depends_on:
-      - coreservice
-      - parkingservice
+    ocelotgateway:
+      build:
+        context: .
+        dockerfile: backend/Gateway/OcelotGateway/Dockerfile
+      image: ocelotgateway
+      container_name: ocelotgateway
+      depends_on:
+        - coreservice
+        - parkingservice
+      ports:
+        - "80:8080"
+        - "443:8443"
+      volumes:
+        - /etc/ssl/ocelot/ocelot.pfx:/https/certs/ocelot.pfx:ro
+      environment:
+        - ASPNETCORE_URLS=http://+:8080;https://+:8443
+        - Kestrel__Certificates__Default__Path=/https/certs/ocelot.pfx
+        - Kestrel__Certificates__Default__Password=123456
+      networks:
+        - backend
+
 
 
 networks:
