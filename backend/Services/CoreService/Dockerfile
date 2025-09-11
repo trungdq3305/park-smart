@@ -2,12 +2,15 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy toàn bộ backend (để có cả Shared + CoreService)
+# Copy toàn bộ backend (để có cả Services + Shared)
 COPY ../../ . 
 
+# Restore dùng solution (nếu có file .sln trong CoreService)
 WORKDIR /src/Services/CoreService
-RUN dotnet restore
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet restore CoreService.sln
+
+# Build & publish
+RUN dotnet publish CoreService.sln -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
