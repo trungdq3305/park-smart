@@ -12,6 +12,7 @@ import { AddressModule } from './module/address/address.module'
 import { BrandModule } from './module/brand/brand.module'
 import { VehicleTypeModule } from './module/vehicleType/vehicleType.module'
 import { CacheModule } from '@nestjs/cache-manager'
+import { ColorModule } from './module/color/color.module'
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -37,6 +38,7 @@ import { CacheModule } from '@nestjs/cache-manager'
     AddressModule,
     BrandModule,
     VehicleTypeModule,
+    ColorModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
