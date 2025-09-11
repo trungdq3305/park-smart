@@ -15,7 +15,7 @@ services:
   parkingservice:
     build:
       context: .
-      dockerfile: /backend/Services/parking-service/Dockerfile
+      dockerfile: backend/Services/parking-service/Dockerfile
     image: parkingservice
     container_name: parkingservice
     ports:
@@ -27,7 +27,7 @@ services:
   ocelotgateway:
     build:
       context: .
-      dockerfile: /backend/Gateway/OcelotGateway/Dockerfile
+      dockerfile: backend/Gateway/OcelotGateway/Dockerfile
     image: ocelotgateway      # ✅ đây là .NET Gateway
     container_name: ocelotgateway
     ports:
