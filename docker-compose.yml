@@ -1,0 +1,36 @@
+version: "3.9"
+
+services:
+  coreservice:
+    build: ./backend/Services/CoreService
+    container_name: coreservice
+    ports:
+      - "5001:80"
+    networks:
+      - backend
+
+  parkingservice:
+    build: ./backend/Services/parking-service
+    container_name: parkingservice
+    ports:
+      - "5000:3000"
+    networks:
+      - backend
+
+  ocelotgateway:
+    build: ./backend/Gateway/OcelotGateway
+    container_name: ocelotgateway
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - coreservice
+      - parkingservice
+    volumes:
+      - ./certs:/https:ro   # chỗ để SSL cert
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
