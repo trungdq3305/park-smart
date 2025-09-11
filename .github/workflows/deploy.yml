@@ -18,10 +18,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
-          source: 
-            - "./backend"
-            - "./docker-compose.yml"
-            - "./certs"
+          source: "./backend,./docker-compose.yml,./certs"
           target: "~/park-smart"
           overwrite: true
 
