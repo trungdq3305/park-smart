@@ -93,6 +93,19 @@
       "UpstreamHttpMethod": ["GET"]
     },
     {
+      // Route cho ColorController
+      "DownstreamPathTemplate": "/colors/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/colors/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+    },
+    {
       // Route cho AppController (health check)
       "DownstreamPathTemplate": "/",
       "DownstreamScheme": "http",

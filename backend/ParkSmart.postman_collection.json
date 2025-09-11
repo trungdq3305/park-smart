@@ -301,6 +301,130 @@
       "description": "Các API liên quan đến hãng xe"
     },
     {
+      "name": "Colors",
+      "item": [
+        {
+          "name": "Tạo màu sắc mới",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"colorName\": \"Red\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/parking/colors",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "colors"]
+            },
+            "description": "Tạo một màu sắc mới. Yêu cầu xác thực Bearer Token."
+          },
+          "response": []
+        },
+        {
+          "name": "Lấy tất cả màu sắc",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/colors",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "colors"]
+            },
+            "description": "Lấy danh sách tất cả các màu sắc."
+          },
+          "response": []
+        },
+        {
+          "name": "Lấy màu sắc theo ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parking/colors/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "colors", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your_color_id_here",
+                  "description": "ID của màu sắc cần tìm"
+                }
+              ]
+            },
+            "description": "Tìm và trả về thông tin của một màu sắc dựa trên ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Xóa màu sắc theo ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parking/colors/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "colors", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your_color_id_here",
+                  "description": "ID của màu sắc cần xóa"
+                }
+              ]
+            },
+            "description": "Xóa một màu sắc dựa trên ID. Yêu cầu xác thực Bearer Token."
+          },
+          "response": []
+        },
+        {
+          "name": "Khôi phục màu sắc theo ID",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parking/colors/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["parking", "colors", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "your_color_id_here",
+                  "description": "ID của màu sắc cần khôi phục"
+                }
+              ]
+            },
+            "description": "Khôi phục một màu sắc đã bị xóa dựa trên ID. Yêu cầu xác thực Bearer Token."
+          },
+          "response": []
+        }
+      ],
+      "description": "Các API liên quan đến màu sắc"
+    },
+    {
       "name": "Vehicle Types",
       "item": [
         {
