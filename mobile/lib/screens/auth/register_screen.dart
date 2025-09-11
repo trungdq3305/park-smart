@@ -168,7 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const Text("Đã có tài khoản?"),
                 TextButton(
                   onPressed: () {
-                    Navigator.pushNamed(context, '/');
+                    Navigator.pushNamed(context, '/login');
                   },
                   child: const Text("Đăng nhập ngay"),
                 ),
