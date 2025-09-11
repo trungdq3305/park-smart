@@ -3,9 +3,9 @@ version: "3.9"
 services:
   coreservice:
     build:
-      context: ./backend/Services/CoreService
-      dockerfile: Dockerfile
-    image: coreservice
+      context: .
+      dockerfile: backend/Services/CoreService/Dockerfile
+    image: coreservice 
     container_name: coreservice
     ports:
       - "5001:80"
@@ -14,8 +14,8 @@ services:
 
   parkingservice:
     build:
-      context: ./backend/Services/parking-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: /backend/Services/parking-service/Dockerfile
     image: parkingservice
     container_name: parkingservice
     ports:
@@ -23,11 +23,12 @@ services:
     networks:
       - backend
 
+
   ocelotgateway:
     build:
-      context: ./backend/Gateway/OcelotGateway
-      dockerfile: Dockerfile
-    image: ocelotgateway
+      context: .
+      dockerfile: /backend/Gateway/OcelotGateway/Dockerfile
+    image: ocelotgateway      # ✅ đây là .NET Gateway
     container_name: ocelotgateway
     ports:
       - "80:80"
@@ -39,6 +40,7 @@ services:
       - ./certs:/https:ro
     networks:
       - backend
+
 
 networks:
   backend:
