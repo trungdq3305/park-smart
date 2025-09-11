@@ -32,3 +32,8 @@ jobs:
             cd ~/park-smart
             docker compose down
             docker compose up -d --build
+      - name: Deploy Docker Compose
+        env:
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: |
+          ssh root@14.225.220.182 "cd /var/www/park-smart && docker compose down && docker compose up -d --build"
