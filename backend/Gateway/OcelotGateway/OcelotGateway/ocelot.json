@@ -7,7 +7,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 5001
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/core/auth/{everything}",
@@ -21,7 +21,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 5001
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/core/swagger/{everything}",
@@ -33,7 +33,7 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 5001
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/signin-google",
