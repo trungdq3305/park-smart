@@ -14,8 +14,8 @@ services:
 
   parkingservice:
     build:
-      context: .
-      dockerfile: backend/Services/parking-service/Dockerfile
+      context: ./backend/Services/parking-service 
+      dockerfile: Dockerfile
     image: parkingservice
     container_name: parkingservice
     ports:
