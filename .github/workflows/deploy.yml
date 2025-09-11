@@ -12,23 +12,15 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Build Docker images
-        run: docker compose build
-
-      - name: Save Docker images as tar
-        run: docker save coreservice parkingservice ocelotgateway -o park-smart.tar
-
-      - name: Copy to VPS
+      - name: Copy source to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
-          source: "park-smart.tar"
-          target: "~/"
+          source: "./*"
+          target: "~/park-smart"
+          overwrite: true
 
       - name: Deploy on VPS
         uses: appleboy/ssh-action@v0.1.10
@@ -37,7 +29,6 @@ jobs:
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            docker load -i ~/park-smart.tar
             cd ~/park-smart
             docker compose down
-            docker compose up -d
+            docker compose up -d --build
