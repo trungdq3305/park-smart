@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  coreservice:
+    build:
+      context: .
+      dockerfile: backend/Services/CoreService/Dockerfile
+    image: coreservice 
+    container_name: coreservice
+    ports:
+      - "5001:8080"
+    networks:
+      - backend
+
+  parkingservice:
+    build:
+      context: ./backend/Services/parking-service 
+      dockerfile: Dockerfile
+    image: parkingservice
+    container_name: parkingservice
+    env_file:
+      - ./backend/Services/parking-service/.env
+    ports:
+      - "5000:5000"
+    networks:
+      - backend
+
+  ocelotgateway:
+    build:
+      context: .
+      dockerfile: backend/Gateway/OcelotGateway/Dockerfile
+    image: ocelotgateway
+    container_name: ocelotgateway
+    ports:
+      # Chỉ giữ lại port 80 cho HTTP
+      - "80:8080"
+      # - "443:8443" # <-- Vô hiệu hóa port 443
+    # volumes: # <-- Vô hiệu hóa việc mount thư mục certs
+      # - ./certs:/https/certs:ro
+    environment:
+      # Chỉ yêu cầu Kestrel lắng nghe trên HTTP (8080)
+      - ASPNETCORE_URLS=http://+:8080 # <-- Sửa lại dòng này
+      # - Kestrel__Certificates__Default__Path=/https/certs/your-certificate.pfx # <-- Vô hiệu hóa
+      # - Kestrel__Certificates__Default__Password=${CERT_PASSWORD} # <-- Vô hiệu hóa
+    networks:
+      - backend
+    depends_on:
+      - coreservice
+      - parkingservice
+
+
+networks:
+  backend:
+    driver: bridge

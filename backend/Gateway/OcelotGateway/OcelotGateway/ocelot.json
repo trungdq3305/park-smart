@@ -6,7 +6,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "coreservice",
           "Port": 5001
         }
       ],
@@ -20,7 +20,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "coreservice",
           "Port": 5001
         }
       ],
@@ -32,7 +32,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "coreservice",
           "Port": 5001
         }
       ],
@@ -46,7 +46,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "parkingservice",
           "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
         }
       ],
@@ -59,7 +59,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "parkingservice",
           "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
         }
       ],
@@ -72,7 +72,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "parkingservice",
           "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
         }
       ],
@@ -85,7 +85,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "parkingservice",
           "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
         }
       ],
@@ -98,7 +98,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "parkingservice",
           "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
         }
       ],
@@ -111,7 +111,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
+          "Host": "parkingservice",
           "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
         }
       ],

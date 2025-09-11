@@ -1,0 +1,50 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: ["master"]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Copy source to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          source: ./backend,./docker-compose.yml,./backend/Gateway/OcelotGateway/OcelotGateway/ocelot.json
+          target: "~/park-smart"
+          overwrite: true
+
+      - name: Deploy on VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          script: |
+            cd ~/park-smart
+
+            echo ">>> Creating .env file for parkingservice..."
+            cat <<EOF > ./backend/Services/parking-service/.env
+            PORT=${{ secrets.PORT }}
+            MONGO_URI=${{ secrets.MONGO_URI }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            EMAIL_USER=${{ secrets.EMAIL_USER }}
+            EMAIL_APP_PASSWORD=${{ secrets.EMAIL_APP_PASSWORD }}
+            SMTP_HOST=${{ secrets.SMTP_HOST }}
+            SMTP_PORT=${{ secrets.SMTP_PORT }}
+            APP_NAME=${{ secrets.APP_NAME }}
+            EOF
+            echo ">>> .env file created successfully."
+
+            echo ">>> Starting deployment..."
+            docker compose down
+            docker compose up -d --build
+            echo ">>> Deployment finished."
