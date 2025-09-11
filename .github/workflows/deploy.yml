@@ -2,7 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
   build-and-deploy:
@@ -11,9 +11,6 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v3
-
-      - name: List files in the repository
-        run: ls -R
 
       - name: Copy source to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -25,7 +22,7 @@ jobs:
           source: |
             ./backend
             ./docker-compose.yml
-            ./ocelot.json 
+            ./backend/Gateway/OcelotGateway/OcelotGateway/ocelot.json
           target: "~/park-smart"
           overwrite: true
 
@@ -38,7 +35,7 @@ jobs:
           # SỬA LẠI: Thêm bước tạo file .env
           script: |
             cd ~/park-smart
-            
+
             echo ">>> Creating .env file for parkingservice..."
             # THÊM MỚI: Tạo file .env từ GitHub Secrets
             # Đường dẫn này phải khớp với cấu hình 'env_file' trong docker-compose.yml
