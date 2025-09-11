@@ -14,7 +14,7 @@ services:
   parkingservice:
     build:
       context: .
-      dockerfile: backend/Services/parking-service/Dockerfile
+      dockerfile: backend/Services/parking-service/Dockerfile   # ✅ đây mới là NodeJS
     container_name: parkingservice
     ports:
       - "5000:3000"
@@ -24,7 +24,7 @@ services:
   ocelotgateway:
     build:
       context: .
-      dockerfile: backend/Gateway/OcelotGateway/Dockerfile
+      dockerfile: backend/Gateway/OcelotGateway/Dockerfile      # ✅ đây là .NET Gateway
     container_name: ocelotgateway
     ports:
       - "80:80"
@@ -33,9 +33,10 @@ services:
       - coreservice
       - parkingservice
     volumes:
-      - ./certs:/https:ro   # Mount SSL certs để bật HTTPS trong Ocelot
+      - ./certs:/https:ro
     networks:
       - backend
+
 
 networks:
   backend:
