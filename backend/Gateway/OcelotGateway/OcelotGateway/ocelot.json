@@ -2,7 +2,7 @@
   "Routes": [
     // ===== CoreService (AuthController) =====
     {
-      "DownstreamPathTemplate": "/api/auth/{everything}",
+      "DownstreamPathTemplate": "/api/auths/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -10,7 +10,7 @@
           "Port": 8080
         }
       ],
-      "UpstreamPathTemplate": "/core/auth/{everything}",
+      "UpstreamPathTemplate": "/core/auths/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
 
