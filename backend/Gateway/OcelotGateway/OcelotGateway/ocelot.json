@@ -74,7 +74,7 @@
         {
           "Host": "parkingservice",
           "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
-        }
+        }  
       ],
       "UpstreamPathTemplate": "/parking/brands/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
