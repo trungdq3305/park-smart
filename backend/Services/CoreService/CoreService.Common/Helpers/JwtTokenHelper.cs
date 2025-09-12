@@ -43,7 +43,7 @@ namespace CoreService.Common.Helpers
                 
                 if (driver != null)
                 {
-                    claims.Add(new Claim("roleName", "Driver"));
+                    claims.Add(new Claim("role", "Driver"));
                     claims.Add(new Claim("driverId", driver.Id ?? ""));
                     claims.Add(new Claim("fullName", driver.FullName ?? ""));
                     claims.Add(new Claim("gender", driver.Gender.ToString()));
