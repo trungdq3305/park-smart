@@ -35,7 +35,10 @@ async function bootstrap() {
   // '/api-docs' là đường dẫn bạn sẽ truy cập để xem UI (ví dụ: http://localhost:3000/api-docs)
   // Tham số thứ 2 là instance của ứng dụng NestJS
   // Tham số thứ 3 là document đã tạo ở trên
-  SwaggerModule.setup('api/v1', app, document)
+  SwaggerModule.setup('/swagger/index.html', app, document, {
+    // Tùy chỉnh đường dẫn cho file JSON tại đây
+    jsonDocumentUrl: '/swagger-json',
+  })
 
   // --- Kết thúc cấu hình Swagger ---
 
@@ -43,9 +46,11 @@ async function bootstrap() {
   await app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
   })
-  console.log(`Swagger UI available at http://localhost:${port}/api/v1`)
   console.log(
-    `API documentation available at http://localhost:${port}/api/v1-json`,
+    `Swagger UI available at http://localhost:${port}/swagger/index.html`,
+  )
+  console.log(
+    `API documentation available at http://localhost:${port}/swagger-json`,
   )
 }
 void bootstrap()
