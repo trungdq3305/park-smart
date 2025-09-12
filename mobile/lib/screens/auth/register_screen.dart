@@ -80,6 +80,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
 
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: "Nhập lại mật khẩu",
+                  prefixIcon: const Icon(Icons.lock_outline),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+
             const SizedBox(height: 20),
 
             // Nút đăng nhập
@@ -139,27 +154,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
 
             // Đăng nhập bằng Apple
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: ElevatedButton.icon(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  minimumSize: const Size(double.infinity, 50),
-                ),
-                icon: const Icon(Icons.apple, color: Colors.white),
-                label: const Text(
-                  "Đăng nhập bằng Apple",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            //   child: ElevatedButton.icon(
+            //     onPressed: () {},
+            //     style: ElevatedButton.styleFrom(
+            //       backgroundColor: Colors.black,
+            //       padding: const EdgeInsets.symmetric(vertical: 14),
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(12),
+            //       ),
+            //       minimumSize: const Size(double.infinity, 50),
+            //     ),
+            //     icon: const Icon(Icons.apple, color: Colors.white),
+            //     label: const Text(
+            //       "Đăng nhập bằng Apple",
+            //       style: TextStyle(color: Colors.white),
+            //     ),
+            //   ),
+            // ),
 
-            const Spacer(),
+            // const Spacer(),
 
             // Chuyển sang Register
             Row(
