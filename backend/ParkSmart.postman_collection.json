@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "9c5f2c82-5259-4f22-845b-cb3209fb7a19",
+		"_postman_id": "20145ef2-03eb-49e9-ad8b-5a3bf243bc64",
 		"name": "ParkSmart",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "38780994"
@@ -425,7 +425,18 @@
 					"name": "Get Account By Id",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/core/accounts/{{accountId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"accounts",
+								"{{accountId}}"
+							]
+						}
 					},
 					"response": []
 				},
@@ -990,7 +1001,7 @@
 	"variable": [
 		{
 			"key": "baseUrl",
-			"value": "http://localhost:1000"
+			"value": "https://14.225.220.182"
 		},
 		{
 			"key": "your_jwt_token",
