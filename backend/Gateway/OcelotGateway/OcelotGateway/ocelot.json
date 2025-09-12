@@ -11,7 +11,43 @@
         }
       ],
       "UpstreamPathTemplate": "/core/auths/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/accounts/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/accounts/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/drivers/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/drivers/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/api/operators/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/operators/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
 
     // ===== Swagger cho CoreService =====
@@ -25,7 +61,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/swagger/{everything}",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     },
     {
       "DownstreamPathTemplate": "/signin-google",
@@ -37,7 +73,7 @@
         }
       ],
       "UpstreamPathTemplate": "/signin-google",
-      "UpstreamHttpMethod": ["GET", "POST"]
+      "UpstreamHttpMethod": [ "GET", "POST" ]
     },
     // ===== ParkingService (AddressController, WardController) =====
     {
@@ -51,7 +87,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/addresses/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
       // Route cho WardController
@@ -64,7 +100,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/wards",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     },
     {
       // Route cho BrandController
@@ -74,10 +110,10 @@
         {
           "Host": "parkingservice",
           "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
-        }  
+        }
       ],
       "UpstreamPathTemplate": "/parking/brands/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
       // Route cho VehicleTypeController
@@ -90,7 +126,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/vehicle-types/{everything}",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     },
     {
       // Route cho ColorController
@@ -103,7 +139,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/colors/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
       // Route cho AppController (health check)
@@ -116,7 +152,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     },
     // ===== Swagger cho ParkingService =====
     {
@@ -129,7 +165,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/swagger/{everything}",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     }
   ],
   "GlobalConfiguration": {
