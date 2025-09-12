@@ -41,6 +41,7 @@ jobs:
             SMTP_HOST=${{ secrets.SMTP_HOST }}
             SMTP_PORT=${{ secrets.SMTP_PORT }}
             APP_NAME=${{ secrets.APP_NAME }}
+            CORE_SERVICE_URL=${{ secrets.CORE_SERVICE_URL }}
             EOF
             echo ">>> .env file created successfully."
 
