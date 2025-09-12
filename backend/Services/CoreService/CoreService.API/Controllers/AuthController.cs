@@ -72,7 +72,6 @@ namespace KLTN.CoreService.API.Controllers
         }
 
         [HttpGet("register-confirm")]
-        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
         {
             var response = await _authApplication.ConfirmEmailAsync(token);
@@ -87,6 +86,7 @@ namespace KLTN.CoreService.API.Controllers
         }
 
         [HttpGet("confirm-operator")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ConfirmOperator(string id)
         {
             var response = await _authApplication.ConfirmOperatorAsync(id);
