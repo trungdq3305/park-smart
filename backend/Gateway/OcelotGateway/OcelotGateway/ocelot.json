@@ -11,7 +11,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/auths/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     {
       "DownstreamPathTemplate": "/api/accounts/{everything}",
@@ -23,7 +23,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/accounts/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     {
       "DownstreamPathTemplate": "/api/drivers/{everything}",
@@ -35,7 +35,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/drivers/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     {
       "DownstreamPathTemplate": "/api/operators/{everything}",
@@ -47,7 +47,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/operators/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     {
       "DownstreamPathTemplate": "/api/admins/{everything}",
@@ -59,7 +59,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/admins/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     // ===== Swagger cho CoreService =====
     {
@@ -98,7 +98,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/addresses/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     {
       // Route cho WardController
@@ -124,7 +124,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/brands/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     {
       // Route cho VehicleTypeController
@@ -150,7 +150,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/colors/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     {
       // Route cho AppController (health check)
