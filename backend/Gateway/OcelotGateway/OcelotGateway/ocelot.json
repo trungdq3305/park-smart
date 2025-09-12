@@ -49,7 +49,18 @@
       "UpstreamPathTemplate": "/core/operators/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
-
+    {
+      "DownstreamPathTemplate": "/api/admins/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/admins/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+    },
     // ===== Swagger cho CoreService =====
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
