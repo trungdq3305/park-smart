@@ -1,24 +1,32 @@
-# Sử dụng base image Node.js
-FROM node:20-alpine
+# ----- Giai đoạn 1: Build & Prune -----
+FROM node:20-alpine AS builder
 
-# Thiết lập thư mục làm việc
 WORKDIR /usr/src/app
 
-# Copy package.json và yarn.lock để tận dụng cache của Docker
-# ✅ Thay vì package*.json, chúng ta chỉ định rõ yarn.lock
 COPY package.json yarn.lock* ./
 
-# ✅ Thay "npm install" bằng "yarn install"
+# 1. Cài đặt TẤT CẢ dependencies để build
 RUN yarn install
 
-# ✅ Thay "npm install -g" bằng "yarn global add"
-RUN yarn global add @nestjs/cli
-
-# Copy toàn bộ source code
 COPY . .
 
-# Mở port 5000
+# 2. Build ứng dụng
+RUN yarn build
+
+# 3. Dọn dẹp: Xóa các devDependencies khỏi node_modules
+# Lệnh này sẽ chỉ giữ lại các production dependencies
+RUN yarn install --production
+
+# ----- Giai đoạn 2: Production -----
+FROM node:20-alpine
+
+WORKDIR /usr/src/app
+
+# Chỉ copy những thứ cần thiết cho production
+COPY --from=builder /usr/src/app/package.json ./package.json
+COPY --from=builder /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+
 EXPOSE 5000
 
-# ✅ Giữ nguyên lệnh CMD vì đã cài Nest CLI global
-CMD ["nest", "start"]
+CMD ["node", "dist/main"]
