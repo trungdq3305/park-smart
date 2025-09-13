@@ -10,13 +10,17 @@ using Dotnet.Shared.Mongo;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
-
+using Microsoft.AspNetCore.Authentication.OAuth;           // + add
+using Microsoft.AspNetCore.HttpOverrides;                  // + add
+using Microsoft.AspNetCore.WebUtilities;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMemoryCache();
@@ -68,8 +72,32 @@ builder.Services.AddAuthentication(options =>
     var googleAuth = builder.Configuration.GetSection("Authentication:Google").Get<GoogleAuthSettings>();
     options.ClientId = googleAuth.ClientId;
     options.ClientSecret = googleAuth.ClientSecret;
-    options.CallbackPath = "/signin-google";
+    options.CallbackPath = "/signin-google";   // ?úng, KHÔNG ??i
     options.SaveTokens = true;
+
+    // ?? QUAN TR?NG: ép redirect_uri g?i lên Google = domain public (fix d?t ?i?m)
+    options.Events = new OAuthEvents
+    {
+        OnRedirectToAuthorizationEndpoint = ctx =>
+        {
+            var fixedRedirect = "https://parksmarthcmc.io.vn" + options.CallbackPath;
+
+            var uri = new Uri(ctx.RedirectUri);
+            var query = QueryHelpers.ParseQuery(uri.Query);
+            var qb = new QueryBuilder();
+            foreach (var kv in query)
+            {
+                if (kv.Key.Equals("redirect_uri", StringComparison.OrdinalIgnoreCase))
+                    qb.Add("redirect_uri", fixedRedirect);
+                else
+                    foreach (var v in kv.Value) qb.Add(kv.Key, v);
+            }
+
+            var final = $"{uri.Scheme}://{uri.Host}{uri.AbsolutePath}{qb.ToQueryString()}";
+            ctx.Response.Redirect(final);
+            return Task.CompletedTask;
+        }
+    };
 })
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
