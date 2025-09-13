@@ -17,6 +17,5 @@ namespace CoreService.Application.DTOs.AccountDtos
         public string PhoneNumber { get; set; }
         public string FullName { get; set; }
         public bool Gender { get; set; }
-        public string DrivingLicenseNumber { get; set; }
     }
 }
