@@ -10,6 +10,7 @@ using Dotnet.Shared.Mongo;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -77,6 +78,12 @@ builder.Services.AddAuthentication(options =>
     options.LoginPath = "/api/auth/login"; // ???ng d?n m?c ??nh khi c?n ??ng nh?p
     options.LogoutPath = "/api/auth/logout"; // ???ng d?n m?c ??nh khi ??ng xu?t
 });
+builder.Services.Configure<ForwardedHeadersOptions>(o =>
+{
+    o.ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+    o.KnownNetworks.Clear();
+    o.KnownProxies.Clear();
+});
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Swagger + JWT support
 builder.Services.AddSwaggerGen(option =>
@@ -128,7 +135,7 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionMiddleware>();
