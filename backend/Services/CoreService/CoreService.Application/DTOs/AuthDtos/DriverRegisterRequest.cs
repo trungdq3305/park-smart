@@ -24,7 +24,5 @@ namespace CoreService.Application.DTOs.AuthDtos
         public string FullName { get; set; }
 
         public bool Gender { get; set; }
-
-        public string DrivingLicenseNumber { get; set; }
     }
 }
