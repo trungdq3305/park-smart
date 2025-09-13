@@ -125,7 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Expanded(child: Divider()),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Text("Hoặc đăng ký bằng."),
+                  child: Text("Hoặc đăng ký bằng"),
                 ),
                 Expanded(child: Divider()),
               ],
