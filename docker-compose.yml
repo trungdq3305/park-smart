@@ -7,8 +7,6 @@ services:
       dockerfile: backend/Services/CoreService/Dockerfile
     image: coreservice 
     container_name: coreservice
-    environment:
-      - ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
     ports:
       - "5001:8080"
     networks:
