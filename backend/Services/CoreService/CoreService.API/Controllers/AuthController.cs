@@ -33,13 +33,30 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        //[HttpGet("google-login")]
+        //public IActionResult GoogleLogin()
+        //{
+        //    var state = Guid.NewGuid().ToString("N");
+        //    _memoryCache.Set(state, true, TimeSpan.FromMinutes(10));
+
+        //    var redirectUrl = Url.Action("GoogleCallback", "Auth");
+
+        //    var properties = new AuthenticationProperties
+        //    {
+        //        RedirectUri = redirectUrl,
+        //        Items = { { "state", state } }
+        //    };
+
+        //    return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        //}
         [HttpGet("google-login")]
         public IActionResult GoogleLogin()
         {
             var state = Guid.NewGuid().ToString("N");
             _memoryCache.Set(state, true, TimeSpan.FromMinutes(10));
 
-            var redirectUrl = Url.Action("GoogleCallback", "Auth");
+            // ✅ DÙNG URL TUYỆT ĐỐI (domain public), không để ASP.NET tự đoán host/scheme
+            var redirectUrl = "https://parksmarthcmc.io.vn/api/auths/google-callback";
 
             var properties = new AuthenticationProperties
             {
