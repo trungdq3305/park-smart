@@ -21,8 +21,6 @@ namespace CoreService.Repository.Models
 
         public bool Gender { get; set; }
 
-        public string DrivingLicenseNumber { get; set; }
-
         public bool IsVerified { get; set; } = false;
 
         public int CreditPoint { get; set; } = 100;

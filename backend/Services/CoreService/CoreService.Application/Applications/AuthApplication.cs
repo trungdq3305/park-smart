@@ -100,7 +100,6 @@ namespace CoreService.Application.Applications
                 Id = null,
                 FullName = request.FullName,
                 Gender = request.Gender,
-                DrivingLicenseNumber = request.DrivingLicenseNumber,
                 AccountId = acc.Id,
             };
             await _driverRepo.AddAsync(driver);
@@ -392,7 +391,6 @@ namespace CoreService.Application.Applications
                     Id = null,
                     FullName = name,
                     Gender = false,
-                    DrivingLicenseNumber = null,
                     AccountId = account.Id
                 };
                 await _driverRepo.AddAsync(driver);
