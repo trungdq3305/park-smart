@@ -176,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
             // const Spacer(),
 
-            // Chuyển sang Register
+            // Chuyển sang Login
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
