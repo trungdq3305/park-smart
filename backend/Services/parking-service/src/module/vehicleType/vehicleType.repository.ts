@@ -21,4 +21,8 @@ export class VehicleTypeRepository implements IVehicleTypeRepository {
     const vehicleType = await this.vehicleTypeModel.findById(id).exec()
     return vehicleType ? vehicleType.typeName : null
   }
+
+  async findVehicleTypeById(id: string): Promise<VehicleType | null> {
+    return this.vehicleTypeModel.findById(id).lean().exec()
+  }
 }

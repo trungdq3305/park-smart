@@ -90,10 +90,11 @@ export class BrandController {
     @Param('id') id: string,
   ): Promise<ApiResponseDto<BrandResponseDto>> {
     const brand = await this.brandService.findBrandById(id)
+    const { message, ...brandData } = brand
     return {
-      data: [{ ...brand }],
+      data: [brandData],
       statusCode: HttpStatus.OK,
-      message: brand.message,
+      message: message,
       success: true,
     }
   }

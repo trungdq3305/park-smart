@@ -9,9 +9,15 @@ import {
   Inject,
   UseGuards,
   HttpStatus,
-  HttpCode,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiParam,
+  ApiResponse,
+  ApiBody,
+} from '@nestjs/swagger'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 import { IAddressService } from './interfaces/iaddress.service'
 import {
@@ -34,7 +40,15 @@ export class AddressController {
   ) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    type: ApiResponseDto<AddressResponseDto>,
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Tạo địa chỉ thất bại',
+  })
+  @ApiBody({ type: CreateAddressDto })
   @ApiOperation({ summary: 'Tạo một địa chỉ mới' })
   async create(
     @Body() createAddressDto: CreateAddressDto,
@@ -54,6 +68,14 @@ export class AddressController {
 
   @Get()
   @ApiOperation({ summary: 'Lấy tất cả địa chỉ' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ApiResponseDto<AddressResponseDto[]>,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy địa chỉ nào',
+  })
   async findAll(): Promise<ApiResponseDto<AddressResponseDto[]>> {
     // Giả sử bạn có hàm findAllAddressesByUserId trong service
     const addresses = await this.addressService.findAllAddresses()
@@ -68,6 +90,14 @@ export class AddressController {
   @Get(':id')
   @ApiOperation({ summary: 'Tìm một địa chỉ theo ID' })
   @ApiParam({ name: 'id', description: 'ID của địa chỉ cần tìm' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ApiResponseDto<AddressResponseDto>,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Địa chỉ không tồn tại',
+  })
   async findById(
     @Param() params: IdDto,
   ): Promise<ApiResponseDto<AddressResponseDto>> {
@@ -82,6 +112,15 @@ export class AddressController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Cập nhật một địa chỉ theo ID' })
+  @ApiParam({ name: 'id', description: 'ID của địa chỉ cần cập nhật' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ApiResponseDto<AddressResponseDto>,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Địa chỉ không tồn tại',
+  })
   async update(
     @Param() params: IdDto,
     @Body() updateAddressDto: UpdateAddressDto,
@@ -101,7 +140,15 @@ export class AddressController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: 'id', description: 'ID của địa chỉ cần cập nhật' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ApiResponseDto<boolean>,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Địa chỉ không tồn tại',
+  })
   @ApiOperation({ summary: 'Xóa một địa chỉ theo ID' })
   async delete(
     @Param() params: IdDto,
