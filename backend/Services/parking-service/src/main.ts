@@ -1,8 +1,8 @@
-import { NestFactory } from '@nestjs/core'
+import { NestFactory, Reflector } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
-import { ValidationPipe } from '@nestjs/common' // Nên có để validate DTOs
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common' // Nên có để validate DTOs
 import { ConfigService } from '@nestjs/config'
 
 async function bootstrap() {
@@ -16,7 +16,7 @@ async function bootstrap() {
       transform: true, // Tự động chuyển đổi kiểu dữ liệu (ví dụ: string sang number)
     }),
   )
-
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
   // --- Bắt đầu cấu hình Swagger ---
   app.enableCors() // Bật CORS nếu cần thiết, giúp frontend có thể gọi API từ backend
   // Tạo một đối tượng cấu hình cơ bản cho Swagger document

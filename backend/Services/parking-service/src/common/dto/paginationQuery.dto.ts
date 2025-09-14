@@ -6,7 +6,7 @@ export class PaginationQueryDto {
   @Type(() => Number) // Chuyển đổi string từ query param sang number
   @IsInt()
   @Min(1)
-  pageNumber?: number = 1 // Giá trị mặc định là trang 1
+  page?: number = 1 // Giá trị mặc định là trang 1
 
   @IsOptional()
   @Type(() => Number)

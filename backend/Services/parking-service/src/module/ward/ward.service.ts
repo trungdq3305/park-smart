@@ -1,13 +1,9 @@
-import {
-  HttpStatus,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common'
+import { Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { IWardService } from './interfaces/iward.service'
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
-import { WardDto } from './dto/ward.dto'
 import { IWardRepository } from './interfaces/iward.repository'
+import { Ward } from './schemas/ward.schema'
+import { WardResponseDto } from './dto/ward.dto'
+import { plainToInstance } from 'class-transformer'
 
 @Injectable()
 export class WardService implements IWardService {
@@ -15,16 +11,18 @@ export class WardService implements IWardService {
     @Inject(IWardRepository) private wardRepository: IWardRepository,
   ) {}
 
-  async getWards(): Promise<ApiResponseDto<WardDto>> {
+  private returnWardResponseDto(ward: Ward): WardResponseDto {
+    return plainToInstance(WardResponseDto, ward, {
+      excludeExtraneousValues: true,
+    })
+  }
+
+  async getWards(): Promise<WardResponseDto[]> {
+    // <-- Sửa: Trả về entity
     const wards = await this.wardRepository.getWards()
     if (!wards || wards.length === 0) {
       throw new NotFoundException('Không tìm thấy khu vực nào')
     }
-    return new ApiResponseDto({
-      data: wards,
-      statusCode: HttpStatus.OK,
-      message: 'Lấy danh sách khu vực thành công',
-      success: true,
-    })
+    return wards.map((ward) => this.returnWardResponseDto(ward))
   }
 }
