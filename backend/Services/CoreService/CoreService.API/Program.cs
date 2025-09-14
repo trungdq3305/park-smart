@@ -71,6 +71,15 @@ builder.Services.AddAuthentication(options =>
     options.ClientSecret = googleAuth.ClientSecret;
     options.CallbackPath = "/signin-google";
     options.SaveTokens = true;
+    options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
+    {
+        OnRedirectToAuthorizationEndpoint = ctx =>
+        {
+            Console.WriteLine("### REDIRECT_TO_GOOGLE: " + ctx.RedirectUri);
+            return Task.CompletedTask;
+        }
+    };
+
 })
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
@@ -123,10 +132,25 @@ var app = builder.Build();
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
-    // cho phép t? b?t k? proxy nào (vì ch?y trong docker network)
-    KnownNetworks = { },
+    KnownNetworks = { },   // ch?y Docker nên ?? tr?ng
     KnownProxies = { }
 });
+app.Use((ctx, next) =>
+{
+    var proto = ctx.Request.Headers["X-Forwarded-Proto"].ToString();
+    var host = ctx.Request.Headers["X-Forwarded-Host"].ToString();
+    if (!string.IsNullOrEmpty(proto)) ctx.Request.Scheme = proto;
+    if (!string.IsNullOrEmpty(host)) ctx.Request.Host = new HostString(host);
+    return next();
+});
+app.MapGet("/__whoami", (HttpRequest r) => Results.Json(new
+{
+    r.Scheme,
+    Host = r.Host.ToString(),
+    XFP = r.Headers["X-Forwarded-Proto"].ToString(),
+    XFHost = r.Headers["X-Forwarded-Host"].ToString()
+}));
+
 using (var scope = app.Services.CreateScope())
 {
     var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
