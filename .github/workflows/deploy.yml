@@ -47,5 +47,8 @@ jobs:
 
             echo ">>> Starting deployment..."
             docker compose down
-            docker compose up -d --build
+
+            # Build lại image từ đầu mà không dùng cache và khởi động lại
+            docker compose up -d --build --no-cache
+
             echo ">>> Deployment finished."
