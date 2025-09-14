@@ -16,6 +16,7 @@ services:
     build:
       context: ./backend/Services/parking-service 
       dockerfile: Dockerfile
+      no_cache: true
     image: parkingservice
     container_name: parkingservice
     env_file:
