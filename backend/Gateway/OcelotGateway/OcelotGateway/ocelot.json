@@ -2,6 +2,22 @@
   "Routes": [
     // ===== CoreService (AuthController) =====
     {
+      "DownstreamPathTemplate": "/__whoami",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/__whoami",
+      "UpstreamHttpMethod": [ "GET" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/auths/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
