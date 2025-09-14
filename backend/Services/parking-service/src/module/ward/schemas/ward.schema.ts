@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import mongoose from 'mongoose'
+import mongoose, { HydratedDocument } from 'mongoose'
 
+export type WardDocument = HydratedDocument<Ward>
 @Schema() // Không sử dụng _id cho Ward
 export class Ward {
   @Prop({

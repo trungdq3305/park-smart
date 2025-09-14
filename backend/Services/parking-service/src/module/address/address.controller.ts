@@ -8,29 +8,31 @@ import {
   Param,
   Inject,
   UseGuards,
-  Req,
   HttpStatus,
-  HttpCode,
 } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiResponse,
+  ApiBody,
 } from '@nestjs/swagger'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { IAddressService } from './interfaces/iaddress.service'
-import { Address } from './schemas/address.schema'
-import { CreateAddressDto } from './dto/createAddress.dto'
-import { UpdateAddressDto } from './dto/updateAddress.dto'
-import { AddressResponseDto } from './dto/addressResponse.dto'
+import {
+  CreateAddressDto,
+  UpdateAddressDto,
+  AddressResponseDto,
+} from './dto/address.dto'
+import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { IdDto } from 'src/common/dto/params.dto'
 
 @ApiTags('address')
 @Controller('addresses')
-@UseGuards(JwtAuthGuard) // Bảo vệ tất cả các route trong controller này
-@ApiBearerAuth() // Yêu cầu token xác thực trong Swagger UI
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class AddressController {
   constructor(
     @Inject(IAddressService)
@@ -38,93 +40,126 @@ export class AddressController {
   ) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Tạo một địa chỉ mới cho người dùng đã đăng nhập' })
   @ApiResponse({
-    status: 201,
-    description: 'Tạo địa chỉ thành công.',
-    type: Address, // Swagger sẽ hiển thị schema của Address
+    status: HttpStatus.CREATED,
+    type: ApiResponseDto<AddressResponseDto>,
   })
-  @ApiResponse({ status: 400, description: 'Dữ liệu không hợp lệ.' })
-  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
-  create(
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Tạo địa chỉ thất bại',
+  })
+  @ApiBody({ type: CreateAddressDto })
+  @ApiOperation({ summary: 'Tạo một địa chỉ mới' })
+  async create(
     @Body() createAddressDto: CreateAddressDto,
-    @Req() req: any, // Dùng 'any' hoặc một interface Request đã được mở rộng
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<AddressResponseDto>> {
-    const userId = req.user?.id || req.user?._id // Lấy userId từ token đã được giải mã
-    return this.addressService.createAddress(createAddressDto, userId)
+    const address = await this.addressService.createAddress(
+      createAddressDto,
+      userId,
+    )
+    return {
+      data: [address],
+      message: 'Tạo địa chỉ thành công',
+      statusCode: HttpStatus.CREATED,
+      success: true,
+    }
   }
 
   @Get()
   @ApiOperation({ summary: 'Lấy tất cả địa chỉ' })
   @ApiResponse({
-    status: 200,
-    description: 'Lấy danh sách địa chỉ thành công.',
-    type: [Address], // Swagger sẽ hiển thị một mảng các Address
+    status: HttpStatus.OK,
+    type: ApiResponseDto<AddressResponseDto[]>,
   })
-  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
-  findAll(): Promise<ApiResponseDto<AddressResponseDto>> {
-    // Lưu ý: Dựa trên interface, hàm này lấy TẤT CẢ địa chỉ.
-    // Nếu bạn muốn lấy địa chỉ của riêng người dùng, bạn cần sửa lại service.
-    return this.addressService.findAllAddresses()
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy địa chỉ nào',
+  })
+  async findAll(): Promise<ApiResponseDto<AddressResponseDto[]>> {
+    // Giả sử bạn có hàm findAllAddressesByUserId trong service
+    const addresses = await this.addressService.findAllAddresses()
+    return {
+      data: [addresses],
+      message: 'Lấy danh sách địa chỉ thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Tìm một địa chỉ theo ID' })
   @ApiParam({ name: 'id', description: 'ID của địa chỉ cần tìm' })
   @ApiResponse({
-    status: 200,
-    description: 'Tìm địa chỉ thành công.',
-    type: Address,
+    status: HttpStatus.OK,
+    type: ApiResponseDto<AddressResponseDto>,
   })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy địa chỉ.' })
-  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
-  findById(
-    @Param('id') id: string,
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Địa chỉ không tồn tại',
+  })
+  async findById(
+    @Param() params: IdDto,
   ): Promise<ApiResponseDto<AddressResponseDto>> {
-    return this.addressService.findAddressById(id)
+    const address = await this.addressService.findAddressById(params.id)
+    return {
+      data: [address],
+      message: 'Tìm địa chỉ thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Cập nhật một địa chỉ theo ID' })
   @ApiParam({ name: 'id', description: 'ID của địa chỉ cần cập nhật' })
   @ApiResponse({
-    status: 200,
-    description: 'Cập nhật địa chỉ thành công.',
-    type: Address,
+    status: HttpStatus.OK,
+    type: ApiResponseDto<AddressResponseDto>,
   })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy địa chỉ.' })
   @ApiResponse({
-    status: 403,
-    description: 'Không có quyền cập nhật địa chỉ này.',
+    status: HttpStatus.NOT_FOUND,
+    description: 'Địa chỉ không tồn tại',
   })
-  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
-  update(
-    @Param('id') id: string,
+  async update(
+    @Param() params: IdDto,
     @Body() updateAddressDto: UpdateAddressDto,
-    @Req() req: any,
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<AddressResponseDto>> {
-    const userId = req.user?.id || req.user?._id
-    return this.addressService.updateAddress(id, updateAddressDto, userId)
+    const updatedAddress = await this.addressService.updateAddress(
+      params.id,
+      updateAddressDto,
+      userId,
+    )
+    return {
+      data: [updatedAddress],
+      message: 'Cập nhật địa chỉ thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Xóa một địa chỉ theo ID' })
-  @ApiParam({ name: 'id', description: 'ID của địa chỉ cần xóa' })
+  @ApiParam({ name: 'id', description: 'ID của địa chỉ cần cập nhật' })
   @ApiResponse({
-    status: 200,
-    description: 'Xóa địa chỉ thành công.',
-    type: Boolean,
+    status: HttpStatus.OK,
+    type: ApiResponseDto<boolean>,
   })
-  @ApiResponse({ status: 404, description: 'Không tìm thấy địa chỉ.' })
-  @ApiResponse({ status: 403, description: 'Không có quyền xóa địa chỉ này.' })
-  @ApiResponse({ status: 401, description: 'Chưa xác thực.' })
-  delete(
-    @Param('id') id: string,
-    @Req() req: any,
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Địa chỉ không tồn tại',
+  })
+  @ApiOperation({ summary: 'Xóa một địa chỉ theo ID' })
+  async delete(
+    @Param() params: IdDto,
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<boolean>> {
-    const userId = req.user?.id || req.user?._id
-    return this.addressService.deleteAddress(id, userId)
+    const result = await this.addressService.deleteAddress(params.id, userId)
+    return {
+      data: [result],
+      message: 'Xóa địa chỉ thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
   }
 }

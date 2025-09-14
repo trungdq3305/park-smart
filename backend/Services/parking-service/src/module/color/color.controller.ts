@@ -8,7 +8,6 @@ import {
   Param,
   Inject,
   UseGuards,
-  Req,
   HttpStatus,
 } from '@nestjs/common'
 import {
@@ -18,14 +17,16 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger'
-import { CreateColorDto } from './dto/createColor.dto'
-import { ColorResponseDto } from './dto/colorResponse.dto'
+
 import { IColorService } from './interfaces/icolorservice'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 import { RolesGuard } from 'src/guard/role.guard'
 import { Roles } from 'src/common/decorators/roles.decorator'
 import { RoleEnum } from 'src/common/enum/role.enum'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { ColorResponseDto, CreateColorDto } from './dto/color.dto'
+import { IdDto } from 'src/common/dto/params.dto'
 
 @Controller('colors')
 @ApiTags('colors')
@@ -51,9 +52,15 @@ export class ColorController {
   })
   async createColor(
     @Body() createColorDto: CreateColorDto,
-    @Req() req,
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<ColorResponseDto>> {
-    return this.colorService.createColor(createColorDto, req.user.id)
+    const data = await this.colorService.createColor(createColorDto, userId)
+    return {
+      data: [data],
+      statusCode: HttpStatus.CREATED,
+      message: 'Tạo màu sắc thành công',
+      success: true,
+    }
   }
 
   @Get()
@@ -64,7 +71,13 @@ export class ColorController {
     type: ApiResponseDto<ColorResponseDto[]>,
   })
   async getAllColors(): Promise<ApiResponseDto<ColorResponseDto>> {
-    return this.colorService.findAllColors()
+    const colors = await this.colorService.findAllColors()
+    return {
+      data: colors,
+      statusCode: HttpStatus.OK,
+      message: 'Tìm thấy tất cả màu sắc thành công',
+      success: true,
+    }
   }
 
   @Get(':id')
@@ -76,9 +89,15 @@ export class ColorController {
     type: ApiResponseDto<ColorResponseDto>,
   })
   async findColorById(
-    @Param('id') id: string,
+    @Param() params: IdDto,
   ): Promise<ApiResponseDto<ColorResponseDto>> {
-    return this.colorService.findColorById(id)
+    const color = await this.colorService.findColorById(params.id)
+    return {
+      data: [color],
+      statusCode: HttpStatus.OK,
+      message: 'Màu sắc đã được tìm thấy',
+      success: true,
+    }
   }
 
   @Delete(':id')
@@ -98,10 +117,16 @@ export class ColorController {
     type: ApiResponseDto,
   })
   async deleteColor(
-    @Param('id') id: string,
-    @Req() req,
+    @Param() params: IdDto,
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<boolean>> {
-    return this.colorService.deleteColor(id, req.user.id)
+    const data = await this.colorService.deleteColor(params.id, userId)
+    return {
+      data: [data],
+      statusCode: HttpStatus.OK,
+      message: 'Xóa màu sắc thành công',
+      success: true,
+    }
   }
 
   @Patch(':id')
@@ -121,9 +146,15 @@ export class ColorController {
     type: ApiResponseDto,
   })
   async restoreColor(
-    @Param('id') id: string,
-    @Req() req,
+    @Param() params: IdDto,
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<boolean>> {
-    return this.colorService.restoreColor(id, req.user.id)
+    const data = await this.colorService.restoreColor(params.id, userId)
+    return {
+      data: [data],
+      statusCode: HttpStatus.OK,
+      message: 'Khôi phục màu sắc thành công',
+      success: true,
+    }
   }
 }

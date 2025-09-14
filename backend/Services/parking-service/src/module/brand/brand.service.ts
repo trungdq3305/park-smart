@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   BadRequestException,
   ConflictException,
@@ -6,17 +7,15 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common'
-import { CreateBrandDto } from './dto/createBrand.dto'
+import { CreateBrandDto, BrandResponseDto } from './dto/brand.dto'
 import { IBrandRepository } from './interfaces/ibrand.repository'
 import { IBrandService } from './interfaces/ibrand.service'
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
-import { BrandResponseDto } from './dto/brandResponse.dto'
-import { isMongoId } from 'class-validator'
 import { HttpService } from '@nestjs/axios'
 import { firstValueFrom } from 'rxjs'
 import { ConfigService } from '@nestjs/config'
-import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Cache } from 'cache-manager'
+import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
+import { plainToInstance } from 'class-transformer'
+import { Brand } from './schemas/brand.schema'
 
 @Injectable()
 export class BrandService implements IBrandService {
@@ -32,139 +31,91 @@ export class BrandService implements IBrandService {
   private readonly accountServiceUrl =
     this.configService.get<string>('CORE_SERVICE_URL')
 
+  private returnBrandResponseDto(brand: Brand): BrandResponseDto {
+    return plainToInstance(BrandResponseDto, brand, {
+      excludeExtraneousValues: true,
+    })
+  }
+
   async createBrand(
     createBrandDto: CreateBrandDto,
     userId: string,
-  ): Promise<ApiResponseDto<BrandResponseDto>> {
+  ): Promise<BrandResponseDto> {
     const existingBrand = await this.brandRepository.findBrandByName(
       createBrandDto.brandName,
     )
-    if (existingBrand) {
+    if (existingBrand && !existingBrand.deletedAt) {
+      // Chỉ báo lỗi nếu hãng xe đang hoạt động
       throw new ConflictException('Hãng xe đã tồn tại')
     }
     const brand = await this.brandRepository.createBrand(createBrandDto, userId)
-    return {
-      data: [new BrandResponseDto(brand)],
-      statusCode: 201,
-      message: 'Hãng xe đã được tạo thành công',
-      success: true,
-    }
+    return this.returnBrandResponseDto(brand)
   }
 
-  /**
-   * Ví dụ về việc call API từ service khác
-   *
-   * Ví dụ về việc sử dụng Cache Manager trong phương thức findBrandById để cache dữ liệu
-   */
-  async findBrandById(id: string): Promise<ApiResponseDto<any>> {
-    if (!isMongoId(id)) {
-      throw new BadRequestException('ID không hợp lệ')
-    }
-
+  async findBrandById(
+    id: string,
+  ): Promise<BrandResponseDto & { message: string }> {
     const brand = await this.brandRepository.findBrandById(id)
-
     if (!brand) {
       throw new NotFoundException('Không tìm thấy hãng xe')
     }
 
-    const brandResponse = { ...brand }
-
-    // Khai báo message mặc định
+    const brandResponse = this.returnBrandResponseDto(brand)
     let message = 'Hãng xe đã được tìm thấy'
 
-    if (brandResponse.deletedBy) {
-      // 1. Tạo một key duy nhất cho cache
-      const cacheKey = `ACCOUNT_${brandResponse.deletedBy}`
-
-      // 2. Thử lấy dữ liệu từ cache trước
+    if (brand.deletedBy) {
+      const cacheKey = `ACCOUNT_${brand.deletedBy.toString()}`
       let accountData = await this.cacheManager.get<any>(cacheKey)
 
-      // 3. Cache miss: Nếu không tìm thấy dữ liệu trong cache
       if (!accountData) {
         try {
-          // 3a. Gọi API đến Account Service
           const accountServiceUrl =
-            this.accountServiceUrl + `/api/accounts/${brandResponse.deletedBy}`
+            this.accountServiceUrl +
+            `/api/accounts/${brand.deletedBy.toString()}`
           const accountResponse = await firstValueFrom(
             this.httpService.get(accountServiceUrl),
           )
-
-          accountData = accountResponse.data.data // Giả sử dữ liệu nằm trong response.data.data
-
-          // 3b. Lưu kết quả vừa lấy được vào cache để dùng cho lần sau
+          accountData = accountResponse.data.data
           await this.cacheManager.set(cacheKey, accountData)
         } catch (error) {
-          // 3c. Xử lý khi gọi API lỗi
           this.logger.error(
-            `Không thể lấy thông tin người xóa với ID: ${brandResponse.deletedBy}. Lỗi: ${error.message}`,
+            `Không thể lấy thông tin người xóa với ID: ${brand.deletedBy.toString()}. Lỗi: ${error.message}`,
           )
-          // Cập nhật lại message để thông báo cho client
           message =
             'Hãng xe đã được tìm thấy, nhưng không thể lấy thông tin người xóa.'
         }
       }
-
-      // 5. Gán dữ liệu account (từ cache hoặc từ API) vào response
-      brandResponse.deletedBy = accountData || brandResponse.deletedBy
+      brandResponse.deletedBy = accountData || brand.deletedBy.toString()
     }
 
-    // 6. Trả về kết quả với message đã được cập nhật (nếu có)
-    return {
-      data: [new BrandResponseDto(brandResponse)],
-      statusCode: 200,
-      message: message,
-      success: true,
-    }
+    return { ...brandResponse, message }
   }
 
-  async findAllBrands(): Promise<ApiResponseDto<BrandResponseDto>> {
+  async findAllBrands(): Promise<BrandResponseDto[]> {
     const brands = await this.brandRepository.findAllBrands()
     if (!brands || brands.length === 0) {
       throw new NotFoundException('Không tìm thấy hãng xe nào')
     }
-    return {
-      data: brands.map((brand) => new BrandResponseDto(brand)),
-      statusCode: 200,
-      message: 'Tìm thấy tất cả hãng xe thành công',
-      success: true,
-    }
+    return brands.map((brand) => this.returnBrandResponseDto(brand))
   }
 
-  async deleteBrand(
-    id: string,
-    userId: string,
-  ): Promise<ApiResponseDto<boolean>> {
-    if (!isMongoId(id)) {
-      throw new BadRequestException('ID không hợp lệ')
-    }
+  async deleteBrand(id: string, userId: string): Promise<boolean> {
     const success = await this.brandRepository.deleteBrand(id, userId)
     if (!success) {
-      throw new BadRequestException('Xóa hãng xe thất bại')
+      throw new BadRequestException(
+        'Xóa hãng xe thất bại. Có thể ID không tồn tại hoặc xe đã bị xóa.',
+      )
     }
-    return {
-      data: [success],
-      statusCode: 200,
-      message: 'Xóa hãng xe thành công',
-      success: true,
-    }
+    return success
   }
 
-  async restoreBrand(
-    id: string,
-    userId: string,
-  ): Promise<ApiResponseDto<boolean>> {
-    if (!isMongoId(id)) {
-      throw new BadRequestException('ID không hợp lệ')
-    }
+  async restoreBrand(id: string, userId: string): Promise<boolean> {
     const success = await this.brandRepository.restoreBrand(id, userId)
     if (!success) {
-      throw new BadRequestException('Khôi phục hãng xe thất bại')
+      throw new BadRequestException(
+        'Khôi phục hãng xe thất bại. Có thể ID không tồn tại hoặc xe không ở trạng thái bị xóa.',
+      )
     }
-    return {
-      data: [success],
-      statusCode: 200,
-      message: 'Khôi phục hãng xe thành công',
-      success: true,
-    }
+    return success
   }
 }

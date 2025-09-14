@@ -1,8 +1,7 @@
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { VehicleTypeResponseDto } from '../dto/vehicleTypeResponse.dto'
 
 export interface IVehicleTypeService {
-  getVehicleTypes(): Promise<ApiResponseDto<VehicleTypeResponseDto>>
+  getVehicleTypes(): Promise<VehicleTypeResponseDto[]> // Sửa: Trả về entity
 }
 
 export const IVehicleTypeService = Symbol('IVehicleTypeService')

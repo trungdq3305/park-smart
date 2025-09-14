@@ -1,7 +1,7 @@
-import { WardDto } from '../dto/ward.dto'
+import { Ward } from '../schemas/ward.schema'
 
 export interface IWardRepository {
-  getWards(): Promise<WardDto[]>
+  getWards(): Promise<Ward[]>
   getWardNameById(id: string): Promise<string | null>
 }
 

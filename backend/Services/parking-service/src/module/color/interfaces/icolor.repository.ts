@@ -1,4 +1,4 @@
-import { CreateColorDto } from '../dto/createColor.dto'
+import { CreateColorDto } from '../dto/color.dto'
 import { Color } from '../schemas/color.schema'
 
 export interface IColorRepository {
