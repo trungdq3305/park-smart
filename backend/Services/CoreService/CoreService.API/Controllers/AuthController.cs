@@ -40,13 +40,11 @@ namespace KLTN.CoreService.API.Controllers
             var state = Guid.NewGuid().ToString("N");
             _memoryCache.Set(state, true, TimeSpan.FromMinutes(10));
 
-            var redirectUrl = Url.Action("GoogleCallback", "Auth");
-
-            var properties = new AuthenticationProperties
+            var props = new AuthenticationProperties
             {
-                RedirectUri = "/core/auths/google-callback" // callback rõ ràng
+                RedirectUri = "/core/auths/google-callback"
             };
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+            return Challenge(props, GoogleDefaults.AuthenticationScheme);
         }
         [HttpPost("driver-register")]
         public async Task<IActionResult> DriverRegister(DriverRegisterRequest request)
