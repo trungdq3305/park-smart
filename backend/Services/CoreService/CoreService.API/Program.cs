@@ -67,29 +67,47 @@ builder.Services.AddAuthentication(options =>
 })
 .AddGoogle(options =>
 {
-    var googleAuth = builder.Configuration.GetSection("Authentication:Google").Get<GoogleAuthSettings>();
-    options.ClientId = googleAuth.ClientId;
-    options.ClientSecret = googleAuth.ClientSecret;
+    var g = builder.Configuration.GetSection("Authentication:Google").Get<GoogleAuthSettings>();
+    options.ClientId = g.ClientId;
+    options.ClientSecret = g.ClientSecret;
+
     options.CallbackPath = "/signin-google";
     options.SaveTokens = true;
 
+    // B?T BU?C: n?i middleware s? ghi ticket sau khi Google tr? v?
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+    // Tránh l?i correlation/state khi qua HTTPS reverse proxy
+    options.CorrelationCookie.SameSite = SameSiteMode.None;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+
+    // (gi? hack ép redirect_uri v? domain HTTPS)
     options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
     {
         OnRedirectToAuthorizationEndpoint = ctx =>
         {
             var fixedRedirectParam = Uri.EscapeDataString("https://parksmarthcmc.io.vn/signin-google");
-            var fixedUri = Regex.Replace(
-                ctx.RedirectUri,
-                @"redirect_uri=[^&]+",
-                "redirect_uri=" + fixedRedirectParam,
-                RegexOptions.IgnoreCase);
-
+            var fixedUri = System.Text.RegularExpressions.Regex
+                .Replace(ctx.RedirectUri, @"redirect_uri=[^&]+", "redirect_uri=" + fixedRedirectParam,
+                         System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             Console.WriteLine("### FIXED_REDIRECT_TO_GOOGLE: " + fixedUri);
             ctx.Response.Redirect(fixedUri);
+            return Task.CompletedTask;
+        },
+        OnRemoteFailure = ctx =>
+        {
+            Console.WriteLine("### REMOTE_FAILURE: " + ctx.Failure);
+            return Task.CompletedTask;
+        },
+        OnTicketReceived = ctx =>
+        {
+            Console.WriteLine("### TICKET_RECEIVED: " +
+                (ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value ?? "<no-email>"));
             return Task.CompletedTask;
         }
     };
 })
+
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
     options.Cookie.Name = "AuthCookie";
