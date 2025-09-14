@@ -11,8 +11,7 @@ services:
       - "5001:8080"
     networks:
       - backend
-    volumes:
-      - /var/coreservice-keys:/keys 
+
   parkingservice:
     build:
       context: ./backend/Services/parking-service 

@@ -10,7 +10,6 @@ using Dotnet.Shared.Mongo;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -21,9 +20,7 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo("/keys"))
-    .SetApplicationName("CoreServiceAuth");
+
 builder.Services.AddMemoryCache();
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
@@ -68,56 +65,57 @@ builder.Services.AddAuthentication(options =>
         NameClaimType = "email"
     };
 })
-.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, o =>
+.AddGoogle(options =>
 {
-    o.Cookie.Name = "AuthCookie";
-    o.Cookie.SameSite = SameSiteMode.None;
-    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    o.LoginPath = "/api/auth/login";
-    o.LogoutPath = "/api/auth/logout";
-})
-.AddGoogle(o =>
-{
-    o.ClientId = builder.Configuration["Authentication:Google:ClientId"];
-    o.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-    o.CallbackPath = "/signin-google";
-    o.SaveTokens = true;
+    var g = builder.Configuration.GetSection("Authentication:Google").Get<GoogleAuthSettings>();
+    options.ClientId = g.ClientId;
+    options.ClientSecret = g.ClientSecret;
 
-    // R?T QUAN TR?NG
-    o.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-    o.CorrelationCookie.SameSite = SameSiteMode.None;
-    o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.CallbackPath = "/signin-google";
+    options.SaveTokens = true;
 
-    // ép redirect_uri v? domain https công khai
-    o.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
+    // B?T BU?C: n?i middleware s? ghi ticket sau khi Google tr? v?
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+    // Tránh l?i correlation/state khi qua HTTPS reverse proxy
+    options.CorrelationCookie.SameSite = SameSiteMode.None;
+    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+
+    // (gi? hack ép redirect_uri v? domain HTTPS)
+    options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
     {
         OnRedirectToAuthorizationEndpoint = ctx =>
         {
-            var fixedRedirect = Uri.EscapeDataString("https://parksmarthcmc.io.vn/signin-google");
-            var fixedUri = System.Text.RegularExpressions.Regex.Replace(
-                ctx.RedirectUri, @"redirect_uri=[^&]+", "redirect_uri=" + fixedRedirect,
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var fixedRedirectParam = Uri.EscapeDataString("https://parksmarthcmc.io.vn/signin-google");
+            var fixedUri = System.Text.RegularExpressions.Regex
+                .Replace(ctx.RedirectUri, @"redirect_uri=[^&]+", "redirect_uri=" + fixedRedirectParam,
+                         System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             Console.WriteLine("### FIXED_REDIRECT_TO_GOOGLE: " + fixedUri);
             ctx.Response.Redirect(fixedUri);
             return Task.CompletedTask;
         },
         OnRemoteFailure = ctx =>
         {
-            // ?? không r?i vào 500 mù m?
             Console.WriteLine("### REMOTE_FAILURE: " + ctx.Failure);
-            ctx.HandleResponse();
-            ctx.Response.StatusCode = 400;
             return Task.CompletedTask;
         },
         OnTicketReceived = ctx =>
         {
-            Console.WriteLine("### TICKET_RECEIVED email=" +
-                (ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value ?? "<null>"));
+            Console.WriteLine("### TICKET_RECEIVED: " +
+                (ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value ?? "<no-email>"));
             return Task.CompletedTask;
         }
     };
-});
+})
 
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+{
+    options.Cookie.Name = "AuthCookie";
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.LoginPath = "/api/auth/login";
+    options.LogoutPath = "/api/auth/logout";
+});
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Swagger + JWT support
 builder.Services.AddSwaggerGen(option =>
