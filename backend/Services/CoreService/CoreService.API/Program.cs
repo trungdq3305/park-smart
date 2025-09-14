@@ -17,6 +17,7 @@ using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -71,15 +72,25 @@ builder.Services.AddAuthentication(options =>
     options.ClientSecret = googleAuth.ClientSecret;
     options.CallbackPath = "/signin-google";
     options.SaveTokens = true;
+
     options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
     {
         OnRedirectToAuthorizationEndpoint = ctx =>
         {
-            Console.WriteLine("### REDIRECT_TO_GOOGLE: " + ctx.RedirectUri);
+            // ctx.RedirectUri là URL Google ch?a query ?redirect_uri=...
+            // Ta ch? c?n thay redirect_uri=... b?ng domain HTTPS public
+            var fixedRedirectParam = Uri.EscapeDataString("https://parksmarthcmc.io.vn/signin-google");
+            var fixedUri = Regex.Replace(
+                ctx.RedirectUri,
+                @"redirect_uri=[^&]+",
+                "redirect_uri=" + fixedRedirectParam,
+                RegexOptions.IgnoreCase);
+
+            Console.WriteLine("### FIXED_REDIRECT_TO_GOOGLE: " + fixedUri);
+            ctx.Response.Redirect(fixedUri);
             return Task.CompletedTask;
         }
     };
-
 })
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
