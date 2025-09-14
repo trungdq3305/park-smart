@@ -32,6 +32,7 @@ jobs:
             cd ~/park-smart
 
             echo ">>> Creating .env file for parkingservice..."
+            # Lệnh tạo file .env của bạn giữ nguyên
             cat <<EOF > ./backend/Services/parking-service/.env
             PORT=${{ secrets.PORT }}
             MONGO_URI=${{ secrets.MONGO_URI }}
@@ -46,6 +47,13 @@ jobs:
             echo ">>> .env file created successfully."
 
             echo ">>> Starting deployment..."
+            # Dừng các container cũ
             docker compose down
-            docker compose up -d --build
+
+            # Build lại image từ đầu mà không dùng cache và khởi động lại
+            docker compose up -d --build --no-cache
+
+            # (Tùy chọn nhưng khuyến khích) Dọn dẹp các image cũ không còn dùng
+            docker image prune -f
+
             echo ">>> Deployment finished."
