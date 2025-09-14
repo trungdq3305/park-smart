@@ -10,12 +10,14 @@ using Dotnet.Shared.Mongo;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -70,12 +72,31 @@ builder.Services.AddAuthentication(options =>
     options.ClientSecret = googleAuth.ClientSecret;
     options.CallbackPath = "/signin-google";
     options.SaveTokens = true;
+
+    options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
+    {
+        OnRedirectToAuthorizationEndpoint = ctx =>
+        {
+            var fixedRedirectParam = Uri.EscapeDataString("https://parksmarthcmc.io.vn/signin-google");
+            var fixedUri = Regex.Replace(
+                ctx.RedirectUri,
+                @"redirect_uri=[^&]+",
+                "redirect_uri=" + fixedRedirectParam,
+                RegexOptions.IgnoreCase);
+
+            Console.WriteLine("### FIXED_REDIRECT_TO_GOOGLE: " + fixedUri);
+            ctx.Response.Redirect(fixedUri);
+            return Task.CompletedTask;
+        }
+    };
 })
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
     options.Cookie.Name = "AuthCookie";
-    options.LoginPath = "/api/auth/login"; // ???ng d?n m?c ??nh khi c?n ??ng nh?p
-    options.LogoutPath = "/api/auth/logout"; // ???ng d?n m?c ??nh khi ??ng xu?t
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.LoginPath = "/api/auth/login";
+    options.LogoutPath = "/api/auth/logout";
 });
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Swagger + JWT support
@@ -117,6 +138,28 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true; // ? Không ?? framework t? return 400
 });
 var app = builder.Build();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+    KnownNetworks = { },   // ch?y Docker nên ?? tr?ng
+    KnownProxies = { }
+});
+app.Use((ctx, next) =>
+{
+    var proto = ctx.Request.Headers["X-Forwarded-Proto"].ToString();
+    var host = ctx.Request.Headers["X-Forwarded-Host"].ToString();
+    if (!string.IsNullOrEmpty(proto)) ctx.Request.Scheme = proto;
+    if (!string.IsNullOrEmpty(host)) ctx.Request.Host = new HostString(host);
+    return next();
+});
+app.MapGet("/__whoami", (HttpRequest r) => Results.Json(new
+{
+    r.Scheme,
+    Host = r.Host.ToString(),
+    XFP = r.Headers["X-Forwarded-Proto"].ToString(),
+    XFHost = r.Headers["X-Forwarded-Host"].ToString()
+}));
+
 using (var scope = app.Services.CreateScope())
 {
     var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
@@ -129,7 +172,7 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionMiddleware>();
 

@@ -3,6 +3,7 @@ using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.Interfaces;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -51,13 +52,12 @@ namespace CoreService.Application.Applications
             // Update fields
             account.PhoneNumber = dto.PhoneNumber;
             account.Email = dto.Email;
-            account.UpdatedAt = DateTime.UtcNow;
+            account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.UpdatedBy = accountId;
 
             driver.FullName = dto.FullName;
             driver.Gender = dto.Gender;
-            driver.DrivingLicenseNumber = dto.DrivingLicenseNumber;
-            driver.UpdatedAt = DateTime.UtcNow;
+            driver.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             driver.UpdatedBy = accountId;
 
             await _accountRepo.UpdateAsync(account);

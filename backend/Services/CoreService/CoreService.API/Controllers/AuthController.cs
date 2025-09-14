@@ -34,20 +34,17 @@ namespace KLTN.CoreService.API.Controllers
         }
 
         [HttpGet("google-login")]
+        [AllowAnonymous]
         public IActionResult GoogleLogin()
         {
             var state = Guid.NewGuid().ToString("N");
             _memoryCache.Set(state, true, TimeSpan.FromMinutes(10));
 
-            var redirectUrl = Url.Action("GoogleCallback", "Auth");
-
-            var properties = new AuthenticationProperties
+            var props = new AuthenticationProperties
             {
-                RedirectUri = redirectUrl,
-                Items = { { "state", state } }
+                RedirectUri = "/core/auths/google-callback"
             };
-
-            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+            return Challenge(props, GoogleDefaults.AuthenticationScheme);
         }
         [HttpPost("driver-register")]
         public async Task<IActionResult> DriverRegister(DriverRegisterRequest request)
@@ -115,6 +112,7 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
         [HttpGet("google-callback")]
+        [AllowAnonymous]
         public async Task<IActionResult> GoogleCallback()
         {
             // Đọc thông tin từ Cookie (middleware đã set)
