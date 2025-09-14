@@ -1,6 +1,5 @@
 {
   "Routes": [
-    // ===== CoreService (AuthController) =====
     {
       "DownstreamPathTemplate": "/__whoami",
       "DownstreamScheme": "http",
@@ -43,7 +42,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/accounts/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     {
       "DownstreamPathTemplate": "/api/drivers/{everything}",
@@ -55,7 +54,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/drivers/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     {
       "DownstreamPathTemplate": "/api/operators/{everything}",
@@ -67,7 +66,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/operators/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     {
       "DownstreamPathTemplate": "/api/admins/{everything}",
@@ -79,9 +78,8 @@
         }
       ],
       "UpstreamPathTemplate": "/core/admins/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
-    // ===== Swagger cho CoreService =====
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
@@ -92,7 +90,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/swagger/{everything}",
-      "UpstreamHttpMethod": [ "GET" ]
+      "UpstreamHttpMethod": ["GET"]
     },
     {
       "DownstreamPathTemplate": "/signin-google",
@@ -110,97 +108,101 @@
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
       }
     },
-    // ===== ParkingService (AddressController, WardController) =====
     {
-      // Route này sẽ bắt tất cả các request đến /addresses, /addresses/{id}, ...
       "DownstreamPathTemplate": "/addresses/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/addresses/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     {
-      // Route cho WardController
       "DownstreamPathTemplate": "/wards",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/wards",
-      "UpstreamHttpMethod": [ "GET" ]
+      "UpstreamHttpMethod": ["GET"]
     },
     {
-      // Route cho BrandController
       "DownstreamPathTemplate": "/brands/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/brands/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     {
-      // Route cho VehicleTypeController
       "DownstreamPathTemplate": "/vehicle-types/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/vehicle-types/{everything}",
-      "UpstreamHttpMethod": [ "GET" ]
+      "UpstreamHttpMethod": ["GET"]
     },
     {
-      // Route cho ColorController
       "DownstreamPathTemplate": "/colors/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/colors/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     {
-      // Route cho AppController (health check)
+      "DownstreamPathTemplate": "/vehicles/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "vehicleservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/vehicles/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+    },
+    {
       "DownstreamPathTemplate": "/",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/",
-      "UpstreamHttpMethod": [ "GET" ]
+      "UpstreamHttpMethod": ["GET"]
     },
-    // ===== Swagger cho ParkingService =====
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/swagger/{everything}",
-      "UpstreamHttpMethod": [ "GET" ]
+      "UpstreamHttpMethod": ["GET"]
     }
   ],
   "GlobalConfiguration": {

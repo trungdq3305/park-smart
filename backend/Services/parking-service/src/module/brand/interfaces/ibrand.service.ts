@@ -1,21 +1,15 @@
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
-import { BrandResponseDto } from '../dto/brandResponse.dto'
-import { CreateBrandDto } from '../dto/createBrand.dto'
+import { BrandResponseDto } from '../dto/brand.dto'
+import { CreateBrandDto } from '../dto/brand.dto'
 
 export interface IBrandService {
   createBrand(
     createBrandDto: CreateBrandDto,
     userId: string,
-  ): Promise<ApiResponseDto<BrandResponseDto>>
-  /**
-   * Ví dụ về việc call API từ service khác
-   *
-   * Ví dụ về việc sử dụng Cache Manager trong phương thức findBrandById để cache dữ liệu
-   */
-  findBrandById(id: string): Promise<ApiResponseDto<BrandResponseDto>>
-  findAllBrands(): Promise<ApiResponseDto<BrandResponseDto>>
-  deleteBrand(id: string, userId: string): Promise<ApiResponseDto<boolean>>
-  restoreBrand(id: string, userId: string): Promise<ApiResponseDto<boolean>>
+  ): Promise<BrandResponseDto>
+  findBrandById(id: string): Promise<BrandResponseDto & { message: string }>
+  findAllBrands(): Promise<BrandResponseDto[]>
+  deleteBrand(id: string, userId: string): Promise<boolean>
+  restoreBrand(id: string, userId: string): Promise<boolean>
 }
 
 export const IBrandService = Symbol('IBrandService')

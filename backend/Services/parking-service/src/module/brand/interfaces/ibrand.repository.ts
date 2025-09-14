@@ -1,4 +1,4 @@
-import { CreateBrandDto } from '../dto/createBrand.dto'
+import { CreateBrandDto } from '../dto/brand.dto'
 import { Brand } from '../schemas/brand.schema'
 
 export interface IBrandRepository {

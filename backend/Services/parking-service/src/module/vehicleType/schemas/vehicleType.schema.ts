@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import mongoose from 'mongoose'
+import mongoose, { HydratedDocument } from 'mongoose'
 import { BaseEntity } from 'src/common/schema/baseEntity.schema'
 
+export type VehicleTypeDocument = HydratedDocument<VehicleType>
 @Schema()
 export class VehicleType extends BaseEntity {
   @Prop({

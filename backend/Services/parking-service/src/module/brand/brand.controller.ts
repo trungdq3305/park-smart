@@ -8,7 +8,6 @@ import {
   Param,
   Inject,
   UseGuards,
-  Req,
   HttpStatus,
 } from '@nestjs/common'
 import {
@@ -18,14 +17,14 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger'
-import { CreateBrandDto } from './dto/createBrand.dto'
-import { BrandResponseDto } from './dto/brandResponse.dto'
+import { CreateBrandDto, BrandResponseDto } from './dto/brand.dto'
 import { IBrandService } from './interfaces/ibrand.service'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 import { RolesGuard } from 'src/guard/role.guard'
 import { Roles } from 'src/common/decorators/roles.decorator'
 import { RoleEnum } from 'src/common/enum/role.enum'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
 
 @Controller('brands')
 @ApiTags('brands')
@@ -51,9 +50,15 @@ export class BrandController {
   })
   async createBrand(
     @Body() createBrandDto: CreateBrandDto,
-    @Req() req,
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<BrandResponseDto>> {
-    return this.brandService.createBrand(createBrandDto, req.user.id)
+    const brand = await this.brandService.createBrand(createBrandDto, userId)
+    return {
+      data: [brand],
+      statusCode: HttpStatus.CREATED,
+      message: 'Hãng xe đã được tạo thành công',
+      success: true,
+    }
   }
 
   @Get()
@@ -63,8 +68,14 @@ export class BrandController {
     description: 'Danh sách hãng xe',
     type: ApiResponseDto<BrandResponseDto[]>,
   })
-  async getAllBrands(): Promise<ApiResponseDto<BrandResponseDto>> {
-    return this.brandService.findAllBrands()
+  async getAllBrands(): Promise<ApiResponseDto<BrandResponseDto[]>> {
+    const brands = await this.brandService.findAllBrands()
+    return {
+      data: [brands],
+      statusCode: HttpStatus.OK,
+      message: 'Lấy danh sách hãng xe thành công',
+      success: true,
+    }
   }
 
   @Get(':id')
@@ -78,7 +89,14 @@ export class BrandController {
   async findBrandById(
     @Param('id') id: string,
   ): Promise<ApiResponseDto<BrandResponseDto>> {
-    return this.brandService.findBrandById(id)
+    const brand = await this.brandService.findBrandById(id)
+    const { message, ...brandData } = brand
+    return {
+      data: [brandData],
+      statusCode: HttpStatus.OK,
+      message: message,
+      success: true,
+    }
   }
 
   @Delete(':id')
@@ -99,9 +117,15 @@ export class BrandController {
   })
   async deleteBrand(
     @Param('id') id: string,
-    @Req() req,
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<boolean>> {
-    return this.brandService.deleteBrand(id, req.user.id)
+    const success = await this.brandService.deleteBrand(id, userId)
+    return {
+      data: [success],
+      statusCode: HttpStatus.OK,
+      message: 'Xóa hãng xe thành công',
+      success: true,
+    }
   }
 
   @Patch(':id')
@@ -122,8 +146,14 @@ export class BrandController {
   })
   async restoreBrand(
     @Param('id') id: string,
-    @Req() req,
+    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<boolean>> {
-    return this.brandService.restoreBrand(id, req.user.id)
+    const success = await this.brandService.restoreBrand(id, userId)
+    return {
+      data: [success],
+      statusCode: HttpStatus.OK,
+      message: 'Khôi phục hãng xe thành công',
+      success: true,
+    }
   }
 }

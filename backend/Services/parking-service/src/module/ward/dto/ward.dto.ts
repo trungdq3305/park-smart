@@ -1,16 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger'
-import { IsNotEmpty, IsString } from 'class-validator'
+import { Exclude, Expose, Transform } from 'class-transformer'
 
-export class WardDto {
-  @ApiProperty({
-    example: 'Phường Vĩnh Hải',
-    description: 'Tên đầy đủ của phường/xã',
-  })
-  @IsString()
-  @IsNotEmpty()
+@Exclude()
+export class WardResponseDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @ApiProperty({ example: 'Phường Vĩnh Hải' })
+  @Expose()
   wardName: string
-
-  constructor(partial: WardDto) {
-    this.wardName = partial.wardName
-  }
 }
