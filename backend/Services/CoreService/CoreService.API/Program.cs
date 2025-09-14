@@ -67,36 +67,29 @@ builder.Services.AddAuthentication(options =>
 })
 .AddGoogle(options =>
 {
-    // … các c?u hình b?n ?ã có …
+    var googleAuth = builder.Configuration.GetSection("Authentication:Google").Get<GoogleAuthSettings>();
+    options.ClientId = googleAuth.ClientId;
+    options.ClientSecret = googleAuth.ClientSecret;
     options.CallbackPath = "/signin-google";
     options.SaveTokens = true;
 
-    // QUAN TR?NG: b?t bu?c g?n SignInScheme = Cookie ?? Google l?u ticket vào cookie
-    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-
-    // (gi? workaround ép redirect_uri b?n ?ã thêm)
     options.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
     {
         OnRedirectToAuthorizationEndpoint = ctx =>
         {
-            // ép redirect_uri v? domain HTTPS công khai
             var fixedRedirectParam = Uri.EscapeDataString("https://parksmarthcmc.io.vn/signin-google");
-            var fixedUri = System.Text.RegularExpressions.Regex.Replace(
-                ctx.RedirectUri, @"redirect_uri=[^&]+", "redirect_uri=" + fixedRedirectParam,
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var fixedUri = Regex.Replace(
+                ctx.RedirectUri,
+                @"redirect_uri=[^&]+",
+                "redirect_uri=" + fixedRedirectParam,
+                RegexOptions.IgnoreCase);
+
             Console.WriteLine("### FIXED_REDIRECT_TO_GOOGLE: " + fixedUri);
             ctx.Response.Redirect(fixedUri);
-            return Task.CompletedTask;
-        },
-        OnRemoteFailure = ctx =>
-        {
-            Console.WriteLine("### REMOTE_FAILURE: " + ctx.Failure);
-            ctx.Response.StatusCode = 400;
             return Task.CompletedTask;
         }
     };
 })
-
 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
 {
     options.Cookie.Name = "AuthCookie";
