@@ -10,13 +10,8 @@ class AuthService {
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
     );
 
     if (response.statusCode == 200) {
@@ -27,18 +22,23 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> register(
-      String email, String password, String name) async {
-    final url = Uri.parse('$baseUrl/core/auths/register');
+    String email,
+    String password,
+    String phoneNumber,
+    String fullName,
+    bool gender,
+  ) async {
+    final url = Uri.parse('$baseUrl/core/auths/driver-register');
 
     final response = await http.post(
       url,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
         'password': password,
-        'name': name,
+        'fullName': fullName,
+        'phoneNumber': phoneNumber,
+        'gender': gender,
       }),
     );
 
