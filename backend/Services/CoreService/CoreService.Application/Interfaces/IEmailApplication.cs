@@ -8,7 +8,7 @@ namespace CoreService.Application.Interfaces
 {
     public interface IEmailApplication
     {
-        Task SendEmailConfirmationAsync(string email, string confirmationLink);
+        Task SendEmailConfirmationCodeAsync(string email, string confirmationLink);
         Task SendPasswordResetAsync(string email, string resetLink);
         Task SendPasswordChangeConfirmationAsync(string email, string confirmationLink);
         Task SendEmailAsync(string toEmail, string subject, string body);

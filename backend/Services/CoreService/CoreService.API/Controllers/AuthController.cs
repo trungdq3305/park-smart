@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Claims;
+using static CoreService.Application.Applications.AuthApplication;
 
 namespace KLTN.CoreService.API.Controllers
 {
@@ -68,10 +69,10 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpGet("register-confirm")]
-        public async Task<IActionResult> ConfirmEmail([FromQuery] string token)
+        [HttpPost("register-confirm")]
+        public async Task<IActionResult> ConfirmEmail(ConfirmEmailByCodeRequest request)
         {
-            var response = await _authApplication.ConfirmEmailAsync(token);
+            var response = await _authApplication.ConfirmEmailAsync(request);
             return StatusCode(response.StatusCode, response);
         }
 
