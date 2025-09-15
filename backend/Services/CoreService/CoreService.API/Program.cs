@@ -44,7 +44,8 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddScoped<JwtTokenHelper>();
 // Authentication + JWT
-
+builder.Services.Configure<AppSecurityOptions>(
+    builder.Configuration.GetSection("AppSecurity"));
 // Authentication + JWT + Google + Cookie
 builder.Services.AddAuthentication(options =>
 {
