@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import '../../services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -16,19 +17,21 @@ class _LoginScreenState extends State<LoginScreen> {
   final storage = const FlutterSecureStorage();
 
   bool _isLoading = false;
+  String? _errorMessage;
 
   Future<void> _handleLogin() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Vui lòng nhập email và mật khẩu")),
-      );
+      setState(() {
+        _errorMessage = 'Vui lòng nhập email và mật khẩu';
+      });
       return;
     }
 
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
@@ -44,16 +47,34 @@ class _LoginScreenState extends State<LoginScreen> {
         ).showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
 
         // Chuyển sang màn hình Home
-        Navigator.pushReplacementNamed(context, '/home');
+        Navigator.pushReplacementNamed(context, '/main');
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Đăng nhập thất bại")));
+        setState(() {
+          _errorMessage = 'Đăng nhập thất bại';
+        });
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("Lỗi: $e")));
+      // Cố gắng lấy thông điệp dễ đọc từ exception
+      String message = e.toString();
+      // Nếu backend trả JSON, cố gắng tách nội dung message/error
+      try {
+        final start = message.indexOf('{');
+        final end = message.lastIndexOf('}');
+        if (start != -1 && end != -1 && end > start) {
+          final jsonStr = message.substring(start, end + 1);
+          // ignore: avoid_dynamic_calls
+          final Map<String, dynamic> obj =
+              jsonDecode(jsonStr) as Map<String, dynamic>;
+          message = (obj['message'] ?? obj['error'] ?? obj['detail'] ?? message)
+              .toString();
+        }
+      } catch (_) {
+        // giữ nguyên message nếu parse thất bại
+      }
+
+      setState(() {
+        _errorMessage = message;
+      });
     } finally {
       setState(() {
         _isLoading = false;
@@ -143,6 +164,21 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
+            // Lỗi (nếu có)
+            if (_errorMessage != null) ...[
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _errorMessage!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                  ),
+                ),
+              ),
+            ],
+
             const SizedBox(height: 20),
             const Row(
               children: [
@@ -176,28 +212,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            // Đăng nhập bằng Apple
-            // Padding(
-            //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            //   child: ElevatedButton.icon(
-            //     onPressed: () {},
-            //     style: ElevatedButton.styleFrom(
-            //       backgroundColor: Colors.black,
-            //       padding: const EdgeInsets.symmetric(vertical: 14),
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(12),
-            //       ),
-            //       minimumSize: const Size(double.infinity, 50),
-            //     ),
-            //     icon: const Icon(Icons.apple, color: Colors.white),
-            //     label: const Text(
-            //       "Đăng nhập bằng Apple",
-            //       style: TextStyle(color: Colors.white),
-            //     ),
-            //   ),
-            // ),
-
-            // const Spacer(),
             // Chuyển sang Register
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

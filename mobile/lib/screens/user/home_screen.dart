@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/widgets/app_scaffold.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -33,17 +34,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
       appBar: AppBar(
         title: const Text("Trang chủ"),
         backgroundColor: Colors.green,
         actions: [
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout),
-          ),
+          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
         ],
       ),
+      showBottomNav: false,
       body: Center(
         child: token == null
             ? const CircularProgressIndicator()

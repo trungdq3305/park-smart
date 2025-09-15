@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import '../../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -18,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool genderIsMale = true; // true: male, false: female
   bool isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -41,21 +43,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin')),
-      );
+      setState(() {
+        _errorMessage = 'Vui lòng nhập đầy đủ thông tin';
+      });
       return;
     }
 
     if (password != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Mật khẩu nhập lại không khớp')),
-      );
+      setState(() {
+        _errorMessage = 'Mật khẩu nhập lại không khớp';
+      });
       return;
     }
 
     setState(() {
       isLoading = true;
+      _errorMessage = null;
     });
 
     try {
@@ -78,9 +81,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Navigator.pushReplacementNamed(context, '/login');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đăng ký thất bại: ${e.toString()}')),
-      );
+      String message = e.toString();
+      try {
+        final start = message.indexOf('{');
+        final end = message.lastIndexOf('}');
+        if (start != -1 && end != -1 && end > start) {
+          final jsonStr = message.substring(start, end + 1);
+          final Map<String, dynamic> obj =
+              jsonDecode(jsonStr) as Map<String, dynamic>;
+          message = (obj['message'] ?? obj['error'] ?? obj['detail'] ?? message)
+              .toString();
+        }
+      } catch (_) {}
+      setState(() {
+        _errorMessage = message.startsWith('Exception: ')
+            ? message.replaceFirst('Exception: ', '')
+            : message;
+      });
     } finally {
       if (mounted) {
         setState(() {
@@ -275,6 +292,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
 
+              // Lỗi (nếu có)
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red, fontSize: 13),
+                    ),
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 20),
 
               // Hoặc
@@ -313,29 +345,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   label: const Text("Đăng nhập bằng Google"),
                 ),
               ),
-
-              // Đăng nhập bằng Apple
-              // Padding(
-              //   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              //   child: ElevatedButton.icon(
-              //     onPressed: () {},
-              //     style: ElevatedButton.styleFrom(
-              //       backgroundColor: Colors.black,
-              //       padding: const EdgeInsets.symmetric(vertical: 14),
-              //       shape: RoundedRectangleBorder(
-              //         borderRadius: BorderRadius.circular(12),
-              //       ),
-              //       minimumSize: const Size(double.infinity, 50),
-              //     ),
-              //     icon: const Icon(Icons.apple, color: Colors.white),
-              //     label: const Text(
-              //       "Đăng nhập bằng Apple",
-              //       style: TextStyle(color: Colors.white),
-              //     ),
-              //   ),
-              // ),
-
-              // const Spacer(),
 
               // Chuyển sang Login
               Row(
