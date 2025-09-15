@@ -173,7 +173,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "vehicleservice",
+          "Host": "parkingservice",
           "Port": 5000
         }
       ],

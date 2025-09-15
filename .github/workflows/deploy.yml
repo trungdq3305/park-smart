@@ -32,6 +32,7 @@ jobs:
             cd ~/park-smart
 
             echo ">>> Creating .env file for parkingservice..."
+            # Lệnh tạo file .env của bạn giữ nguyên
             cat <<EOF > ./backend/Services/parking-service/.env
             PORT=${{ secrets.PORT }}
             MONGO_URI=${{ secrets.MONGO_URI }}
@@ -48,4 +49,5 @@ jobs:
             echo ">>> Starting deployment..."
             docker compose down
             docker compose up -d --build
+
             echo ">>> Deployment finished."
