@@ -73,52 +73,35 @@ builder.Services.AddAuthentication(options =>
     o.Cookie.Name = "AuthCookie";
     o.Cookie.SameSite = SameSiteMode.None;
     o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-    o.LoginPath = "/api/auth/login";
-    o.LogoutPath = "/api/auth/logout";
     o.Cookie.Path = "/";                 // <- THÊM DÒNG NÀY
 })
-    .AddGoogle(o =>
-    {
-        o.ClientId = builder.Configuration["Authentication:Google:ClientId"];
-        o.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
-        o.CallbackPath = "/signin-google";
-        o.SaveTokens = true;
+.AddGoogle(o =>
+{
+    o.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    o.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+    o.CallbackPath = "/signin-google";
+    o.SaveTokens = true;
 
-        // B?T BU?C
-        o.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-        o.CorrelationCookie.SameSite = SameSiteMode.None;
-        o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
-        o.CorrelationCookie.Path = "/";     // <- THÊM DÒNG NÀY
-        o.UsePkce = false;
-        // Ép redirect_uri ?úng domain HTTPS công khai
-        o.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
+    o.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    o.CorrelationCookie.SameSite = SameSiteMode.None;
+    o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    o.CorrelationCookie.Path = "/";
+
+    o.UsePkce = false; // T?M TH?I. Khi ch?y ok thì ??i thành true.
+
+    // Log l?i rõ ràng (không ép redirect_uri!)
+    o.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
+    {
+        OnRemoteFailure = ctx =>
         {
-            OnRedirectToAuthorizationEndpoint = ctx =>
-            {
-                var fixedRedirect = Uri.EscapeDataString("https://parksmarthcmc.io.vn/signin-google");
-                var fixedUri = System.Text.RegularExpressions.Regex.Replace(
-                    ctx.RedirectUri, @"redirect_uri=[^&]+", "redirect_uri=" + fixedRedirect,
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                Console.WriteLine("### FIXED_REDIRECT_TO_GOOGLE: " + fixedUri);
-                ctx.Response.Redirect(fixedUri);
-                return Task.CompletedTask;
-            },
-            OnRemoteFailure = ctx =>
-            {
-                Console.WriteLine("### REMOTE_FAILURE: " + ctx.Failure?.GetType().FullName
-                    + " - " + ctx.Failure?.Message + "\n" + ctx.Failure?.StackTrace);
-                ctx.HandleResponse();
-                ctx.Response.StatusCode = 400;
-                return Task.CompletedTask;
-            },
-            OnTicketReceived = ctx =>
-            {
-                Console.WriteLine("### TICKET_RECEIVED email=" +
-                    (ctx.Principal?.FindFirst(ClaimTypes.Email)?.Value ?? "<null>"));
-                return Task.CompletedTask;
-            }
-        };
-    });
+            var msg = Uri.EscapeDataString(ctx.Failure?.Message ?? "unknown");
+            ctx.Response.Redirect("/core/auths/google-callback?error=" + msg);
+            ctx.HandleResponse();
+            return Task.CompletedTask;
+        }
+    };
+});
+
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Swagger + JWT support
 builder.Services.AddSwaggerGen(option =>
