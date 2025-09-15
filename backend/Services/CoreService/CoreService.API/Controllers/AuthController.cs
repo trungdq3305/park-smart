@@ -42,7 +42,7 @@ namespace KLTN.CoreService.API.Controllers
 
             var props = new AuthenticationProperties
             {
-                RedirectUri = "https://parksmarthcmc.io.vn/core/auths/google-callback"
+                RedirectUri = "/core/auths/google-callback"
             };
             return Challenge(props, GoogleDefaults.AuthenticationScheme);
         }
