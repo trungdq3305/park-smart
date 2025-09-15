@@ -203,7 +203,7 @@ namespace CoreService.Application.Applications
             return new ApiResponse<string>(
                 data: null,
                 success: true,
-                message: "Đăng ký thành công",
+                message: "Tạo mới thành công",
                 statusCode: StatusCodes.Status200OK
             );
         }
