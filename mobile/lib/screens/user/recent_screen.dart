@@ -11,7 +11,7 @@ class RecentScreen extends StatelessWidget {
         title: const Text('Gần đây'),
         backgroundColor: Colors.green,
       ),
-      showBottomNav: true,
+      showBottomNav: false,
       body: const Center(child: Text('Màn hình Gần đây')),
     );
   }

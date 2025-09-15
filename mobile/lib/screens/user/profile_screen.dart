@@ -11,7 +11,7 @@ class ProfileScreen extends StatelessWidget {
         title: const Text('Tài khoản'),
         backgroundColor: Colors.green,
       ),
-      showBottomNav: true,
+      showBottomNav: false,
       body: const Center(child: Text('Màn hình Tài khoản')),
     );
   }

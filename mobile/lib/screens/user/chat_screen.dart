@@ -11,7 +11,7 @@ class ChatScreen extends StatelessWidget {
         title: const Text('Trò chuyện'),
         backgroundColor: Colors.green,
       ),
-      showBottomNav: true,
+      showBottomNav: false,
       body: const Center(child: Text('Màn hình Trò chuyện')),
     );
   }
