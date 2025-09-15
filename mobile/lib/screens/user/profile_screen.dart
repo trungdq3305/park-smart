@@ -7,10 +7,6 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: AppBar(
-        title: const Text('Tài khoản'),
-        backgroundColor: Colors.green,
-      ),
       showBottomNav: false,
       body: const Center(child: Text('Màn hình Tài khoản')),
     );

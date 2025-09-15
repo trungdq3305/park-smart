@@ -7,10 +7,6 @@ class SearchScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: AppBar(
-        title: const Text('Tìm kiếm'),
-        backgroundColor: Colors.green,
-      ),
       showBottomNav: false,
       body: const Center(child: Text('Màn hình Tìm kiếm')),
     );

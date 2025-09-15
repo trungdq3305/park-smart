@@ -35,13 +35,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: AppBar(
-        title: const Text("Trang chủ"),
-        backgroundColor: Colors.green,
-        actions: [
-          IconButton(onPressed: _logout, icon: const Icon(Icons.logout)),
-        ],
-      ),
       showBottomNav: false,
       body: Center(
         child: token == null
@@ -49,6 +42,22 @@ class _HomeScreenState extends State<HomeScreen> {
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Trang chủ",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _logout,
+                        icon: const Icon(Icons.logout),
+                      ),
+                    ],
+                  ),
                   const Text(
                     "Chào mừng bạn đã đăng nhập!",
                     style: TextStyle(fontSize: 20),

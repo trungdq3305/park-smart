@@ -7,10 +7,6 @@ class ChatScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      appBar: AppBar(
-        title: const Text('Trò chuyện'),
-        backgroundColor: Colors.green,
-      ),
       showBottomNav: false,
       body: const Center(child: Text('Màn hình Trò chuyện')),
     );
