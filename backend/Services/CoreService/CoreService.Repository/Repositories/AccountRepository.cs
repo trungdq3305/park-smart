@@ -44,7 +44,7 @@ namespace CoreService.Repository.Repositories
 
         public async Task<Account> GetByRefreshTokenAsync(string emailConfirmToken)
         {
-            return await _users.Find(x => x.EmailConfirmToken == emailConfirmToken).FirstOrDefaultAsync();
+            return await _users.Find(x => x.RefreshToken == emailConfirmToken).FirstOrDefaultAsync();
         }
         public async Task<Account?> GetByPasswordResetTokenAsync(string token)
         {
