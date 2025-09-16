@@ -34,19 +34,19 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpGet("google-login")]
-        [AllowAnonymous]
-        public IActionResult GoogleLogin()
-        {
-            var state = Guid.NewGuid().ToString("N");
-            _memoryCache.Set(state, true, TimeSpan.FromMinutes(10));
+        //[HttpGet("google-login")]
+        //[AllowAnonymous]
+        //public IActionResult GoogleLogin()
+        //{
+        //    var state = Guid.NewGuid().ToString("N");
+        //    _memoryCache.Set(state, true, TimeSpan.FromMinutes(10));
 
-            var props = new AuthenticationProperties
-            {
-                RedirectUri = "/core/auths/google-callback"
-            };
-            return Challenge(props, GoogleDefaults.AuthenticationScheme);
-        }
+        //    var props = new AuthenticationProperties
+        //    {
+        //        RedirectUri = "/core/auths/google-callback"
+        //    };
+        //    return Challenge(props, GoogleDefaults.AuthenticationScheme);
+        //}
         [HttpPost("driver-register")]
         public async Task<IActionResult> DriverRegister(DriverRegisterRequest request)
         {
@@ -112,46 +112,46 @@ namespace KLTN.CoreService.API.Controllers
             var response = await _authApplication.ChangePasswordAsync(accountId, dto);
             return StatusCode(response.StatusCode, response);
         }
-        [HttpGet("google-callback")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GoogleCallback()
-        {
-            // Đọc thông tin từ Cookie (middleware đã set)
-            var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        //[HttpGet("google-callback")]
+        //[AllowAnonymous]
+        //public async Task<IActionResult> GoogleCallback()
+        //{
+        //    // Đọc thông tin từ Cookie (middleware đã set)
+        //    var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
-            if (!authenticateResult.Succeeded)
-                return Unauthorized("Authentication failed.");
+        //    if (!authenticateResult.Succeeded)
+        //        return Unauthorized("Authentication failed.");
 
-            var claims = authenticateResult.Principal.Claims.ToList();
-            var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-            var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+        //    var claims = authenticateResult.Principal.Claims.ToList();
+        //    var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        //    var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
 
-            if (string.IsNullOrEmpty(email))
-                return BadRequest("Email not provided by Google");
+        //    if (string.IsNullOrEmpty(email))
+        //        return BadRequest("Email not provided by Google");
 
-            // Xử lý đăng nhập / tạo account nếu cần
-            var response = await _authApplication.HandleGoogleLoginAsync(email, name);
+        //    // Xử lý đăng nhập / tạo account nếu cần
+        //    var response = await _authApplication.HandleGoogleLoginAsync(email, name);
 
-            // Nếu login thành công, tạo URL để frontend redirect
-            // Ví dụ: gửi token qua query string
-            var frontendUrl = $"http://localhost:3000/login-success?token={response.Data}";
+        //    // Nếu login thành công, tạo URL để frontend redirect
+        //    // Ví dụ: gửi token qua query string
+        //    var frontendUrl = $"http://localhost:3000/login-success?token={response.Data}";
 
-            // Optionally: re-sign cookie để extend session
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = true,
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
-            };
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties
-            );
+        //    // Optionally: re-sign cookie để extend session
+        //    var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        //    var authProperties = new AuthenticationProperties
+        //    {
+        //        IsPersistent = true,
+        //        ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1)
+        //    };
+        //    await HttpContext.SignInAsync(
+        //        CookieAuthenticationDefaults.AuthenticationScheme,
+        //        new ClaimsPrincipal(claimsIdentity),
+        //        authProperties
+        //    );
 
-            // Trả về JSON chứa URL
-            return Redirect(frontendUrl);
-        }
+        //    // Trả về JSON chứa URL
+        //    return Redirect(frontendUrl);
+        //}
 
 
     }
