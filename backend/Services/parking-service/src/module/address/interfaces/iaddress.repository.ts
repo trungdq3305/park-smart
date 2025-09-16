@@ -16,6 +16,7 @@ export interface IAddressRepository {
     userId: string,
   ): Promise<Address | null>
   deleteAddress(id: string, userId: string): Promise<boolean>
+  setAddressAsUsed(id: string): Promise<Address | null>
 }
 
 export const IAddressRepository = Symbol('IAddressRepository')

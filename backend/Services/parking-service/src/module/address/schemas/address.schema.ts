@@ -24,6 +24,9 @@ export class Address extends BaseEntity {
 
   @Prop({ type: String, required: true, trim: true })
   fullAddress: string
+
+  @Prop({ type: String, required: true, trim: true, default: false })
+  isUsed: boolean
 }
 
 export const AddressSchema = SchemaFactory.createForClass(Address)

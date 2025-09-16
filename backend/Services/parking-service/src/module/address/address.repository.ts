@@ -82,4 +82,18 @@ export class AddressRepository implements IAddressRepository {
     )
     return result.modifiedCount > 0
   }
+
+  async setAddressAsUsed(id: string): Promise<Address | null> {
+    return this.addressModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            isUsed: true,
+          },
+        },
+        { new: true },
+      )
+      .exec()
+  }
 }
