@@ -8,7 +8,10 @@ namespace CoreService.Application.DTOs.AuthDtos
 {
     public class ConfirmForgotRequest
     {
-        public string Token { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Code { get; set; } = string.Empty; // OTP 6 số
         public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
+
 }

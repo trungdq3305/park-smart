@@ -38,18 +38,20 @@ namespace CoreService.Application.Applications
         }
 
 
-        public async Task SendPasswordResetAsync(string email, string resetLink)
+        public async Task SendPasswordResetOtpAsync(string email, string code)
         {
-            var subject = "Đặt lại mật khẩu";
+            var subject = "Mã OTP đặt lại mật khẩu";
             var body = $@"
-                <h2>Đặt lại mật khẩu</h2>
-                <p>Chào bạn,</p>
-                <p>Nhấn vào liên kết bên dưới để đặt lại mật khẩu:</p>
-                <p><a href='{resetLink}' style='background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Đặt lại mật khẩu</a></p>
-                <p>Liên kết này sẽ hết hạn sau 1 giờ.</p>";
+        <h2>Đặt lại mật khẩu</h2>
+        <p>Chào bạn,</p>
+        <p>Mã OTP đặt lại mật khẩu của bạn là:</p>
+        <p style='font-size:24px; font-weight:bold; letter-spacing:4px;'>{code}</p>
+        <p>Mã có hiệu lực trong 10 phút. Không chia sẻ mã với bất kỳ ai.</p>
+        <p>Trân trọng,<br/>{_emailSettings.FromName}</p>";
 
             await SendEmailAsync(email, subject, body);
         }
+
 
         public async Task SendPasswordChangeConfirmationAsync(string email, string confirmationLink)
         {
