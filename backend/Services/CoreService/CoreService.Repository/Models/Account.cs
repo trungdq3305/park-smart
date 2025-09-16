@@ -27,9 +27,13 @@ namespace CoreService.Repository.Models
 
         public DateTime? LastLoginAt { get; set; }
 
-        public string EmailConfirmToken { get; set; }
-
-        public DateTime? EmailConfirmTokenExpiresAt { get; set; }
+        public string EmailOtpHash { get; set; }         
+        
+        public DateTime? EmailOtpExpiresAt { get; set; }      
+        
+        public int EmailOtpAttemptCount { get; set; }  
+        
+        public DateTime? EmailOtpLastSentAt { get; set; }
 
         public string PasswordResetToken { get; set; }
 

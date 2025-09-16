@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static CoreService.Application.Applications.AuthApplication;
 
 namespace CoreService.Application.Interfaces
 {
@@ -15,7 +16,7 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<string>> DriverRegisterAsync(DriverRegisterRequest request);
         Task<ApiResponse<string>> OperatorRegisterAsync(OperatorRegisterRequest request);
         Task<ApiResponse<string>> CreateAdminAsync(CreateAdminRequest request);
-        Task<ApiResponse<string>> ConfirmEmailAsync(string token);
+        Task<ApiResponse<string>> ConfirmEmailAsync(ConfirmEmailByCodeRequest request);
         Task<ApiResponse<string>> ResendConfirmationAsync(string email);
         Task<ApiResponse<string>> ConfirmOperatorAsync(string id);
         Task<ApiResponse<string>> ForgotPasswordAsync(string email);
