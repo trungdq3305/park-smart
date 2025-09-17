@@ -8,7 +8,15 @@ services:
     image: coreservice 
     container_name: coreservice
     ports:
-      - "5001:8080"
+      - "5001:8080" 
+      - "8443:8443"    # publish HTTPS riêng
+    environment:
+      - ASPNETCORE_URLS=http://+:8080;https://+:8443
+      - Kestrel__Certificates__Default__Path=/https/certs/parksmart.pfx
+      - Kestrel__Certificates__Default__Password=TTt@192004   # giống Ocelot
+    volumes:
+      - /etc/ssl/ocelot/parksmart.pfx:/https/certs/parksmart.pfx:ro
+      - core_keys:/keys
     networks:
       - backend
 
@@ -53,6 +61,8 @@ services:
       - backend    
 
 
+volumes:
+  core_keys:
 
 networks:
   backend:
