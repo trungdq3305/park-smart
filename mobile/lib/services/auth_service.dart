@@ -51,14 +51,14 @@ class AuthService {
 
   Future<Map<String, dynamic>> confirmRegister({
     required String email,
-    required String otpCode,
+    required String code,
   }) async {
     final url = Uri.parse('$baseUrl/core/auths/register-confirm');
 
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'otpCode': otpCode}),
+      body: jsonEncode({'email': email, 'code': code}),
     );
 
     if (response.statusCode == 200) {
@@ -71,10 +71,9 @@ class AuthService {
   Future<Map<String, dynamic>> googleLogin(String idToken) async {
     final url = Uri.parse('$baseUrl/api/auths/google-login');
 
-    final response = await http.post(
+    final response = await http.get(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'idToken': idToken}),
     );
 
     if (response.statusCode == 200) {

@@ -12,7 +12,7 @@ import 'screens/main/main_wrapper.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load biến môi trường
+  // Load biến môi trường - tạm thời comment vì không có file .env
   await dotenv.load(fileName: ".env");
 
   // ✅ Gán HttpOverrides (không cần async, không cần create())
