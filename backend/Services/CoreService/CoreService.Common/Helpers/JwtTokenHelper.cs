@@ -32,9 +32,9 @@ namespace CoreService.Common.Helpers
         {
             var claims = new List<Claim>
             {
-                new Claim("id", acc.Id.ToString()),
-                new Claim("email", acc.Email),
-                new Claim("phoneNumber", acc.PhoneNumber)
+                new Claim("id", acc.Id.ToString() ?? ""),
+                new Claim("email", acc.Email ?? ""),
+                new Claim("phoneNumber", acc.PhoneNumber ?? "")
             };
             var driver = _driverRepo.GetByAccountIdAsync(acc.Id).Result;
             // Gắn thêm thông tin chi tiết dựa vào role
@@ -46,7 +46,7 @@ namespace CoreService.Common.Helpers
                     claims.Add(new Claim("role", "Driver"));
                     claims.Add(new Claim("driverId", driver.Id ?? ""));
                     claims.Add(new Claim("fullName", driver.FullName ?? ""));
-                    claims.Add(new Claim("gender", driver.Gender.ToString()));
+                    claims.Add(new Claim("gender", driver.Gender.ToString() ?? ""));
                 }
             }
             else
