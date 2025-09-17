@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/services/user_service.dart';
+import 'package:mobile/widgets/app_scaffold.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   final Map<String, dynamic> claims;
@@ -87,7 +88,29 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppScaffold(
+      showBottomNav: true,
+      currentIndex: 4, // Profile tab index (last tab)
+      onTapBottomNav: (index) {
+        // Handle bottom navigation
+        switch (index) {
+          case 0:
+            Navigator.pushReplacementNamed(context, '/home');
+            break;
+          case 1:
+            Navigator.pushReplacementNamed(context, '/parking');
+            break;
+          case 2:
+            Navigator.pushReplacementNamed(context, '/tickets');
+            break;
+          case 3:
+            Navigator.pushReplacementNamed(context, '/history');
+            break;
+          case 4:
+            // Already on profile page
+            break;
+        }
+      },
       appBar: AppBar(
         title: const Text('Thông tin cá nhân'),
         backgroundColor: Colors.green,
