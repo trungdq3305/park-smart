@@ -23,10 +23,10 @@ namespace CoreService.Repository.Repositories
         }
 
         public async Task<Driver?> GetByIdAsync(string id) =>
-            await _collection.Find(e => e.Id == id).FirstOrDefaultAsync();
+            await _collection.Find(e => e.Id == id && e.DeletedAt == null).FirstOrDefaultAsync();
 
         public async Task<IEnumerable<Driver>> GetAllAsync() =>
-            await _collection.Find(_ => true).ToListAsync();
+            await _collection.Find(e => e.DeletedAt == null).ToListAsync();
 
         public async Task AddAsync(Driver entity) =>
             await _collection.InsertOneAsync(entity);
@@ -36,5 +36,8 @@ namespace CoreService.Repository.Repositories
 
         public async Task DeleteAsync(string id) =>
             await _collection.DeleteOneAsync(e => e.Id == id);
+        public async Task<Driver?> GetByAccountIdAsync(string accountId) =>
+    await _collection.Find(d => d.AccountId == accountId && d.DeletedAt == null).FirstOrDefaultAsync();
+
     }
 }

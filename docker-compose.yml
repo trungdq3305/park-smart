@@ -1,0 +1,71 @@
+version: "3.9"
+
+services:
+  coreservice:
+    build:
+      context: .
+      dockerfile: backend/Services/CoreService/Dockerfile
+    image: coreservice 
+    container_name: coreservice
+    ports:
+      - "5001:8080" 
+      - "8443:8443"    # publish HTTPS riêng
+    env_file:
+      - ./backend/Services/CoreService/.env 
+    environment:
+      - ASPNETCORE_URLS=http://+:8080;https://+:8443
+      - Kestrel__Certificates__Default__Path=/https/certs/parksmart.pfx
+      - Kestrel__Certificates__Default__Password=TTt@192004   # giống Ocelot
+    volumes:
+      - /etc/ssl/ocelot/parksmart.pfx:/https/certs/parksmart.pfx:ro
+      - core_keys:/keys
+    networks:
+      - backend
+
+  parkingservice:
+    build:
+      context: ./backend/Services/parking-service 
+      dockerfile: Dockerfile
+    image: parkingservice
+    container_name: parkingservice
+    env_file:
+      - ./backend/Services/parking-service/.env
+    ports:
+      - "5000:5000"
+    networks:
+      - backend
+
+  ocelotgateway:
+    build:
+      context: .
+      dockerfile: backend/Gateway/OcelotGateway/Dockerfile
+    image: ocelotgateway
+    container_name: ocelotgateway
+    depends_on:
+      - coreservice
+      - parkingservice
+    ports:
+      - "80:8080"
+      - "443:8443"
+    volumes:
+      - /etc/ssl/ocelot/parksmart.pfx:/https/certs/parksmart.pfx:ro
+    environment:
+      - ASPNETCORE_URLS=http://+:8080;https://+:8443
+      - Kestrel__Certificates__Default__Path=/https/certs/parksmart.pfx
+      - Kestrel__Certificates__Default__Password=TTt@192004
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "https://localhost:8443/"]  # endpoint nhẹ
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - backend    
+
+
+volumes:
+  core_keys:
+
+networks:
+  backend:
+    driver: bridge

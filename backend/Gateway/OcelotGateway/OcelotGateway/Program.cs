@@ -9,7 +9,18 @@ builder.Configuration.AddJsonFile("ocelot.json", optional: false, reloadOnChange
 builder.Services.AddOcelot();
 
 var app = builder.Build();
-
+// Redirect t?t c? HTTP sang HTTPS (gi? 80 ch? ?? redirect)
+app.Use(async (ctx, next) =>
+{
+    if (!ctx.Request.IsHttps)
+    {
+        var host = ctx.Request.Host.Host;
+        var path = $"{ctx.Request.Path}{ctx.Request.QueryString}";
+        ctx.Response.Redirect($"https://{host}{path}", permanent: true);
+        return;
+    }
+    await next();
+});
 await app.UseOcelot();   // Ocelot vào pipeline ??u
 
 app.Run();

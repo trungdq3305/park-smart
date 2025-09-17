@@ -11,17 +11,17 @@ import { firstValueFrom } from 'rxjs'
 import { IAddressRepository } from './interfaces/iaddress.repository'
 import { IAddressService } from './interfaces/iaddress.service'
 import { IWardRepository } from '../ward/interfaces/iward.repository'
-import { CreateAddressDto } from './dto/createAddress.dto'
-import { UpdateAddressDto } from './dto/updateAddress.dto'
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
-import { isMongoId } from 'class-validator'
-import { AddressResponseDto } from './dto/addressResponse.dto'
-// Định nghĩa type ở đây hoặc import từ file khác
+import {
+  AddressResponseDto,
+  CreateAddressDto,
+  UpdateAddressDto,
+} from './dto/address.dto'
+import { Address } from './schemas/address.schema'
+import { plainToInstance } from 'class-transformer'
+// Giữ lại các type cho Nominatim
 interface NominatimLocation {
   lat: string
   lon: string
-  display_name: string
-  place_id: number
 }
 type NominatimResponse = NominatimLocation[]
 
@@ -30,19 +30,27 @@ export class AddressService implements IAddressService {
   constructor(
     @Inject(IAddressRepository)
     private readonly addressRepository: IAddressRepository,
-    @Inject(IWardRepository)
-    private readonly wardRepository: IWardRepository,
+    @Inject(IWardRepository) private readonly wardRepository: IWardRepository,
     private readonly httpService: HttpService,
   ) {}
 
   cityName = 'Thành phố Hồ Chí Minh'
+
+  private returnAddressResponseDto(address: Address): AddressResponseDto {
+    return plainToInstance(AddressResponseDto, address, {
+      excludeExtraneousValues: true,
+    })
+  }
 
   private async getCoordinatesFromAddress(
     address: string,
     wardId: string,
   ): Promise<{ latitude: number; longitude: number }> {
     const wardName = await this.wardRepository.getWardNameById(wardId)
-    const fullAddress = this.cityName + ' ' + wardName + ' ' + address
+    if (!wardName) {
+      throw new NotFoundException('WardId không tồn tại')
+    }
+    const fullAddress = this.cityName + ', ' + wardName + ', ' + address
     const encodedAddress = encodeURIComponent(fullAddress)
     const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodedAddress}`
 
@@ -73,7 +81,7 @@ export class AddressService implements IAddressService {
       if (!locations || locations.length === 0) {
         // <-- Sửa ở đây
         throw new HttpException(
-          `Không thể tìm thấy địa chỉ: "${address}"`,
+          `Không thể tìm thấy địa chỉ: "${fullAddress}"`,
           HttpStatus.BAD_REQUEST,
         )
       }
@@ -95,83 +103,51 @@ export class AddressService implements IAddressService {
     }
   }
 
-  async findAllAddresses(): Promise<ApiResponseDto<AddressResponseDto>> {
+  async findAllAddresses(): Promise<AddressResponseDto[]> {
     const addresses = await this.addressRepository.findAllAddresses()
     if (!addresses) {
       throw new NotFoundException('Không tìm thấy địa chỉ nào')
     }
-    return {
-      data: addresses.map((address) => new AddressResponseDto(address)),
-      message: 'Tìm thấy địa chỉ thành công',
-      statusCode: HttpStatus.OK,
-      success: true,
-    }
+    return addresses.map((address) => this.returnAddressResponseDto(address))
   }
 
-  async findAddressById(
-    id: string,
-  ): Promise<ApiResponseDto<AddressResponseDto>> {
-    if (!isMongoId(id)) {
-      throw new BadRequestException('ID không hợp lệ')
-    }
+  async findAddressById(id: string): Promise<AddressResponseDto> {
     const address = await this.addressRepository.findAddressById(id)
     if (!address) {
       throw new NotFoundException('Không tìm thấy địa chỉ')
     }
-    return {
-      data: [new AddressResponseDto(address)],
-      statusCode: HttpStatus.OK,
-      message: 'Tìm thấy địa chỉ thành công',
-      success: true,
-    }
+    return this.returnAddressResponseDto(address)
   }
 
   async createAddress(
     createAddressDto: CreateAddressDto,
     userId: string,
-  ): Promise<ApiResponseDto<AddressResponseDto>> {
+  ): Promise<AddressResponseDto> {
     const coordinates = await this.getCoordinatesFromAddress(
       createAddressDto.fullAddress,
       createAddressDto.wardId,
     )
-    if (!coordinates) {
-      throw new NotFoundException('Địa chỉ không tồn tại')
-    }
 
     const address = await this.addressRepository.createAddress(
       createAddressDto,
       coordinates,
       userId,
     )
-
     if (!address) {
       throw new BadRequestException('Không thể tạo địa chỉ')
     }
-    return {
-      data: [new AddressResponseDto(address)],
-      message: 'Address created successfully',
-      statusCode: HttpStatus.OK,
-      success: true,
-    }
+    return this.returnAddressResponseDto(address)
   }
 
   async updateAddress(
     id: string,
     updateAddressDto: UpdateAddressDto,
     userId: string,
-  ): Promise<ApiResponseDto<AddressResponseDto>> {
-    if (!isMongoId(id)) {
-      throw new BadRequestException('ID không hợp lệ')
-    }
-
+  ): Promise<AddressResponseDto> {
     const coordinates = await this.getCoordinatesFromAddress(
       updateAddressDto.fullAddress,
       updateAddressDto.wardId,
     )
-
-    if (!coordinates) {
-      throw new NotFoundException('Địa chỉ không tồn tại')
-    }
 
     const address = await this.addressRepository.updateAddress(
       id,
@@ -182,32 +158,14 @@ export class AddressService implements IAddressService {
     if (!address) {
       throw new NotFoundException('Không tìm thấy địa chỉ')
     }
-    return {
-      data: [new AddressResponseDto(address)],
-      message: 'Cập nhật địa chỉ thành công',
-      statusCode: HttpStatus.OK,
-      success: true,
-    }
+    return this.returnAddressResponseDto(address)
   }
 
-  async deleteAddress(
-    id: string,
-    userId: string,
-  ): Promise<ApiResponseDto<boolean>> {
-    if (!isMongoId(id)) {
-      throw new BadRequestException('ID không hợp lệ')
-    }
+  async deleteAddress(id: string, userId: string): Promise<boolean> {
     const result = await this.addressRepository.deleteAddress(id, userId)
-
     if (!result) {
       throw new BadRequestException('Xóa địa chỉ thất bại')
     }
-
-    return {
-      data: [result],
-      message: 'Xóa địa chỉ thành công',
-      statusCode: HttpStatus.OK,
-      success: true,
-    }
+    return result
   }
 }

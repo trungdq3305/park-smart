@@ -1,6 +1,5 @@
 import mongoose, { Model } from 'mongoose'
-import { CreateAddressDto } from './dto/createAddress.dto'
-import { UpdateAddressDto } from './dto/updateAddress.dto'
+import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto'
 import { Address } from './schemas/address.schema'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
@@ -18,11 +17,12 @@ export class AddressRepository implements IAddressRepository {
     userId: string,
   ): Promise<Address> {
     const createdAddress = new this.addressModel({
-      ...createAddressDto,
+      fullAddress: createAddressDto.fullAddress,
+      wardId: createAddressDto.wardId,
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
-      created_at: new Date(),
-      created_by: new mongoose.Types.ObjectId(userId),
+      // createdAt sẽ được quản lý bởi Mongoose timestamps
+      createdBy: new mongoose.Types.ObjectId(userId),
     })
     return createdAddress.save()
   }
@@ -32,7 +32,7 @@ export class AddressRepository implements IAddressRepository {
       .find()
       .populate({
         path: 'wardId',
-        select: 'ward_name',
+        select: 'wardName',
       })
       .exec()
   }
@@ -42,7 +42,7 @@ export class AddressRepository implements IAddressRepository {
       .findById(id)
       .populate({
         path: 'wardId',
-        select: 'ward_name -_id',
+        select: 'wardName',
       })
       .exec()
   }
@@ -57,11 +57,13 @@ export class AddressRepository implements IAddressRepository {
       .findByIdAndUpdate(
         id,
         {
-          ...updateAddressDto,
-          latitude: coordinates.latitude,
-          longitude: coordinates.longitude,
-          updated_at: new Date(),
-          updated_by: userId,
+          $set: {
+            // Thêm $set để an toàn hơn
+            ...updateAddressDto,
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+            updatedBy: new mongoose.Types.ObjectId(userId),
+          },
         },
         { new: true },
       )
@@ -69,12 +71,15 @@ export class AddressRepository implements IAddressRepository {
   }
 
   async deleteAddress(id: string, userId: string): Promise<boolean> {
-    const result = await this.addressModel
-      .findByIdAndUpdate(id, {
-        deleted_at: new Date(),
-        deleted_by: new mongoose.Types.ObjectId(userId),
-      })
-      .exec()
-    return result !== null
+    const result = await this.addressModel.updateOne(
+      { _id: id },
+      {
+        $set: {
+          deletedAt: new Date(),
+          deletedBy: new mongoose.Types.ObjectId(userId),
+        },
+      },
+    )
+    return result.modifiedCount > 0
   }
 }

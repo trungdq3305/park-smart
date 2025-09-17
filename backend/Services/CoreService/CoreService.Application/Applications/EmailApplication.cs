@@ -23,32 +23,35 @@ namespace CoreService.Application.Applications
             _logger = logger;
         }
 
-        public async Task SendEmailConfirmationAsync(string email, string confirmationLink)
+        public async Task SendEmailConfirmationCodeAsync(string email, string code)
         {
-            var subject = "Xác nhận tài khoản";
+            var subject = "Mã xác nhận tài khoản (OTP)";
             var body = $@"
-                <h2>Xác nhận tài khoản của bạn</h2>
-                <p>Chào bạn,</p>
-                <p>Cảm ơn bạn đã đăng ký tài khoản. Vui lòng nhấn vào liên kết bên dưới để xác nhận email:</p>
-                <p><a href='{confirmationLink}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Xác nhận Email</a></p>
-                <p>Liên kết này sẽ hết hạn sau 24 giờ.</p>
-                <p>Trân trọng,<br/>{_emailSettings.FromName}</p>";
+        <h2>Mã xác nhận tài khoản của bạn</h2>
+        <p>Chào bạn,</p>
+        <p>Mã xác nhận (OTP) của bạn là:</p>
+        <p style='font-size:24px; font-weight:bold; letter-spacing:4px;'>{code}</p>
+        <p>Mã có hiệu lực trong 10 phút. Không chia sẻ mã với bất kỳ ai.</p>
+        <p>Trân trọng,<br/>{_emailSettings.FromName}</p>";
 
             await SendEmailAsync(email, subject, body);
         }
 
-        public async Task SendPasswordResetAsync(string email, string resetLink)
+
+        public async Task SendPasswordResetOtpAsync(string email, string code)
         {
-            var subject = "Đặt lại mật khẩu";
+            var subject = "Mã OTP đặt lại mật khẩu";
             var body = $@"
-                <h2>Đặt lại mật khẩu</h2>
-                <p>Chào bạn,</p>
-                <p>Nhấn vào liên kết bên dưới để đặt lại mật khẩu:</p>
-                <p><a href='{resetLink}' style='background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Đặt lại mật khẩu</a></p>
-                <p>Liên kết này sẽ hết hạn sau 1 giờ.</p>";
+        <h2>Đặt lại mật khẩu</h2>
+        <p>Chào bạn,</p>
+        <p>Mã OTP đặt lại mật khẩu của bạn là:</p>
+        <p style='font-size:24px; font-weight:bold; letter-spacing:4px;'>{code}</p>
+        <p>Mã có hiệu lực trong 10 phút. Không chia sẻ mã với bất kỳ ai.</p>
+        <p>Trân trọng,<br/>{_emailSettings.FromName}</p>";
 
             await SendEmailAsync(email, subject, body);
         }
+
 
         public async Task SendPasswordChangeConfirmationAsync(string email, string confirmationLink)
         {

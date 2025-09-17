@@ -23,16 +23,15 @@ namespace CoreService.Repository.Repositories
         }
 
         public async Task<Account?> GetByIdAsync(string id) =>
-            await _users.Find(u => u.Id == id).FirstOrDefaultAsync();
-
+            await _users.Find(u => u.Id == id && u.DeletedAt == null).FirstOrDefaultAsync();
         public async Task<Account?> GetByEmailAsync(string email) =>
-            await _users.Find(u => u.Email == email).FirstOrDefaultAsync();
+            await _users.Find(u => u.Email == email && u.DeletedAt == null).FirstOrDefaultAsync();
         public async Task<Account?> GetByPhoneAsync(string phone) =>
-            await _users.Find(u => u.PhoneNumber == phone).FirstOrDefaultAsync();
+            await _users.Find(u => u.PhoneNumber == phone && u.DeletedAt == null).FirstOrDefaultAsync();
         public async Task<Account?> GetActivedByEmailAsync(string email) =>
             await _users.Find(u => u.Email == email && u.IsActive == true).FirstOrDefaultAsync();
         public async Task<IEnumerable<Account>> GetAllAsync() =>
-            await _users.Find(_ => true).ToListAsync();
+            await _users.Find(u => u.DeletedAt == null).ToListAsync();
 
         public async Task AddAsync(Account user) =>
             await _users.InsertOneAsync(user);
@@ -45,12 +44,13 @@ namespace CoreService.Repository.Repositories
 
         public async Task<Account> GetByRefreshTokenAsync(string emailConfirmToken)
         {
-            return await _users.Find(x => x.EmailConfirmToken == emailConfirmToken).FirstOrDefaultAsync();
+            return await _users.Find(x => x.RefreshToken == emailConfirmToken).FirstOrDefaultAsync();
         }
         public async Task<Account?> GetByPasswordResetTokenAsync(string token)
         {
             return await _users.Find(x => x.PasswordResetToken == token).FirstOrDefaultAsync();
         }
-
+        public async Task<Account?> GetByPhoneNumberAsync(string phoneNumber) =>
+    await _users.Find(a => a.PhoneNumber == phoneNumber).FirstOrDefaultAsync();
     }
 }

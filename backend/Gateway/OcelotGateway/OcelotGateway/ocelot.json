@@ -1,80 +1,204 @@
 {
   "Routes": [
-    // ===== CoreService (AuthController) =====
     {
-      "DownstreamPathTemplate": "/auth/{everything}",
+      "DownstreamPathTemplate": "/__whoami",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 3000
+          "Host": "coreservice",
+          "Port": 8080
         }
       ],
-      "UpstreamPathTemplate": "/core/auth/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+      "UpstreamPathTemplate": "/core/__whoami",
+      "UpstreamHttpMethod": [ "GET" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
     },
-
-    // ===== Swagger cho CoreService =====
+    {
+      "DownstreamPathTemplate": "/api/auths/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/auths/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/accounts/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/accounts/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/drivers/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/drivers/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/operators/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/operators/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/api/admins/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/admins/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 3000
+          "Host": "coreservice",
+          "Port": 8080
         }
       ],
       "UpstreamPathTemplate": "/core/swagger/{everything}",
       "UpstreamHttpMethod": ["GET"]
     },
-    // ===== ParkingService (AddressController, WardController) =====
+    //{
+    //  "DownstreamPathTemplate": "/signin-google",
+    //  "DownstreamScheme": "http",
+    //  "DownstreamHostAndPorts": [
+    //    {
+    //      "Host": "coreservice",
+    //      "Port": 8080
+    //    }
+    //  ],
+    //  "UpstreamPathTemplate": "/signin-google",
+    //  "UpstreamHttpMethod": [ "GET", "POST" ],
+    //  "AddHeadersToRequest": {
+    //    "X-Forwarded-Proto": "https",
+    //    "X-Forwarded-Host": "parksmarthcmc.io.vn"
+    //  }
+    //},
     {
-      // Route này sẽ bắt tất cả các request đến /addresses, /addresses/{id}, ...
       "DownstreamPathTemplate": "/addresses/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Host": "parkingservice",
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/addresses/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
     },
     {
-      // Route cho WardController
       "DownstreamPathTemplate": "/wards",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Host": "parkingservice",
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/wards",
       "UpstreamHttpMethod": ["GET"]
     },
     {
-      // Route cho AppController (health check)
+      "DownstreamPathTemplate": "/brands/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/brands/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/vehicle-types/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/vehicle-types/{everything}",
+      "UpstreamHttpMethod": ["GET"]
+    },
+    {
+      "DownstreamPathTemplate": "/colors/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/colors/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/vehicles/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/vehicles/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+    },
+    {
       "DownstreamPathTemplate": "/",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "localhost",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Host": "parkingservice",
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/",
       "UpstreamHttpMethod": ["GET"]
     },
-    // ===== Swagger cho ParkingService =====
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5000 // <-- THAY ĐỔI PORT NÀY NẾU CẦN
+          "Port": 5000
         }
       ],
       "UpstreamPathTemplate": "/parking/swagger/{everything}",
@@ -82,6 +206,6 @@
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:1000"
+    "BaseUrl": "https://parksmarthcmc.io.vn"
   }
 }

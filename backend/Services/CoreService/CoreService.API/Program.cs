@@ -1,45 +1,109 @@
 using CoreService.Application;
+using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.AuthDtos;
 using CoreService.Application.DTOs.EmailDtos;
 using CoreService.Common.Helpers;
 using CoreService.Repository;
 using Dotnet.Shared.Extensions;
 using Dotnet.Shared.Mongo;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
 using System.Security.Claims;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo("/keys"))
+    .SetApplicationName("CoreServiceAuth");
+builder.Services.AddMemoryCache();
+
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 // Add services to the container.
+builder.Services.AddHttpContextAccessor();
 builder.Services
 .AddRepository()
 .AddService();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 builder.Services.AddScoped<JwtTokenHelper>();
 // Authentication + JWT
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.Configure<AppSecurityOptions>(
+    builder.Configuration.GetSection("AppSecurity"));
+// Authentication + JWT + Google + Cookie
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        RoleClaimType = ClaimTypes.Role,
+        NameClaimType = "email"
+    };
+})
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, o =>
+{
+    o.Cookie.Name = "AuthCookie";
+    o.Cookie.SameSite = SameSiteMode.None;
+    o.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    o.Cookie.Path = "/";                 // <- THÊM DÒNG NÀY
+})
+.AddGoogle(o =>
+{
+    o.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    o.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+    o.CallbackPath = "/signin-google";
+    o.SaveTokens = true;
+
+    o.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    o.CorrelationCookie.SameSite = SameSiteMode.None;
+    o.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+    o.CorrelationCookie.Path = "/";
+
+    o.UsePkce = false; // T?M TH?I. Khi ch?y ok thì ??i thành true.
+
+    // Log l?i rõ ràng (không ép redirect_uri!)
+    o.Events = new Microsoft.AspNetCore.Authentication.OAuth.OAuthEvents
+    {
+        OnRemoteFailure = ctx =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true, // Nên b?t ?? ki?m tra token h?t h?n
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+            var msg = Uri.EscapeDataString(ctx.Failure?.Message ?? "unknown");
+            ctx.Response.Redirect("/api/auths/google-callback?error=" + msg);
+            ctx.HandleResponse();
+            return Task.CompletedTask;
+        }
+    };
+});
 
-            RoleClaimType = ClaimTypes.Role,
-            NameClaimType = "email"   //User.Identity.Name = email
-        };
-    });
-
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 // Swagger + JWT support
 builder.Services.AddSwaggerGen(option =>
 {
@@ -55,27 +119,9 @@ builder.Services.AddSwaggerGen(option =>
         Scheme = "bearer",
         BearerFormat = "JWT"
     });
-
-    //option.AddSecurityRequirement(new OpenApiSecurityRequirement
-    //{
-    //    {
-    //        new OpenApiSecurityScheme
-    //        {
-    //            Reference = new OpenApiReference
-    //            {
-    //                Type = ReferenceType.SecurityScheme,
-    //                Id = "Bearer"
-    //            }
-    //        },
-    //        Array.Empty<string>()
-    //    }
-    //});
     option.OperationFilter<AuthorizeCheckOperationFilter>(); // <-- Thêm dòng này
 
 });
-
-
-
 
 builder.Services.AddHttpClients(builder.Configuration);
 
@@ -97,19 +143,42 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
     options.SuppressModelStateInvalidFilter = true; // ? Không ?? framework t? return 400
 });
 var app = builder.Build();
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
+    KnownNetworks = { },   // ch?y Docker nên ?? tr?ng
+    KnownProxies = { }
+});
+app.Use((ctx, next) =>
+{
+    var proto = ctx.Request.Headers["X-Forwarded-Proto"].ToString();
+    var host = ctx.Request.Headers["X-Forwarded-Host"].ToString();
+    if (!string.IsNullOrEmpty(proto)) ctx.Request.Scheme = proto;
+    if (!string.IsNullOrEmpty(host)) ctx.Request.Host = new HostString(host);
+    return next();
+});
+app.MapGet("/__whoami", (HttpRequest r) => Results.Json(new
+{
+    r.Scheme,
+    Host = r.Host.ToString(),
+    XFP = r.Headers["X-Forwarded-Proto"].ToString(),
+    XFHost = r.Headers["X-Forwarded-Host"].ToString()
+}));
+
 using (var scope = app.Services.CreateScope())
 {
     var database = scope.ServiceProvider.GetRequiredService<IMongoDatabase>();
     MongoCollectionInitializer.InitializeCollections(database, "CoreService.Repository.Models");
 }
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || true)
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
+app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();   // ? parse token tr??c

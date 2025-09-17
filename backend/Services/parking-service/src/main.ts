@@ -1,8 +1,8 @@
-import { NestFactory } from '@nestjs/core'
+import { NestFactory, Reflector } from '@nestjs/core'
 import { AppModule } from './app.module'
 import { NestExpressApplication } from '@nestjs/platform-express'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
-import { ValidationPipe } from '@nestjs/common' // Nên có để validate DTOs
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common' // Nên có để validate DTOs
 import { ConfigService } from '@nestjs/config'
 
 async function bootstrap() {
@@ -16,7 +16,7 @@ async function bootstrap() {
       transform: true, // Tự động chuyển đổi kiểu dữ liệu (ví dụ: string sang number)
     }),
   )
-
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
   // --- Bắt đầu cấu hình Swagger ---
   app.enableCors() // Bật CORS nếu cần thiết, giúp frontend có thể gọi API từ backend
   // Tạo một đối tượng cấu hình cơ bản cho Swagger document
@@ -35,17 +35,22 @@ async function bootstrap() {
   // '/api-docs' là đường dẫn bạn sẽ truy cập để xem UI (ví dụ: http://localhost:3000/api-docs)
   // Tham số thứ 2 là instance của ứng dụng NestJS
   // Tham số thứ 3 là document đã tạo ở trên
-  SwaggerModule.setup('api/v1', app, document)
+  SwaggerModule.setup('/swagger/index.html', app, document, {
+    // Tùy chỉnh đường dẫn cho file JSON tại đây
+    jsonDocumentUrl: '/swagger-json',
+  })
 
   // --- Kết thúc cấu hình Swagger ---
 
-  const port = configService.get<number>('PORT') || 3000
+  const port = configService.get<number>('PORT') || 5000
   await app.listen(port, () => {
     console.log(`Example app listening on port ${port}`)
   })
-  console.log(`Swagger UI available at http://localhost:${port}/api/v1`)
   console.log(
-    `API documentation available at http://localhost:${port}/api/v1-json`,
+    `Swagger UI available at http://localhost:${port}/swagger/index.html`,
+  )
+  console.log(
+    `API documentation available at http://localhost:${port}/swagger-json`,
   )
 }
 void bootstrap()
