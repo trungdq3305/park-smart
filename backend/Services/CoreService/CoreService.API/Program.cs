@@ -176,7 +176,14 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.MapGet("/__envcheck", (IConfiguration cfg) => Results.Json(new
+{
+    Env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+    Mongo = !string.IsNullOrWhiteSpace(cfg["MongoDbSettings:ConnectionString"]),
+    Jwt = !string.IsNullOrWhiteSpace(cfg["Jwt:Key"]),
+    Email = !string.IsNullOrWhiteSpace(cfg["EmailSettings:SmtpPassword"]),
+    Google = !string.IsNullOrWhiteSpace(cfg["Authentication:Google:ClientId"])
+}));
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionMiddleware>();
