@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
+import 'package:mobile/services/user_service.dart';
 import 'profile/personal_info_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -26,11 +27,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Thử đọc theo cả 2 key để tránh không đồng nhất
     String? token = await _storage.read(key: 'accessToken');
     token ??= await _storage.read(key: 'data');
-    if (token == null || token.isEmpty) return;
+
+    print('Token found: ${token != null ? 'Yes' : 'No'}');
+    if (token == null || token.isEmpty) {
+      print('No token found');
+      return;
+    }
 
     try {
+      // Kiểm tra nếu token là JSON object thay vì JWT
+      if (token.startsWith('{')) {
+        final Map<String, dynamic> jsonMap = json.decode(token);
+        if (!mounted) return;
+        setState(() {
+          _claims = jsonMap;
+        });
+        print('Loaded claims from JSON: $_claims');
+        return;
+      }
+
+      // Xử lý JWT token
       final parts = token.split('.');
-      if (parts.length != 3) return;
+      if (parts.length != 3) {
+        print('Invalid JWT format');
+        return;
+      }
+
       String payload = parts[1].padRight(
         parts[1].length + ((4 - parts[1].length % 4) % 4),
         '=',
@@ -41,14 +63,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _claims = jsonMap;
       });
-    } catch (_) {
-      // ignore lỗi decode
+      print('Loaded claims from JWT: $_claims');
+    } catch (e) {
+      print('Error decoding token: $e');
+      // Thử lấy thông tin từ UserService
+      try {
+        final userData = await UserService.getUserData();
+        if (userData != null && mounted) {
+          setState(() {
+            _claims = userData;
+          });
+          print('Loaded claims from UserService: $_claims');
+        }
+      } catch (e) {
+        print('Error loading from UserService: $e');
+      }
     }
   }
 
+  String _getDisplayName() {
+    return _claims?['fullName'] ??
+        _claims?['name'] ??
+        _claims?['user']?['name'] ??
+        'Người dùng';
+  }
+
+  String _getDisplayRole() {
+    return _claims?['role'] ??
+        _claims?['roles'] ??
+        _claims?['user']?['role'] ??
+        '';
+  }
+
   Widget _buildHeader(BuildContext context) {
-    final String fullName = (_claims?['fullName'] ?? 'Người dùng').toString();
-    final String role = (_claims?['role'] ?? '').toString();
+    final String fullName = _getDisplayName();
+    final String role = _getDisplayRole();
 
     return Stack(
       clipBehavior: Clip.none,
@@ -217,11 +266,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Thông tin cá nhân',
                       selected: true,
                       onTap: () {
-                        if (_claims == null) return;
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) =>
-                                PersonalInfoScreen(claims: _claims!),
+                                PersonalInfoScreen(claims: _claims ?? {}),
                           ),
                         );
                       },

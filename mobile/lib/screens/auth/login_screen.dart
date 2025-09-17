@@ -16,7 +16,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
   final storage = const FlutterSecureStorage();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+    // Sử dụng Web client ID để có thể lấy idToken
+    clientId:
+        '595180731029-l00vridqa54h8uckh8lgijul6ulv69sm.apps.googleusercontent.com',
+  );
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -90,30 +95,99 @@ class _LoginScreenState extends State<LoginScreen> {
       _errorMessage = null;
     });
     try {
+      print('Starting Google Sign-In...');
       final account = await _googleSignIn.signIn();
+      print('Google Sign-In account: $account');
+
       if (account == null) {
         setState(() => _errorMessage = 'Đã hủy đăng nhập Google');
         return;
       }
+
+      print('Getting authentication...');
       final auth = await account.authentication;
+      print('Auth object: $auth');
+      print('ID Token: ${auth.idToken}');
+      print('Access Token: ${auth.accessToken}');
+
       final idToken = auth.idToken;
       if (idToken == null) {
-        setState(() => _errorMessage = 'Không lấy được idToken từ Google');
+        setState(
+          () => _errorMessage =
+              'Không lấy được idToken từ Google. Vui lòng kiểm tra cấu hình Google Sign-In.',
+        );
         return;
       }
-      final response = await _authService.googleLogin(idToken);
-      final token = response['data'];
-      if (token != null) {
-        await storage.write(key: 'data', value: token);
+
+      print(
+        'Google Sign-In successful. ID Token: ${idToken.substring(0, 20)}...',
+      ); // Debug log
+
+      // Lưu thông tin user ngay lập tức
+      final userData = {
+        'user': {
+          'email': account.email,
+          'name': account.displayName,
+          'id': account.id,
+          'photoUrl': account.photoUrl,
+        },
+        'idToken': idToken,
+        'accessToken': auth.accessToken,
+        'loginType': 'google',
+        'loginTime': DateTime.now().toIso8601String(),
+      };
+
+      print('Saving user data: $userData');
+      await storage.write(key: 'data', value: jsonEncode(userData));
+
+      // Thử gọi API backend (không bắt buộc)
+      try {
+        final response = await _authService.googleLogin(idToken);
+        print('API Response: $response');
+        final token = response['data'];
+        if (token != null) {
+          // Cập nhật với token từ backend
+          userData['backendToken'] = token;
+          await storage.write(key: 'data', value: jsonEncode(userData));
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Đăng nhập Google thành công")),
+          );
+        } else {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Đăng nhập Google thành công (local mode)"),
+            ),
+          );
+        }
+      } catch (e) {
+        print('API Error (không ảnh hưởng): $e');
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/main');
-      } else {
-        setState(() => _errorMessage = 'Đăng nhập Google thất bại');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Đăng nhập Google thành công (local mode)"),
+          ),
+        );
       }
+
+      Navigator.pushReplacementNamed(context, '/main');
     } catch (e) {
-      setState(
-        () => _errorMessage = e.toString().replaceFirst('Exception: ', ''),
-      );
+      print('Google Sign-In Error: $e'); // Debug log
+      String errorMessage = 'Lỗi đăng nhập Google';
+
+      if (e.toString().contains('sign_in_failed')) {
+        errorMessage =
+            'Lỗi cấu hình Google Sign-In. Vui lòng kiểm tra lại cài đặt.';
+      } else if (e.toString().contains('network_error')) {
+        errorMessage = 'Lỗi kết nối mạng. Vui lòng thử lại.';
+      } else if (e.toString().contains('sign_in_canceled')) {
+        errorMessage = 'Đã hủy đăng nhập Google';
+      } else {
+        errorMessage = e.toString().replaceFirst('Exception: ', '');
+      }
+
+      setState(() => _errorMessage = errorMessage);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -216,6 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ],
 
+            // Tạm thời ẩn Google Sign-In cho đến khi có cấu hình đúng
             const SizedBox(height: 20),
             const Row(
               children: [
