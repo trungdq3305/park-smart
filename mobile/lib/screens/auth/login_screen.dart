@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../../services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
   final storage = const FlutterSecureStorage();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -79,6 +81,41 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        setState(() => _errorMessage = 'Đã hủy đăng nhập Google');
+        return;
+      }
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) {
+        setState(() => _errorMessage = 'Không lấy được idToken từ Google');
+        return;
+      }
+      final response = await _authService.googleLogin(idToken);
+      final token = response['data'];
+      if (token != null) {
+        await storage.write(key: 'data', value: token);
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/main');
+      } else {
+        setState(() => _errorMessage = 'Đăng nhập Google thất bại');
+      }
+    } catch (e) {
+      setState(
+        () => _errorMessage = e.toString().replaceFirst('Exception: ', ''),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -195,7 +232,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: _isLoading ? null : _handleGoogleLogin,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   side: const BorderSide(color: Colors.grey),

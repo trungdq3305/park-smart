@@ -48,4 +48,39 @@ class AuthService {
       throw Exception('Register failed: ${response.body}');
     }
   }
+
+  Future<Map<String, dynamic>> confirmRegister({
+    required String email,
+    required String otpCode,
+  }) async {
+    final url = Uri.parse('$baseUrl/core/auths/register-confirm');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'otpCode': otpCode}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Confirm register failed: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> googleLogin(String idToken) async {
+    final url = Uri.parse('$baseUrl/api/auths/google-login');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'idToken': idToken}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Google login failed: ${response.body}');
+    }
+  }
 }

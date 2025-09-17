@@ -6,6 +6,7 @@ import 'package:mobile/screens/user/home_screen.dart';
 import 'package:mobile/utils/custom_http_overrides.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/auth/register_otp_screen.dart';
 import 'screens/main/main_wrapper.dart';
 
 Future<void> main() async {
@@ -33,6 +34,11 @@ class MyApp extends StatelessWidget {
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
+        // Truyền email bằng arguments: Navigator.pushNamed(context, '/register-otp', arguments: 'email@example.com')
+        '/register-otp': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as String?;
+          return RegisterOtpScreen(email: args ?? '');
+        },
         '/main': (context) => const MainWrapper(),
         '/home': (context) => const HomeScreen(),
         // '/details': (context) => const DetailScreen(), // KHÔNG navbar
