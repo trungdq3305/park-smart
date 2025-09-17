@@ -92,22 +92,22 @@
       "UpstreamPathTemplate": "/core/swagger/{everything}",
       "UpstreamHttpMethod": ["GET"]
     },
-    {
-      "DownstreamPathTemplate": "/signin-google",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "coreservice",
-          "Port": 8080
-        }
-      ],
-      "UpstreamPathTemplate": "/signin-google",
-      "UpstreamHttpMethod": [ "GET", "POST" ],
-      "AddHeadersToRequest": {
-        "X-Forwarded-Proto": "https",
-        "X-Forwarded-Host": "parksmarthcmc.io.vn"
-      }
-    },
+    //{
+    //  "DownstreamPathTemplate": "/signin-google",
+    //  "DownstreamScheme": "http",
+    //  "DownstreamHostAndPorts": [
+    //    {
+    //      "Host": "coreservice",
+    //      "Port": 8080
+    //    }
+    //  ],
+    //  "UpstreamPathTemplate": "/signin-google",
+    //  "UpstreamHttpMethod": [ "GET", "POST" ],
+    //  "AddHeadersToRequest": {
+    //    "X-Forwarded-Proto": "https",
+    //    "X-Forwarded-Host": "parksmarthcmc.io.vn"
+    //  }
+    //},
     {
       "DownstreamPathTemplate": "/addresses/{everything}",
       "DownstreamScheme": "http",
