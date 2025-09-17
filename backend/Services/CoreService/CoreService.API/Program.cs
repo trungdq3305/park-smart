@@ -96,7 +96,7 @@ builder.Services.AddAuthentication(options =>
         OnRemoteFailure = ctx =>
         {
             var msg = Uri.EscapeDataString(ctx.Failure?.Message ?? "unknown");
-            ctx.Response.Redirect("/core/auths/google-callback?error=" + msg);
+            ctx.Response.Redirect("/api/auths/google-callback?error=" + msg);
             ctx.HandleResponse();
             return Task.CompletedTask;
         }
