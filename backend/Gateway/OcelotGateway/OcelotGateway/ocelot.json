@@ -2,11 +2,11 @@
   "Routes": [
     {
       "DownstreamPathTemplate": "/__whoami",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 8080
+          "Port": 8443
         }
       ],
       "UpstreamPathTemplate": "/core/__whoami",
@@ -18,11 +18,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/auths/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 8080
+          "Port": 8443
         }
       ],
       "UpstreamPathTemplate": "/core/auths/{everything}",
@@ -34,11 +34,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/accounts/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 8080
+          "Port": 8443
         }
       ],
       "UpstreamPathTemplate": "/core/accounts/{everything}",
@@ -46,11 +46,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/drivers/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 8080
+          "Port": 8443
         }
       ],
       "UpstreamPathTemplate": "/core/drivers/{everything}",
@@ -58,11 +58,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/operators/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 8080
+          "Port": 8443
         }
       ],
       "UpstreamPathTemplate": "/core/operators/{everything}",
@@ -70,11 +70,11 @@
     },
     {
       "DownstreamPathTemplate": "/api/admins/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 8080
+          "Port": 8443
         }
       ],
       "UpstreamPathTemplate": "/core/admins/{everything}",
@@ -82,11 +82,11 @@
     },
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
-      "DownstreamScheme": "http",
+      "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [
         {
           "Host": "coreservice",
-          "Port": 8080
+          "Port": 8443
         }
       ],
       "UpstreamPathTemplate": "/core/swagger/{everything}",

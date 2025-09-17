@@ -7,8 +7,7 @@ services:
       dockerfile: backend/Services/CoreService/Dockerfile
     image: coreservice 
     container_name: coreservice
-    ports:
-      - "5001:8080" 
+    ports: 
       - "8443:8443"    # publish HTTPS riêng
     env_file:
       - ./backend/Services/CoreService/.env 
