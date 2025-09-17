@@ -116,28 +116,26 @@ namespace KLTN.CoreService.API.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GoogleCallback()
         {
-            // Đọc thông tin từ Cookie (middleware đã set)
-            var authenticateResult = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            // Lấy thông tin đăng nhập do middleware Google đã set vào cookie tạm
+            var authenticateResult = await HttpContext.AuthenticateAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
 
             if (!authenticateResult.Succeeded)
-                return Unauthorized("Authentication failed.");
+                return Unauthorized(new { message = "Authentication failed." });
 
             var claims = authenticateResult.Principal.Claims.ToList();
             var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
             var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
 
             if (string.IsNullOrEmpty(email))
-                return BadRequest("Email not provided by Google");
+                return BadRequest(new { message = "Email not provided by Google." });
 
-            // Xử lý đăng nhập / tạo account nếu cần
+            // Tạo hoặc đăng nhập user trong hệ thống
             var response = await _authApplication.HandleGoogleLoginAsync(email, name);
 
-            // Nếu login thành công, tạo URL để frontend redirect
-            // Ví dụ: gửi token qua query string
-            var frontendUrl = $"http://localhost:3000/login-success?token={response.Data}";
-
-            // Optionally: re-sign cookie để extend session
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            // (Tuỳ chọn) ký lại cookie để kéo dài session
+            var claimsIdentity = new ClaimsIdentity(
+                claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties
             {
                 IsPersistent = true,
@@ -146,13 +144,15 @@ namespace KLTN.CoreService.API.Controllers
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity),
-                authProperties
-            );
+                authProperties);
 
-            // Trả về JSON chứa URL
-            return Redirect(frontendUrl);
+            // Trả về JSON chứa thông tin / token
+            return Ok(new
+            {
+                message = "Đăng nhập thành công, email:" + email + ", name:"+ name,
+                data = response.Data
+            });
         }
-
 
     }
 }
