@@ -22,14 +22,5 @@ namespace CoreService.Application.DTOs.AuthDtos
         public string PhoneNumber { get; set; }
 
         public string FullName { get; set; }
-
-        public string Address { get; set; }
-
-        public string TaxCode { get; set; }
-
-        public string CompanyName { get; set; }
-
-        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-        public string ContactEmail { get; set; }
     }
 }

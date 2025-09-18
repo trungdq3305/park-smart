@@ -18,6 +18,10 @@ namespace CoreService.Application.DTOs.AccountDtos
 
         public string FullName { get; set; }
 
+        public string WardId { get; set; } = default!;
+
+        public string FullAddress { get; set; }
+
         public string TaxCode { get; set; }
 
         public string CompanyName { get; set; }
