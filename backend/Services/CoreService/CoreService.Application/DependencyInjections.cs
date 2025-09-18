@@ -27,6 +27,7 @@ namespace CoreService.Application
                 c.BaseAddress = new Uri("https://parksmarthcmc.io.vn"); // gọi nội bộ qua docker network
                 c.Timeout = TimeSpan.FromSeconds(10);
             });
+            services.AddScoped<ITermPolicyApplication, TermPolicyApplication>();
             return services;
         }
     }
