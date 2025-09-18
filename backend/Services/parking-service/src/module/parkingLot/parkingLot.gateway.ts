@@ -1,9 +1,64 @@
-import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets'
+import { Injectable } from '@nestjs/common'
+import {
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets'
+import { Server, Socket } from 'socket.io'
+import {
+  ParkingLotSpotsUpdateDto,
+  ParkingLotMinimalResponseDto,
+} from './dto/parkingLot.dto'
 
-@WebSocketGateway()
-export class ParkingLotGateway {
-  @SubscribeMessage('message')
-  handleMessage(): string {
-    return 'Hello world!'
+@Injectable() // Quan trọng: Để có thể inject vào Service
+@WebSocketGateway({
+  cors: {
+    origin: '*', // Cho phép kết nối từ mọi nguồn (cần thiết cho mobile)
+  },
+})
+export class ParkingLotGateway
+  implements OnGatewayConnection, OnGatewayDisconnect
+{
+  @WebSocketServer()
+  server: Server // Biến server để có thể phát sóng event
+
+  // 1. Quản lý kết nối
+  handleConnection(client: Socket) {
+    console.log(`✅ Client connected: ${client.id}`)
+  }
+
+  handleDisconnect(client: Socket) {
+    console.log(`❌ Client disconnected: ${client.id}`)
+  }
+
+  // 2. Xử lý sự kiện từ Client
+  @SubscribeMessage('join-room')
+  async handleJoinRoom(client: Socket, roomName: string) {
+    await client.join(roomName)
+    console.log(`Client ${client.id} joined room: ${roomName}`)
+  }
+
+  @SubscribeMessage('leave-room')
+  async handleLeaveRoom(client: Socket, roomName: string) {
+    await client.leave(roomName)
+    console.log(`Client ${client.id} left room: ${roomName}`)
+  }
+
+  // 3. Các phương thức để Service gọi (để phát sóng)
+
+  /**
+   * Gửi cập nhật số chỗ trống đến một khu vực cụ thể.
+   */
+  sendSpotsUpdate(roomName: string, payload: ParkingLotSpotsUpdateDto) {
+    this.server.to(roomName).emit('parking-lot-spots-updated', payload)
+  }
+
+  /**
+   * Gửi thông tin về một bãi đỗ xe mới được thêm vào một khu vực.
+   */
+  sendNewParkingLot(roomName: string, payload: ParkingLotMinimalResponseDto) {
+    this.server.to(roomName).emit('new-parking-lot-added', payload)
   }
 }
