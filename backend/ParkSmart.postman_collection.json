@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "e5524ef7-f11d-4138-a597-d8eae4ed46ea",
+		"_postman_id": "46cc9dc1-d183-456f-b1d5-69bc314e5a5c",
 		"name": "ParkSmart",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "45297038",
-		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-e5524ef7-f11d-4138-a597-d8eae4ed46ea?action=share&source=collection_link&creator=45297038"
+		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-46cc9dc1-d183-456f-b1d5-69bc314e5a5c?action=share&source=collection_link&creator=45297038"
 	},
 	"item": [
 		{
@@ -291,6 +291,29 @@
 								"core",
 								"auths",
 								"change-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Google Login",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://parksmarthcmc.io.vn:8443/api/auths/google-login",
+							"protocol": "https",
+							"host": [
+								"parksmarthcmc",
+								"io",
+								"vn"
+							],
+							"port": "8443",
+							"path": [
+								"api",
+								"auths",
+								"google-login"
 							]
 						}
 					},

@@ -96,7 +96,7 @@ builder.Services.AddAuthentication(options =>
         OnRemoteFailure = ctx =>
         {
             var msg = Uri.EscapeDataString(ctx.Failure?.Message ?? "unknown");
-            ctx.Response.Redirect("/core/auths/google-callback?error=" + msg);
+            ctx.Response.Redirect("/api/auths/google-callback?error=" + msg);
             ctx.HandleResponse();
             return Task.CompletedTask;
         }
@@ -176,7 +176,6 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 //app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionMiddleware>();
