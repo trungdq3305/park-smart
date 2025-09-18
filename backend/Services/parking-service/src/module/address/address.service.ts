@@ -18,6 +18,7 @@ import {
 } from './dto/address.dto'
 import { Address } from './schemas/address.schema'
 import { plainToInstance } from 'class-transformer'
+import axios from 'axios'
 // Giữ lại các type cho Nominatim
 interface NominatimLocation {
   lat: string
@@ -93,9 +94,37 @@ export class AddressService implements IAddressService {
 
       return { latitude, longitude }
     } catch (error) {
-      if (error instanceof HttpException) throw error
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      console.error('Lỗi khi gọi OpenStreetMap Nominatim API:', error.message)
+      // Luôn ưu tiên re-throw HttpException nếu nó đã được ném ra từ trước
+      if (error instanceof HttpException) {
+        throw error
+      }
+
+      // Kiểm tra xem đây có phải là lỗi từ Axios không
+      if (axios.isAxiosError(error) && error.response) {
+        console.error(
+          `Lỗi từ Nominatim API - Status: ${error.response.status}`,
+          JSON.stringify(error.response.data, null, 2),
+        )
+
+        // Dựa vào status code để trả về lỗi phù hợp
+        if (error.response.status === 400) {
+          throw new HttpException(
+            `Địa chỉ không hợp lệ hoặc không tìm thấy: "${fullAddress}"`,
+            HttpStatus.BAD_REQUEST,
+          )
+        }
+        if (error.response.status === 429) {
+          throw new HttpException(
+            'Vượt quá giới hạn truy cập API định vị.',
+            HttpStatus.TOO_MANY_REQUESTS,
+          )
+        }
+      } else {
+        // Dành cho các lỗi khác không phải từ Axios (ví dụ: lỗi mạng cục bộ)
+        console.error('Lỗi không xác định khi gọi API:', error)
+      }
+
+      // Lỗi mặc định nếu không rơi vào các trường hợp trên
       throw new HttpException(
         'Lỗi từ dịch vụ định vị OpenStreetMap.',
         HttpStatus.SERVICE_UNAVAILABLE,
