@@ -154,10 +154,6 @@ namespace CoreService.Application.Applications
             {
                 Id = null,
                 FullName = request.FullName,
-                TaxCode = request.TaxCode,
-                CompanyName = request.CompanyName,
-                ContactEmail = request.ContactEmail,
-                //Address = request.Address,
                 AccountId = acc.Id,
             };
 
