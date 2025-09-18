@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "46cc9dc1-d183-456f-b1d5-69bc314e5a5c",
+		"_postman_id": "01c812cd-0be3-4a18-a53c-379f903023c0",
 		"name": "ParkSmart",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "45297038",
-		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-46cc9dc1-d183-456f-b1d5-69bc314e5a5c?action=share&source=collection_link&creator=45297038"
+		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-01c812cd-0be3-4a18-a53c-379f903023c0?action=share&source=collection_link&creator=45297038"
 	},
 	"item": [
 		{
@@ -73,7 +73,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"email\": \"user@example.com\",\r\n  \"password\": \"Z0z?J\",\r\n  \"phoneNumber\": \"0102272822\",\r\n  \"fullName\": \"string\",\r\n  \"address\": \"string\",\r\n  \"taxCode\": \"string\",\r\n  \"companyName\": \"string\",\r\n  \"contactEmail\": \"user@example.com\"\r\n}",
+							"raw": "{\r\n  \"email\": \"user@example.com\",\r\n  \"password\": \"Z0z?J\",\r\n  \"phoneNumber\": \"0102272822\",\r\n  \"fullName\": \"string\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -81,14 +81,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/core/auths/driver-register",
+							"raw": "{{baseUrl}}/core/auths/operator-register",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"core",
 								"auths",
-								"driver-register"
+								"operator-register"
 							]
 						}
 					},
@@ -642,7 +642,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"phoneNumber\": \"0762603789\",\r\n  \"email\": \"operator@example.com\",\r\n  \"fullName\": \"string\",\r\n  \"taxCode\": \"string\",\r\n  \"companyName\": \"string\",\r\n  \"contactEmail\": \"user@example.com\"\r\n}",
+							"raw": "{\r\n  \"phoneNumber\": \"0031544149\",\r\n  \"email\": \"operator@example.com\",\r\n  \"fullName\": \"string\",\r\n  \"wardId\": \"string\",\r\n  \"fullAddress\": \"string\",\r\n  \"taxCode\": \"string\",\r\n  \"companyName\": \"string\",\r\n  \"contactEmail\": \"user@example.com\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
