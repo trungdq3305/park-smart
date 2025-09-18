@@ -21,7 +21,10 @@ export class AddressRepository implements IAddressRepository {
       wardId: createAddressDto.wardId,
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
-      // createdAt sẽ được quản lý bởi Mongoose timestamps
+      location: {
+        type: 'Point',
+        coordinates: [coordinates.longitude, coordinates.latitude], // !!! [kinh độ, vĩ độ]
+      },
       createdBy: new mongoose.Types.ObjectId(userId),
     })
     return createdAddress.save()
@@ -94,6 +97,47 @@ export class AddressRepository implements IAddressRepository {
         },
         { new: true },
       )
+      .exec()
+  }
+
+  async findWithinBox(
+    bottomLeft: [number, number], // [lng, lat]
+    topRight: [number, number], // [lng, lat]
+    page: number,
+    limit: number,
+  ): Promise<Address[]> {
+    return this.addressModel
+      .find({
+        location: {
+          $geoWithin: {
+            // $box yêu cầu 2 điểm: góc dưới-trái và góc trên-phải
+            $box: [bottomLeft, topRight],
+          },
+        },
+      })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .exec()
+  }
+
+  async findNear(
+    longitude: number,
+    latitude: number,
+    maxDistanceInKm: number,
+  ): Promise<Address[]> {
+    const maxDistanceInMeters = maxDistanceInKm * 1000
+    return this.addressModel
+      .find({
+        location: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude],
+            },
+            $maxDistance: maxDistanceInMeters,
+          },
+        },
+      })
       .exec()
   }
 }
