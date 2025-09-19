@@ -1,4 +1,5 @@
 ﻿using CoreService.Application.Applications;
+using CoreService.Application.DTOs.CommentDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Repositories;
@@ -28,6 +29,9 @@ namespace CoreService.Application
                 c.Timeout = TimeSpan.FromSeconds(10);
             });
             services.AddScoped<ITermPolicyApplication, TermPolicyApplication>();
+            services.AddScoped<AccountDisplayHelper>();
+            services.AddScoped<IFaqApplication, FaqApplication>();
+            services.AddScoped<ICommentApplication, CommentApplication>();
             return services;
         }
     }
