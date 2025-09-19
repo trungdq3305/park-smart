@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:mobile/services/user_service.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
@@ -86,6 +88,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         userData?['user']?['photoUrl'];
   }
 
+  String? _getUserGender() {
+    return widget.claims['gender'] ?? userData?['user']?['gender'] ?? 'N/A';
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -115,9 +121,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         title: const Text('Thông tin cá nhân'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
-        actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
-        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -173,14 +176,13 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   _buildInfoCard('Vai trò', _getUserRole()),
                   _buildInfoCard('Số điện thoại', _getUserPhone()),
                   _buildInfoCard(
-                    'Loại đăng nhập',
-                    userData?['loginType'] ?? 'N/A',
-                  ),
-                  _buildInfoCard(
-                    'Thời gian đăng nhập',
-                    userData?['loginTime'] != null
-                        ? DateTime.parse(userData!['loginTime']).toString()
-                        : 'N/A',
+                    'Giới tính',
+                    _getUserGender() == 'True' ||
+                            _getUserGender() == 'true' ||
+                            _getUserGender() == 'male' ||
+                            _getUserGender() == 'Nam'
+                        ? 'Nam'
+                        : 'Nữ',
                   ),
 
                   const SizedBox(height: 16),
