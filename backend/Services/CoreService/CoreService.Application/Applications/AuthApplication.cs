@@ -426,13 +426,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<string>> HandleGoogleLoginAsync(string email, string name)
         {
             var account = await _accountRepo.GetByEmailAsync(email);
-            string tempPassword = null;
+            var tempPassword = GenerateTempPassword(12);
 
             if (account == null)
             {
-                // 1. Tạo mật khẩu tạm
-                tempPassword = Guid.NewGuid().ToString("N")[..10]; // lấy 10 ký tự đầu
-
                 account = new Account
                 {
                     Id = null,
@@ -481,6 +478,34 @@ namespace CoreService.Application.Applications
                 message: "Đăng nhập bằng Google thành công",
                 statusCode: StatusCodes.Status200OK
             );
+        }
+        string GenerateTempPassword(int length = 12)
+        {
+            if (length < 8) length = 8;   // ép tối thiểu 8 ký tự
+
+            const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const string lower = "abcdefghijklmnopqrstuvwxyz";
+            const string digits = "0123456789";
+            const string special = "@$!%*?&";
+
+            var rnd = new Random();
+
+            // mỗi nhóm 1 ký tự
+            var chars = new[]
+            {
+        upper[rnd.Next(upper.Length)],
+        lower[rnd.Next(lower.Length)],
+        digits[rnd.Next(digits.Length)],
+        special[rnd.Next(special.Length)]
+    }.ToList();
+
+            // còn lại lấy random từ tất cả
+            string all = upper + lower + digits + special;
+            for (int i = chars.Count; i < length; i++)
+                chars.Add(all[rnd.Next(all.Length)]);
+
+            // xáo trộn
+            return new string(chars.OrderBy(_ => rnd.Next()).ToArray());
         }
 
         public async Task<ApiResponse<bool>> ChangePasswordAsync(string accountId, ChangePasswordDto dto)
