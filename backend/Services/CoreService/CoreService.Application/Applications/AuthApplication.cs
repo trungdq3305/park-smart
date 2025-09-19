@@ -426,13 +426,18 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<string>> HandleGoogleLoginAsync(string email, string name)
         {
             var account = await _accountRepo.GetByEmailAsync(email);
+            string tempPassword = null;
+
             if (account == null)
             {
+                // 1. Tạo mật khẩu tạm
+                tempPassword = Guid.NewGuid().ToString("N")[..10]; // lấy 10 ký tự đầu
+
                 account = new Account
                 {
                     Id = null,
                     Email = email,
-                    Password = HashPassword(Guid.NewGuid().ToString()),
+                    Password = HashPassword(tempPassword),
                     PhoneNumber = null,
                     RoleId = "68bee20c00a9410adb97d3a1",
                     IsActive = true,
@@ -449,27 +454,35 @@ namespace CoreService.Application.Applications
                     AccountId = account.Id
                 };
                 await _driverRepo.AddAsync(driver);
+
+                // 2. Gửi mật khẩu tạm cho user
+                await _emailApplication.SendInitialPasswordAsync(
+                    email,
+                    tempPassword,
+                    "Đây là mật khẩu để đăng nhập vào hệ thống nếu bạn không muốn đăng nhập bằng Google. " +
+                    "Hãy đổi mật khẩu ngay sau khi đăng nhập để đảm bảo an toàn."
+                );
             }
             else if (!account.IsActive)
             {
                 throw new ApiException("Tài khoản chưa được xác thực", StatusCodes.Status401Unauthorized);
             }
 
+            // 3. Tạo token & cập nhật LastLogin
             var token = _jwtHelper.GenerateToken(account);
             account.LastLoginAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.RefreshToken = token;
-
             await _accountRepo.UpdateAsync(account);
 
-            return new ApiResponse<string>
-            (
+            return new ApiResponse<string>(
                 data: token,
                 success: true,
                 message: "Đăng nhập bằng Google thành công",
                 statusCode: StatusCodes.Status200OK
             );
         }
+
         public async Task<ApiResponse<bool>> ChangePasswordAsync(string accountId, ChangePasswordDto dto)
         {
 
