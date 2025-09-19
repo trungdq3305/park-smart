@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "21ab847b-a9a6-4291-a7d4-dc47379fa4dd",
+		"_postman_id": "4c01d3d8-7682-4ab8-959e-27f64c9f8002",
 		"name": "ParkSmart",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "45297038",
-		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-21ab847b-a9a6-4291-a7d4-dc47379fa4dd?action=share&source=collection_link&creator=45297038"
+		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-4c01d3d8-7682-4ab8-959e-27f64c9f8002?action=share&source=collection_link&creator=45297038"
 	},
 	"item": [
 		{
@@ -1172,6 +1172,493 @@
 								"termpolicies",
 								"by-admin",
 								"68bf1bfa63547daf59667800"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Comment",
+			"item": [
+				{
+					"name": "Get Comments By Parkinglot",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/core/comments/by-parkinglot/<id>?page=1&pageSize=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments",
+								"by-parkinglot",
+								"<id>"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Comments By FAQ",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/core/comments/by-faq/<id>?page&pageSize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments",
+								"by-faq",
+								"<id>"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": null
+								},
+								{
+									"key": "pageSize",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"targetId\": \"68cd599095774348de20d3d0\",\r\n  \"content\": \"string\",\r\n  \"star\": 5,\r\n  \"targetType\": \"Faq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Reply Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"targetId\": \"68cd599095774348de20d3d0\",\r\n  \"content\": \"string\",\r\n  \"parentId\": \"68cd5e0f2d04214752a1920b\",\r\n  \"targetType\": \"Faq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"content\": \"string\",\r\n  \"star\": 0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"content\": \"string\",\r\n  \"star\": 0\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/comments/<id>",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments",
+								"<id>"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "FAQ",
+			"item": [
+				{
+					"name": "Get all FAQs",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"content\": \"string\",\r\n  \"star\": 0\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get FAQs By Status",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"content\": \"string\",\r\n  \"star\": 0\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs/by-status?status=Pending",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs",
+								"by-status"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "Pending"
+								},
+								{
+									"key": "page",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "pageSize",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My FAQs",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Get FAQs By Id",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Create FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs/<id>",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs",
+								"<id>"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Approve FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs/<id>/approve",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs",
+								"<id>",
+								"approve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reject FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs/<id>/reject",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs",
+								"<id>",
+								"reject"
 							]
 						}
 					},

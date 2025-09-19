@@ -57,9 +57,10 @@ namespace CoreService.Application.Applications
         {
             var entity = await _repo.GetByIdAsync(dto.Id)
                 ?? throw new ApiException("FAQ không tồn tại", StatusCodes.Status404NotFound);
-
+            var pendingStatus = await _statusRepo.GetByNameAsync("Pending");
             entity.Question = dto.Question?.Trim();
             entity.Answer = dto.Answer?.Trim();
+            entity.FaqStatusId = pendingStatus.Id;
             entity.UpdatedAt = DateTime.UtcNow;
             entity.UpdatedBy = accountId;
 

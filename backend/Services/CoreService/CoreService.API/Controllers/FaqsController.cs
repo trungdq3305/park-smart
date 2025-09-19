@@ -67,7 +67,7 @@ namespace CoreService.API.Controllers
             return StatusCode(res.StatusCode, res);
         }
         [HttpGet("by-status")]
-        [Authorize(Roles = "Admin")] // hoặc Authorize nếu cần
+        [AllowAnonymous]
         public async Task<IActionResult> GetByStatus([FromQuery] string status, [FromQuery] int? page, [FromQuery] int? pageSize)
         {
             var res = await _app.GetByStatusAsync(status, page, pageSize);
