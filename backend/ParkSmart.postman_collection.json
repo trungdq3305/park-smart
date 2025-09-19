@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "d1a45446-8971-4d75-a2d3-7b2753a4279d",
+		"_postman_id": "21ab847b-a9a6-4291-a7d4-dc47379fa4dd",
 		"name": "ParkSmart",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "45297038",
-		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-d1a45446-8971-4d75-a2d3-7b2753a4279d?action=share&source=collection_link&creator=45297038"
+		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-21ab847b-a9a6-4291-a7d4-dc47379fa4dd?action=share&source=collection_link&creator=45297038"
 	},
 	"item": [
 		{
@@ -33,6 +33,29 @@
 								"core",
 								"auths",
 								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Google Login",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://parksmarthcmc.io.vn:8443/api/auths/google-login",
+							"protocol": "https",
+							"host": [
+								"parksmarthcmc",
+								"io",
+								"vn"
+							],
+							"port": "8443",
+							"path": [
+								"api",
+								"auths",
+								"google-login"
 							]
 						}
 					},
@@ -295,29 +318,6 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "Google Login",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://parksmarthcmc.io.vn:8443/api/auths/google-login",
-							"protocol": "https",
-							"host": [
-								"parksmarthcmc",
-								"io",
-								"vn"
-							],
-							"port": "8443",
-							"path": [
-								"api",
-								"auths",
-								"google-login"
-							]
-						}
-					},
-					"response": []
 				}
 			]
 		},
@@ -568,7 +568,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"phoneNumber\": \"0265841659\",\r\n  \"email\": \"admin@example.com\",\r\n  \"fullName\": \"string\",\r\n  \"department\": \"string\",\r\n  \"position\": \"string\"\r\n}",
+							"raw": "{\r\n  \"phoneNumber\": \"0324847574\",\r\n  \"fullName\": \"string\",\r\n  \"department\": \"string\",\r\n  \"position\": \"string\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -600,7 +600,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"email\": \"driver@example.com\",\r\n  \"phoneNumber\": \"0552947588\",\r\n  \"fullName\": \"string\",\r\n  \"gender\": true,\r\n  \"drivingLicenseNumber\": \"string\"\r\n}",
+							"raw": "{\r\n  \"phoneNumber\": \"0674398212\",\r\n  \"fullName\": \"string\",\r\n  \"gender\": true\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -608,13 +608,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/core/admins",
+							"raw": "{{baseUrl}}/core/drivers",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"core",
-								"admins"
+								"drivers"
 							]
 						}
 					},
@@ -642,7 +642,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"phoneNumber\": \"0031544149\",\r\n  \"email\": \"operator@example.com\",\r\n  \"fullName\": \"string\",\r\n  \"wardId\": \"string\",\r\n  \"fullAddress\": \"string\",\r\n  \"taxCode\": \"string\",\r\n  \"companyName\": \"string\",\r\n  \"contactEmail\": \"user@example.com\"\r\n}",
+							"raw": "{\r\n  \"phoneNumber\": \"0564226318\",\r\n  \"fullName\": \"string\",\r\n  \"wardId\": \"string\",\r\n  \"fullAddress\": \"string\",\r\n  \"taxCode\": \"string\",\r\n  \"companyName\": \"string\",\r\n  \"contactEmail\": \"user@example.com\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1009,7 +1009,10 @@
 					"name": "Get All TaP",
 					"request": {
 						"method": "GET",
-						"header": []
+						"header": [],
+						"url": {
+							"raw": ""
+						}
 					},
 					"response": []
 				},
