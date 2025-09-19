@@ -170,7 +170,6 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  _buildInfoCard('ID', _getUserId()),
                   _buildInfoCard('Email', _getUserEmail()),
                   _buildInfoCard('Tên đầy đủ', _getFullName()),
                   _buildInfoCard('Vai trò', _getUserRole()),
