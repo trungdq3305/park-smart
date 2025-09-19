@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
+import 'package:mobile/services/user_service.dart';
 import 'profile/personal_info_screen.dart';
+import 'profile/booking_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,11 +28,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Thử đọc theo cả 2 key để tránh không đồng nhất
     String? token = await _storage.read(key: 'accessToken');
     token ??= await _storage.read(key: 'data');
-    if (token == null || token.isEmpty) return;
+
+    print('Token found: ${token != null ? 'Yes' : 'No'}');
+    if (token == null || token.isEmpty) {
+      print('No token found');
+      return;
+    }
 
     try {
+      // Kiểm tra nếu token là JSON object thay vì JWT
+      if (token.startsWith('{')) {
+        final Map<String, dynamic> jsonMap = json.decode(token);
+        if (!mounted) return;
+        setState(() {
+          _claims = jsonMap;
+        });
+        print('Loaded claims from JSON: $_claims');
+        return;
+      }
+
+      // Xử lý JWT token
       final parts = token.split('.');
-      if (parts.length != 3) return;
+      if (parts.length != 3) {
+        print('Invalid JWT format');
+        return;
+      }
+
       String payload = parts[1].padRight(
         parts[1].length + ((4 - parts[1].length % 4) % 4),
         '=',
@@ -41,132 +64,124 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _claims = jsonMap;
       });
-    } catch (_) {
-      // ignore lỗi decode
+      print('Loaded claims from JWT: $_claims');
+    } catch (e) {
+      print('Error decoding token: $e');
+      // Thử lấy thông tin từ UserService
+      try {
+        final userData = await UserService.getUserData();
+        if (userData != null && mounted) {
+          setState(() {
+            _claims = userData;
+          });
+          print('Loaded claims from UserService: $_claims');
+        }
+      } catch (e) {
+        print('Error loading from UserService: $e');
+      }
     }
   }
 
+  String _getDisplayName() {
+    return _claims?['fullName'] ??
+        _claims?['name'] ??
+        _claims?['user']?['name'] ??
+        'Người dùng';
+  }
+
+  String? _getUserPhoto() {
+    return _claims?['picture'] ??
+        _claims?['photoUrl'] ??
+        _claims?['avatar'] ??
+        _claims?['user']?['photoUrl'];
+  }
+
   Widget _buildHeader(BuildContext context) {
-    final String fullName = (_claims?['fullName'] ?? 'Người dùng').toString();
-    final String role = (_claims?['role'] ?? '').toString();
+    final String fullName = _getDisplayName();
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        // White card-like header
+        // Blue gradient background
         Container(
-          height: 220,
+          height: 280,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(28),
-              bottomRight: Radius.circular(28),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.green, Colors.green],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+          ),
+          child: Stack(
+            children: [
+              // Background city buildings pattern
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: CustomPaint(
+                  size: const Size(double.infinity, 100),
+                  painter: _CityBackgroundPainter(),
+                ),
               ),
             ],
           ),
         ),
-        // Small green wave band at the bottom
+        // Title
         Positioned(
+          top: 50,
           left: 0,
           right: 0,
-          bottom: -4,
-          child: ClipPath(
-            clipper: _BottomWaveClipper(),
-            child: Container(
-              height: 110,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [Colors.green.shade600, Colors.green.shade400],
-                ),
-              ),
+          child: const Text(
+            'Thông tin tài khoản',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
-        Positioned(
-          top: 40,
-          left: 20,
-          child: IconButton(
-            icon: const Icon(Icons.menu, color: Colors.white),
-            onPressed: () {},
-          ),
-        ),
+        // Avatar and user info
         Positioned(
           left: 0,
           right: 0,
-          bottom: -54,
+          bottom: 20,
           child: Column(
             children: [
-              SizedBox(
-                width: 108,
-                height: 108,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                        ),
-                        child: const ClipOval(
-                          child: Image(
-                            image: AssetImage(
-                              'assets/wired-outline-268-avatar-man-hover-glance.png',
-                            ),
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: -2,
-                      bottom: -2,
-                      child: Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.green.shade600,
-                            width: 2,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.edit,
-                          size: 14,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                  ],
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                ),
+                child: ClipOval(
+                  child: _getUserPhoto() != null
+                      ? Image.network(
+                          _getUserPhoto()!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Icon(
+                              Icons.person,
+                              size: 70,
+                              color: Colors.white,
+                            );
+                          },
+                        )
+                      : const Icon(Icons.person, size: 70, color: Colors.white),
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Text(
                 fullName,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 24,
                 ),
               ),
-              if (role.isNotEmpty) const SizedBox(height: 2),
-              if (role.isNotEmpty)
-                Text(
-                  role,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.black54, fontSize: 12),
-                ),
             ],
           ),
         ),
@@ -179,23 +194,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String title,
     Widget? trailing,
     VoidCallback? onTap,
-    bool selected = false,
   }) {
-    final Color highlight = Colors.green;
     return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: selected ? highlight.withOpacity(0.06) : Colors.transparent,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ListTile(
-        leading: Icon(icon, color: Colors.black87),
-        title: Text(title),
-        trailing: trailing,
+        leading: Icon(icon, color: Colors.black87, size: 24),
+        title: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87,
+          ),
+        ),
+        trailing:
+            trailing ??
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.black54,
+            ),
         onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
     );
   }
+
+  // Widget _buildLogo() {
+  //   return Container(
+  //     margin: const EdgeInsets.only(top: 20, bottom: 20),
+  //     child: Column(
+  //       children: [
+  //         Container(
+  //           width: 60,
+  //           height: 60,
+  //           decoration: BoxDecoration(
+  //             gradient: LinearGradient(
+  //               begin: Alignment.topLeft,
+  //               end: Alignment.bottomRight,
+  //               colors: [
+  //                 const Color.fromARGB(255, 25, 210, 40),
+  //                 const Color.fromARGB(255, 25, 210, 40),
+  //               ],
+  //             ),
+  //             borderRadius: BorderRadius.circular(12),
+  //           ),
+  //           // child: Center(child: Image.asset("assets/logo.webp", height: 500)),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -207,83 +267,90 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               _buildHeader(context),
-              const SizedBox(height: 56),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+              // White content card
+              Container(
+                margin: const EdgeInsets.only(top: 20),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(28),
+                    topRight: Radius.circular(28),
+                  ),
+                ),
                 child: Column(
                   children: [
+                    // _buildLogo(),
                     _buildTile(
                       icon: Icons.person_outline,
                       title: 'Thông tin cá nhân',
-                      selected: true,
                       onTap: () {
-                        if (_claims == null) return;
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) =>
-                                PersonalInfoScreen(claims: _claims!),
+                                PersonalInfoScreen(claims: _claims ?? {}),
                           ),
                         );
                       },
                     ),
-                    const SizedBox(height: 6),
                     _buildTile(
-                      icon: Icons.email_outlined,
-                      title: 'Tin nhắn',
-                      trailing: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF7C4DFF),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          '0',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                      onTap: () {},
-                    ),
-                    const SizedBox(height: 6),
-                    _buildTile(
-                      icon: Icons.car_crash_outlined,
-                      title: 'Xe của tôi',
-                      onTap: () {},
-                    ),
-                    const SizedBox(height: 6),
-                    _buildTile(
-                      icon: Icons.topic_outlined,
+                      icon: Icons.confirmation_number_outlined,
                       title: 'Vé của tôi',
-                      onTap: () {},
+                      onTap: () {
+                        // TODO: Navigate to tickets screen
+                      },
                     ),
-                    const SizedBox(height: 6),
                     _buildTile(
-                      icon: Icons.settings_outlined,
-                      title: 'Cài đặt',
-                      onTap: () {},
+                      icon: Icons.directions_car_outlined,
+                      title: 'Xe của tôi',
+                      onTap: () {
+                        // TODO: Navigate to vehicles screen
+                      },
                     ),
-                    const SizedBox(height: 16),
-
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
+                    _buildTile(
+                      icon: Icons.history_outlined,
+                      title: 'Lịch sử đặt chỗ',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const BookingHistoryScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    // Logout button
+                    Container(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.logout,
+                          color: Colors.red,
+                          size: 24,
+                        ),
+                        title: const Text(
+                          'Đăng xuất',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.red,
+                          ),
+                        ),
+                        onTap: () async {
                           await _storage.delete(key: 'accessToken');
                           await _storage.delete(key: 'data');
                           if (!mounted) return;
                           Navigator.pushReplacementNamed(context, '/login');
                         },
-                        icon: const Icon(Icons.logout),
-                        label: const Text('Đăng xuất'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          foregroundColor: Colors.black87,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
                       ),
                     ),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -295,35 +362,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class _BottomWaveClipper extends CustomClipper<Path> {
+class _CityBackgroundPainter extends CustomPainter {
   @override
-  Path getClip(Size size) {
-    final Path path = Path();
-    path.lineTo(0, size.height * 0.35);
+  void paint(Canvas canvas, Size size) {
+    final Paint paint = Paint()
+      ..color = Colors.white.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
 
-    final firstControlPoint = Offset(size.width * 0.25, size.height * 0.05);
-    final firstEndPoint = Offset(size.width * 0.55, size.height * 0.30);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
+    // Draw simple building silhouettes
+    final double buildingWidth = size.width / 8;
+    final double buildingHeight = size.height * 0.6;
 
-    final secondControlPoint = Offset(size.width * 0.85, size.height * 0.55);
-    final secondEndPoint = Offset(size.width, size.height * 0.35);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
+    for (int i = 0; i < 8; i++) {
+      final double x = i * buildingWidth;
+      final double height = buildingHeight * (0.5 + (i % 3) * 0.2);
+      final double y = size.height - height;
 
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
+      canvas.drawRect(Rect.fromLTWH(x, y, buildingWidth * 0.8, height), paint);
+    }
+
+    // Draw a simple bus
+    final double busWidth = size.width * 0.15;
+    final double busHeight = size.height * 0.2;
+    final double busX = size.width * 0.7;
+    final double busY = size.height - busHeight - 10;
+
+    canvas.drawRect(Rect.fromLTWH(busX, busY, busWidth, busHeight), paint);
   }
 
   @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
