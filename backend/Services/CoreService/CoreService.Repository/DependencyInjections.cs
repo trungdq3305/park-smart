@@ -18,7 +18,7 @@ namespace CoreService.Repository
             services.AddScoped<IParkingLotOperatorRepository, ParkingLotOperatorRepository>();
             services.AddScoped<IDriverRepository, DriverRepository>();
             services.AddScoped<ICityAdminRepository, CityAdminRepository>();
-
+            services.AddScoped<ITermAndPolicyRepository, TermAndPolicyRepository>();
             return services;
         }
     }

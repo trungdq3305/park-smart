@@ -16,6 +16,18 @@ export interface IAddressRepository {
     userId: string,
   ): Promise<Address | null>
   deleteAddress(id: string, userId: string): Promise<boolean>
+  setAddressAsUsed(id: string): Promise<Address | null>
+  findWithinBox(
+    bottomLeft: [number, number], // [lng, lat]
+    topRight: [number, number], // [lng, lat]
+    page: number,
+    limit: number,
+  ): Promise<Address[]>
+  findNear(
+    longitude: number,
+    latitude: number,
+    maxDistanceInKm: number,
+  ): Promise<Address[]>
 }
 
 export const IAddressRepository = Symbol('IAddressRepository')
