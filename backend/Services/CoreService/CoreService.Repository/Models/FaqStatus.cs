@@ -9,25 +9,13 @@ using System.Threading.Tasks;
 
 namespace CoreService.Repository.Models
 {
-    public class ParkingLotOperator
+    public class FaqStatus
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string AccountId { get; set; }
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string AddressId { get; set; }
 
-        public string FullName { get; set; }
-
-        public string TaxCode { get; set; }
-
-        public string CompanyName { get; set; }
-
-        public string ContactEmail { get; set; }
-
-        public bool IsVerified { get; set; } = false;
+        public string StatusName { get; set; }
 
         public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
