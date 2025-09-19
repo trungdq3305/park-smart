@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using CoreService.Application.DTOs.CommentDtos;
+using CoreService.Application.DTOs.FaqDtos;
 using CoreService.Repository.Models;
 using System;
 using System.Collections.Generic;
@@ -27,6 +29,9 @@ namespace CoreService.Application.DTOs.AccountDtos
 
             // Admin → AdminDto
             CreateMap<CityAdmin, AdminDto>();
+
+            CreateMap<Faq, FaqResponseDto>();
+            CreateMap<Comment, CommentItemDto>();
         }
     }
 }
