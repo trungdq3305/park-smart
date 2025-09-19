@@ -40,13 +40,6 @@ namespace CoreService.Application.Applications
                 throw new ApiException("Tài khoản không tồn tại", StatusCodes.Status404NotFound);
 
             // 🔹 Check trùng email
-            if (!string.IsNullOrEmpty(dto.Email))
-            {
-                var existingEmail = await _accountRepo.GetByEmailAsync(dto.Email);
-                if (existingEmail != null && existingEmail.Id != account.Id)
-                    throw new ApiException("Email đã tồn tại", StatusCodes.Status400BadRequest);
-            }
-
             // 🔹 Check trùng phone number
             if (!string.IsNullOrEmpty(dto.PhoneNumber))
             {
@@ -57,7 +50,6 @@ namespace CoreService.Application.Applications
 
             // Update Account
             account.PhoneNumber = dto.PhoneNumber;
-            account.Email = dto.Email;
             account.UpdatedAt = DateTime.UtcNow;
             account.UpdatedBy = accountId;
 
