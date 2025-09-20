@@ -5,6 +5,7 @@ import 'package:mobile/widgets/app_scaffold.dart';
 import 'package:mobile/services/user_service.dart';
 import 'profile/personal_info_screen.dart';
 import 'profile/booking_history_screen.dart';
+import 'profile/my_car_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,7 +14,7 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   Map<String, dynamic>? _claims;
@@ -24,8 +25,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadAndDecodeToken();
   }
 
+  @override
+  void didPopNext() {
+    // Reload data khi quay lại từ màn hình khác
+    _loadAndDecodeToken();
+  }
+
   Future<void> _loadAndDecodeToken() async {
-    // Thử đọc theo cả 2 key để tránh không đồng nhất
+    // Thử lấy dữ liệu từ API trước
+    try {
+      final apiData = await UserService.getUserProfile();
+      if (apiData['data'] != null) {
+        final userData = apiData['data'];
+        final driverDetail = userData['driverDetail'];
+        final adminDetail = userData['adminDetail'];
+        final operatorDetail = userData['operatorDetail'];
+
+        // Tạo claims từ API data
+        final Map<String, dynamic> apiClaims = {
+          'fullName':
+              driverDetail?['fullName'] ??
+              adminDetail?['fullName'] ??
+              operatorDetail?['fullName'],
+          'email': userData['email'],
+          'phoneNumber': userData['phoneNumber'],
+          'role': userData['roleName'],
+          'gender': driverDetail?['gender'],
+          'creditPoint': driverDetail?['creditPoint'],
+          'isActive': userData['isActive'],
+        };
+
+        if (mounted) {
+          setState(() {
+            _claims = apiClaims;
+          });
+        }
+        print('Loaded claims from API: $_claims');
+        return;
+      }
+    } catch (e) {
+      print('API Error, falling back to token: $e');
+    }
+
+    // Fallback: Thử đọc từ token
     String? token = await _storage.read(key: 'accessToken');
     token ??= await _storage.read(key: 'data');
 
@@ -277,7 +319,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.directions_car_outlined,
                       title: 'Xe của tôi',
                       onTap: () {
-                        // TODO: Navigate to vehicles screen
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const MyCarScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildTile(
