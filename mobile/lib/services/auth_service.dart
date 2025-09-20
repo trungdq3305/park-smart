@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class AuthService {
   final String baseUrl = dotenv.env['BASE_URL'] ?? '';
   final String baseUrlGoogle = dotenv.env['BASE_URL_GOOGLE'] ?? '';
+  static const FlutterSecureStorage _storage = FlutterSecureStorage();
 
   Future<Map<String, dynamic>> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/core/auths/login');
@@ -16,7 +18,20 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      final responseData = jsonDecode(response.body);
+      print('Login response data: $responseData');
+      print('Response data keys: ${responseData.keys.toList()}');
+
+      // Lưu token vào storage - data là JWT token string
+      if (responseData['data'] != null) {
+        await _storage.write(
+          key: 'accessToken',
+          value: responseData['data'], // data chính là JWT token
+        );
+        print('JWT token saved to storage');
+      }
+
+      return responseData;
     } else {
       throw Exception('Login failed: ${response.body}');
     }
@@ -93,7 +108,37 @@ class AuthService {
     if (response.statusCode == 200) {
       // Kiểm tra xem response có phải là JSON không
       try {
-        return jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+
+        // Lưu token vào storage - data có thể là JWT token string hoặc object
+        if (responseData['data'] != null) {
+          if (responseData['data'] is String) {
+            // data là JWT token string
+            await _storage.write(
+              key: 'accessToken',
+              value: responseData['data'],
+            );
+            print('JWT token saved to storage');
+          } else if (responseData['data'] is Map) {
+            // data là object chứa accessToken
+            if (responseData['data']['accessToken'] != null) {
+              await _storage.write(
+                key: 'accessToken',
+                value: responseData['data']['accessToken'],
+              );
+              print('Access token saved to storage');
+            }
+            if (responseData['data']['refreshToken'] != null) {
+              await _storage.write(
+                key: 'refreshToken',
+                value: responseData['data']['refreshToken'],
+              );
+              print('Refresh token saved to storage');
+            }
+          }
+        }
+
+        return responseData;
       } catch (e) {
         // Nếu không phải JSON, có thể là HTML redirect page
         print('Response is not JSON, might be redirect page');
@@ -123,5 +168,12 @@ class AuthService {
         'Google login failed: ${response.statusCode} - ${response.body}',
       );
     }
+  }
+
+  // Logout và xóa token
+  Future<void> logout() async {
+    await _storage.delete(key: 'accessToken');
+    await _storage.delete(key: 'refreshToken');
+    print('Tokens cleared from storage');
   }
 }
