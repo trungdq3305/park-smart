@@ -43,23 +43,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await _authService.login(email, password);
+      print('Login response in screen: $response');
+      print('Response type: ${response.runtimeType}');
 
-      // Ví dụ API trả về token: {"accessToken": "abcxyz..."}
-      final token = response['data'];
-      if (token != null) {
-        await storage.write(key: 'data', value: token);
-
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
-
-        // Chuyển sang màn hình Home
-        Navigator.pushReplacementNamed(context, '/main');
-      } else {
-        setState(() {
-          _errorMessage = 'Đăng nhập thất bại';
-        });
+      // Lưu toàn bộ response data vào storage
+      try {
+        await storage.write(key: 'data', value: jsonEncode(response));
+        print('Data saved to storage successfully');
+      } catch (e) {
+        print('Error saving to storage: $e');
+        // Thử lưu dưới dạng string nếu jsonEncode fail
+        await storage.write(key: 'data', value: response.toString());
       }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
+
+      // Chuyển sang màn hình Home
+      Navigator.pushReplacementNamed(context, '/main');
     } catch (e) {
       // Cố gắng lấy thông điệp dễ đọc từ exception
       String message = e.toString();
@@ -144,25 +146,17 @@ class _LoginScreenState extends State<LoginScreen> {
       try {
         final response = await _authService.googleLogin(idToken);
         print('API Response: $response');
-        final token = response['data'];
-        if (token != null) {
-          // Cập nhật với token từ backend
-          userData['backendToken'] = token;
-          await storage.write(key: 'data', value: jsonEncode(userData));
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Đăng nhập Google thành công")),
-          );
-        } else {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Đăng nhập Google thành công (local mode)"),
-            ),
-          );
-        }
-      } catch (e) {
-        print('API Error (không ảnh hưởng): $e');
+        // Cập nhật với response từ backend
+        userData['backendResponse'] = response;
+        await storage.write(key: 'data', value: jsonEncode(userData));
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Đăng nhập Google thành công")),
+        );
+      } catch (apiError) {
+        print('API Error: $apiError');
+        // Vẫn tiếp tục với local data nếu API fail
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
