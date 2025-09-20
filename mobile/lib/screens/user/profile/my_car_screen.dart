@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/widgets/app_scaffold.dart';
-import 'package:mobile/services/vehicle_service.dart';
+import '../../../services/vehicle_service.dart';
 
 class MyCarScreen extends StatefulWidget {
   const MyCarScreen({super.key});
@@ -28,13 +27,6 @@ class _MyCarScreenState extends State<MyCarScreen> {
   // Loading states for dropdowns
   bool _isLoadingDropdowns = false;
 
-  // Store original vehicle data for comparison
-  Map<String, dynamic>? _originalVehicle;
-
-  // Dialog states
-  bool _isUpdating = false;
-  String? _updateError;
-
   @override
   void initState() {
     super.initState();
@@ -47,6 +39,26 @@ class _MyCarScreenState extends State<MyCarScreen> {
     super.dispose();
   }
 
+  Future<void> _loadVehicles() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final response = await VehicleService.getDriverVehicles();
+      setState(() {
+        vehicles = List<Map<String, dynamic>>.from(response['data'] ?? []);
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        isLoading = false;
+      });
+    }
+  }
+
   Future<void> _loadDropdownData() async {
     if (_isLoadingDropdowns) return;
 
@@ -55,66 +67,43 @@ class _MyCarScreenState extends State<MyCarScreen> {
     });
 
     try {
-      print('Starting to load dropdown data...');
-
       final results = await Future.wait([
         VehicleService.getBrands(),
         VehicleService.getColors(),
         VehicleService.getVehicleTypes(),
       ]);
 
-      print('API calls completed');
-      print('Brands response: ${results[0]}');
-      print('Colors response: ${results[1]}');
-      print('Vehicle types response: ${results[2]}');
-
       setState(() {
         // Brands có nested array structure: data[0] chứa array
         final brandsData = results[0]['data'];
-        print('Brands data structure: $brandsData');
-
         if (brandsData != null && brandsData is List && brandsData.isNotEmpty) {
-          print('Brands data[0]: ${brandsData[0]}');
           final allBrands = List<Map<String, dynamic>>.from(
             brandsData[0] ?? [],
           );
-          print('All brands before filter: $allBrands');
-          // Filter ra các brands chưa bị xóa (deletedAt == null)
           brands = allBrands
               .where((brand) => brand['deletedAt'] == null)
               .toList();
-          print('Filtered brands: $brands');
         } else {
           brands = [];
-          print('Brands data is null or empty');
         }
 
         // Colors và VehicleTypes có structure bình thường: data chứa array
-        final colorsData = results[1]['data'];
-        print('Colors data: $colorsData');
-        final allColors = List<Map<String, dynamic>>.from(colorsData ?? []);
-        print('All colors before filter: $allColors');
+        final allColors = List<Map<String, dynamic>>.from(
+          results[1]['data'] ?? [],
+        );
         colors = allColors
             .where((color) => color['deletedAt'] == null)
             .toList();
-        print('Filtered colors: $colors');
 
-        final vehicleTypesData = results[2]['data'];
-        print('Vehicle types data: $vehicleTypesData');
-        vehicleTypes = List<Map<String, dynamic>>.from(vehicleTypesData ?? []);
-        print('Vehicle types: $vehicleTypes');
-
+        vehicleTypes = List<Map<String, dynamic>>.from(
+          results[2]['data'] ?? [],
+        );
         _isLoadingDropdowns = false;
       });
-
-      print(
-        'Final counts - brands: ${brands.length}, colors: ${colors.length}, vehicle types: ${vehicleTypes.length}',
-      );
     } catch (e) {
       setState(() {
         _isLoadingDropdowns = false;
       });
-      print('Error loading dropdown data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Lỗi tải dữ liệu: $e'),
@@ -122,87 +111,6 @@ class _MyCarScreenState extends State<MyCarScreen> {
         ),
       );
     }
-  }
-
-  Future<void> _loadVehicles() async {
-    try {
-      setState(() {
-        isLoading = true;
-        errorMessage = null;
-      });
-
-      final response = await VehicleService.getDriverVehicles(
-        page: 1,
-        pageSize: 50, // Load nhiều xe hơn
-      );
-
-      print('Vehicle response: $response');
-
-      if (response['data'] != null) {
-        setState(() {
-          vehicles = List<Map<String, dynamic>>.from(response['data']);
-          isLoading = false;
-        });
-        print('Loaded ${vehicles.length} vehicles');
-        if (vehicles.isNotEmpty) {
-          print('First vehicle: ${vehicles[0]}');
-        }
-      } else {
-        setState(() {
-          vehicles = [];
-          isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
-      print('Error loading vehicles: $e');
-    }
-  }
-
-  Future<void> _deleteVehicle(String vehicleId) async {
-    try {
-      await VehicleService.deleteVehicle(vehicleId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Xóa xe thành công'),
-          backgroundColor: Colors.green,
-        ),
-      );
-      _loadVehicles(); // Reload danh sách
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi xóa xe: $e'), backgroundColor: Colors.red),
-      );
-    }
-  }
-
-  void _showDeleteDialog(String vehicleId, String plateNumber) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Xác nhận xóa'),
-          content: Text('Bạn có chắc chắn muốn xóa xe $plateNumber?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Hủy'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteVehicle(vehicleId);
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Xóa'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   void _showAddVehicleDialog() {
@@ -218,7 +126,7 @@ class _MyCarScreenState extends State<MyCarScreen> {
               title: const Text('Thêm xe mới'),
               content: SizedBox(
                 width: double.maxFinite,
-                child: _buildVehicleForm(setDialogState),
+                child: _buildVehicleForm(setDialogState, isEdit: false),
               ),
               actions: [
                 TextButton(
@@ -226,7 +134,9 @@ class _MyCarScreenState extends State<MyCarScreen> {
                   child: const Text('Hủy'),
                 ),
                 ElevatedButton(
-                  onPressed: _isLoadingDropdowns ? null : _createVehicle,
+                  onPressed: _isLoadingDropdowns
+                      ? null
+                      : () => _createVehicle(),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
@@ -242,12 +152,6 @@ class _MyCarScreenState extends State<MyCarScreen> {
   }
 
   void _showEditVehicleDialog(Map<String, dynamic> vehicle) {
-    print('Edit vehicle data: $vehicle');
-    print('Vehicle ID: ${vehicle['_id']}');
-    print('Brand ID structure: ${vehicle['brandId']}');
-    print('Color ID structure: ${vehicle['colorId']}');
-    print('Vehicle Type ID structure: ${vehicle['vehicleTypeId']}');
-
     _resetForm();
     _loadDropdownData();
 
@@ -256,13 +160,6 @@ class _MyCarScreenState extends State<MyCarScreen> {
     _selectedBrandId = vehicle['brandId']?['_id'];
     _selectedColorId = vehicle['colorId']?['_id'];
     _selectedVehicleTypeId = vehicle['vehicleTypeId']?['_id'];
-
-    // Store original values for comparison
-    _originalVehicle = vehicle;
-
-    print('Selected brand ID: $_selectedBrandId');
-    print('Selected color ID: $_selectedColorId');
-    print('Selected vehicle type ID: $_selectedVehicleTypeId');
 
     showDialog(
       context: context,
@@ -273,42 +170,7 @@ class _MyCarScreenState extends State<MyCarScreen> {
               title: const Text('Chỉnh sửa xe'),
               content: SizedBox(
                 width: double.maxFinite,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildVehicleForm(setDialogState),
-                    if (_updateError != null) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.red.shade200),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error,
-                              color: Colors.red.shade600,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _updateError!,
-                                style: TextStyle(
-                                  color: Colors.red.shade700,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
+                child: _buildVehicleForm(setDialogState, isEdit: true),
               ),
               actions: [
                 TextButton(
@@ -316,25 +178,14 @@ class _MyCarScreenState extends State<MyCarScreen> {
                   child: const Text('Hủy'),
                 ),
                 ElevatedButton(
-                  onPressed: _isLoadingDropdowns || _isUpdating
+                  onPressed: _isLoadingDropdowns
                       ? null
                       : () => _updateVehicle(vehicle['_id']),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                   ),
-                  child: _isUpdating
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
-                        )
-                      : const Text('Cập nhật'),
+                  child: const Text('Cập nhật'),
                 ),
               ],
             );
@@ -373,14 +224,14 @@ class _MyCarScreenState extends State<MyCarScreen> {
         vehicleTypeId: _selectedVehicleTypeId!,
       );
 
-      Navigator.of(context).pop(); // Close dialog
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Thêm xe thành công'),
           backgroundColor: Colors.green,
         ),
       );
-      _loadVehicles(); // Reload list
+      _loadVehicles();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi thêm xe: $e'), backgroundColor: Colors.red),
@@ -389,91 +240,106 @@ class _MyCarScreenState extends State<MyCarScreen> {
   }
 
   Future<void> _updateVehicle(String vehicleId) async {
-    print('Updating vehicle with ID: $vehicleId');
-    print('Original vehicle: $_originalVehicle');
-
-    if (_originalVehicle == null) {
+    if (_plateNumberController.text.isEmpty ||
+        _selectedBrandId == null ||
+        _selectedColorId == null ||
+        _selectedVehicleTypeId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Không tìm thấy thông tin xe gốc'),
-          backgroundColor: Colors.red,
+          content: Text('Vui lòng điền đầy đủ thông tin'),
+          backgroundColor: Colors.orange,
         ),
       );
       return;
     }
 
-    // Compare with original values and only send changed fields
-    final originalPlateNumber = _originalVehicle!['plateNumber'] ?? '';
-    final originalBrandId = _originalVehicle!['brandId']?['_id'];
-    final originalColorId = _originalVehicle!['colorId']?['_id'];
-    final originalVehicleTypeId = _originalVehicle!['vehicleTypeId']?['_id'];
-
-    final currentPlateNumber = _plateNumberController.text.trim();
-    final currentBrandId = _selectedBrandId;
-    final currentColorId = _selectedColorId;
-    final currentVehicleTypeId = _selectedVehicleTypeId;
-
-    print('Original values:');
-    print('  Plate: $originalPlateNumber');
-    print('  Brand: $originalBrandId');
-    print('  Color: $originalColorId');
-    print('  Type: $originalVehicleTypeId');
-
-    print('Current values:');
-    print('  Plate: $currentPlateNumber');
-    print('  Brand: $currentBrandId');
-    print('  Color: $currentColorId');
-    print('  Type: $currentVehicleTypeId');
-
-    setState(() {
-      _isUpdating = true;
-      _updateError = null;
-    });
-
     try {
       await VehicleService.updateVehicle(
         vehicleId: vehicleId,
-        brandId: currentBrandId,
-        colorId: currentColorId,
-        vehicleTypeId: currentVehicleTypeId,
+        brandId: _selectedBrandId!,
+        colorId: _selectedColorId!,
+        vehicleTypeId: _selectedVehicleTypeId!,
       );
 
-      Navigator.of(context).pop(); // Close dialog
+      Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cập nhật xe thành công'),
           backgroundColor: Colors.green,
         ),
       );
-      _loadVehicles(); // Reload list
+      _loadVehicles();
     } catch (e) {
-      setState(() {
-        _isUpdating = false;
-        _updateError = e.toString();
-      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi cập nhật xe: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showDeleteDialog(String vehicleId, String plateNumber) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Xác nhận xóa'),
+          content: Text('Bạn có chắc chắn muốn xóa xe $plateNumber?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Hủy'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _deleteVehicle(vehicleId);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Xóa'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteVehicle(String vehicleId) async {
+    try {
+      await VehicleService.deleteVehicle(vehicleId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Xóa xe thành công'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadVehicles();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi xóa xe: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      showBottomNav: true,
+    return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Xe của tôi',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-        ),
+        title: const Text('Xe của tôi'),
         backgroundColor: Colors.green,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
             onPressed: _showAddVehicleDialog,
+            icon: const Icon(Icons.add),
           ),
         ],
       ),
-      body: RefreshIndicator(onRefresh: _loadVehicles, child: _buildBody()),
+      body: _buildBody(),
     );
   }
 
@@ -498,14 +364,14 @@ class _MyCarScreenState extends State<MyCarScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
+                color: Colors.red.shade700,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               errorMessage!,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: TextStyle(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 16),
             ElevatedButton(
@@ -528,14 +394,14 @@ class _MyCarScreenState extends State<MyCarScreen> {
           children: [
             Icon(
               Icons.directions_car_outlined,
-              size: 80,
+              size: 64,
               color: Colors.grey.shade400,
             ),
             const SizedBox(height: 16),
             Text(
               'Chưa có xe nào',
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey.shade700,
               ),
@@ -543,11 +409,13 @@ class _MyCarScreenState extends State<MyCarScreen> {
             const SizedBox(height: 8),
             Text(
               'Thêm xe đầu tiên của bạn',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: TextStyle(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _showAddVehicleDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('Thêm xe'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
@@ -556,21 +424,21 @@ class _MyCarScreenState extends State<MyCarScreen> {
                   vertical: 12,
                 ),
               ),
-              icon: const Icon(Icons.add),
-              label: const Text('Thêm xe'),
             ),
           ],
         ),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: vehicles.length,
-      itemBuilder: (context, index) {
-        final vehicle = vehicles[index];
-        return _buildVehicleCard(vehicle);
-      },
+    return RefreshIndicator(
+      onRefresh: _loadVehicles,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: vehicles.length,
+        itemBuilder: (context, index) {
+          return _buildVehicleCard(vehicles[index]);
+        },
+      ),
     );
   }
 
@@ -689,44 +557,44 @@ class _MyCarScreenState extends State<MyCarScreen> {
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: Colors.green.shade600),
+        Icon(icon, size: 16, color: Colors.grey.shade600),
         const SizedBox(width: 8),
         Text(
           '$label: ',
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
             color: Colors.grey.shade700,
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
+            style: const TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildVehicleForm(StateSetter setDialogState) {
+  Widget _buildVehicleForm(StateSetter setDialogState, {bool isEdit = false}) {
     return SingleChildScrollView(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Plate Number (Readonly)
+          // Plate Number
           TextField(
             controller: _plateNumberController,
-            readOnly: true,
+            readOnly: isEdit, // Only readonly for edit
             decoration: InputDecoration(
               labelText: 'Biển số xe',
-              hintText: 'Biển số xe',
+              hintText: 'Nhập biển số xe',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               prefixIcon: const Icon(Icons.directions_car),
-              filled: true,
-              fillColor: Colors.grey.shade100,
             ),
           ),
           const SizedBox(height: 16),
@@ -742,9 +610,6 @@ class _MyCarScreenState extends State<MyCarScreen> {
               prefixIcon: const Icon(Icons.business),
             ),
             items: brands.map((brand) {
-              print(
-                'Creating brand dropdown item: ${brand['_id']} - ${brand['brandName']}',
-              );
               return DropdownMenuItem<String>(
                 value: brand['_id'],
                 child: Text(brand['brandName'] ?? 'N/A'),
@@ -804,15 +669,6 @@ class _MyCarScreenState extends State<MyCarScreen> {
               });
             },
           ),
-
-          if (_isLoadingDropdowns) ...[
-            const SizedBox(height: 16),
-            const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-              ),
-            ),
-          ],
         ],
       ),
     );
