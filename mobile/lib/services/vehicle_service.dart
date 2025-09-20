@@ -102,7 +102,6 @@ class VehicleService {
   // Cập nhật thông tin xe
   static Future<Map<String, dynamic>> updateVehicle({
     required String vehicleId,
-    String? plateNumber,
     String? colorId,
     String? vehicleTypeId,
     String? brandId,
@@ -113,14 +112,18 @@ class VehicleService {
     }
 
     final url = Uri.parse('$_baseUrl/parking/vehicles/$vehicleId');
+    print('Update vehicle URL: $url');
+    print('Vehicle ID: $vehicleId');
+    print('Token: ${token.substring(0, 20)}...');
 
     final Map<String, dynamic> body = {};
-    if (plateNumber != null) body['plateNumber'] = plateNumber;
     if (colorId != null) body['colorId'] = colorId;
     if (vehicleTypeId != null) body['vehicleTypeId'] = vehicleTypeId;
     if (brandId != null) body['brandId'] = brandId;
 
-    final response = await http.put(
+    print('Update request body: $body');
+
+    final response = await http.patch(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -128,6 +131,9 @@ class VehicleService {
       },
       body: jsonEncode(body),
     );
+
+    print('Update response status: ${response.statusCode}');
+    print('Update response body: ${response.body}');
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);

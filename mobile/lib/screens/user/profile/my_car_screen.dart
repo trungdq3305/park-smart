@@ -28,6 +28,13 @@ class _MyCarScreenState extends State<MyCarScreen> {
   // Loading states for dropdowns
   bool _isLoadingDropdowns = false;
 
+  // Store original vehicle data for comparison
+  Map<String, dynamic>? _originalVehicle;
+  
+  // Dialog states
+  bool _isUpdating = false;
+  String? _updateError;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +56,7 @@ class _MyCarScreenState extends State<MyCarScreen> {
 
     try {
       print('Starting to load dropdown data...');
-      
+
       final results = await Future.wait([
         VehicleService.getBrands(),
         VehicleService.getColors(),
@@ -64,35 +71,45 @@ class _MyCarScreenState extends State<MyCarScreen> {
       setState(() {
         // Brands có nested array structure: data[0] chứa array
         final brandsData = results[0]['data'];
+        print('Brands data structure: $brandsData');
+
         if (brandsData != null && brandsData is List && brandsData.isNotEmpty) {
+          print('Brands data[0]: ${brandsData[0]}');
           final allBrands = List<Map<String, dynamic>>.from(
             brandsData[0] ?? [],
           );
+          print('All brands before filter: $allBrands');
           // Filter ra các brands chưa bị xóa (deletedAt == null)
           brands = allBrands
               .where((brand) => brand['deletedAt'] == null)
               .toList();
+          print('Filtered brands: $brands');
         } else {
           brands = [];
+          print('Brands data is null or empty');
         }
 
         // Colors và VehicleTypes có structure bình thường: data chứa array
-        final allColors = List<Map<String, dynamic>>.from(
-          results[1]['data'] ?? [],
-        );
+        final colorsData = results[1]['data'];
+        print('Colors data: $colorsData');
+        final allColors = List<Map<String, dynamic>>.from(colorsData ?? []);
+        print('All colors before filter: $allColors');
         colors = allColors
             .where((color) => color['deletedAt'] == null)
             .toList();
+        print('Filtered colors: $colors');
 
-        vehicleTypes = List<Map<String, dynamic>>.from(
-          results[2]['data'] ?? [],
-        );
+        final vehicleTypesData = results[2]['data'];
+        print('Vehicle types data: $vehicleTypesData');
+        vehicleTypes = List<Map<String, dynamic>>.from(vehicleTypesData ?? []);
+        print('Vehicle types: $vehicleTypes');
+
         _isLoadingDropdowns = false;
       });
 
-      print('Loaded brands: ${brands.length}');
-      print('Loaded colors: ${colors.length}');
-      print('Loaded vehicle types: ${vehicleTypes.length}');
+      print(
+        'Final counts - brands: ${brands.length}, colors: ${colors.length}, vehicle types: ${vehicleTypes.length}',
+      );
     } catch (e) {
       setState(() {
         _isLoadingDropdowns = false;
@@ -225,6 +242,12 @@ class _MyCarScreenState extends State<MyCarScreen> {
   }
 
   void _showEditVehicleDialog(Map<String, dynamic> vehicle) {
+    print('Edit vehicle data: $vehicle');
+    print('Vehicle ID: ${vehicle['_id']}');
+    print('Brand ID structure: ${vehicle['brandId']}');
+    print('Color ID structure: ${vehicle['colorId']}');
+    print('Vehicle Type ID structure: ${vehicle['vehicleTypeId']}');
+
     _resetForm();
     _loadDropdownData();
 
@@ -233,6 +256,13 @@ class _MyCarScreenState extends State<MyCarScreen> {
     _selectedBrandId = vehicle['brandId']?['_id'];
     _selectedColorId = vehicle['colorId']?['_id'];
     _selectedVehicleTypeId = vehicle['vehicleTypeId']?['_id'];
+
+    // Store original values for comparison
+    _originalVehicle = vehicle;
+
+    print('Selected brand ID: $_selectedBrandId');
+    print('Selected color ID: $_selectedColorId');
+    print('Selected vehicle type ID: $_selectedVehicleTypeId');
 
     showDialog(
       context: context,
@@ -251,14 +281,23 @@ class _MyCarScreenState extends State<MyCarScreen> {
                   child: const Text('Hủy'),
                 ),
                 ElevatedButton(
-                  onPressed: _isLoadingDropdowns
+                  onPressed: _isLoadingDropdowns || _isUpdating
                       ? null
                       : () => _updateVehicle(vehicle['_id']),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Cập nhật'),
+                  child: _isUpdating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('Cập nhật'),
                 ),
               ],
             );
@@ -313,26 +352,53 @@ class _MyCarScreenState extends State<MyCarScreen> {
   }
 
   Future<void> _updateVehicle(String vehicleId) async {
-    if (_plateNumberController.text.isEmpty ||
-        _selectedBrandId == null ||
-        _selectedColorId == null ||
-        _selectedVehicleTypeId == null) {
+    print('Updating vehicle with ID: $vehicleId');
+    print('Original vehicle: $_originalVehicle');
+
+    if (_originalVehicle == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Vui lòng điền đầy đủ thông tin'),
-          backgroundColor: Colors.orange,
+          content: Text('Không tìm thấy thông tin xe gốc'),
+          backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
+    // Compare with original values and only send changed fields
+    final originalPlateNumber = _originalVehicle!['plateNumber'] ?? '';
+    final originalBrandId = _originalVehicle!['brandId']?['_id'];
+    final originalColorId = _originalVehicle!['colorId']?['_id'];
+    final originalVehicleTypeId = _originalVehicle!['vehicleTypeId']?['_id'];
+
+    final currentPlateNumber = _plateNumberController.text.trim();
+    final currentBrandId = _selectedBrandId;
+    final currentColorId = _selectedColorId;
+    final currentVehicleTypeId = _selectedVehicleTypeId;
+
+    print('Original values:');
+    print('  Plate: $originalPlateNumber');
+    print('  Brand: $originalBrandId');
+    print('  Color: $originalColorId');
+    print('  Type: $originalVehicleTypeId');
+
+    print('Current values:');
+    print('  Plate: $currentPlateNumber');
+    print('  Brand: $currentBrandId');
+    print('  Color: $currentColorId');
+    print('  Type: $currentVehicleTypeId');
+
+    setState(() {
+      _isUpdating = true;
+      _updateError = null;
+    });
+
     try {
       await VehicleService.updateVehicle(
         vehicleId: vehicleId,
-        plateNumber: _plateNumberController.text.trim(),
-        brandId: _selectedBrandId!,
-        colorId: _selectedColorId!,
-        vehicleTypeId: _selectedVehicleTypeId!,
+        brandId: currentBrandId,
+        colorId: currentColorId,
+        vehicleTypeId: currentVehicleTypeId,
       );
 
       Navigator.of(context).pop(); // Close dialog
@@ -344,12 +410,10 @@ class _MyCarScreenState extends State<MyCarScreen> {
       );
       _loadVehicles(); // Reload list
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi cập nhật xe: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() {
+        _isUpdating = false;
+        _updateError = e.toString();
+      });
     }
   }
 
@@ -638,6 +702,9 @@ class _MyCarScreenState extends State<MyCarScreen> {
               prefixIcon: const Icon(Icons.business),
             ),
             items: brands.map((brand) {
+              print(
+                'Creating brand dropdown item: ${brand['_id']} - ${brand['brandName']}',
+              );
               return DropdownMenuItem<String>(
                 value: brand['_id'],
                 child: Text(brand['brandName'] ?? 'N/A'),
