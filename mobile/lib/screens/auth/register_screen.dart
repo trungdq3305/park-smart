@@ -78,7 +78,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
 
       if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushNamed(context, '/register-otp', arguments: email);
       }
     } catch (e) {
       String message = e.toString();

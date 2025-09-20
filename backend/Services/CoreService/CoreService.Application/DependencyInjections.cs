@@ -1,7 +1,9 @@
 ﻿using CoreService.Application.Applications;
+using CoreService.Application.DTOs.CommentDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Repositories;
+using Dotnet.Shared.ServiceClients;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -21,6 +23,15 @@ namespace CoreService.Application
             services.AddScoped<IDriverApplication, DriverApplication>();
             services.AddScoped<IOperatorApplication, OperatorApplication>();
             services.AddScoped<IAdminApplication, AdminApplication>();
+            services.AddHttpClient<IParkingServiceClient, ParkingServiceClient>(c =>
+            {
+                c.BaseAddress = new Uri("https://parksmarthcmc.io.vn"); // gọi nội bộ qua docker network
+                c.Timeout = TimeSpan.FromSeconds(10);
+            });
+            services.AddScoped<ITermPolicyApplication, TermPolicyApplication>();
+            services.AddScoped<AccountDisplayHelper>();
+            services.AddScoped<IFaqApplication, FaqApplication>();
+            services.AddScoped<ICommentApplication, CommentApplication>();
             return services;
         }
     }

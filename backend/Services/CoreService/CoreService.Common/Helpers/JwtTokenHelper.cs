@@ -47,6 +47,8 @@ namespace CoreService.Common.Helpers
                     claims.Add(new Claim("driverId", driver.Id ?? ""));
                     claims.Add(new Claim("fullName", driver.FullName ?? ""));
                     claims.Add(new Claim("gender", driver.Gender.ToString() ?? ""));
+                    claims.Add(new Claim("creditPoint", driver.CreditPoint.ToString() ?? ""));
+                    claims.Add(new Claim("accumulatedPoints", driver.AccumulatedPoints.ToString() ?? ""));
                 }
             }
             else

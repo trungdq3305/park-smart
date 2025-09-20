@@ -13,10 +13,11 @@ namespace CoreService.Application.DTOs.AccountDtos
         [RegularExpression(@"^0\d{9}$", ErrorMessage = "Số điện thoại phải có 10 chữ số và bắt đầu bằng số 0")]
         public string PhoneNumber { get; set; }
 
-        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-        public string Email { get; set; }
-
         public string FullName { get; set; }
+
+        public string WardId { get; set; } = default!;
+
+        public string FullAddress { get; set; }
 
         public string TaxCode { get; set; }
 

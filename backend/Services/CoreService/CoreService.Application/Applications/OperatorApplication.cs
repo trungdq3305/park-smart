@@ -1,8 +1,11 @@
 ﻿using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.Interfaces;
+using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.DTOs;
+using Dotnet.Shared.ServiceClients;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -16,11 +19,14 @@ namespace CoreService.Application.Applications
     {
         private readonly IParkingLotOperatorRepository _operatorRepo;
         private readonly IAccountRepository _accountRepo;
-
-        public OperatorApplication(IParkingLotOperatorRepository operatorRepo, IAccountRepository accountRepo)
+        private readonly IParkingServiceClient _parkingClient;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public OperatorApplication(IParkingLotOperatorRepository operatorRepo, IAccountRepository accountRepo, IParkingServiceClient parkingClient, IHttpContextAccessor httpContextAccessor)
         {
             _operatorRepo = operatorRepo;
             _accountRepo = accountRepo;
+            _parkingClient = parkingClient;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<ApiResponse<OperatorUpdateDto>> UpdateAsync(OperatorUpdateDto dto, string accountId)
@@ -34,13 +40,6 @@ namespace CoreService.Application.Applications
                 throw new ApiException("Tài khoản không tồn tại", StatusCodes.Status404NotFound);
 
             // 🔹 Check trùng email
-            if (!string.IsNullOrEmpty(dto.Email))
-            {
-                var existingEmail = await _accountRepo.GetByEmailAsync(dto.Email);
-                if (existingEmail != null && existingEmail.Id != account.Id)
-                    throw new ApiException("Email đã tồn tại", StatusCodes.Status400BadRequest);
-            }
-
             // 🔹 Check trùng phone number
             if (!string.IsNullOrEmpty(dto.PhoneNumber))
             {
@@ -51,7 +50,6 @@ namespace CoreService.Application.Applications
 
             // Update Account
             account.PhoneNumber = dto.PhoneNumber;
-            account.Email = dto.Email;
             account.UpdatedAt = DateTime.UtcNow;
             account.UpdatedBy = accountId;
 
@@ -62,6 +60,39 @@ namespace CoreService.Application.Applications
             operatorEntity.ContactEmail = dto.ContactEmail;
             operatorEntity.UpdatedAt = DateTime.UtcNow;
             operatorEntity.UpdatedBy = accountId;
+
+            var addressDto = new UpdateAddressDto
+            {
+                WardId = dto.WardId,
+                FullAddress = dto.FullAddress
+            };
+            var auth = _httpContextAccessor.HttpContext?.Request.Headers["Authorization"].FirstOrDefault();
+            var token = (auth != null && auth.StartsWith("Bearer ")) ? auth.Substring("Bearer ".Length) : null;
+            try
+            {
+                if (operatorEntity.AddressId != null)
+                {
+                    var updated = await _parkingClient.UpdateAddressAsync(operatorEntity.AddressId, addressDto, token);
+                    if (updated == null)
+                        throw new ApiException("Không cập nhật được địa chỉ trong ParkingService", StatusCodes.Status502BadGateway);
+                }
+                else
+                {
+                    var created = await _parkingClient.CreateAddressAsync(addressDto, token);
+                    if (created == null)
+                        throw new ApiException("Không tạo được địa chỉ trong ParkingService", StatusCodes.Status502BadGateway);
+
+                    operatorEntity.AddressId = created.Id;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new ApiException($"Lỗi kết nối tới ParkingService: {ex.Message}", StatusCodes.Status502BadGateway);
+            }
+            catch (Exception ex)
+            {
+                throw new ApiException($"Lỗi khi gọi ParkingService: {ex.Message}", StatusCodes.Status500InternalServerError);
+            }
 
             await _accountRepo.UpdateAsync(account);
             await _operatorRepo.UpdateAsync(operatorEntity);

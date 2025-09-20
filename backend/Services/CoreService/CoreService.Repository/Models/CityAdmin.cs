@@ -28,11 +28,11 @@ namespace CoreService.Repository.Models
         public DateTime? UpdatedAt { get; set; }
 
         public DateTime? DeletedAt { get; set; }
-
+        [BsonRepresentation(BsonType.ObjectId)]
         public string CreatedBy { get; set; }
-
+        [BsonRepresentation(BsonType.ObjectId)]
         public string UpdatedBy { get; set; }
-
+        [BsonRepresentation(BsonType.ObjectId)]
         public string DeletedBy { get; set; }
     }
 }

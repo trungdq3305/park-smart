@@ -154,10 +154,6 @@ namespace CoreService.Application.Applications
             {
                 Id = null,
                 FullName = request.FullName,
-                TaxCode = request.TaxCode,
-                CompanyName = request.CompanyName,
-                ContactEmail = request.ContactEmail,
-                //Address = request.Address,
                 AccountId = acc.Id,
             };
 
@@ -430,13 +426,15 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<string>> HandleGoogleLoginAsync(string email, string name)
         {
             var account = await _accountRepo.GetByEmailAsync(email);
+            var tempPassword = GenerateTempPassword(12);
+
             if (account == null)
             {
                 account = new Account
                 {
                     Id = null,
                     Email = email,
-                    Password = HashPassword(Guid.NewGuid().ToString()),
+                    Password = HashPassword(tempPassword),
                     PhoneNumber = null,
                     RoleId = "68bee20c00a9410adb97d3a1",
                     IsActive = true,
@@ -453,27 +451,63 @@ namespace CoreService.Application.Applications
                     AccountId = account.Id
                 };
                 await _driverRepo.AddAsync(driver);
+
+                // 2. Gửi mật khẩu tạm cho user
+                await _emailApplication.SendInitialPasswordAsync(
+                    email,
+                    tempPassword,
+                    "Đây là mật khẩu để đăng nhập vào hệ thống nếu bạn không muốn đăng nhập bằng Google. " +
+                    "Hãy đổi mật khẩu ngay sau khi đăng nhập để đảm bảo an toàn."
+                );
             }
             else if (!account.IsActive)
             {
                 throw new ApiException("Tài khoản chưa được xác thực", StatusCodes.Status401Unauthorized);
             }
 
+            // 3. Tạo token & cập nhật LastLogin
             var token = _jwtHelper.GenerateToken(account);
             account.LastLoginAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.RefreshToken = token;
-
             await _accountRepo.UpdateAsync(account);
 
-            return new ApiResponse<string>
-            (
+            return new ApiResponse<string>(
                 data: token,
                 success: true,
                 message: "Đăng nhập bằng Google thành công",
                 statusCode: StatusCodes.Status200OK
             );
         }
+        string GenerateTempPassword(int length = 12)
+        {
+            if (length < 8) length = 8;   // ép tối thiểu 8 ký tự
+
+            const string upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            const string lower = "abcdefghijklmnopqrstuvwxyz";
+            const string digits = "0123456789";
+            const string special = "@$!%*?&";
+
+            var rnd = new Random();
+
+            // mỗi nhóm 1 ký tự
+            var chars = new[]
+            {
+        upper[rnd.Next(upper.Length)],
+        lower[rnd.Next(lower.Length)],
+        digits[rnd.Next(digits.Length)],
+        special[rnd.Next(special.Length)]
+    }.ToList();
+
+            // còn lại lấy random từ tất cả
+            string all = upper + lower + digits + special;
+            for (int i = chars.Count; i < length; i++)
+                chars.Add(all[rnd.Next(all.Length)]);
+
+            // xáo trộn
+            return new string(chars.OrderBy(_ => rnd.Next()).ToArray());
+        }
+
         public async Task<ApiResponse<bool>> ChangePasswordAsync(string accountId, ChangePasswordDto dto)
         {
 

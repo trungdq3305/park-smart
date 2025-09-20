@@ -1,10 +1,10 @@
 {
 	"info": {
-		"_postman_id": "46cc9dc1-d183-456f-b1d5-69bc314e5a5c",
+		"_postman_id": "4c01d3d8-7682-4ab8-959e-27f64c9f8002",
 		"name": "ParkSmart",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "45297038",
-		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-46cc9dc1-d183-456f-b1d5-69bc314e5a5c?action=share&source=collection_link&creator=45297038"
+		"_collection_link": "https://trung-7070617.postman.co/workspace/trung's-Workspace~60234a12-c824-4a2b-8700-d6d35d6e7ec9/collection/45297038-4c01d3d8-7682-4ab8-959e-27f64c9f8002?action=share&source=collection_link&creator=45297038"
 	},
 	"item": [
 		{
@@ -33,6 +33,29 @@
 								"core",
 								"auths",
 								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Google Login",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://parksmarthcmc.io.vn:8443/api/auths/google-login",
+							"protocol": "https",
+							"host": [
+								"parksmarthcmc",
+								"io",
+								"vn"
+							],
+							"port": "8443",
+							"path": [
+								"api",
+								"auths",
+								"google-login"
 							]
 						}
 					},
@@ -73,7 +96,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"email\": \"user@example.com\",\r\n  \"password\": \"Z0z?J\",\r\n  \"phoneNumber\": \"0102272822\",\r\n  \"fullName\": \"string\",\r\n  \"address\": \"string\",\r\n  \"taxCode\": \"string\",\r\n  \"companyName\": \"string\",\r\n  \"contactEmail\": \"user@example.com\"\r\n}",
+							"raw": "{\r\n  \"email\": \"user@example.com\",\r\n  \"password\": \"Z0z?J\",\r\n  \"phoneNumber\": \"0102272822\",\r\n  \"fullName\": \"string\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -81,14 +104,14 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/core/auths/driver-register",
+							"raw": "{{baseUrl}}/core/auths/operator-register",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"core",
 								"auths",
-								"driver-register"
+								"operator-register"
 							]
 						}
 					},
@@ -291,29 +314,6 @@
 								"core",
 								"auths",
 								"change-password"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Google Login",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "https://parksmarthcmc.io.vn:8443/api/auths/google-login",
-							"protocol": "https",
-							"host": [
-								"parksmarthcmc",
-								"io",
-								"vn"
-							],
-							"port": "8443",
-							"path": [
-								"api",
-								"auths",
-								"google-login"
 							]
 						}
 					},
@@ -568,7 +568,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"phoneNumber\": \"0265841659\",\r\n  \"email\": \"admin@example.com\",\r\n  \"fullName\": \"string\",\r\n  \"department\": \"string\",\r\n  \"position\": \"string\"\r\n}",
+							"raw": "{\r\n  \"phoneNumber\": \"0324847574\",\r\n  \"fullName\": \"string\",\r\n  \"department\": \"string\",\r\n  \"position\": \"string\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -600,7 +600,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"email\": \"driver@example.com\",\r\n  \"phoneNumber\": \"0552947588\",\r\n  \"fullName\": \"string\",\r\n  \"gender\": true,\r\n  \"drivingLicenseNumber\": \"string\"\r\n}",
+							"raw": "{\r\n  \"phoneNumber\": \"0674398212\",\r\n  \"fullName\": \"string\",\r\n  \"gender\": true\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -608,13 +608,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{baseUrl}}/core/admins",
+							"raw": "{{baseUrl}}/core/drivers",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"core",
-								"admins"
+								"drivers"
 							]
 						}
 					},
@@ -642,7 +642,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n  \"phoneNumber\": \"0762603789\",\r\n  \"email\": \"operator@example.com\",\r\n  \"fullName\": \"string\",\r\n  \"taxCode\": \"string\",\r\n  \"companyName\": \"string\",\r\n  \"contactEmail\": \"user@example.com\"\r\n}",
+							"raw": "{\r\n  \"phoneNumber\": \"0564226318\",\r\n  \"fullName\": \"string\",\r\n  \"wardId\": \"string\",\r\n  \"fullAddress\": \"string\",\r\n  \"taxCode\": \"string\",\r\n  \"companyName\": \"string\",\r\n  \"contactEmail\": \"user@example.com\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1001,6 +1001,670 @@
 				}
 			],
 			"description": "Các API liên quan đến hãng xe"
+		},
+		{
+			"name": "TermAndPolicy",
+			"item": [
+				{
+					"name": "Get All TaP",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": ""
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create TaP (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"title\": \"string\",\r\n  \"content\": \"string\",\r\n  \"description\": \"string\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/termpolicies",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"termpolicies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update TaP (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"68cc25744962dc867344e342\",\r\n  \"title\": \"string2\",\r\n  \"content\": \"string\",\r\n  \"description\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/termpolicies",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"termpolicies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By Id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"68cc25744962dc867344e342\",\r\n  \"title\": \"string2\",\r\n  \"content\": \"string\",\r\n  \"description\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/termpolicies/68cc259b4962dc867344e344",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"termpolicies",
+								"68cc259b4962dc867344e344"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete TaP (Admin)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/core/termpolicies/68cc259b4962dc867344e344",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"termpolicies",
+								"68cc259b4962dc867344e344"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get By Admin Id",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"68cc25744962dc867344e342\",\r\n  \"title\": \"string2\",\r\n  \"content\": \"string\",\r\n  \"description\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/termpolicies/by-admin/68bf1bfa63547daf59667800",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"termpolicies",
+								"by-admin",
+								"68bf1bfa63547daf59667800"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Comment",
+			"item": [
+				{
+					"name": "Get Comments By Parkinglot",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/core/comments/by-parkinglot/<id>?page=1&pageSize=1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments",
+								"by-parkinglot",
+								"<id>"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "pageSize",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Comments By FAQ",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/core/comments/by-faq/<id>?page&pageSize",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments",
+								"by-faq",
+								"<id>"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": null
+								},
+								{
+									"key": "pageSize",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"targetId\": \"68cd599095774348de20d3d0\",\r\n  \"content\": \"string\",\r\n  \"star\": 5,\r\n  \"targetType\": \"Faq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Reply Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"targetId\": \"68cd599095774348de20d3d0\",\r\n  \"content\": \"string\",\r\n  \"parentId\": \"68cd5e0f2d04214752a1920b\",\r\n  \"targetType\": \"Faq\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"content\": \"string\",\r\n  \"star\": 0\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/comments",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Comment",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"content\": \"string\",\r\n  \"star\": 0\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/comments/<id>",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"comments",
+								"<id>"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "FAQ",
+			"item": [
+				{
+					"name": "Get all FAQs",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"content\": \"string\",\r\n  \"star\": 0\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get FAQs By Status",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"content\": \"string\",\r\n  \"star\": 0\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs/by-status?status=Pending",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs",
+								"by-status"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "Pending"
+								},
+								{
+									"key": "page",
+									"value": null,
+									"disabled": true
+								},
+								{
+									"key": "pageSize",
+									"value": null,
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get My FAQs",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Get FAQs By Id",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				},
+				{
+					"name": "Create FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs/<id>",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs",
+								"<id>"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Approve FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs/<id>/approve",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs",
+								"<id>",
+								"approve"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reject FAQs",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{your_jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n  \"id\": \"string\",\r\n  \"question\": \"string\",\r\n  \"answer\": \"string\"\r\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/core/faqs/<id>/reject",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"core",
+								"faqs",
+								"<id>",
+								"reject"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [

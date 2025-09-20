@@ -21,7 +21,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     final bool isSelected = widget.currentIndex == index;
     final bool isHovered = _hoveredIndex == index;
     final Color hoverColor = Colors.green.shade400;
-    final Color iconColor = isSelected ? Colors.white : Colors.black87;
+    final Color iconColor = isSelected ? Colors.white : Colors.grey[400]!;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hoveredIndex = index),
@@ -30,7 +30,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
         curve: Curves.easeOut,
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: isSelected
@@ -44,40 +44,60 @@ class _BottomNavBarState extends State<BottomNavBar> {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      backgroundColor: Colors.white,
-      elevation: 8,
-      currentIndex: widget.currentIndex,
-      onTap: widget.onTap,
-      selectedItemColor: Colors.black,
-      unselectedItemColor: Colors.black54,
-      selectedIconTheme: const IconThemeData(size: 26),
-      unselectedIconTheme: const IconThemeData(size: 26),
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
-      items: [
-        BottomNavigationBarItem(
-          icon: _buildIcon(Icons.home_rounded, 0),
-          label: 'Trang chủ',
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        height: 75,
+        decoration: BoxDecoration(
+          color: Colors.grey[900],
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
         ),
-        BottomNavigationBarItem(
-          icon: _buildIcon(Icons.search_rounded, 1),
-          label: 'Tìm kiếm',
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: BottomNavigationBar(
+            type: BottomNavigationBarType.fixed,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            currentIndex: widget.currentIndex,
+            onTap: widget.onTap,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.grey[400],
+            selectedIconTheme: const IconThemeData(size: 26),
+            unselectedIconTheme: const IconThemeData(size: 26),
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            items: [
+              BottomNavigationBarItem(
+                icon: _buildIcon(Icons.home_rounded, 0),
+                label: 'Trang chủ',
+              ),
+              BottomNavigationBarItem(
+                icon: _buildIcon(Icons.search_rounded, 1),
+                label: 'Tìm kiếm',
+              ),
+              BottomNavigationBarItem(
+                icon: _buildIcon(Icons.chat_bubble_rounded, 2),
+                label: 'Trò chuyện',
+              ),
+              BottomNavigationBarItem(
+                icon: _buildIcon(Icons.history_rounded, 3),
+                label: 'Gần đây',
+              ),
+              BottomNavigationBarItem(
+                icon: _buildIcon(Icons.person_rounded, 4),
+                label: 'Tài khoản',
+              ),
+            ],
+          ),
         ),
-        BottomNavigationBarItem(
-          icon: _buildIcon(Icons.chat_bubble_rounded, 2),
-          label: 'Trò chuyện',
-        ),
-        BottomNavigationBarItem(
-          icon: _buildIcon(Icons.history_rounded, 3),
-          label: 'Gần đây',
-        ),
-        BottomNavigationBarItem(
-          icon: _buildIcon(Icons.person_rounded, 4),
-          label: 'Tài khoản',
-        ),
-      ],
+      ),
     );
   }
 }
