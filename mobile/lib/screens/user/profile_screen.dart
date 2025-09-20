@@ -231,32 +231,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // Widget _buildLogo() {
-  //   return Container(
-  //     margin: const EdgeInsets.only(top: 20, bottom: 20),
-  //     child: Column(
-  //       children: [
-  //         Container(
-  //           width: 60,
-  //           height: 60,
-  //           decoration: BoxDecoration(
-  //             gradient: LinearGradient(
-  //               begin: Alignment.topLeft,
-  //               end: Alignment.bottomRight,
-  //               colors: [
-  //                 const Color.fromARGB(255, 25, 210, 40),
-  //                 const Color.fromARGB(255, 25, 210, 40),
-  //               ],
-  //             ),
-  //             borderRadius: BorderRadius.circular(12),
-  //           ),
-  //           // child: Center(child: Image.asset("assets/logo.webp", height: 500)),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -304,6 +278,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       title: 'Xe của tôi',
                       onTap: () {
                         // TODO: Navigate to vehicles screen
+                      },
+                    ),
+                    _buildTile(
+                      icon: Icons.chat_outlined,
+                      title: 'Tin nhắn',
+                      onTap: () {
+                        // TODO: Navigate to chat screen
                       },
                     ),
                     _buildTile(

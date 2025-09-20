@@ -70,29 +70,53 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> googleLogin(String idToken) async {
-    // Thử endpoint khác hoặc sử dụng POST với body
-    final url = Uri.parse('$baseUrlGoogle/api/auths/google-login');
+    // Sử dụng GET request với query parameter
+    final url = Uri.parse('$baseUrlGoogle/api/auths/google-login').replace(
+      queryParameters: {
+        'idToken': idToken,
+        'redirectUrl': 'park-smart://login-success', // Custom scheme cho mobile
+      },
+    );
 
-    final response = await http.post(
+    final response = await http.get(
       url,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $idToken',
+        'Accept': 'application/json',
       },
-      body: jsonEncode({'idToken': idToken}),
     );
+
+    print('Google login response status: ${response.statusCode}');
+    print('Google login response headers: ${response.headers}');
+    print('Google login response body: ${response.body.substring(0, 500)}...');
 
     if (response.statusCode == 200) {
       // Kiểm tra xem response có phải là JSON không
       try {
         return jsonDecode(response.body);
       } catch (e) {
-        // Nếu không phải JSON, có thể là HTML hoặc text
-        print('Response body: ${response.body}');
+        // Nếu không phải JSON, có thể là HTML redirect page
+        print('Response is not JSON, might be redirect page');
+
+        // Thử parse HTML để tìm redirect URL hoặc token
+        if (response.body.contains('window.location') ||
+            response.body.contains('redirect') ||
+            response.body.contains('token')) {
+          // Có thể cần follow redirect hoặc extract token từ HTML
+          throw Exception(
+            'API trả về redirect page. Cần xử lý redirect hoặc extract token từ HTML.',
+          );
+        }
+
         throw Exception(
           'API trả về định dạng không đúng. Status: ${response.statusCode}. Body: ${response.body.substring(0, 200)}...',
         );
       }
+    } else if (response.statusCode == 302 || response.statusCode == 301) {
+      // Handle redirect
+      final location = response.headers['location'];
+      print('Redirect to: $location');
+      throw Exception('API redirect to: $location');
     } else {
       print('Error response: ${response.statusCode} - ${response.body}');
       throw Exception(
