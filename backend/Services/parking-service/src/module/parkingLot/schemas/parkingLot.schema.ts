@@ -45,6 +45,9 @@ export class ParkingLot extends BaseEntity {
 
   @Prop({ required: true, type: Boolean })
   isApproved: boolean
+
+  @Prop({ required: true, type: Number })
+  availableSpots: number
 }
 
 export const ParkingLotSchema = SchemaFactory.createForClass(ParkingLot)

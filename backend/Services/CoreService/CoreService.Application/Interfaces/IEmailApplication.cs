@@ -11,6 +11,7 @@ namespace CoreService.Application.Interfaces
         Task SendEmailConfirmationCodeAsync(string email, string confirmationLink);
         Task SendPasswordResetOtpAsync(string email, string code);
         Task SendPasswordChangeConfirmationAsync(string email, string confirmationLink);
+        Task SendInitialPasswordAsync(string email, string plainPassword, string note);
         Task SendEmailAsync(string toEmail, string subject, string body);
     }
 }

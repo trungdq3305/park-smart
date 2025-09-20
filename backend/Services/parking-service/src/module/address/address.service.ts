@@ -59,6 +59,7 @@ export class AddressService implements IAddressService {
       const response = await firstValueFrom(
         this.httpService.get<NominatimResponse>(url, {
           // <-- Thêm kiểu dữ liệu ở đây
+          timeout: 5000, // 5 giây
           headers: {
             'User-Agent': 'NestJS-GeoCoding-App/1.0 (contact@example.com)',
           },

@@ -64,6 +64,20 @@ namespace CoreService.Application.Applications
 
             await SendEmailAsync(email, subject, body);
         }
+        public async Task SendInitialPasswordAsync(string email, string plainPassword, string note)
+        {
+            var subject = "Tài khoản ParkSmart – Mật khẩu tạm thời";
+            var body = $@"
+        <h2>Chào mừng bạn đến với ParkSmart</h2>
+        <p>Tài khoản của bạn đã được tạo bằng Google Sign-In.</p>
+        <p>Nếu bạn muốn đăng nhập theo cách thông thường (email & mật khẩu), 
+        hãy dùng mật khẩu dưới đây và đổi ngay sau khi đăng nhập để bảo mật:</p>
+        <p style='font-size:22px; font-weight:bold; letter-spacing:2px;'>{plainPassword}</p>
+        <p>{note}</p>
+        <p>Trân trọng,<br/>{_emailSettings.FromName}</p>";
+
+            await SendEmailAsync(email, subject, body);
+        }
 
         public async Task SendEmailAsync(string toEmail, string subject, string body)
         {
