@@ -30,7 +30,7 @@ class _MyCarScreenState extends State<MyCarScreen> {
 
   // Store original vehicle data for comparison
   Map<String, dynamic>? _originalVehicle;
-  
+
   // Dialog states
   bool _isUpdating = false;
   String? _updateError;
@@ -273,7 +273,42 @@ class _MyCarScreenState extends State<MyCarScreen> {
               title: const Text('Chỉnh sửa xe'),
               content: SizedBox(
                 width: double.maxFinite,
-                child: _buildVehicleForm(setDialogState),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildVehicleForm(setDialogState),
+                    if (_updateError != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.error,
+                              color: Colors.red.shade600,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _updateError!,
+                                style: TextStyle(
+                                  color: Colors.red.shade700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -294,7 +329,9 @@ class _MyCarScreenState extends State<MyCarScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : const Text('Cập nhật'),
@@ -677,16 +714,19 @@ class _MyCarScreenState extends State<MyCarScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Plate Number
+          // Plate Number (Readonly)
           TextField(
             controller: _plateNumberController,
+            readOnly: true,
             decoration: InputDecoration(
               labelText: 'Biển số xe',
-              hintText: 'Nhập biển số xe',
+              hintText: 'Biển số xe',
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
               prefixIcon: const Icon(Icons.directions_car),
+              filled: true,
+              fillColor: Colors.grey.shade100,
             ),
           ),
           const SizedBox(height: 16),
