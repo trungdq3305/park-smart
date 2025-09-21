@@ -101,23 +101,37 @@ export class AddressRepository implements IAddressRepository {
   }
 
   async findWithinBox(
-    bottomLeft: [number, number], // [lng, lat]
-    topRight: [number, number], // [lng, lat]
+    bottomLeft: [number, number],
+    topRight: [number, number],
     page: number,
     limit: number,
-  ): Promise<Address[]> {
-    return this.addressModel
-      .find({
-        location: {
-          $geoWithin: {
-            // $box yêu cầu 2 điểm: góc dưới-trái và góc trên-phải
-            $box: [bottomLeft, topRight],
-          },
+  ): Promise<{ data: Address[]; total: number }> {
+    // <-- SỬA Ở ĐÂY
+
+    // Tạo một object query để tái sử dụng
+    const query = {
+      location: {
+        $geoWithin: {
+          $box: [bottomLeft, topRight],
         },
-      })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .exec()
+      },
+    }
+
+    // Thực hiện 2 truy vấn song song để tăng hiệu năng
+    const [total, data] = await Promise.all([
+      // 1. Đếm tất cả document khớp với query
+      this.addressModel.countDocuments(query),
+
+      // 2. Tìm các document khớp với query và áp dụng phân trang
+      this.addressModel
+        .find(query)
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .exec(),
+    ])
+
+    // Trả về kết quả theo đúng cấu trúc
+    return { data, total }
   }
 
   async findNear(

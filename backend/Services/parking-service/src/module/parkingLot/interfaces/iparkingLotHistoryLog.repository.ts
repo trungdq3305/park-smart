@@ -1,8 +1,7 @@
 import { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
-import { UpdateParkingLotHistoryLogDto } from '../dto/parkingLot.dto'
 export interface IParkingLotHistoryLogRepository {
   updateParkingLot(
-    parkingLotHistory: UpdateParkingLotHistoryLogDto,
+    parkingLotHistory: Partial<ParkingLotHistoryLog>,
   ): Promise<ParkingLotHistoryLog>
 
   findByParkingLotId(
@@ -11,6 +10,13 @@ export interface IParkingLotHistoryLogRepository {
 
   updateParkingLotHistoryLogStatus(
     id: string,
+    userId: string,
+    statusId: string,
+  ): Promise<boolean>
+
+  deleteParkingLot(
+    id: string,
+    userId: string,
     statusId: string,
   ): Promise<boolean>
 }

@@ -51,9 +51,9 @@ export class ParkingLotHistoryLog extends BaseEntity {
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ParkingLotUpdateStatus',
+    ref: 'ParkingLotStatus',
   })
-  parkingLotUpdateStatusId: mongoose.Schema.Types.ObjectId
+  parkingLotStatusId: mongoose.Schema.Types.ObjectId
 }
 
 export const ParkingLotHistoryLogSchema =

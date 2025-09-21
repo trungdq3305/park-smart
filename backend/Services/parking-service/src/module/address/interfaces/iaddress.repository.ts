@@ -18,11 +18,11 @@ export interface IAddressRepository {
   deleteAddress(id: string, userId: string): Promise<boolean>
   setAddressAsUsed(id: string): Promise<Address | null>
   findWithinBox(
-    bottomLeft: [number, number], // [lng, lat]
-    topRight: [number, number], // [lng, lat]
+    bottomLeft: [number, number],
+    topRight: [number, number],
     page: number,
     limit: number,
-  ): Promise<Address[]>
+  ): Promise<{ data: Address[]; total: number }>
   findNear(
     longitude: number,
     latitude: number,

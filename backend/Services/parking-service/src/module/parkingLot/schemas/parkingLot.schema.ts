@@ -43,11 +43,15 @@ export class ParkingLot extends BaseEntity {
   @Prop({ required: true, type: Number })
   totalLevel: number
 
-  @Prop({ required: true, type: Boolean })
-  isApproved: boolean
-
   @Prop({ required: true, type: Number })
   availableSpots: number
+
+  @Prop({
+    required: true,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ParkingLotStatus',
+  })
+  parkingLotStatusId: mongoose.Schema.Types.ObjectId
 }
 
 export const ParkingLotSchema = SchemaFactory.createForClass(ParkingLot)

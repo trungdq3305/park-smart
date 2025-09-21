@@ -1,24 +1,13 @@
 import { ParkingLot } from '../schemas/parkingLot.schema'
-import { CreateParkingLotDto } from '../dto/parkingLot.dto'
 
 export interface IParkingLotRepository {
-  createParkingLot(
-    parkingLot: CreateParkingLotDto,
-    userId: string,
-  ): Promise<ParkingLot>
+  createParkingLot(parkingLotData: Partial<ParkingLot>): Promise<ParkingLot>
 
   findParkingLotById(id: string): Promise<ParkingLot | null>
 
   findByAddressIds(addressIds: string[]): Promise<ParkingLot[]>
 
-  findAllParkingLot(
-    page: number,
-    pageSize: number,
-  ): Promise<{ data: ParkingLot[]; total: number }>
-
-  deleteParkingLot(id: string, userId: string): Promise<boolean>
-
-  updateAvalableSpots(id: string, availableSpots: number): Promise<boolean>
+  updateAvailableSpots(id: string, change: number): Promise<boolean>
 
   approveParkingLot(
     id: string,
@@ -37,5 +26,11 @@ export interface IParkingLotRepository {
     topRight: [number, number], // [lng, lat]
     page: number,
     pageSize: number,
+  ): Promise<{ data: ParkingLot[]; total: number }>
+
+  findAllParkingLotByStatus(
+    page: number,
+    pageSize: number,
+    statusId: string,
   ): Promise<{ data: ParkingLot[]; total: number }>
 }
