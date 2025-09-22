@@ -26,7 +26,7 @@ export default tseslint.config(
     ],
     plugins: {
       'simple-import-sort': simpleImportSort,
-      unicorn,
+      'unicorn': unicorn,
     },
     languageOptions: {
       parserOptions: {
@@ -36,7 +36,7 @@ export default tseslint.config(
     },
     rules: {
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
       '@typescript-eslint/no-unsafe-call': 'error',
       '@typescript-eslint/no-unsafe-argument': 'error',
       '@typescript-eslint/no-unsafe-assignment': 'warn',
@@ -45,15 +45,18 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-misused-spread': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'warn',
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
       'unicorn/prevent-abbreviations': 'error',
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
-      eqeqeq: 'error',
-      'padding-line-between-statements': [
+      'no-console': ['warn', { 'allow': ['warn', 'error'] }],
+      'eqeqeq': 'error',
+      '@typescript-eslint/no-extraneous-class': 'off',
+      '@/lines-between-class-members': [
         'error',
-        { blankLine: 'always', prev: '*', next: ['function', 'class'] },
-        { blankLine: 'always', prev: ['function', 'class'], next: '*' },
+        'always',
+        { 'exceptAfterSingleLine': true }
       ],
     },
   }),
