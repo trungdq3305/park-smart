@@ -7,9 +7,10 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
+
 import {
-  ParkingLotSpotsUpdateDto,
   ParkingLotMinimalResponseDto,
+  ParkingLotSpotsUpdateDto,
 } from './dto/parkingLot.dto'
 
 @Injectable() // Quan trọng: Để có thể inject vào Service

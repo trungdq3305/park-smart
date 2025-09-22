@@ -1,5 +1,5 @@
-import { CreateAddressDto, UpdateAddressDto } from '../dto/address.dto'
-import { Address } from '../schemas/address.schema'
+import type { CreateAddressDto, UpdateAddressDto } from '../dto/address.dto'
+import type { Address } from '../schemas/address.schema'
 
 export interface IAddressRepository {
   createAddress(

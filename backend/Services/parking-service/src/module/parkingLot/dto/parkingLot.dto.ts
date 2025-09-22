@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger'
+import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import {
   IsBoolean,
   IsLatitude,
@@ -13,7 +14,6 @@ import {
   IsString,
   Matches,
 } from 'class-validator'
-import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
 
 export class CreateParkingLotDto {

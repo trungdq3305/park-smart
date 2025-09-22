@@ -5,9 +5,6 @@
   "useTabs": false,
   "arrowParens": "always",
   "semi": false,
-  "jsxSingleQuote": true,
   "printWidth": 80,
-  "jsxBracketSameLine": false,
-  "bracketSameLine": false,
-  "isExternalModuleNameRelative": true
+  "bracketSameLine": false
 }

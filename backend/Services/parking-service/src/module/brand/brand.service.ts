@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { HttpService } from '@nestjs/axios'
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
   BadRequestException,
   ConflictException,
@@ -7,14 +9,13 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common'
-import { CreateBrandDto, BrandResponseDto } from './dto/brand.dto'
+import { ConfigService } from '@nestjs/config'
+import { plainToInstance } from 'class-transformer'
+import { firstValueFrom } from 'rxjs'
+
+import { BrandResponseDto, CreateBrandDto } from './dto/brand.dto'
 import { IBrandRepository } from './interfaces/ibrand.repository'
 import { IBrandService } from './interfaces/ibrand.service'
-import { HttpService } from '@nestjs/axios'
-import { firstValueFrom } from 'rxjs'
-import { ConfigService } from '@nestjs/config'
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
-import { plainToInstance } from 'class-transformer'
 import { Brand } from './schemas/brand.schema'
 
 @Injectable()

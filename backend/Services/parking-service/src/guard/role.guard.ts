@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
 import {
-  Injectable,
   CanActivate,
   ExecutionContext,
   ForbiddenException, // Lỗi 403 khi không có quyền
+  Injectable,
   Logger,
 } from '@nestjs/common'
 import { Reflector } from '@nestjs/core' // Dùng để đọc metadata từ @Roles()
@@ -37,7 +37,7 @@ export class RolesGuard implements CanActivate {
 
     // 3. Kiểm tra và truy cập trực tiếp vào req.user.role
     // req.user.role giờ đây được mong đợi là một string hoặc một mảng các string
-    if (!user || user.role === undefined || user.role === null) {
+    if (user?.role === undefined || user.role === null) {
       this.logger.warn(
         'Thông tin vai trò người dùng (req.user.role) bị thiếu hoặc null.',
       )

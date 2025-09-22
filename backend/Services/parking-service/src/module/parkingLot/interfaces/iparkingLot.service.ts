@@ -1,14 +1,15 @@
-import { ParkingLot } from '../schemas/parkingLot.schema'
-import { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
-import {
-  CreateParkingLotDto,
-  UpdateParkingLotHistoryLogDto,
-  CoordinatesDto,
+import type { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
+import type { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
+
+import type {
   BoundingBoxDto,
+  CoordinatesDto,
+  CreateParkingLotDto,
   ParkingLotResponseDto,
+  UpdateParkingLotHistoryLogDto,
 } from '../dto/parkingLot.dto'
-import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
-import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
+import type { ParkingLot } from '../schemas/parkingLot.schema'
+import type { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
 
 export interface IParkingLotService {
   getParkingLotDetails(id: string): Promise<ParkingLot>

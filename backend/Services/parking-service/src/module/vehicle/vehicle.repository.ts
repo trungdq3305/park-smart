@@ -1,9 +1,10 @@
-import { Model } from 'mongoose'
-import { Vehicle } from './schemas/vehicle.schema'
-import { IVehicleRepository } from './interfaces/ivehicle.repository'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
+
 import { CreateVehicleDto, UpdateVehicleDto } from './dto/vehicle.dto'
+import { IVehicleRepository } from './interfaces/ivehicle.repository'
+import { Vehicle } from './schemas/vehicle.schema'
 
 @Injectable()
 export class VehicleRepository implements IVehicleRepository {

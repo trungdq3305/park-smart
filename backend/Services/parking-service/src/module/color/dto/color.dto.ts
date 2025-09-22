@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger'
-import { IsMongoId, IsNotEmpty, IsString } from 'class-validator'
 import { Exclude, Expose, Transform } from 'class-transformer'
+import { IsMongoId, IsNotEmpty, IsString } from 'class-validator'
 
 // --- DTO for URL Parameters ---
 export class ColorIdParamDto {

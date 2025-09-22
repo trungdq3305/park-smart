@@ -1,4 +1,4 @@
-import { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
+import type { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
 export interface IParkingLotHistoryLogRepository {
   updateParkingLot(
     parkingLotHistory: Partial<ParkingLotHistoryLog>,
@@ -20,3 +20,7 @@ export interface IParkingLotHistoryLogRepository {
     statusId: string,
   ): Promise<boolean>
 }
+
+export const IParkingLotHistoryLogRepository = Symbol(
+  'IParkingLotHistoryLogRepository',
+)

@@ -1,9 +1,10 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { plainToInstance } from 'class-transformer'
+
+import { VehicleTypeResponseDto } from './dto/vehicleTypeResponse.dto'
 import { IVehicleTypeRepository } from './interfaces/ivehicleType.repository'
 import { IVehicleTypeService } from './interfaces/ivehicleType.service'
 import { VehicleType } from './schemas/vehicleType.schema'
-import { plainToInstance } from 'class-transformer'
-import { VehicleTypeResponseDto } from './dto/vehicleTypeResponse.dto'
 
 @Injectable()
 export class VehicleTypeService implements IVehicleTypeService {

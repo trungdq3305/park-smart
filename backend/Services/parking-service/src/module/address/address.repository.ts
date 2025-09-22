@@ -1,9 +1,10 @@
-import mongoose, { Model } from 'mongoose'
-import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto'
-import { Address } from './schemas/address.schema'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import mongoose, { Model } from 'mongoose'
+
+import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto'
 import { IAddressRepository } from './interfaces/iaddress.repository'
+import { Address } from './schemas/address.schema'
 
 @Injectable()
 export class AddressRepository implements IAddressRepository {

@@ -1,11 +1,12 @@
-import { IdDto } from 'src/common/dto/params.dto'
-import {
+import type { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
+import type { IdDto } from 'src/common/dto/params.dto'
+
+import type {
   CreateVehicleDto,
-  PlateParamDto,
+  PlateParamDto as PlateParameterDto,
   UpdateVehicleDto,
   VehicleResponseDto,
 } from '../dto/vehicle.dto'
-import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 export interface IVehicleService {
   createVehicle(
     vehicle: CreateVehicleDto,
@@ -22,7 +23,9 @@ export interface IVehicleService {
     pageSize: number,
   ): Promise<{ data: VehicleResponseDto[]; pagination: PaginationDto }>
   findVehicleById(id: IdDto): Promise<VehicleResponseDto>
-  findVehicleByPlateNumber(plateDto: PlateParamDto): Promise<VehicleResponseDto>
+  findVehicleByPlateNumber(
+    plateDto: PlateParameterDto,
+  ): Promise<VehicleResponseDto>
   updateVehicle(
     id: IdDto,
     vehicle: UpdateVehicleDto,

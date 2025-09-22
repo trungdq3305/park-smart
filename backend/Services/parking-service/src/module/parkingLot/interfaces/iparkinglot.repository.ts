@@ -1,4 +1,4 @@
-import { ParkingLot } from '../schemas/parkingLot.schema'
+import type { ParkingLot } from '../schemas/parkingLot.schema'
 
 export interface IParkingLotRepository {
   createParkingLot(parkingLotData: Partial<ParkingLot>): Promise<ParkingLot>
@@ -34,3 +34,5 @@ export interface IParkingLotRepository {
     statusId: string,
   ): Promise<{ data: ParkingLot[]; total: number }>
 }
+
+export const IParkingLotRepository = Symbol('IParkingLotRepository')

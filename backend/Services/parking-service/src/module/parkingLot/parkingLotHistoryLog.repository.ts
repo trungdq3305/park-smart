@@ -1,7 +1,8 @@
 import { InjectModel } from '@nestjs/mongoose'
+import { Model, Types } from 'mongoose'
+
 import { IParkingLotHistoryLogRepository } from './interfaces/iparkingLotHistoryLog.repository'
 import { ParkingLotHistoryLog } from './schemas/parkingLotHistoryLog.schema'
-import { Model, Types } from 'mongoose'
 
 export class ParkingLotHistoryLogRepository
   implements IParkingLotHistoryLogRepository

@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import { BaseEntity } from 'src/common/schema/baseEntity.schema'
 
 export type AddressDocument = HydratedDocument<Address>
+
 class Point {
   @Prop({
     type: String,
@@ -18,6 +19,7 @@ class Point {
   })
   coordinates: number[] // Mảng này sẽ chứa [longitude, latitude]
 }
+
 @Schema()
 export class Address extends BaseEntity {
   @Prop({

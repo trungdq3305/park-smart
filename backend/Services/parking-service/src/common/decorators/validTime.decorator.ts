@@ -1,4 +1,6 @@
-import { registerDecorator, ValidationOptions } from 'class-validator'
+import type { ValidationOptions } from 'class-validator'
+import { registerDecorator } from 'class-validator'
+
 import { IsAfterTimeConstraint } from '../validators/isAfterTimeValidator.validator'
 
 export function IsAfterTime(

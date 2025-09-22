@@ -1,5 +1,5 @@
-import { CreateVehicleDto, UpdateVehicleDto } from '../dto/vehicle.dto'
-import { Vehicle } from '../schemas/vehicle.schema'
+import type { CreateVehicleDto, UpdateVehicleDto } from '../dto/vehicle.dto'
+import type { Vehicle } from '../schemas/vehicle.schema'
 export interface IVehicleRepository {
   createVehicle(
     vehicle: CreateVehicleDto,

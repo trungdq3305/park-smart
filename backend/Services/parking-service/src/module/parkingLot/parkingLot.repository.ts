@@ -1,9 +1,10 @@
-import { ParkingLot } from './schemas/parkingLot.schema'
-import { IParkingLotRepository } from './interfaces/iparkinglot.repository'
+import { Inject } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
-import { Inject } from '@nestjs/common'
+
 import { IAddressRepository } from '../address/interfaces/iaddress.repository'
+import { IParkingLotRepository } from './interfaces/iparkinglot.repository'
+import { ParkingLot } from './schemas/parkingLot.schema'
 
 export class ParkingLotRepository implements IParkingLotRepository {
   constructor(

@@ -4,21 +4,22 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { IVehicleRepository } from './interfaces/ivehicle.repository'
-import { IVehicleService } from './interfaces/ivehicle.service'
-import { Vehicle } from './schemas/vehicle.schema'
+import { plainToInstance } from 'class-transformer'
+import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { IdDto } from 'src/common/dto/params.dto'
+
+import { IBrandRepository } from '../brand/interfaces/ibrand.repository'
+import { IColorRepository } from '../color/interfaces/icolor.repository'
+import { IVehicleTypeRepository } from '../vehicleType/interfaces/ivehicleType.repository'
 import {
   CreateVehicleDto,
-  PlateParamDto,
+  PlateParamDto as PlateParameterDto,
   UpdateVehicleDto,
   VehicleResponseDto,
 } from './dto/vehicle.dto'
-import { plainToInstance } from 'class-transformer'
-import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
-import { IVehicleTypeRepository } from '../vehicleType/interfaces/ivehicleType.repository'
-import { IColorRepository } from '../color/interfaces/icolor.repository'
-import { IBrandRepository } from '../brand/interfaces/ibrand.repository'
+import { IVehicleRepository } from './interfaces/ivehicle.repository'
+import { IVehicleService } from './interfaces/ivehicle.service'
+import { Vehicle } from './schemas/vehicle.schema'
 @Injectable()
 export class VehicleService implements IVehicleService {
   constructor(
@@ -184,7 +185,7 @@ export class VehicleService implements IVehicleService {
   }
 
   async findVehicleByPlateNumber(
-    plateDto: PlateParamDto,
+    plateDto: PlateParameterDto,
   ): Promise<VehicleResponseDto> {
     const vehicle = await this.vehicleRepository.findVehicleByPlateNumber(
       plateDto.plateNumber,
