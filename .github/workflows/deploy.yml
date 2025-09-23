@@ -12,6 +12,17 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      # 🔹 Build thử các service để đảm bảo không lỗi
+      - name: Build CoreService
+        run: docker build -t coreservice-test -f backend/Services/CoreService/Dockerfile .
+
+      - name: Build ParkingService
+        run: docker build -t parkingservice-test ./backend/Services/parking-service
+
+      - name: Build OcelotGateway
+        run: docker build -t ocelotgateway-test -f backend/Gateway/OcelotGateway/Dockerfile .
+
+      # 🔹 Nếu build ok hết mới copy lên VPS
       - name: Copy source to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -32,7 +43,6 @@ jobs:
             cd ~/park-smart
 
             echo ">>> Creating .env file for parkingservice..."
-            # Lệnh tạo file .env của bạn giữ nguyên
             cat <<EOF > ./backend/Services/parking-service/.env
             PORT=${{ secrets.PORT }}
             MONGO_URI=${{ secrets.MONGO_URI }}
@@ -49,5 +59,4 @@ jobs:
             echo ">>> Starting deployment..."
             docker compose down
             docker compose up -d --build
-
             echo ">>> Deployment finished."
