@@ -84,6 +84,39 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> changePassword({
+    required String oldPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    // Lấy token từ storage
+    final token = await _storage.read(key: 'accessToken');
+    if (token == null) {
+      throw Exception('No authentication token found');
+    }
+
+    final url = Uri.parse('$baseUrl/core/auths/change-password');
+
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Change password failed: ${response.body}');
+    }
+  }
+
   Future<Map<String, dynamic>> googleLogin(String idToken) async {
     // Sử dụng GET request với query parameter
     final url = Uri.parse('$baseUrlGoogle/api/auths/google-login').replace(
