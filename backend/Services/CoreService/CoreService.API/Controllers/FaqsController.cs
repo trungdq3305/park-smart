@@ -60,10 +60,10 @@ namespace CoreService.API.Controllers
 
         [HttpPut("{id}/reject")]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Reject(string id)
+        public async Task<IActionResult> Reject(FaqRejectDto dto)
         {
             var adminId = User.FindFirst("id")?.Value;
-            var res = await _app.RejectAsync(id, adminId);
+            var res = await _app.RejectAsync(dto, adminId);
             return StatusCode(res.StatusCode, res);
         }
         [HttpGet("by-status")]
