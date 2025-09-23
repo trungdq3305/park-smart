@@ -67,12 +67,7 @@ export class AddressService implements IAddressService {
         }),
       )
 
-      if (
-        !response ||
-        typeof response !== 'object' ||
-        response === null ||
-        !('data' in response)
-      ) {
+      if (typeof response !== 'object' || !('data' in response)) {
         throw new HttpException(
           'Không nhận được dữ liệu hợp lệ từ dịch vụ định vị.',
           HttpStatus.SERVICE_UNAVAILABLE,
@@ -81,7 +76,7 @@ export class AddressService implements IAddressService {
       const locations = (response as { data: NominatimResponse }).data // <-- Đã sửa ở đây
 
       // Kiểm tra kết quả
-      if (!locations || locations.length === 0) {
+      if (locations.length === 0) {
         // <-- Sửa ở đây
         throw new HttpException(
           `Không thể tìm thấy địa chỉ: "${fullAddress}"`,
@@ -104,7 +99,7 @@ export class AddressService implements IAddressService {
       // Kiểm tra xem đây có phải là lỗi từ Axios không
       if (axios.isAxiosError(error) && error.response) {
         console.error(
-          `Lỗi từ Nominatim API - Status: ${error.response.status}`,
+          `Lỗi từ Nominatim API - Status: ${String(error.response.status)}`,
           JSON.stringify(error.response.data, null, 2),
         )
 

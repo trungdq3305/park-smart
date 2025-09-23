@@ -24,7 +24,7 @@ export class VehicleTypeService implements IVehicleTypeService {
   async getVehicleTypes(): Promise<VehicleTypeResponseDto[]> {
     // Sửa: Trả về entity
     const vehicleTypes = await this.vehicleTypeRepository.getVehicleTypes()
-    if (!vehicleTypes || vehicleTypes.length === 0) {
+    if (vehicleTypes.length === 0) {
       throw new NotFoundException('Không tìm thấy loại xe nào trong hệ thống')
     }
     return vehicleTypes.map((vehicleType) =>

@@ -11,6 +11,7 @@ import { JwtAuthGuard } from './guard/jwtAuth.guard'
 import { AddressModule } from './module/address/address.module'
 import { BrandModule } from './module/brand/brand.module'
 import { ColorModule } from './module/color/color.module'
+import { ParkingLotStatusModule } from './module/parkingLotStatus/parkingLotStatus.module'
 import { VehicleModule } from './module/vehicle/vehicle.module'
 import { VehicleTypeModule } from './module/vehicleType/vehicleType.module'
 import { WardModule } from './module/ward/ward.module'
@@ -42,6 +43,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     VehicleTypeModule,
     ColorModule,
     VehicleModule,
+    ParkingLotStatusModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],

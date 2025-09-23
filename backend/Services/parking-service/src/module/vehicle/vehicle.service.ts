@@ -101,7 +101,7 @@ export class VehicleService implements IVehicleService {
 
     let vehicle: Vehicle | null
 
-    if (existingVehicle && existingVehicle.deletedAt) {
+    if (existingVehicle?.deletedAt) {
       vehicle = await this.vehicleRepository.createVehicleIfDeleted(
         createVehicleDto,
         userId,
@@ -244,7 +244,7 @@ export class VehicleService implements IVehicleService {
       message = 'Xóa xe thành công'
     }
     return {
-      success: !!deletedVehicle,
+      success: deletedVehicle,
       message,
     }
   }
@@ -265,7 +265,7 @@ export class VehicleService implements IVehicleService {
       message = 'Khôi phục xe thành công'
     }
     return {
-      success: !!restoredVehicle,
+      success: restoredVehicle,
       message,
     }
   }
