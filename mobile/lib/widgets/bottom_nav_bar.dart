@@ -83,8 +83,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 label: 'Tìm kiếm',
               ),
               BottomNavigationBarItem(
-                icon: _buildIcon(Icons.chat_bubble_rounded, 2),
-                label: 'Trò chuyện',
+                icon: _buildIcon(Icons.location_on_rounded, 2),
+                label: 'Địa chỉ',
               ),
               BottomNavigationBarItem(
                 icon: _buildIcon(Icons.history_rounded, 3),

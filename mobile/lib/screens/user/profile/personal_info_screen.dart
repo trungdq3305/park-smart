@@ -252,7 +252,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      showBottomNav: true,
+      showBottomNav: false,
       currentIndex: 4, // Profile tab index (last tab)
       onTapBottomNav: (index) {
         // Handle bottom navigation

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../services/vehicle_service.dart';
+import '../../../widgets/vehicle/vehicle_card.dart';
+import '../../../widgets/vehicle/vehicle_dialogs.dart';
+import '../../../widgets/vehicle/state_widgets.dart';
 
 class MyCarScreen extends StatefulWidget {
   const MyCarScreen({super.key});
@@ -8,7 +11,8 @@ class MyCarScreen extends StatefulWidget {
   State<MyCarScreen> createState() => _MyCarScreenState();
 }
 
-class _MyCarScreenState extends State<MyCarScreen> {
+class _MyCarScreenState extends State<MyCarScreen>
+    with TickerProviderStateMixin {
   List<Map<String, dynamic>> vehicles = [];
   bool isLoading = true;
   String? errorMessage;
@@ -26,16 +30,55 @@ class _MyCarScreenState extends State<MyCarScreen> {
 
   // Loading states for dropdowns
   bool _isLoadingDropdowns = false;
+  bool _isSubmitting = false;
+  String? _errorMessage;
+
+  // Animation controllers
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  // App theme colors
+  static const Color primaryColor = Colors.green;
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardColor = Colors.white;
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
     _loadVehicles();
+  }
+
+  void _initializeAnimations() {
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
+
+    _fadeController.forward();
+    _slideController.forward();
   }
 
   @override
   void dispose() {
     _plateNumberController.dispose();
+    _fadeController.dispose();
+    _slideController.dispose();
     super.dispose();
   }
 
@@ -119,31 +162,39 @@ class _MyCarScreenState extends State<MyCarScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Thêm xe mới'),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: _buildVehicleForm(setDialogState, isEdit: false),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Hủy'),
-                ),
-                ElevatedButton(
-                  onPressed: _isLoadingDropdowns
-                      ? null
-                      : () => _createVehicle(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Thêm xe'),
-                ),
-              ],
+            return VehicleDialogs.buildAddVehicleDialog(
+              context: context,
+              plateNumberController: _plateNumberController,
+              selectedBrandId: _selectedBrandId,
+              selectedColorId: _selectedColorId,
+              selectedVehicleTypeId: _selectedVehicleTypeId,
+              brands: brands,
+              colors: colors,
+              vehicleTypes: vehicleTypes,
+              onBrandChanged: (value) {
+                setDialogState(() {
+                  _selectedBrandId = value;
+                });
+              },
+              onColorChanged: (value) {
+                setDialogState(() {
+                  _selectedColorId = value;
+                });
+              },
+              onVehicleTypeChanged: (value) {
+                setDialogState(() {
+                  _selectedVehicleTypeId = value;
+                });
+              },
+              errorMessage: _errorMessage,
+              isLoadingDropdowns: _isLoadingDropdowns,
+              isSubmitting: _isSubmitting,
+              onCancel: () => Navigator.of(context).pop(),
+              onSubmit: () => _createVehicle(),
             );
           },
         );
@@ -163,31 +214,39 @@ class _MyCarScreenState extends State<MyCarScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Chỉnh sửa xe'),
-              content: SizedBox(
-                width: double.maxFinite,
-                child: _buildVehicleForm(setDialogState, isEdit: true),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Hủy'),
-                ),
-                ElevatedButton(
-                  onPressed: _isLoadingDropdowns
-                      ? null
-                      : () => _updateVehicle(vehicle['_id']),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('Cập nhật'),
-                ),
-              ],
+            return VehicleDialogs.buildEditVehicleDialog(
+              context: context,
+              plateNumberController: _plateNumberController,
+              selectedBrandId: _selectedBrandId,
+              selectedColorId: _selectedColorId,
+              selectedVehicleTypeId: _selectedVehicleTypeId,
+              brands: brands,
+              colors: colors,
+              vehicleTypes: vehicleTypes,
+              onBrandChanged: (value) {
+                setDialogState(() {
+                  _selectedBrandId = value;
+                });
+              },
+              onColorChanged: (value) {
+                setDialogState(() {
+                  _selectedColorId = value;
+                });
+              },
+              onVehicleTypeChanged: (value) {
+                setDialogState(() {
+                  _selectedVehicleTypeId = value;
+                });
+              },
+              errorMessage: _errorMessage,
+              isLoadingDropdowns: _isLoadingDropdowns,
+              isSubmitting: _isSubmitting,
+              onCancel: () => Navigator.of(context).pop(),
+              onSubmit: () => _updateVehicle(vehicle['_id']),
             );
           },
         );
@@ -200,6 +259,7 @@ class _MyCarScreenState extends State<MyCarScreen> {
     _selectedBrandId = null;
     _selectedColorId = null;
     _selectedVehicleTypeId = null;
+    _errorMessage = null;
   }
 
   Future<void> _createVehicle() async {
@@ -207,14 +267,16 @@ class _MyCarScreenState extends State<MyCarScreen> {
         _selectedBrandId == null ||
         _selectedColorId == null ||
         _selectedVehicleTypeId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng điền đầy đủ thông tin'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      setState(() {
+        _errorMessage = 'Vui lòng điền đầy đủ thông tin';
+      });
       return;
     }
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
 
     try {
       await VehicleService.createVehicle(
@@ -225,17 +287,16 @@ class _MyCarScreenState extends State<MyCarScreen> {
       );
 
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Thêm xe thành công'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      _showSnackBar('Thêm xe thành công', isError: false);
       _loadVehicles();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi thêm xe: $e'), backgroundColor: Colors.red),
-      );
+      setState(() {
+        _errorMessage = 'Lỗi thêm xe: $e';
+      });
+    } finally {
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
 
@@ -244,14 +305,16 @@ class _MyCarScreenState extends State<MyCarScreen> {
         _selectedBrandId == null ||
         _selectedColorId == null ||
         _selectedVehicleTypeId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng điền đầy đủ thông tin'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      setState(() {
+        _errorMessage = 'Vui lòng điền đầy đủ thông tin';
+      });
       return;
     }
+
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
 
     try {
       await VehicleService.updateVehicle(
@@ -262,20 +325,16 @@ class _MyCarScreenState extends State<MyCarScreen> {
       );
 
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cập nhật xe thành công'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      _showSnackBar('Cập nhật xe thành công', isError: false);
       _loadVehicles();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Lỗi cập nhật xe: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      setState(() {
+        _errorMessage = 'Lỗi cập nhật xe: $e';
+      });
+    } finally {
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
 
@@ -283,26 +342,14 @@ class _MyCarScreenState extends State<MyCarScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Xác nhận xóa'),
-          content: Text('Bạn có chắc chắn muốn xóa xe $plateNumber?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Hủy'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteVehicle(vehicleId);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Xóa'),
-            ),
-          ],
+        return VehicleDialogs.buildDeleteDialog(
+          context: context,
+          plateNumber: plateNumber,
+          onCancel: () => Navigator.of(context).pop(),
+          onDelete: () {
+            Navigator.of(context).pop();
+            _deleteVehicle(vehicleId);
+          },
         );
       },
     );
@@ -311,365 +358,110 @@ class _MyCarScreenState extends State<MyCarScreen> {
   Future<void> _deleteVehicle(String vehicleId) async {
     try {
       await VehicleService.deleteVehicle(vehicleId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Xóa xe thành công'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      _showSnackBar('Xóa xe thành công', isError: false);
       _loadVehicles();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Lỗi xóa xe: $e'), backgroundColor: Colors.red),
-      );
+      _showSnackBar('Lỗi xóa xe: $e', isError: true);
     }
+  }
+
+  void _showSnackBar(String message, {required bool isError}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.check_circle_outline,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: isError ? Colors.red.shade600 : primaryColor,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Xe của tôi'),
-        backgroundColor: Colors.green,
+        title: const Text(
+          'Xe của tôi',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
+        ),
+        backgroundColor: primaryColor,
         foregroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
         actions: [
-          IconButton(
-            onPressed: _showAddVehicleDialog,
-            icon: const Icon(Icons.add),
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              onPressed: _showAddVehicleDialog,
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.add_rounded, size: 20),
+              ),
+            ),
           ),
         ],
       ),
-      body: _buildBody(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(position: _slideAnimation, child: _buildBody()),
+      ),
     );
   }
 
   Widget _buildBody() {
     if (isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-        ),
-      );
+      return StateWidgets.buildLoadingState();
     }
 
     if (errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
-            const SizedBox(height: 16),
-            Text(
-              'Lỗi tải dữ liệu',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.red.shade700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              errorMessage!,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadVehicles,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Thử lại'),
-            ),
-          ],
-        ),
+      return StateWidgets.buildErrorState(
+        errorMessage: errorMessage!,
+        onRetry: _loadVehicles,
       );
     }
 
     if (vehicles.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.directions_car_outlined,
-              size: 64,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Chưa có xe nào',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Thêm xe đầu tiên của bạn',
-              style: TextStyle(color: Colors.grey.shade600),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _showAddVehicleDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('Thêm xe'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+      return StateWidgets.buildEmptyState(onAddVehicle: _showAddVehicleDialog);
     }
 
     return RefreshIndicator(
       onRefresh: _loadVehicles,
+      color: primaryColor,
+      backgroundColor: cardColor,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: vehicles.length,
         itemBuilder: (context, index) {
-          return _buildVehicleCard(vehicles[index]);
+          return AnimatedContainer(
+            duration: Duration(milliseconds: 300 + (index * 100)),
+            curve: Curves.easeOutCubic,
+            child: VehicleCard(
+              vehicle: vehicles[index],
+              onEdit: () => _showEditVehicleDialog(vehicles[index]),
+              onDelete: () => _showDeleteDialog(
+                vehicles[index]['_id'] ?? '',
+                vehicles[index]['plateNumber'] ?? 'N/A',
+              ),
+            ),
+          );
         },
-      ),
-    );
-  }
-
-  Widget _buildVehicleCard(Map<String, dynamic> vehicle) {
-    final plateNumber = vehicle['plateNumber'] ?? 'N/A';
-    final brand = vehicle['brandId']?['brandName'] ?? 'N/A';
-    final color = vehicle['colorId']?['colorName'] ?? 'N/A';
-    final type = vehicle['vehicleTypeId']?['typeName'] ?? 'N/A';
-    final isActive = vehicle['isActive'] ?? true;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.white, Colors.green.shade50],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header với biển số và trạng thái
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      plateNumber,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isActive ? Colors.green : Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      isActive ? 'Hoạt động' : 'Không hoạt động',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Thông tin xe
-              _buildInfoRow(Icons.business, 'Hãng xe', brand),
-              const SizedBox(height: 8),
-              _buildInfoRow(Icons.palette, 'Màu sắc', color),
-              const SizedBox(height: 8),
-              _buildInfoRow(Icons.category, 'Loại xe', type),
-
-              const SizedBox(height: 16),
-
-              // Action buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _showEditVehicleDialog(vehicle),
-                      icon: const Icon(Icons.edit, size: 18),
-                      label: const Text('Chỉnh sửa'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.green,
-                        side: const BorderSide(color: Colors.green),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () =>
-                          _showDeleteDialog(vehicle['_id'] ?? '', plateNumber),
-                      icon: const Icon(Icons.delete, size: 18),
-                      label: const Text('Xóa'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: Colors.grey.shade600),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: TextStyle(
-            fontWeight: FontWeight.w500,
-            color: Colors.grey.shade700,
-          ),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Colors.black87,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildVehicleForm(StateSetter setDialogState, {bool isEdit = false}) {
-    return SingleChildScrollView(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Plate Number
-          TextField(
-            controller: _plateNumberController,
-            readOnly: isEdit, // Only readonly for edit
-            decoration: InputDecoration(
-              labelText: 'Biển số xe',
-              hintText: 'Nhập biển số xe',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              prefixIcon: const Icon(Icons.directions_car),
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Brand Dropdown
-          DropdownButtonFormField<String>(
-            value: _selectedBrandId,
-            decoration: InputDecoration(
-              labelText: 'Hãng xe',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              prefixIcon: const Icon(Icons.business),
-            ),
-            items: brands.map((brand) {
-              return DropdownMenuItem<String>(
-                value: brand['_id'],
-                child: Text(brand['brandName'] ?? 'N/A'),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setDialogState(() {
-                _selectedBrandId = value;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Color Dropdown
-          DropdownButtonFormField<String>(
-            value: _selectedColorId,
-            decoration: InputDecoration(
-              labelText: 'Màu sắc',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              prefixIcon: const Icon(Icons.palette),
-            ),
-            items: colors.map((color) {
-              return DropdownMenuItem<String>(
-                value: color['_id'],
-                child: Text(color['colorName'] ?? 'N/A'),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setDialogState(() {
-                _selectedColorId = value;
-              });
-            },
-          ),
-          const SizedBox(height: 16),
-
-          // Vehicle Type Dropdown
-          DropdownButtonFormField<String>(
-            value: _selectedVehicleTypeId,
-            decoration: InputDecoration(
-              labelText: 'Loại xe',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              prefixIcon: const Icon(Icons.category),
-            ),
-            items: vehicleTypes.map((type) {
-              return DropdownMenuItem<String>(
-                value: type['_id'],
-                child: Text(type['typeName'] ?? 'N/A'),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setDialogState(() {
-                _selectedVehicleTypeId = value;
-              });
-            },
-          ),
-        ],
       ),
     );
   }
