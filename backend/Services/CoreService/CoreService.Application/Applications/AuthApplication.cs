@@ -423,9 +423,8 @@ namespace CoreService.Application.Applications
                 throw new ApiException("Mật khẩu xác nhận không khớp", StatusCodes.Status400BadRequest);
 
             var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
-
-            if (account.PasswordResetTokenExpiresAt == null || account.PasswordResetTokenExpiresAt < now)
-                throw new ApiException("Mã OTP đã hết hạn", StatusCodes.Status400BadRequest);
+            if (account.PasswordResetTokenExpiresAt != null && account.PasswordResetToken != null)
+                throw new ApiException("Chưa xác nhận OTP", StatusCodes.Status400BadRequest);
 
             // Đúng OTP → cập nhật mật khẩu
             account.Password = HashPassword(request.NewPassword);
