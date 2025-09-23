@@ -384,7 +384,35 @@ namespace CoreService.Application.Applications
         }
 
 
-        public async Task<ApiResponse<string>> ConfirmForgotAsync(ConfirmForgotRequest request)
+        public async Task<ApiResponse<string>> ConfirmForgotCodeAsync(ConfirmForgotCodeRequest request)
+        {
+            var account = await _accountRepo.GetByEmailAsync(request.Email);
+            if (account == null)
+                throw new ApiException("Email không tồn tại", StatusCodes.Status404NotFound);
+
+            var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+
+            if (account.PasswordResetTokenExpiresAt == null || account.PasswordResetTokenExpiresAt < now)
+                throw new ApiException("Mã OTP đã hết hạn", StatusCodes.Status400BadRequest);
+
+            string pepper = _securityOptions.Value.EmailOtpPepper;
+            var inputHash = OtpHelper.ComputeHash(request.Code, account.Id, pepper);
+
+            if (!OtpHelper.FixedTimeEquals(account.PasswordResetToken, inputHash))
+                throw new ApiException("Mã OTP không đúng", StatusCodes.Status400BadRequest);
+
+            account.UpdatedAt = now;
+
+            await _accountRepo.UpdateAsync(account);
+
+            return new ApiResponse<string>(
+                null,
+                true,
+                "Xác nhận OTP thành công.",
+                StatusCodes.Status200OK
+            );
+        }
+        public async Task<ApiResponse<string>> ConfirmForgotPassAsync(ConfirmForgotPassRequest request)
         {
             var account = await _accountRepo.GetByEmailAsync(request.Email);
             if (account == null)
@@ -398,12 +426,6 @@ namespace CoreService.Application.Applications
             if (account.PasswordResetTokenExpiresAt == null || account.PasswordResetTokenExpiresAt < now)
                 throw new ApiException("Mã OTP đã hết hạn", StatusCodes.Status400BadRequest);
 
-            string pepper = _securityOptions.Value.EmailOtpPepper;
-            var inputHash = OtpHelper.ComputeHash(request.Code, account.Id, pepper);
-
-            if (!OtpHelper.FixedTimeEquals(account.PasswordResetToken, inputHash))
-                throw new ApiException("Mã OTP không đúng", StatusCodes.Status400BadRequest);
-
             // Đúng OTP → cập nhật mật khẩu
             account.Password = HashPassword(request.NewPassword);
             account.PasswordResetToken = null;
@@ -412,8 +434,6 @@ namespace CoreService.Application.Applications
 
             await _accountRepo.UpdateAsync(account);
 
-            await _emailApplication.SendPasswordChangeConfirmationAsync(account.Email, "http://localhost:3000/login");
-
             return new ApiResponse<string>(
                 null,
                 true,
@@ -421,7 +441,6 @@ namespace CoreService.Application.Applications
                 StatusCodes.Status200OK
             );
         }
-
 
         public async Task<ApiResponse<string>> HandleGoogleLoginAsync(string email, string name)
         {
