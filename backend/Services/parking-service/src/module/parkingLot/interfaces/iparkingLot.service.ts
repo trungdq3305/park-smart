@@ -5,7 +5,7 @@ import {
   UpdateParkingLotHistoryLogDto,
   CoordinatesDto,
   BoundingBoxDto,
-  ParkingLotSpotsUpdateDto,
+  ParkingLotResponseDto,
 } from '../dto/parkingLot.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
@@ -15,18 +15,18 @@ export interface IParkingLotService {
 
   getAllParkingLots(
     paginationQuery: PaginationQueryDto,
-  ): Promise<{ data: ParkingLotSpotsUpdateDto[]; pagination: PaginationDto }>
+  ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   findNearbyParkingLots(
     coordinates: CoordinatesDto,
-  ): Promise<{ data: ParkingLotSpotsUpdateDto[]; pagination: PaginationDto }>
+  ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   findParkingLotsInBounds(
     bounds: BoundingBoxDto,
     paginationQuery: PaginationQueryDto,
-  ): Promise<{ data: ParkingLotSpotsUpdateDto[]; pagination: PaginationDto }>
+  ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
-  getUpdateHistoryForParkingLot(
+  getUpdateHistoryLogForParkingLot(
     parkingLotId: string,
   ): Promise<ParkingLotHistoryLog[]>
 
@@ -43,15 +43,16 @@ export interface IParkingLotService {
 
   approveNewParkingLot(
     parkingLotId: string,
-    adminId: string,
+    isApproved: boolean,
+    userId: string,
   ): Promise<ParkingLot>
 
-  updateAvailableSpots(
+  updateAvailableSpotsForWebsocket(
     parkingLotId: string,
     change: number,
   ): Promise<ParkingLot>
 
-  deleteParkingLot(id: string): Promise<boolean>
+  deleteParkingLot(id: string, userId: string): Promise<boolean>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')
