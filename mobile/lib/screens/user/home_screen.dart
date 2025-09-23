@@ -139,13 +139,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   'Bạn muốn gửi xe ở đâu?',
-                  style: TextStyle(fontSize: 20, color: Colors.black87),
+                  style: TextStyle(fontSize: 20, color: Colors.white),
                 ),
               ],
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/services/user_service.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
+import '../../../widgets/auth/change_password_dialog.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   final Map<String, dynamic> claims;
@@ -129,6 +130,16 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     });
   }
 
+  void _showChangePasswordDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return const ChangePasswordDialog();
+      },
+    );
+  }
+
   // Helper methods để lấy thông tin từ API response với fallback về local data
   String _getUserId() {
     return apiUserData?['data']?['_id'] ??
@@ -252,7 +263,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
-      showBottomNav: true,
+      showBottomNav: false,
       currentIndex: 4, // Profile tab index (last tab)
       onTapBottomNav: (index) {
         // Handle bottom navigation
@@ -381,6 +392,27 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   _buildInfoCard('Lần đăng nhập cuối', _getLastLogin()),
 
                   const SizedBox(height: 16),
+
+                  // Button đổi mật khẩu
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _showChangePasswordDialog,
+                      icon: const Icon(Icons.lock_outline_rounded),
+                      label: const Text('Đổi mật khẩu'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 2,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
 
                   // Nút refresh
                   SizedBox(

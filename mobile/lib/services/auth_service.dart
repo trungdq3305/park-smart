@@ -84,6 +84,105 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> changePassword({
+    required String oldPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    // Lấy token từ storage
+    final token = await _storage.read(key: 'accessToken');
+    if (token == null) {
+      throw Exception('No authentication token found');
+    }
+
+    final url = Uri.parse('$baseUrl/core/auths/change-password');
+
+    final response = await http.put(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'oldPassword': oldPassword,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Change password failed: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    final url = Uri.parse(
+      '$baseUrl/core/auths/forgot-password',
+    ).replace(queryParameters: {'email': email});
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Forgot password failed: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmForgotPassword({
+    required String email,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    final url = Uri.parse('$baseUrl/core/auths/confirm-forgot-pass');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      }),
+    );
+
+    print('Confirm forgot password response status: ${response.statusCode}');
+    print('Confirm forgot password response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Confirm forgot password failed: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmForgotCode({
+    required String email,
+    required String code,
+  }) async {
+    final url = Uri.parse('$baseUrl/core/auths/confirm-forgot-code');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'code': code}),
+    );
+
+    print('Confirm forgot code response status: ${response.statusCode}');
+    print('Confirm forgot code response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Confirm forgot code failed: ${response.body}');
+    }
+  }
+
   Future<Map<String, dynamic>> googleLogin(String idToken) async {
     // Sử dụng GET request với query parameter
     final url = Uri.parse('$baseUrlGoogle/api/auths/google-login').replace(
