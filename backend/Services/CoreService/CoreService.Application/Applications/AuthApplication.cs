@@ -400,7 +400,8 @@ namespace CoreService.Application.Applications
 
             if (!OtpHelper.FixedTimeEquals(account.PasswordResetToken, inputHash))
                 throw new ApiException("Mã OTP không đúng", StatusCodes.Status400BadRequest);
-
+            account.PasswordResetToken = null;
+            account.PasswordResetTokenExpiresAt = null;
             account.UpdatedAt = now;
 
             await _accountRepo.UpdateAsync(account);
@@ -428,8 +429,6 @@ namespace CoreService.Application.Applications
 
             // Đúng OTP → cập nhật mật khẩu
             account.Password = HashPassword(request.NewPassword);
-            account.PasswordResetToken = null;
-            account.PasswordResetTokenExpiresAt = null;
             account.UpdatedAt = now;
 
             await _accountRepo.UpdateAsync(account);
