@@ -112,7 +112,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        // Parse error message từ response
+        String errorMsg = e.toString();
+        if (errorMsg.contains('Mật khẩu')) {
+          _errorMessage = 'Mật khẩu không hợp lệ';
+        } else if (errorMsg.contains('Token') || errorMsg.contains('OTP')) {
+          _errorMessage = 'Phiên xác thực đã hết hạn';
+        } else if (errorMsg.contains('Email')) {
+          _errorMessage = 'Email không tồn tại';
+        } else {
+          _errorMessage = 'Có lỗi xảy ra, vui lòng thử lại';
+        }
       });
     } finally {
       setState(() {
@@ -125,16 +135,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Đặt lại mật khẩu',
-          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-        ),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
+
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),

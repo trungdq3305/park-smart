@@ -76,7 +76,15 @@ class _ConfirmForgotCodeScreenState extends State<ConfirmForgotCodeScreen> {
       }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString().replaceFirst('Exception: ', '');
+        // Parse error message từ response
+        String errorMsg = e.toString();
+        if (errorMsg.contains('Mã OTP không đúng')) {
+          _errorMessage = 'Mã OTP không đúng';
+        } else if (errorMsg.contains('OTP')) {
+          _errorMessage = 'Mã xác nhận không hợp lệ';
+        } else {
+          _errorMessage = 'Có lỗi xảy ra, vui lòng thử lại';
+        }
         _isLoading = false;
       });
     }

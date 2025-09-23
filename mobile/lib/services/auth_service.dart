@@ -139,7 +139,7 @@ class AuthService {
     required String newPassword,
     required String confirmPassword,
   }) async {
-    final url = Uri.parse('$baseUrl/core/auths/confirm-forgot');
+    final url = Uri.parse('$baseUrl/core/auths/confirm-forgot-pass');
 
     final response = await http.post(
       url,
@@ -150,6 +150,9 @@ class AuthService {
         'confirmPassword': confirmPassword,
       }),
     );
+
+    print('Confirm forgot password response status: ${response.statusCode}');
+    print('Confirm forgot password response body: ${response.body}');
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
@@ -169,6 +172,9 @@ class AuthService {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'code': code}),
     );
+
+    print('Confirm forgot code response status: ${response.statusCode}');
+    print('Confirm forgot code response body: ${response.body}');
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
