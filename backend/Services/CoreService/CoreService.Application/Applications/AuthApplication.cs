@@ -365,7 +365,7 @@ namespace CoreService.Application.Applications
             // Tạo OTP 6 số
             var otp = OtpHelper.Generate6DigitCode();
             string pepper = _securityOptions.Value.EmailOtpPepper;
-
+            account.RequestForgot = true;
             account.PasswordResetToken = OtpHelper.ComputeHash(otp, account.Id, pepper);
             account.PasswordResetTokenExpiresAt = now.AddMinutes(10);
             account.UpdatedAt = now;
@@ -389,7 +389,8 @@ namespace CoreService.Application.Applications
             var account = await _accountRepo.GetByEmailAsync(request.Email);
             if (account == null)
                 throw new ApiException("Email không tồn tại", StatusCodes.Status404NotFound);
-
+            if (account.RequestForgot == false)
+                throw new ApiException("Bạn chưa gửi yêu cầu quên mật khẩu", StatusCodes.Status404NotFound);
             var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
             if (account.PasswordResetTokenExpiresAt == null || account.PasswordResetTokenExpiresAt < now)
@@ -418,7 +419,8 @@ namespace CoreService.Application.Applications
             var account = await _accountRepo.GetByEmailAsync(request.Email);
             if (account == null)
                 throw new ApiException("Email không tồn tại", StatusCodes.Status404NotFound);
-
+            if (account.RequestForgot == false)
+                throw new ApiException("Bạn chưa gửi yêu cầu quên mật khẩu", StatusCodes.Status404NotFound);
             if (request.NewPassword != request.ConfirmPassword)
                 throw new ApiException("Mật khẩu xác nhận không khớp", StatusCodes.Status400BadRequest);
 
@@ -429,6 +431,7 @@ namespace CoreService.Application.Applications
             // Đúng OTP → cập nhật mật khẩu
             account.Password = HashPassword(request.NewPassword);
             account.UpdatedAt = now;
+            account.RequestForgot = false; // reset trạng thái
 
             await _accountRepo.UpdateAsync(account);
 
