@@ -90,10 +90,7 @@ class StateWidgets {
             Text(
               errorMessage,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
@@ -118,9 +115,7 @@ class StateWidgets {
     );
   }
 
-  static Widget buildEmptyState({
-    required VoidCallback onAddVehicle,
-  }) {
+  static Widget buildEmptyState({required VoidCallback onAddVehicle}) {
     return Center(
       child: Container(
         margin: const EdgeInsets.all(24),
@@ -160,7 +155,7 @@ class StateWidgets {
             ),
             const SizedBox(height: 24),
             Text(
-              'Chưa có xe nào',
+              'Bạn chưa có xe nào',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
@@ -169,18 +164,15 @@ class StateWidgets {
             ),
             const SizedBox(height: 8),
             Text(
-              'Thêm xe đầu tiên của bạn để bắt đầu',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
+              'Hãy tạo xe đầu tiên của bạn để bắt đầu',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
               onPressed: onAddVehicle,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Thêm xe'),
+              label: const Text('Tạo xe mới'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
@@ -218,9 +210,7 @@ class StateWidgets {
       ),
       backgroundColor: isError ? Colors.red.shade600 : primaryColor,
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.all(16),
       duration: const Duration(seconds: 3),
     );

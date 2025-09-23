@@ -365,6 +365,21 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             ),
                     ),
                   ),
+
+                  const SizedBox(height: 16),
+
+                  // Back button
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: Text(
+                      'Quay lại',
+                      style: TextStyle(
+                        color: primaryColor,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

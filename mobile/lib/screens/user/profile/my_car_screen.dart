@@ -95,10 +95,21 @@ class _MyCarScreenState extends State<MyCarScreen>
         isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
+      // Kiểm tra nếu là lỗi 404 "Không tìm thấy xe nào" thì coi như empty state
+      String errorMsg = e.toString();
+      if (errorMsg.contains('404') &&
+          errorMsg.contains('Không tìm thấy xe nào')) {
+        setState(() {
+          vehicles = []; // Set empty list thay vì error
+          isLoading = false;
+          errorMessage = null; // Không có error
+        });
+      } else {
+        setState(() {
+          errorMessage = e.toString();
+          isLoading = false;
+        });
+      }
     }
   }
 
