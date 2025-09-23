@@ -69,7 +69,7 @@ namespace CoreService.Application.Applications
         {
             var items = await _repo.GetAllAsync();
             var list = items.Select(Map).ToList();
-            return new ApiResponse<List<TermPolicyResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
+            return new ApiResponse<List<TermPolicyResponseDto>>(list, true, "Lấy danh sách Term and Policy thành công", StatusCodes.Status200OK);
         }
 
         public async Task<ApiResponse<List<TermPolicyResponseDto>>> GetByAdminAsync(string cityAdminId)
