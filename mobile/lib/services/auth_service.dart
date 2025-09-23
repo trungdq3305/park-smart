@@ -117,6 +117,42 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    final url = Uri.parse(
+      '$baseUrl/core/auths/forgot-password',
+    ).replace(queryParameters: {'email': email});
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Forgot password failed: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmForgotPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    final url = Uri.parse('$baseUrl/core/auths/confirm-forgot');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'token': token, 'newPassword': newPassword}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Confirm forgot password failed: ${response.body}');
+    }
+  }
+
   Future<Map<String, dynamic>> googleLogin(String idToken) async {
     // Sử dụng GET request với query parameter
     final url = Uri.parse('$baseUrlGoogle/api/auths/google-login').replace(
