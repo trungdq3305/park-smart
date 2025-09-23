@@ -135,21 +135,45 @@ class AuthService {
   }
 
   Future<Map<String, dynamic>> confirmForgotPassword({
-    required String token,
+    required String email,
     required String newPassword,
+    required String confirmPassword,
   }) async {
     final url = Uri.parse('$baseUrl/core/auths/confirm-forgot');
 
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'token': token, 'newPassword': newPassword}),
+      body: jsonEncode({
+        'email': email,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      }),
     );
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
       throw Exception('Confirm forgot password failed: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> confirmForgotCode({
+    required String email,
+    required String code,
+  }) async {
+    final url = Uri.parse('$baseUrl/core/auths/confirm-forgot-code');
+
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'code': code}),
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Confirm forgot code failed: ${response.body}');
     }
   }
 

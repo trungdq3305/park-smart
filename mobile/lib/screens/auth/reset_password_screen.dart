@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
-  final String? token;
-  
-  const ResetPasswordScreen({super.key, this.token});
+  final String email;
+
+  const ResetPasswordScreen({super.key, required this.email});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -12,10 +12,9 @@ class ResetPasswordScreen extends StatefulWidget {
 
 class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _tokenController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
@@ -30,9 +29,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.token != null) {
-      _tokenController.text = widget.token!;
-    }
     _setupPasswordListeners();
   }
 
@@ -44,7 +40,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   void _checkPasswordMatch() {
     final newPassword = _newPasswordController.text;
     final confirmPassword = _confirmPasswordController.text;
-    
+
     if (confirmPassword.isNotEmpty && newPassword.isNotEmpty) {
       setState(() {
         if (newPassword != confirmPassword) {
@@ -62,7 +58,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   void dispose() {
-    _tokenController.dispose();
     _newPasswordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -85,8 +80,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     try {
       await AuthService().confirmForgotPassword(
-        token: _tokenController.text.trim(),
+        email: widget.email,
         newPassword: _newPasswordController.text.trim(),
+        confirmPassword: _confirmPasswordController.text.trim(),
       );
 
       if (mounted) {
@@ -95,14 +91,20 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+                const Icon(
+                  Icons.check_circle_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 const Expanded(child: Text('Đặt lại mật khẩu thành công')),
               ],
             ),
             backgroundColor: primaryColor,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
             margin: const EdgeInsets.all(16),
             duration: const Duration(seconds: 3),
           ),
@@ -126,10 +128,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       appBar: AppBar(
         title: const Text(
           'Đặt lại mật khẩu',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
         ),
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
@@ -192,12 +191,31 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
                   // Description
                   Text(
-                    'Nhập token và mật khẩu mới để đặt lại mật khẩu',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 16,
-                    ),
+                    'Nhập mật khẩu mới để đặt lại mật khẩu cho',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
                     textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Email display
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: primaryColor.withOpacity(0.3)),
+                    ),
+                    child: Text(
+                      widget.email,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: primaryColor,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 32),
 
@@ -269,21 +287,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     ),
                   ],
 
-                  // Token field
-                  _buildTextField(
-                    controller: _tokenController,
-                    labelText: 'Token',
-                    hintText: 'Nhập token từ email',
-                    icon: Icons.key_rounded,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Vui lòng nhập token';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-
                   // New password field
                   _buildPasswordField(
                     controller: _newPasswordController,
@@ -347,7 +350,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(
@@ -364,52 +369,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String labelText,
-    required String hintText,
-    required IconData icon,
-    required String? Function(String?) validator,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: controller,
-        style: const TextStyle(fontSize: 16),
-        decoration: InputDecoration(
-          labelText: labelText,
-          hintText: hintText,
-          filled: true,
-          fillColor: Colors.grey.shade50,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: Colors.grey.shade300),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: primaryColor, width: 2),
-          ),
-          prefixIcon: Icon(icon, color: primaryColor),
-          labelStyle: TextStyle(color: Colors.grey.shade600),
-        ),
-        validator: validator,
       ),
     );
   }
@@ -457,7 +416,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           prefixIcon: Icon(Icons.lock_outline_rounded, color: primaryColor),
           suffixIcon: IconButton(
             icon: Icon(
-              obscureText ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+              obscureText
+                  ? Icons.visibility_off_rounded
+                  : Icons.visibility_rounded,
               color: Colors.grey.shade600,
             ),
             onPressed: onToggleObscure,

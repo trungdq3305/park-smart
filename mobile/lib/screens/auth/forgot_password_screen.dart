@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import 'confirm_forgot_code_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -11,9 +12,8 @@ class ForgotPasswordScreen extends StatefulWidget {
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  
+
   bool _isLoading = false;
-  bool _emailSent = false;
   String? _errorMessage;
 
   // App theme colors
@@ -39,11 +39,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     try {
       await AuthService().forgotPassword(_emailController.text.trim());
-      
-      setState(() {
-        _emailSent = true;
-        _isLoading = false;
-      });
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                ConfirmForgotCodeScreen(email: _emailController.text.trim()),
+          ),
+        );
+      }
     } catch (e) {
       setState(() {
         _errorMessage = e.toString().replaceFirst('Exception: ', '');
@@ -56,19 +61,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'Quên mật khẩu',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 20,
-          ),
-        ),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -85,7 +77,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
               ],
             ),
-            child: _emailSent ? _buildSuccessView() : _buildFormView(),
+            child: _buildFormView(),
           ),
         ),
       ),
@@ -134,10 +126,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           // Description
           Text(
             'Nhập email của bạn để nhận liên kết đặt lại mật khẩu',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
@@ -216,7 +205,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 if (value == null || value.isEmpty) {
                   return 'Vui lòng nhập email';
                 }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                if (!RegExp(
+                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                ).hasMatch(value)) {
                   return 'Email không hợp lệ';
                 }
                 return null;
@@ -274,81 +265,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSuccessView() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Success icon
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.green.withOpacity(0.1),
-                Colors.green.withOpacity(0.05),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(50),
-          ),
-          child: Icon(
-            Icons.mark_email_read_rounded,
-            size: 64,
-            color: Colors.green,
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Success title
-        Text(
-          'Email đã được gửi!',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Success description
-        Text(
-          'Chúng tôi đã gửi liên kết đặt lại mật khẩu đến email của bạn. Vui lòng kiểm tra hộp thư và làm theo hướng dẫn.',
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 16,
-          ),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 32),
-
-        // Back to login button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              elevation: 2,
-            ),
-            child: const Text(
-              'Quay lại đăng nhập',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
