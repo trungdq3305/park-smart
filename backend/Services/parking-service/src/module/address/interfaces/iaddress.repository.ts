@@ -28,6 +28,7 @@ export interface IAddressRepository {
     latitude: number,
     maxDistanceInKm: number,
   ): Promise<Address[]>
+  deleteAddressPermanently(id: string): Promise<boolean>
 }
 
 export const IAddressRepository = Symbol('IAddressRepository')

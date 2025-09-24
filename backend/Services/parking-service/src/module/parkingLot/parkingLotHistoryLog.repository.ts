@@ -62,26 +62,12 @@ export class ParkingLotHistoryLogRepository
     userId: string,
     statusId: string,
   ): Promise<boolean> {
-    try {
-      const result = await this.parkingLotHistoryLogModel
-        .updateOne(
-          { _id: id },
-          {
-            $set: {
-              parkingLotStatusId: new Types.ObjectId(statusId),
-              deletedAt: new Date(),
-              deletedBy: userId,
-            },
-          },
-        )
-        .exec()
-
-      // `modifiedCount` sẽ > 0 nếu có ít nhất một document được thay đổi.
-      // `matchedCount` sẽ > 0 nếu tìm thấy document có _id tương ứng.
-      // Kết hợp cả hai để đảm bảo đúng document đã được cập nhật.
-      return result.matchedCount > 0 && result.modifiedCount > 0
-    } catch {
-      return false
-    }
+    const result = await this.parkingLotHistoryLogModel.create({
+      parkingLotId: new Types.ObjectId(id),
+      parkingLotStatusId: new Types.ObjectId(statusId),
+      createdBy: userId,
+      updatedBy: userId,
+    })
+    return !!result
   }
 }

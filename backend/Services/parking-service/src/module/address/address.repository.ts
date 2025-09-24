@@ -155,4 +155,9 @@ export class AddressRepository implements IAddressRepository {
       })
       .exec()
   }
+
+  async deleteAddressPermanently(id: string): Promise<boolean> {
+    const result = await this.addressModel.findByIdAndDelete(id).exec()
+    return result !== null
+  }
 }

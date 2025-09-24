@@ -16,7 +16,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
 
   async createParkingLot(
     parkingLotData: Partial<ParkingLot>, // Nhận dữ liệu đã xử lý từ Service
-  ): Promise<ParkingLot> {
+  ): Promise<ParkingLot | null> {
     const newParkingLot = new this.parkingLotModel(parkingLotData)
     return newParkingLot.save()
   }
@@ -60,30 +60,41 @@ export class ParkingLotRepository implements IParkingLotRepository {
     return { data, total }
   }
 
-  async updateAvailableSpots(id: string, change: number): Promise<boolean> {
-    try {
-      const result = await this.parkingLotModel
-        .updateOne({ _id: id }, { $inc: { availableSpots: change } })
-        .exec()
-
-      // `modifiedCount` sẽ > 0 nếu có ít nhất một document được thay đổi.
-      // `matchedCount` sẽ > 0 nếu tìm thấy document có _id tương ứng.
-      // Kết hợp cả hai để đảm bảo đúng document đã được cập nhật.
-      return result.matchedCount > 0 && result.modifiedCount > 0
-    } catch {
-      return false
+  async updateAvailableSpots(
+    id: string,
+    change: number,
+  ): Promise<ParkingLot | null> {
+    // Thêm điều kiện vào bộ lọc:
+    // Chỉ tìm document có ID này VÀ (nếu là check-in) có availableSpots > 0
+    const filter = {
+      _id: id,
+      ...(change < 0 && { availableSpots: { $gt: 0 } }),
     }
+
+    return this.parkingLotModel
+      .findOneAndUpdate(
+        filter, // <-- Dùng bộ lọc mới
+        { $inc: { availableSpots: change } },
+        { new: true },
+      )
+      .exec()
   }
 
   approveParkingLot(
     id: string,
-    isApproved: boolean,
+    statusId: string,
     userId: string,
   ): Promise<ParkingLot | null> {
     const data = this.parkingLotModel
       .findOneAndUpdate(
         { _id: id },
-        { $set: { isApproved: isApproved, updatedBy: userId } },
+        {
+          $set: {
+            parkingLotStatusId: statusId,
+            updatedBy: userId,
+            updatedAt: new Date(),
+          },
+        },
         { new: true },
       )
       .lean()
@@ -95,7 +106,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
     longitude: number,
     latitude: number,
     maxDistanceInKm: number,
-  ): Promise<ParkingLot[]> {
+  ): Promise<{ data: ParkingLot[]; total: number }> {
     // Bước 1: Gọi AddressRepository để tìm các địa chỉ trong bán kính
     const nearbyAddresses = await this.addressRepository.findNear(
       longitude,
@@ -104,8 +115,8 @@ export class ParkingLotRepository implements IParkingLotRepository {
     )
 
     // Nếu không tìm thấy địa chỉ nào, trả về mảng rỗng
-    if (!nearbyAddresses || nearbyAddresses.length === 0) {
-      return []
+    if (nearbyAddresses.length === 0) {
+      return { data: [], total: 0 }
     }
 
     // Bước 2: Lấy danh sách ID từ các địa chỉ tìm được
@@ -113,11 +124,24 @@ export class ParkingLotRepository implements IParkingLotRepository {
     const addressIds = nearbyAddresses.map((address) => address._id.toString())
 
     // Bước 3: Dùng danh sách ID để tìm và trả về các ParkingLot tương ứng
-    return this.parkingLotModel
+    const parkingLots = await this.parkingLotModel
       .find({
         addressId: { $in: addressIds },
       })
+      .sort({ availableSpots: -1 })
+      .lean()
       .exec()
+
+    const total = await this.parkingLotModel
+      .countDocuments({
+        addressId: { $in: addressIds },
+      })
+      .exec()
+
+    return {
+      data: parkingLots,
+      total: total,
+    }
   }
 
   async findInBounds(
@@ -152,6 +176,8 @@ export class ParkingLotRepository implements IParkingLotRepository {
       .find({
         addressId: { $in: addressIds },
       })
+      .sort({ availableSpots: -1 })
+      .lean()
       .exec()
 
     // Bước 4: Trả về kết quả cuối cùng

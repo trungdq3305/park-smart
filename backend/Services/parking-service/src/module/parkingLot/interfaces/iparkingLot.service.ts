@@ -1,5 +1,6 @@
 import type { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import type { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
+import type { IdDto } from 'src/common/dto/params.dto'
 
 import type {
   BoundingBoxDto,
@@ -12,14 +13,17 @@ import type { ParkingLot } from '../schemas/parkingLot.schema'
 import type { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
 
 export interface IParkingLotService {
-  getParkingLotDetails(id: string): Promise<ParkingLot>
+  getParkingLotDetails(id: IdDto): Promise<ParkingLot>
 
   getAllParkingLots(
     paginationQuery: PaginationQueryDto,
+    parkingLotStatus: IdDto,
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   findNearbyParkingLots(
     coordinates: CoordinatesDto,
+    paginationQuery: PaginationQueryDto,
+    maxDistanceInKm: number,
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   findParkingLotsInBounds(
@@ -28,7 +32,7 @@ export interface IParkingLotService {
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   getUpdateHistoryLogForParkingLot(
-    parkingLotId: string,
+    parkingLotId: IdDto,
   ): Promise<ParkingLotHistoryLog[]>
 
   createParkingLot(
@@ -37,14 +41,14 @@ export interface IParkingLotService {
   ): Promise<ParkingLot>
 
   requestParkingLotUpdate(
-    parkingLotId: string,
+    parkingLotId: IdDto,
     updateRequestDto: UpdateParkingLotHistoryLogDto,
     userId: string,
   ): Promise<ParkingLotHistoryLog>
 
   approveNewParkingLot(
-    parkingLotId: string,
-    isApproved: boolean,
+    parkingLotId: IdDto,
+    statusId: IdDto,
     userId: string,
   ): Promise<ParkingLot>
 
@@ -53,7 +57,7 @@ export interface IParkingLotService {
     change: number,
   ): Promise<ParkingLot>
 
-  deleteParkingLot(id: string, userId: string): Promise<boolean>
+  deleteParkingLot(id: IdDto, userId: string): Promise<boolean>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

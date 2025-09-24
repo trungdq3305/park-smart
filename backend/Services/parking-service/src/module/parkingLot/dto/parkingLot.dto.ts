@@ -15,6 +15,7 @@ import {
   Matches,
 } from 'class-validator'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
+import { UserMinimalResponseDto } from 'src/common/dto/userResponse.dto'
 
 export class CreateParkingLotDto {
   @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4567' })
@@ -217,6 +218,59 @@ export class ParkingLotResponseDto {
 
   @Expose()
   availableSpots: number
+}
+
+@Exclude()
+export class ParkingLotHistoryLogResponseDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  @Transform(({ obj }) => obj.parkingLotId.toString())
+  parkingLotId: string
+
+  // Giữ lại các trường dữ liệu đã thay đổi
+  @Expose()
+  openTime?: string // Dùng optional (?) vì không phải lúc nào cũng thay đổi
+
+  @Expose()
+  closeTime?: string
+
+  @Expose()
+  is24Hours?: boolean
+
+  @Expose()
+  maxVehicleHeight?: number
+
+  // ... các trường dữ liệu khác có thể thay đổi
+
+  /**
+   * MỚI: Thêm các trường ngày tháng quan trọng
+   */
+  @Expose()
+  effectiveDate: Date // Ngày thay đổi sẽ có hiệu lực
+
+  @Expose()
+  approvalDeadline: Date // Hạn chót để duyệt
+
+  /**
+   * MỚI: Thêm các trường kế thừa từ BaseEntity để biết ai tạo, khi nào
+   */
+  @Expose()
+  createdAt: Date
+
+  @Expose()
+  @Type(() => UserMinimalResponseDto) // Populate thông tin người tạo
+  createdBy: UserMinimalResponseDto
+
+  /**
+   * MỚI: Thay thế parkingLotStatusId bằng status string
+   * Dễ dàng hơn cho frontend
+   */
+  @Expose()
+  @Transform(({ obj }) => obj.parkingLotStatusId?.status ?? obj.status) // Lấy tên status
+  status: string // Trạng thái hiện tại (PENDING, APPROVED,...)
 }
 
 @Exclude()

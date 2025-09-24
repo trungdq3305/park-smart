@@ -10,14 +10,14 @@ export class ParkingLot extends BaseEntity {
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId(),
   })
-  _id: mongoose.Schema.Types.ObjectId
+  _id: string
 
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Address',
   })
-  addressId: mongoose.Schema.Types.ObjectId
+  addressId: string
 
   @Prop({ required: true, type: String })
   parkingLotOperator: string
@@ -51,7 +51,7 @@ export class ParkingLot extends BaseEntity {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ParkingLotStatus',
   })
-  parkingLotStatusId: mongoose.Schema.Types.ObjectId
+  parkingLotStatusId: string
 }
 
 export const ParkingLotSchema = SchemaFactory.createForClass(ParkingLot)
