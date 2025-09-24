@@ -98,12 +98,20 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpPost("confirm-forgot")]
-        public async Task<IActionResult> ConfirmForgot(ConfirmForgotRequest request)
+        [HttpPost("confirm-forgot-code")]
+        public async Task<IActionResult> ConfirmForgotCode(ConfirmForgotCodeRequest request)
         {
-            var response = await _authApplication.ConfirmForgotAsync(request);
+            var response = await _authApplication.ConfirmForgotCodeAsync(request);
             return StatusCode(response.StatusCode, response);
         }
+
+        [HttpPost("confirm-forgot-pass")]
+        public async Task<IActionResult> ConfirmForgotPass(ConfirmForgotPassRequest request)
+        {
+            var response = await _authApplication.ConfirmForgotPassAsync(request);
+            return StatusCode(response.StatusCode, response);
+        }
+
         [Authorize]
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)

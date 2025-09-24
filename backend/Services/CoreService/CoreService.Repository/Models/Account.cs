@@ -38,6 +38,7 @@ namespace CoreService.Repository.Models
         public string PasswordResetToken { get; set; }
 
         public DateTime? PasswordResetTokenExpiresAt { get; set; }
+        public bool RequestForgot { get; set; } = false;
 
         public string RefreshToken { get; set; }
 

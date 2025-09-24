@@ -18,7 +18,7 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<PaginationDto<FaqResponseDto>>> GetPagedAsync(int? page, int? pageSize);
         Task<ApiResponse<FaqResponseDto>> GetByIdAsync(string id);
         Task<ApiResponse<Faq>> ApproveAsync(string faqId, string adminId);
-        Task<ApiResponse<Faq>> RejectAsync(string faqId, string adminId);
+        Task<ApiResponse<Faq>> RejectAsync(FaqRejectDto dto, string adminId);
         Task<ApiResponse<PaginationDto<FaqResponseDto>>> GetByStatusAsync(string status, int? page, int? pageSize);
         Task<ApiResponse<PaginationDto<FaqResponseDto>>> GetMineAsync(string accountId, int? page, int? pageSize);
     }

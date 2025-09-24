@@ -20,7 +20,8 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<string>> ResendConfirmationAsync(string email);
         Task<ApiResponse<string>> ConfirmOperatorAsync(string id);
         Task<ApiResponse<string>> ForgotPasswordAsync(string email);
-        Task<ApiResponse<string>> ConfirmForgotAsync(ConfirmForgotRequest request);
+        Task<ApiResponse<string>> ConfirmForgotCodeAsync(ConfirmForgotCodeRequest request);
+        Task<ApiResponse<string>> ConfirmForgotPassAsync(ConfirmForgotPassRequest request);
         Task<ApiResponse<string>> HandleGoogleLoginAsync(string email, string name);
         Task<ApiResponse<bool>> ChangePasswordAsync(string accountId, ChangePasswordDto dto);
     }
