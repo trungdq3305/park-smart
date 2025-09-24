@@ -141,7 +141,7 @@ export class AddressRepository implements IAddressRepository {
     maxDistanceInKm: number,
   ): Promise<Address[]> {
     const maxDistanceInMeters = maxDistanceInKm * 1000
-    return this.addressModel
+    return await this.addressModel
       .find({
         location: {
           $near: {

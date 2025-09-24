@@ -18,7 +18,20 @@ export class ParkingLotRepository implements IParkingLotRepository {
     parkingLotData: Partial<ParkingLot>, // Nhận dữ liệu đã xử lý từ Service
   ): Promise<ParkingLot | null> {
     const newParkingLot = new this.parkingLotModel(parkingLotData)
-    return newParkingLot.save()
+    await newParkingLot.save()
+    return this.parkingLotModel
+      .findById(newParkingLot._id)
+      .populate({
+        path: 'addressId',
+        populate: {
+          path: 'wardId',
+        },
+      })
+      .populate({
+        path: 'parkingLotStatusId',
+      })
+      .lean() // lean() sẽ chuyển đổi ObjectId thành string
+      .exec()
   }
 
   findParkingLotById(id: string): Promise<ParkingLot | null> {
@@ -52,6 +65,15 @@ export class ParkingLotRepository implements IParkingLotRepository {
         .sort({ createdAt: -1 }) // Thêm: Sắp xếp kết quả (ví dụ: mới nhất trước)
         .skip(skip)
         .limit(pageSize)
+        .populate({
+          path: 'addressId',
+          populate: {
+            path: 'wardId',
+          },
+        })
+        .populate({
+          path: 'parkingLotStatusId',
+        })
         .lean() // .lean() vẫn là một tối ưu tốt ở đây
         .exec(),
       this.parkingLotModel.countDocuments(queryCondition), // <- Áp dụng điều kiện
@@ -105,9 +127,11 @@ export class ParkingLotRepository implements IParkingLotRepository {
   async findByCoordinates(
     longitude: number,
     latitude: number,
+    page: number,
+    pageSize: number,
     maxDistanceInKm: number,
+    parkingLotStatus: string,
   ): Promise<{ data: ParkingLot[]; total: number }> {
-    // Bước 1: Gọi AddressRepository để tìm các địa chỉ trong bán kính
     const nearbyAddresses = await this.addressRepository.findNear(
       longitude,
       latitude,
@@ -124,24 +148,37 @@ export class ParkingLotRepository implements IParkingLotRepository {
     const addressIds = nearbyAddresses.map((address) => address._id.toString())
 
     // Bước 3: Dùng danh sách ID để tìm và trả về các ParkingLot tương ứng
-    const parkingLots = await this.parkingLotModel
-      .find({
-        addressId: { $in: addressIds },
-      })
-      .sort({ availableSpots: -1 })
-      .lean()
-      .exec()
+    const skip = (page - 1) * pageSize
 
-    const total = await this.parkingLotModel
-      .countDocuments({
-        addressId: { $in: addressIds },
-      })
-      .exec()
-
-    return {
-      data: parkingLots,
-      total: total,
+    // 1. Tạo điều kiện query để tái sử dụng và đảm bảo tính nhất quán
+    const queryCondition = {
+      addressId: { $in: addressIds },
+      parkingLotStatusId: parkingLotStatus,
     }
+
+    // 2. Chạy song song 2 query để tối ưu hiệu năng
+    const [data, total] = await Promise.all([
+      this.parkingLotModel
+        .find(queryCondition) // <-- Dùng điều kiện
+        .sort({ availableSpots: -1 })
+        .skip(skip) // <-- THÊM SKIP
+        .limit(pageSize) // <-- THÊM LIMIT
+        .populate({
+          path: 'addressId',
+          populate: {
+            path: 'wardId',
+          },
+        })
+        .populate({
+          path: 'parkingLotStatusId',
+        })
+        .lean()
+        .exec(),
+
+      this.parkingLotModel.countDocuments(queryCondition), // <-- Dùng CÙNG điều kiện
+    ])
+
+    return { data, total }
   }
 
   async findInBounds(

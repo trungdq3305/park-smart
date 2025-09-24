@@ -194,7 +194,8 @@ export class ParkingLotService implements IParkingLotService {
   async createParkingLot(
     createDto: CreateParkingLotDto,
     userId: string,
-  ): Promise<ParkingLot> {
+    currentIdOfUserRole: string,
+  ): Promise<ParkingLotResponseDto> {
     const isAddressExist = await this.addressRepository.findAddressById(
       createDto.addressId,
     )
@@ -218,6 +219,7 @@ export class ParkingLotService implements IParkingLotService {
       // Initially, available spots equal total capacity
       parkingLotStatusId: parkingStatus,
       availableSpots: createDto.totalCapacityEachLevel * createDto.totalLevel,
+      parkingLotOperatorId: currentIdOfUserRole,
     }
     const data = await this.parkingLotRepository.createParkingLot(dataSend)
     if (!data) {
@@ -227,7 +229,7 @@ export class ParkingLotService implements IParkingLotService {
       )
     }
     await this.addressRepository.setAddressAsUsed(createDto.addressId)
-    return data
+    return this.returnParkingLotResponseDto(data)
   }
 
   async requestParkingLotUpdate(

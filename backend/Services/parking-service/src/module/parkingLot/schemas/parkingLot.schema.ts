@@ -20,7 +20,7 @@ export class ParkingLot extends BaseEntity {
   addressId: string
 
   @Prop({ required: true, type: String })
-  parkingLotOperator: string
+  parkingLotOperatorId: string
 
   @Prop({ required: false, type: String })
   openTime: string

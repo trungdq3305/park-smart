@@ -180,6 +180,22 @@ export class AddressDto {
   @Expose()
   @Transform(({ obj }) => obj.longitude)
   longitude: number
+
+  @Expose()
+  @Transform(({ obj }) => {
+    const fullAddress = obj.fullAddress as string
+
+    // Nếu trong chuỗi đã có "Thành phố Hồ Chí Minh", trả về luôn
+    if (fullAddress.includes('Thành phố Hồ Chí Minh')) {
+      return fullAddress
+    }
+
+    // Nếu chưa có, mới thực hiện ghép chuỗi
+    const parts = [fullAddress, obj.wardId?.wardName, 'Thành phố Hồ Chí Minh']
+
+    return parts.filter((part) => part).join(', ')
+  })
+  fullAddress: string
 }
 
 @Exclude()
@@ -214,10 +230,15 @@ export class ParkingLotResponseDto {
   totalLevel: number
 
   @Expose()
-  isApproved: boolean
+  availableSpots: number
 
   @Expose()
-  availableSpots: number
+  @Transform(({ obj }) => obj.parkingLotOperatorId.toString())
+  parkingLotOperatorId: string
+
+  @Expose()
+  @Transform(({ obj }) => obj.parkingLotStatusId?.status ?? obj.status) // Lấy tên status
+  parkingLotStatusId: string // Trạng thái hiện tại (PENDING, APPROVED,...)
 }
 
 @Exclude()

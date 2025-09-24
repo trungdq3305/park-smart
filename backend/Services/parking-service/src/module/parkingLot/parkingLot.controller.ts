@@ -19,11 +19,14 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger'
+import { GetCurrenIdOfUserRole } from 'src/common/decorators/getCurrenIdOfUserRole.decorator'
 import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
+import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 
 import {
@@ -39,8 +42,6 @@ import { ParkingLotHistoryLog } from './schemas/parkingLotHistoryLog.schema'
 
 @ApiTags('parking-lots')
 @Controller('parking-lots')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class ParkingLotController {
   constructor(
     @Inject(IParkingLotService)
@@ -80,6 +81,46 @@ export class ParkingLotController {
 
   @Get('in-bounds')
   @ApiOperation({ summary: 'Tìm các bãi đỗ xe trong một khung nhìn bản đồ' })
+  @ApiOperation({ summary: 'Tìm các bãi đỗ xe trong một khung nhìn bản đồ' })
+  // --- BỔ SUNG CÁC @ApiQuery Ở ĐÂY ---
+  @ApiQuery({
+    name: 'bottomLeftLng',
+    type: Number,
+    required: true,
+    description: 'Kinh độ của góc dưới-trái',
+  })
+  @ApiQuery({
+    name: 'bottomLeftLat',
+    type: Number,
+    required: true,
+    description: 'Vĩ độ của góc dưới-trái',
+  })
+  @ApiQuery({
+    name: 'topRightLng',
+    type: Number,
+    required: true,
+    description: 'Kinh độ của góc trên-phải',
+  })
+  @ApiQuery({
+    name: 'topRightLat',
+    type: Number,
+    required: true,
+    description: 'Vĩ độ của góc trên-phải',
+  })
+  @ApiQuery({
+    name: 'page',
+    type: Number,
+    required: true,
+    description: 'Số trang',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    type: Number,
+    required: true,
+    description: 'Số lượng mục trên trang',
+    example: 20,
+  })
   async findInBounds(
     @Query() bounds: BoundingBoxDto,
     @Query() paginationQuery: PaginationQueryDto,
@@ -98,17 +139,21 @@ export class ParkingLotController {
   }
 
   // ======= Endpoints cho Quản trị viên (Admin) =======
-
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
   @Post()
   @ApiOperation({ summary: 'Tạo một bãi đỗ xe mới (chờ duyệt)' })
   @ApiBody({ type: CreateParkingLotDto })
   async create(
     @Body() createDto: CreateParkingLotDto,
     @GetCurrentUserId() userId: string,
-  ): Promise<ApiResponseDto<ParkingLot>> {
+    @GetCurrenIdOfUserRole() currentIdOfUserRole: string,
+  ): Promise<ApiResponseDto<ParkingLotResponseDto>> {
     const newParkingLot = await this.parkingLotService.createParkingLot(
       createDto,
       userId,
+      currentIdOfUserRole,
     )
     return {
       data: [newParkingLot],
@@ -119,7 +164,10 @@ export class ParkingLotController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách tất cả bãi đỗ xe' })
+  @ApiOperation({ summary: 'Lấy danh sách tất cả bãi đỗ xe cho admin' })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
   @ApiQuery({
     name: 'statusId',
     type: String,
@@ -157,6 +205,9 @@ export class ParkingLotController {
   }
 
   @Patch(':id/approve')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Duyệt hoặc từ chối một bãi đỗ xe mới' })
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
   @ApiBody({ schema: { example: { statusId: '...' } } })
@@ -180,6 +231,9 @@ export class ParkingLotController {
   }
 
   @Post(':id/update-requests')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Gửi yêu cầu cập nhật thông tin bãi đỗ xe' })
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
   @ApiBody({ type: UpdateParkingLotHistoryLogDto })
@@ -202,6 +256,9 @@ export class ParkingLotController {
   }
 
   @Get(':id/history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Lấy lịch sử cập nhật của một bãi đỗ xe' })
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
   async getHistory(
@@ -220,6 +277,9 @@ export class ParkingLotController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Xóa một bãi đỗ xe' })
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
   async delete(

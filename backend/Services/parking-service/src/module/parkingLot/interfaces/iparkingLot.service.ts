@@ -38,7 +38,8 @@ export interface IParkingLotService {
   createParkingLot(
     createDto: CreateParkingLotDto,
     userId: string,
-  ): Promise<ParkingLot>
+    currentIdOfUserRole: string,
+  ): Promise<ParkingLotResponseDto>
 
   requestParkingLotUpdate(
     parkingLotId: IdDto,

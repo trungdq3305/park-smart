@@ -22,6 +22,6 @@ export class ParkingLotStatusRepository implements IParkingLotStatusRepository {
 
   async findParkingLotStatusByStatus(status: string): Promise<string | null> {
     const data = await this.parkingLotModel.findOne({ status }).lean().exec()
-    return data ? data.status : null
+    return data ? data._id : null
   }
 }
