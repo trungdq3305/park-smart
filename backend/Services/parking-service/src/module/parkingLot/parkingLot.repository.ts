@@ -37,7 +37,19 @@ export class ParkingLotRepository implements IParkingLotRepository {
   }
 
   findParkingLotById(id: string): Promise<ParkingLot | null> {
-    return this.parkingLotModel.findById(id).lean().exec()
+    return this.parkingLotModel
+      .findById(id)
+      .populate({
+        path: 'addressId',
+        populate: {
+          path: 'wardId',
+        },
+      })
+      .populate({
+        path: 'parkingLotStatusId',
+      })
+      .lean()
+      .exec()
   }
 
   findByAddressIds(addressIds: string[]): Promise<ParkingLot[]> {

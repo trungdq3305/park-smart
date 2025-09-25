@@ -61,23 +61,23 @@ export class ParkingLotService implements IParkingLotService {
     return `room_${roomName}`
   }
 
-  async getParkingLotDetails(id: IdDto): Promise<ParkingLot> {
+  async getParkingLotDetails(id: IdDto): Promise<ParkingLotResponseDto> {
     const parkingLot = await this.parkingLotRepository.findParkingLotById(id.id)
     if (!parkingLot) {
       throw new Error('Không tìm thấy bãi đỗ xe')
     }
-    return parkingLot
+    return this.returnParkingLotResponseDto(parkingLot)
   }
 
   async getAllParkingLots(
     paginationQuery: PaginationQueryDto,
-    parkingLotStatus: IdDto,
+    parkingLotStatusId: string,
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }> {
     const { data, total } =
       await this.parkingLotRepository.findAllParkingLotByStatus(
         paginationQuery.page,
         paginationQuery.pageSize,
-        parkingLotStatus.id,
+        parkingLotStatusId,
       )
     if (data.length === 0) {
       throw new NotFoundException('Không tìm thấy bãi đỗ xe nào')

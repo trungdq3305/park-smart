@@ -13,11 +13,11 @@ import type { ParkingLot } from '../schemas/parkingLot.schema'
 import type { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
 
 export interface IParkingLotService {
-  getParkingLotDetails(id: IdDto): Promise<ParkingLot>
+  getParkingLotDetails(id: IdDto): Promise<ParkingLotResponseDto>
 
   getAllParkingLots(
     paginationQuery: PaginationQueryDto,
-    parkingLotStatus: IdDto,
+    parkingLotStatusId: string,
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   findNearbyParkingLots(
