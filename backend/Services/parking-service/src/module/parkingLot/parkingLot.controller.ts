@@ -25,7 +25,7 @@ import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
-import { IdDto } from 'src/common/dto/params.dto'
+import { IdDto, ParkingLotStatusIdDto } from 'src/common/dto/params.dto'
 import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 
@@ -183,21 +183,35 @@ export class ParkingLotController {
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN)
   @ApiQuery({
-    name: 'statusId',
+    name: 'parkingLotStatusId',
     type: String,
     required: true,
     description: 'ID của trạng thái cần lọc',
   })
+  @ApiQuery({
+    name: 'page',
+    type: Number,
+    required: true,
+    description: 'Số trang',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    type: Number,
+    required: true,
+    description: 'Số lượng mục trên trang',
+    example: 20,
+  })
   async findAll(
+    @Query() parkingLotStatusId: ParkingLotStatusIdDto,
     @Query() paginationQuery: PaginationQueryDto,
-    @Query() parkingLotStatus: IdDto,
-  ): Promise<PaginatedResponseDto<ParkingLotResponseDto[]>> {
+  ): Promise<PaginatedResponseDto<ParkingLotResponseDto>> {
     const result = await this.parkingLotService.getAllParkingLots(
       paginationQuery,
-      parkingLotStatus,
+      parkingLotStatusId.parkingLotStatusId,
     )
     return {
-      data: [result.data],
+      data: result.data,
       pagination: result.pagination,
       statusCode: HttpStatus.OK,
       message: 'Lấy danh sách bãi đỗ xe thành công',
@@ -208,7 +222,9 @@ export class ParkingLotController {
   @Get(':id')
   @ApiOperation({ summary: 'Lấy chi tiết một bãi đỗ xe' })
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
-  async findById(@Param() id: IdDto): Promise<ApiResponseDto<ParkingLot>> {
+  async findById(
+    @Param() id: IdDto,
+  ): Promise<ApiResponseDto<ParkingLotResponseDto>> {
     const parkingLot = await this.parkingLotService.getParkingLotDetails(id)
     return {
       data: [parkingLot],

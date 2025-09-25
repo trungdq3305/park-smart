@@ -40,7 +40,7 @@ export class Address extends BaseEntity {
   @Prop({ type: String, required: true, trim: true })
   fullAddress: string
 
-  @Prop({ type: String, required: true, trim: true, default: false })
+  @Prop({ type: Boolean, required: true, trim: true, default: false })
   isUsed: boolean
 
   @Prop({
