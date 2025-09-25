@@ -5,3 +5,9 @@ export class IdDto {
   @IsMongoId({ message: 'Id không hợp lệ' })
   id: string
 }
+
+export class ParkingLotStatusIdDto {
+  @IsNotEmpty({ message: 'parkingLotStatusId không được để trống' })
+  @IsMongoId({ message: 'parkingLotStatusId không hợp lệ' })
+  parkingLotStatusId: string
+}
