@@ -16,6 +16,7 @@ namespace CoreService.Repository.Models
 
         public string Question { get; set; }
         public string Answer { get; set; }
+        public string RejectReason { get; set; }
         [BsonRepresentation(BsonType.ObjectId)]
         public string AccountId { get; set; }
         [BsonRepresentation(BsonType.ObjectId)]

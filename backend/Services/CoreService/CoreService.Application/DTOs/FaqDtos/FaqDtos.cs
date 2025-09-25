@@ -20,6 +20,11 @@ namespace CoreService.Application.DTOs.FaqDtos
         [Required] public string Question { get; set; }
         [Required] public string Answer { get; set; }
     }
+    public class FaqRejectDto
+    {
+        [Required] public string Id { get; set; }
+        [Required] public string RejectReason { get; set; }
+    }
 
     public class FaqResponseDto
     {

@@ -125,13 +125,13 @@ namespace CoreService.Application.Applications
             return new ApiResponse<Faq>(faq, true, "FAQ đã được duyệt", StatusCodes.Status200OK);
         }
 
-        public async Task<ApiResponse<Faq>> RejectAsync(string faqId, string adminId)
+        public async Task<ApiResponse<Faq>> RejectAsync(FaqRejectDto dto, string adminId)
         {
-            var faq = await _repo.GetByIdAsync(faqId)
+            var faq = await _repo.GetByIdAsync(dto.Id)
                 ?? throw new ApiException("FAQ không tồn tại", StatusCodes.Status404NotFound);
 
             var rejectedStatus = await _statusRepo.GetByNameAsync("Rejected");
-
+            faq.RejectReason = dto.RejectReason?.Trim();
             faq.FaqStatusId = rejectedStatus.Id;
             faq.UpdatedAt = DateTime.UtcNow;
             faq.UpdatedBy = adminId;
