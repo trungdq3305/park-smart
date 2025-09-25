@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Inject } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model, Types } from 'mongoose'
@@ -132,51 +134,104 @@ export class ParkingLotRepository implements IParkingLotRepository {
     maxDistanceInKm: number,
     parkingLotStatus: string,
   ): Promise<{ data: ParkingLot[]; total: number }> {
-    const nearbyAddresses = await this.addressRepository.findNear(
-      longitude,
-      latitude,
-      maxDistanceInKm,
-    )
+    const skipAmount = (page - 1) * pageSize
+    const statusObjectId = new Types.ObjectId(parkingLotStatus)
+    const radiusInRadians = maxDistanceInKm / 6378.1
 
-    // Nếu không tìm thấy địa chỉ nào, trả về mảng rỗng
-    if (nearbyAddresses.length === 0) {
+    const results = await this.parkingLotModel.aggregate([
+      // Các stage $lookup, $unwind, $match, $sort vẫn giữ nguyên
+      {
+        $lookup: {
+          from: 'addresses',
+          localField: 'addressId',
+          foreignField: '_id',
+          as: 'address',
+        },
+      },
+      { $unwind: '$address' },
+      {
+        $match: {
+          'address.location': {
+            $geoWithin: {
+              $centerSphere: [[longitude, latitude], radiusInRadians],
+            },
+          },
+          parkingLotStatusId: statusObjectId,
+        },
+      },
+      {
+        $sort: {
+          availableSpots: -1,
+        },
+      },
+
+      // Stage $facet
+      {
+        $facet: {
+          metadata: [{ $count: 'total' }],
+          data: [
+            { $skip: skipAmount },
+            { $limit: pageSize },
+            // Các bước populate
+            {
+              $lookup: {
+                from: 'parkinglotstatuses',
+                localField: 'parkingLotStatusId',
+                foreignField: '_id',
+                as: 'parkingLotStatusId',
+              },
+            },
+            { $unwind: '$parkingLotStatusId' },
+            {
+              $lookup: {
+                from: 'wards',
+                localField: 'address.wardId',
+                foreignField: '_id',
+                as: 'address.wardId',
+              },
+            },
+            { $unwind: '$address.wardId' },
+
+            // <-- DI CHUYỂN $project VÀO ĐÂY, LÀM BƯỚC CUỐI CÙNG CỦA PIPELINE `data`
+            {
+              $project: {
+                _id: 1,
+                openTime: 1,
+                closeTime: 1,
+                is24Hours: 1,
+                maxVehicleHeight: 1,
+                maxVehicleWidth: 1,
+                totalCapacityEachLevel: 1,
+                totalLevel: 1,
+                availableSpots: 1,
+                parkingLotOperatorId: 1,
+                parkingLotStatusId: '$parkingLotStatusId',
+                addressId: {
+                  _id: '$address._id',
+                  fullAddress: '$address.fullAddress',
+                  latitude: {
+                    $arrayElemAt: ['$address.location.coordinates', 1],
+                  },
+                  longitude: {
+                    $arrayElemAt: ['$address.location.coordinates', 0],
+                  },
+                  wardId: '$address.wardId',
+                },
+              },
+            },
+          ],
+        },
+      },
+      // <-- XÓA STAGE $project KHỎI VỊ TRÍ NÀY
+    ])
+
+    // Phần xử lý kết quả giữ nguyên
+    if (results.length === 0 || results[0].metadata.length === 0) {
       return { data: [], total: 0 }
     }
 
-    // Bước 2: Lấy danh sách ID từ các địa chỉ tìm được
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    const addressIds = nearbyAddresses.map((address) => address._id.toString())
-
-    // Bước 3: Dùng danh sách ID để tìm và trả về các ParkingLot tương ứng
-    const skip = (page - 1) * pageSize
-
-    // 1. Tạo điều kiện query để tái sử dụng và đảm bảo tính nhất quán
-    const queryCondition = {
-      addressId: { $in: addressIds },
-      parkingLotStatusId: parkingLotStatus,
-    }
-
-    // 2. Chạy song song 2 query để tối ưu hiệu năng
-    const [data, total] = await Promise.all([
-      this.parkingLotModel
-        .find(queryCondition) // <-- Dùng điều kiện
-        .sort({ availableSpots: -1 })
-        .skip(skip) // <-- THÊM SKIP
-        .limit(pageSize) // <-- THÊM LIMIT
-        .populate({
-          path: 'addressId',
-          populate: {
-            path: 'wardId',
-          },
-        })
-        .populate({
-          path: 'parkingLotStatusId',
-        })
-        .lean()
-        .exec(),
-
-      this.parkingLotModel.countDocuments(queryCondition), // <-- Dùng CÙNG điều kiện
-    ])
+    const data = results[0].data
+    const total = results[0].metadata[0].total
 
     return { data, total }
   }
@@ -187,40 +242,115 @@ export class ParkingLotRepository implements IParkingLotRepository {
     page: number,
     pageSize: number,
   ): Promise<{ data: ParkingLot[]; total: number }> {
-    // Bước 1: Gọi AddressRepository để tìm các địa chỉ trong khung, có phân trang.
-    // Giả sử addressRepository.findWithinBox trả về { data: Address[], total: number }
-    const addressResult = await this.addressRepository.findWithinBox(
-      bottomLeft,
-      topRight,
-      page,
-      pageSize,
-    )
+    // Trả về any[] để service xử lý DTO
+    const skipAmount = (page - 1) * pageSize
 
-    const nearbyAddresses = addressResult.data
-    const totalAddressesInBounds = addressResult.total
+    const results = await this.parkingLotModel.aggregate([
+      // Các bước $lookup, $unwind, $match, $sort giữ nguyên như cũ
+      {
+        $lookup: {
+          from: 'addresses',
+          localField: 'addressId',
+          foreignField: '_id',
+          as: 'address',
+        },
+      },
+      { $unwind: '$address' },
+      {
+        $match: {
+          'address.location': {
+            $geoWithin: {
+              $box: [bottomLeft, topRight],
+            },
+          },
+        },
+      },
+      {
+        $sort: {
+          availableSpots: -1,
+        },
+      },
+      {
+        $facet: {
+          metadata: [{ $count: 'total' }],
+          data: [
+            { $skip: skipAmount },
+            { $limit: pageSize },
+            // Lookup các thông tin cần thiết
+            {
+              $lookup: {
+                from: 'parkinglotstatuses',
+                localField: 'parkingLotStatusId',
+                foreignField: '_id',
+                as: 'parkingLotStatusId',
+              },
+            },
+            {
+              $unwind: {
+                path: '$parkingLotStatusId',
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $lookup: {
+                from: 'wards',
+                localField: 'address.wardId',
+                foreignField: '_id',
+                as: 'address.wardId',
+              },
+            },
+            {
+              $unwind: {
+                path: '$address.wardId',
+                preserveNullAndEmptyArrays: true,
+              },
+            },
 
-    // Nếu không tìm thấy địa chỉ nào, trả về kết quả rỗng
-    if (nearbyAddresses.length === 0) {
-      return { data: [], total: 0 }
-    }
+            // --- PHẦN QUAN TRỌNG NHẤT ĐƯỢC THÊM VÀO ---
+            // Bước cuối: Định hình lại cấu trúc đầu ra cho khớp với DTO
+            {
+              $project: {
+                _id: 1, // Giữ lại _id của ParkingLot
+                openTime: 1,
+                closeTime: 1,
+                is24Hours: 1,
+                maxVehicleHeight: 1,
+                maxVehicleWidth: 1,
+                totalCapacityEachLevel: 1,
+                totalLevel: 1,
+                availableSpots: 1,
+                parkingLotOperatorId: 1,
+                // Trả về cả object status để DTO có thể lấy `status`
+                parkingLotStatusId: '$parkingLotStatusId',
 
-    // Bước 2: Lấy danh sách ID từ các địa chỉ tìm được
-    // eslint-disable-next-line @typescript-eslint/no-base-to-string
-    const addressIds = nearbyAddresses.map((address) => address._id.toString())
+                // Tái cấu trúc lại field `addressId` thành một object mới
+                // khớp với cấu trúc của AddressDto
+                addressId: {
+                  _id: '$address._id',
+                  fullAddress: '$address.fullAddress',
+                  // Tách kinh độ và vĩ độ từ mảng coordinates
+                  latitude: {
+                    $arrayElemAt: ['$address.location.coordinates', 1],
+                  },
+                  longitude: {
+                    $arrayElemAt: ['$address.location.coordinates', 0],
+                  },
+                  // Giữ lại wardId đã được populate để DTO xử lý fullAddress
+                  wardId: '$address.wardId',
+                },
+              },
+            },
+          ],
+        },
+      },
+    ])
 
-    // Bước 3: Dùng danh sách ID để tìm các ParkingLot tương ứng
-    const parkingLots = await this.parkingLotModel
-      .find({
-        addressId: { $in: addressIds },
-      })
-      .sort({ availableSpots: -1 })
-      .lean()
-      .exec()
+    const parkingLots = results[0].data
+    const total = results[0].metadata[0]?.total ?? 0
 
-    // Bước 4: Trả về kết quả cuối cùng
     return {
       data: parkingLots,
-      total: totalAddressesInBounds, // Trả về tổng số lượng từ truy vấn địa chỉ
+      total: total,
     }
   }
 }
