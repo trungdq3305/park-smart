@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { createParamDecorator, ExecutionContext } from '@nestjs/common'
+import type { ExecutionContext } from '@nestjs/common'
+import { createParamDecorator } from '@nestjs/common'
 
 /**
  * Custom decorator để lấy userId từ payload của JWT đã được xác thực.

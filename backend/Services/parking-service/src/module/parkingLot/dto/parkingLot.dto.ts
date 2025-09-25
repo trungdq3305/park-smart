@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger'
+import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import {
   IsBoolean,
   IsLatitude,
@@ -13,8 +14,8 @@ import {
   IsString,
   Matches,
 } from 'class-validator'
-import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
+import { UserMinimalResponseDto } from 'src/common/dto/userResponse.dto'
 
 export class CreateParkingLotDto {
   @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4567' })
@@ -179,6 +180,22 @@ export class AddressDto {
   @Expose()
   @Transform(({ obj }) => obj.longitude)
   longitude: number
+
+  @Expose()
+  @Transform(({ obj }) => {
+    const fullAddress = obj.fullAddress as string
+
+    // Nếu trong chuỗi đã có "Thành phố Hồ Chí Minh", trả về luôn
+    if (fullAddress.includes('Thành phố Hồ Chí Minh')) {
+      return fullAddress
+    }
+
+    // Nếu chưa có, mới thực hiện ghép chuỗi
+    const parts = [fullAddress, obj.wardId?.wardName, 'Thành phố Hồ Chí Minh']
+
+    return parts.filter((part) => part).join(', ')
+  })
+  fullAddress: string
 }
 
 @Exclude()
@@ -213,10 +230,68 @@ export class ParkingLotResponseDto {
   totalLevel: number
 
   @Expose()
-  isApproved: boolean
+  availableSpots: number
 
   @Expose()
-  availableSpots: number
+  @Transform(({ obj }) => obj.parkingLotOperatorId.toString())
+  parkingLotOperatorId: string
+
+  @Expose()
+  @Transform(({ obj }) => obj.parkingLotStatusId?.status ?? obj.status) // Lấy tên status
+  parkingLotStatusId: string // Trạng thái hiện tại (PENDING, APPROVED,...)
+}
+
+@Exclude()
+export class ParkingLotHistoryLogResponseDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  @Transform(({ obj }) => obj.parkingLotId.toString())
+  parkingLotId: string
+
+  // Giữ lại các trường dữ liệu đã thay đổi
+  @Expose()
+  openTime?: string // Dùng optional (?) vì không phải lúc nào cũng thay đổi
+
+  @Expose()
+  closeTime?: string
+
+  @Expose()
+  is24Hours?: boolean
+
+  @Expose()
+  maxVehicleHeight?: number
+
+  // ... các trường dữ liệu khác có thể thay đổi
+
+  /**
+   * MỚI: Thêm các trường ngày tháng quan trọng
+   */
+  @Expose()
+  effectiveDate: Date // Ngày thay đổi sẽ có hiệu lực
+
+  @Expose()
+  approvalDeadline: Date // Hạn chót để duyệt
+
+  /**
+   * MỚI: Thêm các trường kế thừa từ BaseEntity để biết ai tạo, khi nào
+   */
+  @Expose()
+  createdAt: Date
+
+  @Expose()
+  @Type(() => UserMinimalResponseDto) // Populate thông tin người tạo
+  createdBy: UserMinimalResponseDto
+
+  /**
+   * MỚI: Thay thế parkingLotStatusId bằng status string
+   * Dễ dàng hơn cho frontend
+   */
+  @Expose()
+  @Transform(({ obj }) => obj.parkingLotStatusId?.status ?? obj.status) // Lấy tên status
+  status: string // Trạng thái hiện tại (PENDING, APPROVED,...)
 }
 
 @Exclude()

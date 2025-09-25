@@ -1,42 +1,43 @@
 import {
-  Controller,
-  Post,
   Body,
-  Get,
-  Patch,
+  Controller,
   Delete,
-  Param,
-  Inject,
-  UseGuards,
+  Get,
   HttpStatus,
+  Inject,
+  Param,
+  Patch,
+  Post,
   Query,
+  UseGuards,
 } from '@nestjs/common'
 import {
-  ApiTags,
-  ApiOperation,
   ApiBearerAuth,
-  ApiParam,
   ApiBody,
-  ApiResponse,
+  ApiOperation,
+  ApiParam,
   ApiQuery,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger'
+import { GetCurrenIdOfUserRole } from 'src/common/decorators/getCurrenIdOfUserRole.decorator'
+import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { Roles } from 'src/common/decorators/roles.decorator'
+import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
+import { IdDto } from 'src/common/dto/params.dto'
+import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 import { RolesGuard } from 'src/guard/role.guard'
-import { Roles } from 'src/common/decorators/roles.decorator'
-import { RoleEnum } from 'src/common/enum/role.enum'
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+
 import {
-  VehicleResponseDto,
   CreateVehicleDto,
+  PlateParamDto as PlateParameterDto,
   UpdateVehicleDto,
-  PlateParamDto,
+  VehicleResponseDto,
 } from './dto/vehicle.dto'
 import { IVehicleService } from './interfaces/ivehicle.service'
-import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
-import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
-import { IdDto } from 'src/common/dto/params.dto'
-import { GetCurrenIdOfUserRole } from 'src/common/decorators/getCurrenIdOfUserRole.decorator'
-import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 @Controller('vehicles')
 @ApiTags('vehicles')
 export class VehicleController {
@@ -195,7 +196,7 @@ export class VehicleController {
     description: 'Không tìm thấy xe',
   })
   async getVehicleByPlateNumber(
-    @Param() plateNumber: PlateParamDto,
+    @Param() plateNumber: PlateParameterDto,
   ): Promise<ApiResponseDto<VehicleResponseDto>> {
     const vehicle = await this.vehicleService.findVehicleByPlateNumber({
       plateNumber: plateNumber.plateNumber,

@@ -1,4 +1,4 @@
-import { VehicleType } from '../schemas/vehicleType.schema'
+import type { VehicleType } from '../schemas/vehicleType.schema'
 
 export interface IVehicleTypeRepository {
   getVehicleTypes(): Promise<VehicleType[]> // Sửa: Trả về entity

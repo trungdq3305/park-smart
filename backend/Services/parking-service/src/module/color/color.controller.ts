@@ -1,32 +1,32 @@
 import {
-  Controller,
-  Post,
   Body,
-  Get,
-  Patch,
+  Controller,
   Delete,
-  Param,
-  Inject,
-  UseGuards,
+  Get,
   HttpStatus,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common'
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
+  ApiOperation,
   ApiParam,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger'
-
-import { IColorService } from './interfaces/icolorservice'
+import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { Roles } from 'src/common/decorators/roles.decorator'
+import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+import { IdDto } from 'src/common/dto/params.dto'
+import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 import { RolesGuard } from 'src/guard/role.guard'
-import { Roles } from 'src/common/decorators/roles.decorator'
-import { RoleEnum } from 'src/common/enum/role.enum'
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
-import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+
 import { ColorResponseDto, CreateColorDto } from './dto/color.dto'
-import { IdDto } from 'src/common/dto/params.dto'
+import { IColorService } from './interfaces/icolorservice'
 
 @Controller('colors')
 @ApiTags('colors')
@@ -89,9 +89,9 @@ export class ColorController {
     type: ApiResponseDto<ColorResponseDto>,
   })
   async findColorById(
-    @Param() params: IdDto,
+    @Param() parameters: IdDto,
   ): Promise<ApiResponseDto<ColorResponseDto>> {
-    const color = await this.colorService.findColorById(params.id)
+    const color = await this.colorService.findColorById(parameters.id)
     return {
       data: [color],
       statusCode: HttpStatus.OK,
@@ -117,10 +117,10 @@ export class ColorController {
     type: ApiResponseDto,
   })
   async deleteColor(
-    @Param() params: IdDto,
+    @Param() parameters: IdDto,
     @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<boolean>> {
-    const data = await this.colorService.deleteColor(params.id, userId)
+    const data = await this.colorService.deleteColor(parameters.id, userId)
     return {
       data: [data],
       statusCode: HttpStatus.OK,
@@ -146,10 +146,10 @@ export class ColorController {
     type: ApiResponseDto,
   })
   async restoreColor(
-    @Param() params: IdDto,
+    @Param() parameters: IdDto,
     @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<boolean>> {
-    const data = await this.colorService.restoreColor(params.id, userId)
+    const data = await this.colorService.restoreColor(parameters.id, userId)
     return {
       data: [data],
       statusCode: HttpStatus.OK,

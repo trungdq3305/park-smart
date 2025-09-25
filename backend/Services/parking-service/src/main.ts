@@ -1,9 +1,10 @@
-import { NestFactory, Reflector } from '@nestjs/core'
-import { AppModule } from './app.module'
-import { NestExpressApplication } from '@nestjs/platform-express'
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common' // Nên có để validate DTOs
 import { ConfigService } from '@nestjs/config'
+import { NestFactory, Reflector } from '@nestjs/core'
+import type { NestExpressApplication } from '@nestjs/platform-express'
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+
+import { AppModule } from './app.module'
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
@@ -53,4 +54,5 @@ async function bootstrap() {
     `API documentation available at http://localhost:${port}/swagger-json`,
   )
 }
+
 void bootstrap()

@@ -1,9 +1,10 @@
-import mongoose, { Model } from 'mongoose'
-import { CreateColorDto } from './dto/color.dto'
-import { Color, ColorDocument } from './schemas/color.schema'
-import { IColorRepository } from './interfaces/icolor.repository'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import mongoose, { Model } from 'mongoose'
+
+import { CreateColorDto } from './dto/color.dto'
+import { IColorRepository } from './interfaces/icolor.repository'
+import { Color, ColorDocument } from './schemas/color.schema'
 
 @Injectable()
 export class ColorRepository implements IColorRepository {

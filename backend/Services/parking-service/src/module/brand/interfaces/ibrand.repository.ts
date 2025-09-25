@@ -1,5 +1,5 @@
-import { CreateBrandDto } from '../dto/brand.dto'
-import { Brand } from '../schemas/brand.schema'
+import type { CreateBrandDto } from '../dto/brand.dto'
+import type { Brand } from '../schemas/brand.schema'
 
 export interface IBrandRepository {
   createBrand(brand: CreateBrandDto, userId: string): Promise<Brand>

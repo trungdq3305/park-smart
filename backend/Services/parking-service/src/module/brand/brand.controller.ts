@@ -1,30 +1,31 @@
 import {
-  Controller,
-  Post,
   Body,
-  Get,
-  Patch,
+  Controller,
   Delete,
-  Param,
-  Inject,
-  UseGuards,
+  Get,
   HttpStatus,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
 } from '@nestjs/common'
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
+  ApiOperation,
   ApiParam,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger'
-import { CreateBrandDto, BrandResponseDto } from './dto/brand.dto'
-import { IBrandService } from './interfaces/ibrand.service'
+import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { Roles } from 'src/common/decorators/roles.decorator'
+import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 import { RolesGuard } from 'src/guard/role.guard'
-import { Roles } from 'src/common/decorators/roles.decorator'
-import { RoleEnum } from 'src/common/enum/role.enum'
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
-import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+
+import { BrandResponseDto, CreateBrandDto } from './dto/brand.dto'
+import { IBrandService } from './interfaces/ibrand.service'
 
 @Controller('brands')
 @ApiTags('brands')

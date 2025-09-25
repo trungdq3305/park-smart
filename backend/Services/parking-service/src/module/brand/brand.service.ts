@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import { HttpService } from '@nestjs/axios'
+import { Cache, CACHE_MANAGER } from '@nestjs/cache-manager'
 import {
   BadRequestException,
   ConflictException,
@@ -7,14 +8,13 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common'
-import { CreateBrandDto, BrandResponseDto } from './dto/brand.dto'
+import { ConfigService } from '@nestjs/config'
+import { plainToInstance } from 'class-transformer'
+import { firstValueFrom } from 'rxjs'
+
+import { BrandResponseDto, CreateBrandDto } from './dto/brand.dto'
 import { IBrandRepository } from './interfaces/ibrand.repository'
 import { IBrandService } from './interfaces/ibrand.service'
-import { HttpService } from '@nestjs/axios'
-import { firstValueFrom } from 'rxjs'
-import { ConfigService } from '@nestjs/config'
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager'
-import { plainToInstance } from 'class-transformer'
 import { Brand } from './schemas/brand.schema'
 
 @Injectable()
@@ -29,7 +29,7 @@ export class BrandService implements IBrandService {
   private readonly logger = new Logger(BrandService.name)
   private readonly configService = new ConfigService()
   private readonly accountServiceUrl =
-    this.configService.get<string>('CORE_SERVICE_URL')
+    this.configService.get<string>('CORE_SERVICE_URL') ?? ''
 
   private returnBrandResponseDto(brand: Brand): BrandResponseDto {
     return plainToInstance(BrandResponseDto, brand, {
@@ -64,28 +64,41 @@ export class BrandService implements IBrandService {
     let message = 'Hãng xe đã được tìm thấy'
 
     if (brand.deletedBy) {
-      const cacheKey = `ACCOUNT_${brand.deletedBy.toString()}`
-      let accountData = await this.cacheManager.get<any>(cacheKey)
+      const cacheKey = `ACCOUNT_${brand.deletedBy}`
+      let accountData = await this.cacheManager.get<{
+        id: string
+        name?: string
+        [key: string]: unknown
+      } | null>(cacheKey)
 
       if (!accountData) {
         try {
           const accountServiceUrl =
-            this.accountServiceUrl +
-            `/api/accounts/${brand.deletedBy.toString()}`
+            this.accountServiceUrl + `/api/accounts/${brand.deletedBy}`
           const accountResponse = await firstValueFrom(
-            this.httpService.get(accountServiceUrl),
+            this.httpService.get<{
+              data: { id: string; name?: string; [key: string]: unknown }
+            }>(accountServiceUrl),
           )
-          accountData = accountResponse.data.data
+          accountData = accountResponse.data.data as {
+            id: string
+            name?: string
+            [key: string]: unknown
+          }
           await this.cacheManager.set(cacheKey, accountData)
         } catch (error) {
+          const errorMessage =
+            error && typeof error === 'object' && 'message' in error
+              ? (error as { message: string }).message
+              : String(error)
           this.logger.error(
-            `Không thể lấy thông tin người xóa với ID: ${brand.deletedBy.toString()}. Lỗi: ${error.message}`,
+            `Không thể lấy thông tin người xóa với ID: ${brand.deletedBy}. Lỗi: ${errorMessage}`,
           )
           message =
             'Hãng xe đã được tìm thấy, nhưng không thể lấy thông tin người xóa.'
         }
       }
-      brandResponse.deletedBy = accountData || brand.deletedBy.toString()
+      brandResponse.deletedBy = accountData ?? brand.deletedBy
     }
 
     return { ...brandResponse, message }
@@ -93,7 +106,7 @@ export class BrandService implements IBrandService {
 
   async findAllBrands(): Promise<BrandResponseDto[]> {
     const brands = await this.brandRepository.findAllBrands()
-    if (!brands || brands.length === 0) {
+    if (brands.length === 0) {
       throw new NotFoundException('Không tìm thấy hãng xe nào')
     }
     return brands.map((brand) => this.returnBrandResponseDto(brand))

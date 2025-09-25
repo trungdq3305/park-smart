@@ -5,10 +5,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { CreateColorDto, ColorResponseDto } from './dto/color.dto'
+import { plainToInstance } from 'class-transformer'
+
+import { ColorResponseDto, CreateColorDto } from './dto/color.dto'
 import { IColorRepository } from './interfaces/icolor.repository'
 import { IColorService } from './interfaces/icolorservice'
-import { plainToInstance } from 'class-transformer'
 import { Color } from './schemas/color.schema'
 
 @Injectable()

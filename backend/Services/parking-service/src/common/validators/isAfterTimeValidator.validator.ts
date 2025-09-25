@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
+  ValidationArguments,
   ValidatorConstraint,
   ValidatorConstraintInterface,
-  ValidationArguments,
 } from 'class-validator'
 
 // Đăng ký validator với tên 'isAfterTime'
 @ValidatorConstraint({ name: 'isAfterTime', async: false })
 export class IsAfterTimeConstraint implements ValidatorConstraintInterface {
   // Hàm chính để thực hiện validation
-  validate(value: any, args: ValidationArguments) {
-    const [relatedPropertyName] = args.constraints // Lấy tên của thuộc tính cần so sánh (vd: 'openTime')
-    const relatedValue = (args.object as any)[relatedPropertyName] // Lấy giá trị của thuộc tính đó
+  validate(value: any, arguments_: ValidationArguments) {
+    const [relatedPropertyName] = arguments_.constraints // Lấy tên của thuộc tính cần so sánh (vd: 'openTime')
+    const relatedValue = (arguments_.object as any)[relatedPropertyName] // Lấy giá trị của thuộc tính đó
 
     // Nếu một trong hai giá trị không tồn tại, bỏ qua validation
     if (!value || !relatedValue) {
@@ -28,8 +28,8 @@ export class IsAfterTimeConstraint implements ValidatorConstraintInterface {
   }
 
   // Hàm để trả về thông báo lỗi mặc định
-  defaultMessage(args: ValidationArguments) {
-    const [relatedPropertyName] = args.constraints
-    return `${args.property} phải sau ${relatedPropertyName}`
+  defaultMessage(arguments_: ValidationArguments) {
+    const [relatedPropertyName] = arguments_.constraints
+    return `${arguments_.property} phải sau ${relatedPropertyName}`
   }
 }

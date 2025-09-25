@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger'
-import { IsMongoId, IsNotEmpty, IsString, Matches } from 'class-validator'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
+import { IsMongoId, IsNotEmpty, IsString, Matches } from 'class-validator'
 
 // ===================================================================================
 // DTOs for REQUEST BODY

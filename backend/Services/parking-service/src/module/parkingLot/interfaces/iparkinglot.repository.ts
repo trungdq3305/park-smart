@@ -1,41 +1,44 @@
-import { ParkingLot } from '../schemas/parkingLot.schema'
-import { CreateParkingLotDto } from '../dto/parkingLot.dto'
+import type { ParkingLot } from '../schemas/parkingLot.schema'
 
 export interface IParkingLotRepository {
   createParkingLot(
-    parkingLot: CreateParkingLotDto,
-    userId: string,
-  ): Promise<ParkingLot>
+    parkingLotData: Partial<ParkingLot>,
+  ): Promise<ParkingLot | null>
 
   findParkingLotById(id: string): Promise<ParkingLot | null>
 
   findByAddressIds(addressIds: string[]): Promise<ParkingLot[]>
 
-  findAllParkingLot(
-    page: number,
-    pageSize: number,
-  ): Promise<{ data: ParkingLot[]; total: number }>
-
-  deleteParkingLot(id: string, userId: string): Promise<boolean>
-
-  updateAvalableSpots(id: string, availableSpots: number): Promise<boolean>
+  updateAvailableSpots(id: string, change: number): Promise<ParkingLot | null>
 
   approveParkingLot(
     id: string,
-    isApproved: boolean,
+    statusId: string,
     userId: string,
   ): Promise<ParkingLot | null>
 
   findByCoordinates(
     longitude: number,
     latitude: number,
+    page: number,
+    pageSize: number,
     maxDistanceInKm: number,
-  ): Promise<ParkingLot[]>
+    parkingLotStatus: string,
+  ): Promise<{ data: ParkingLot[]; total: number }>
 
   findInBounds(
     bottomLeft: [number, number], // [lng, lat]
     topRight: [number, number], // [lng, lat]
     page: number,
     pageSize: number,
+    parkingLotStatus: string,
+  ): Promise<{ data: ParkingLot[]; total: number }>
+
+  findAllParkingLotByStatus(
+    page: number,
+    pageSize: number,
+    statusId: string,
   ): Promise<{ data: ParkingLot[]; total: number }>
 }
+
+export const IParkingLotRepository = Symbol('IParkingLotRepository')
