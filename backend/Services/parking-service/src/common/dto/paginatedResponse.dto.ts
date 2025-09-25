@@ -32,8 +32,8 @@ export class PaginatedResponseDto<T> {
 
   constructor(
     partial: Partial<PaginatedResponseDto<T>>,
-    success: boolean = true,
-    message: string = 'Successful',
+    success = true,
+    message = 'Successful',
   ) {
     this.data = partial.data ?? []
     this.pagination = partial.pagination ?? {

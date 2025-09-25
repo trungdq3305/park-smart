@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
+
+import { IVehicleTypeRepository } from './interfaces/ivehicleType.repository'
+import { IVehicleTypeService } from './interfaces/ivehicleType.service'
 import { VehicleType, VehicleTypeSchema } from './schemas/vehicleType.schema'
 import { VehicleTypeController } from './vehicleType.controller'
-import { IVehicleTypeService } from './interfaces/ivehicleType.service'
-import { VehicleTypeService } from './vehicleType.service'
-import { IVehicleTypeRepository } from './interfaces/ivehicleType.repository'
 import { VehicleTypeRepository } from './vehicleType.repository'
+import { VehicleTypeService } from './vehicleType.service'
 
 @Module({
   imports: [

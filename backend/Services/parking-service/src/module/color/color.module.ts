@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { Color, ColorSchema } from './schemas/color.schema'
+
 import { ColorController } from './color.controller'
-import { IColorService } from './interfaces/icolorservice'
+import { ColorRepository } from './color.repository'
 import { ColorService } from './color.service'
 import { IColorRepository } from './interfaces/icolor.repository'
-import { ColorRepository } from './color.repository'
+import { IColorService } from './interfaces/icolorservice'
+import { Color, ColorSchema } from './schemas/color.schema'
 
 @Module({
   imports: [

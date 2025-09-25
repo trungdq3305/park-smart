@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-import { createParamDecorator, ExecutionContext } from '@nestjs/common'
+import type { ExecutionContext } from '@nestjs/common'
+import { createParamDecorator } from '@nestjs/common'
+
 import { RoleEnum } from '../enum/role.enum'
 
 /**

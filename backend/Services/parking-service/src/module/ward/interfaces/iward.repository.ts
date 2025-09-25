@@ -1,4 +1,4 @@
-import { Ward } from '../schemas/ward.schema'
+import type { Ward } from '../schemas/ward.schema'
 
 export interface IWardRepository {
   getWards(): Promise<Ward[]>

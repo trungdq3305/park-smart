@@ -1,8 +1,9 @@
-import { Controller, Get, Inject, HttpStatus } from '@nestjs/common'
-import { ApiTags, ApiOperation } from '@nestjs/swagger'
-import { IWardService } from './interfaces/iward.service'
+import { Controller, Get, HttpStatus, Inject } from '@nestjs/common'
+import { ApiOperation, ApiTags } from '@nestjs/swagger'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+
 import { WardResponseDto } from './dto/ward.dto'
+import { IWardService } from './interfaces/iward.service'
 
 @ApiTags('wards')
 @Controller('wards')
