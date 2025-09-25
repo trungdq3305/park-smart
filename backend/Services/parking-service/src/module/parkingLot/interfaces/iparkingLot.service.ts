@@ -1,6 +1,10 @@
 import type { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import type { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
-import type { IdDto } from 'src/common/dto/params.dto'
+import type {
+  IdDto,
+  ParkingLotIdDto,
+  ParkingLotStatusIdDto,
+} from 'src/common/dto/params.dto'
 
 import type {
   BoundingBoxDto,
@@ -32,7 +36,7 @@ export interface IParkingLotService {
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   getUpdateHistoryLogForParkingLot(
-    parkingLotId: IdDto,
+    parkingLotId: ParkingLotIdDto,
   ): Promise<ParkingLotHistoryLog[]>
 
   createParkingLot(
@@ -42,14 +46,14 @@ export interface IParkingLotService {
   ): Promise<ParkingLotResponseDto>
 
   requestParkingLotUpdate(
-    parkingLotId: IdDto,
+    parkingLotId: ParkingLotIdDto,
     updateRequestDto: UpdateParkingLotHistoryLogDto,
     userId: string,
   ): Promise<ParkingLotHistoryLog>
 
   approveNewParkingLot(
-    parkingLotId: IdDto,
-    statusId: IdDto,
+    parkingLotId: ParkingLotIdDto,
+    statusId: ParkingLotStatusIdDto,
     userId: string,
   ): Promise<ParkingLot>
 

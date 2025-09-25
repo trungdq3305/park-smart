@@ -310,4 +310,38 @@ export class VehicleController {
       success: data.success,
     }
   }
+
+  @Get('driver/all-deleted')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy tất cả xe đã xóa của người dùng hiện tại' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Danh sách xe đã xóa của người dùng hiện tại',
+    type: PaginatedResponseDto<VehicleResponseDto>,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy xe đã xóa nào',
+  })
+  @ApiQuery({ name: 'page', required: true, type: Number })
+  @ApiQuery({ name: 'pageSize', required: true, type: Number })
+  async getAllDeletedVehicles(
+    @GetCurrenIdOfUserRole() driverId: string,
+    @Query() paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<VehicleResponseDto>> {
+    const vehicles = await this.vehicleService.findAllDeletedVehicles(
+      paginationQuery.page,
+      paginationQuery.pageSize,
+      driverId,
+    )
+    return {
+      data: vehicles.data,
+      pagination: vehicles.pagination,
+      statusCode: HttpStatus.OK,
+      message: 'Lấy danh sách xe đã xóa thành công',
+      success: true,
+    }
+  }
 }
