@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 const { Content } = Layout
 import { useEffect } from 'react'
 import NavBar from '../navbar/NavBar'
+import Footer from '../../footer/Footer'
 function MainLayout() {
     const navigate = useNavigate()
 
@@ -39,7 +40,7 @@ function MainLayout() {
             >
                 <Outlet />
             </Content>
-            {/* <AppFooter /> */}
+            <Footer />
         </Layout>
     )
 }
