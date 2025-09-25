@@ -6,6 +6,26 @@
 .slogan {
     text-align: center;
     color: #333;
-    margin: 20px 0;
     border-bottom: #aaa7a7 1px solid;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeUp 1.5s ease forwards;
+}
+
+/* Keyframes for fade + slide up */
+@keyframes fadeUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slogan p {
+    display: inline-block;
+    animation: float 3s ease-in-out infinite;
 }
