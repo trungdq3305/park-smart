@@ -25,7 +25,11 @@ import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
-import { IdDto, ParkingLotStatusIdDto } from 'src/common/dto/params.dto'
+import {
+  IdDto,
+  ParkingLotIdDto,
+  ParkingLotStatusIdDto,
+} from 'src/common/dto/params.dto'
 import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 
@@ -240,16 +244,16 @@ export class ParkingLotController {
   @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Duyệt hoặc từ chối một bãi đỗ xe mới' })
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
-  @ApiBody({ schema: { example: { statusId: '...' } } })
+  @ApiBody({ schema: { example: { parkingLotStatusId: '...' } } })
   async approve(
-    @Param() parkingLotId: IdDto,
-    @Body('statusId') statusId: IdDto,
+    @Param() parkingLotId: ParkingLotIdDto,
+    @Body('parkingLotStatusId') parkingLotStatusId: ParkingLotStatusIdDto,
     @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<ParkingLot>> {
     const approvedParkingLot =
       await this.parkingLotService.approveNewParkingLot(
         parkingLotId,
-        statusId,
+        parkingLotStatusId,
         userId,
       )
     return {
@@ -268,7 +272,7 @@ export class ParkingLotController {
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
   @ApiBody({ type: UpdateParkingLotHistoryLogDto })
   async requestUpdate(
-    @Param() parkingLotId: IdDto,
+    @Param() parkingLotId: ParkingLotIdDto,
     @Body() updateDto: UpdateParkingLotHistoryLogDto,
     @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<ParkingLotHistoryLog>> {
@@ -292,7 +296,7 @@ export class ParkingLotController {
   @ApiOperation({ summary: 'Lấy lịch sử cập nhật của một bãi đỗ xe' })
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
   async getHistory(
-    @Param() parkingLotId: IdDto,
+    @Param() parkingLotId: ParkingLotIdDto,
   ): Promise<ApiResponseDto<ParkingLotHistoryLog[]>> {
     const history =
       await this.parkingLotService.getUpdateHistoryLogForParkingLot(

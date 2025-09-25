@@ -11,3 +11,9 @@ export class ParkingLotStatusIdDto {
   @IsMongoId({ message: 'parkingLotStatusId không hợp lệ' })
   parkingLotStatusId: string
 }
+
+export class ParkingLotIdDto {
+  @IsNotEmpty({ message: 'parkingLotId không được để trống' })
+  @IsMongoId({ message: 'parkingLotId không hợp lệ' })
+  parkingLotId: string
+}1

@@ -269,4 +269,32 @@ export class VehicleService implements IVehicleService {
       message,
     }
   }
+
+  async findAllDeletedVehicles(
+    page: number,
+    pageSize: number,
+    driverId: string,
+  ): Promise<{ data: VehicleResponseDto[]; pagination: PaginationDto }> {
+    const vehicles = await this.vehicleRepository.findAllDeletedVehicles(
+      page,
+      pageSize,
+      driverId,
+    )
+
+    if (vehicles.data.length === 0) {
+      throw new NotFoundException('Không tìm thấy xe đã xóa nào')
+    }
+
+    return {
+      data: vehicles.data.map((vehicle) =>
+        this.returnVehicleResponseDto(vehicle),
+      ),
+      pagination: {
+        currentPage: page,
+        pageSize,
+        totalItems: vehicles.total,
+        totalPages: Math.ceil(vehicles.total / pageSize),
+      },
+    }
+  }
 }

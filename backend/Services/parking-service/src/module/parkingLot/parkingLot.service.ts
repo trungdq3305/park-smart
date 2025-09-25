@@ -9,7 +9,11 @@ import { plainToInstance } from 'class-transformer'
 import geohash from 'ngeohash'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
-import { IdDto } from 'src/common/dto/params.dto'
+import {
+  IdDto,
+  ParkingLotIdDto,
+  ParkingLotStatusIdDto,
+} from 'src/common/dto/params.dto'
 
 import { IAddressRepository } from '../address/interfaces/iaddress.repository'
 import { Address } from '../address/schemas/address.schema'
@@ -179,11 +183,11 @@ export class ParkingLotService implements IParkingLotService {
   }
 
   async getUpdateHistoryLogForParkingLot(
-    parkingLotId: IdDto,
+    parkingLotId: ParkingLotIdDto,
   ): Promise<ParkingLotHistoryLog[]> {
     const historyLogs =
       await this.parkingLotHistoryLogRepository.findByParkingLotId(
-        parkingLotId.id,
+        parkingLotId.parkingLotId,
       )
     if (historyLogs === null || historyLogs.length === 0) {
       throw new NotFoundException('Không tìm thấy lịch sử cập nhật nào')
@@ -233,7 +237,7 @@ export class ParkingLotService implements IParkingLotService {
   }
 
   async requestParkingLotUpdate(
-    parkingLotId: IdDto,
+    parkingLotId: ParkingLotIdDto,
     updateRequestDto: UpdateParkingLotHistoryLogDto,
     userId: string,
   ): Promise<ParkingLotHistoryLog> {
@@ -248,7 +252,7 @@ export class ParkingLotService implements IParkingLotService {
     }
     const dataSend = {
       ...updateRequestDto,
-      parkingLotId: parkingLotId.id,
+      parkingLotId: parkingLotId.parkingLotId,
       createdBy: userId,
       createdAt: new Date(),
       parkingLotStatusId: parkingStatus,
@@ -259,18 +263,20 @@ export class ParkingLotService implements IParkingLotService {
   }
 
   async approveNewParkingLot(
-    parkingLotId: IdDto,
-    statusId: IdDto,
+    parkingLotId: ParkingLotIdDto,
+    statusId: ParkingLotStatusIdDto,
     userId: string,
   ): Promise<ParkingLot> {
     const existingParkingLot =
-      await this.parkingLotRepository.findParkingLotById(parkingLotId.id)
+      await this.parkingLotRepository.findParkingLotById(
+        parkingLotId.parkingLotId,
+      )
     if (!existingParkingLot) {
       throw new NotFoundException('Không tìm thấy bãi đỗ xe')
     }
     const result = await this.parkingLotRepository.approveParkingLot(
-      parkingLotId.id,
-      statusId.id,
+      parkingLotId.parkingLotId,
+      statusId.parkingLotStatusId,
       userId,
     )
     if (!result) {
