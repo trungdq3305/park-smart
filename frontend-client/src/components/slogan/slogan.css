@@ -1,0 +1,11 @@
+.slogan-container {
+    width: 80%;
+    justify-self: center;
+}
+
+.slogan {
+    text-align: center;
+    color: #333;
+    margin: 20px 0;
+    border-bottom: #aaa7a7 1px solid;
+}
