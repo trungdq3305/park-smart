@@ -7,9 +7,10 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
+
 import {
-  ParkingLotSpotsUpdateDto,
   ParkingLotMinimalResponseDto,
+  ParkingLotSpotsUpdateDto,
 } from './dto/parkingLot.dto'
 
 @Injectable() // Quan trọng: Để có thể inject vào Service
@@ -35,15 +36,22 @@ export class ParkingLotGateway
 
   // 2. Xử lý sự kiện từ Client
   @SubscribeMessage('join-room')
-  async handleJoinRoom(client: Socket, roomName: string) {
-    await client.join(roomName)
-    console.log(`Client ${client.id} joined room: ${roomName}`)
+  async handleJoinRoom(
+    client: Socket,
+    payload: { newRoom: string; oldRoom?: string },
+  ) {
+    // Nếu có room cũ, hãy rời khỏi nó trước
+    if (payload.oldRoom) {
+      await client.leave(payload.oldRoom)
+    }
+
+    // Tham gia vào room mới
+    await client.join(payload.newRoom)
   }
 
   @SubscribeMessage('leave-room')
   async handleLeaveRoom(client: Socket, roomName: string) {
     await client.leave(roomName)
-    console.log(`Client ${client.id} left room: ${roomName}`)
   }
 
   // 3. Các phương thức để Service gọi (để phát sóng)

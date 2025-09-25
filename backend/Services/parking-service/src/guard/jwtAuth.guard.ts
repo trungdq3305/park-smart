@@ -10,7 +10,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
    * @param user Thông tin user nếu xác thực thành công (từ hàm validate của JwtStrategy)
    * @param info Thông tin bổ sung, chứa lỗi cụ thể từ passport-jwt
    */
-  handleRequest(err, user, info: Error) {
+  handleRequest(error, user, info: Error) {
     // Bắt lỗi TokenExpiredError
     if (info instanceof TokenExpiredError) {
       throw new UnauthorizedException(
@@ -24,9 +24,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     // Xử lý các lỗi khác hoặc trường hợp không có user
-    if (err || !user) {
+    if (error || !user) {
       throw (
-        err ||
+        error ||
         new UnauthorizedException(
           'Hành động không được phép. Vui lòng cung cấp token.',
         )

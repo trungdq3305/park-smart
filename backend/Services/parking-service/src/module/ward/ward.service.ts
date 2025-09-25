@@ -1,9 +1,10 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common'
-import { IWardService } from './interfaces/iward.service'
-import { IWardRepository } from './interfaces/iward.repository'
-import { Ward } from './schemas/ward.schema'
-import { WardResponseDto } from './dto/ward.dto'
 import { plainToInstance } from 'class-transformer'
+
+import { WardResponseDto } from './dto/ward.dto'
+import { IWardRepository } from './interfaces/iward.repository'
+import { IWardService } from './interfaces/iward.service'
+import { Ward } from './schemas/ward.schema'
 
 @Injectable()
 export class WardService implements IWardService {

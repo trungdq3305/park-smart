@@ -1,19 +1,22 @@
+import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
-import { AppController } from './app.controller'
-import { AppService } from './app.service'
-import { DatabaseConfig } from './config/database.config'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
-import { JwtStrategy } from './strategy/jwt.strategy'
+
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+import { DatabaseConfig } from './config/database.config'
 import { JwtAuthGuard } from './guard/jwtAuth.guard'
-import { WardModule } from './module/ward/ward.module'
 import { AddressModule } from './module/address/address.module'
 import { BrandModule } from './module/brand/brand.module'
-import { VehicleTypeModule } from './module/vehicleType/vehicleType.module'
-import { CacheModule } from '@nestjs/cache-manager'
 import { ColorModule } from './module/color/color.module'
+import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
+import { ParkingLotStatusModule } from './module/parkingLotStatus/parkingLotStatus.module'
 import { VehicleModule } from './module/vehicle/vehicle.module'
+import { VehicleTypeModule } from './module/vehicleType/vehicleType.module'
+import { WardModule } from './module/ward/ward.module'
+import { JwtStrategy } from './strategy/jwt.strategy'
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -41,6 +44,8 @@ import { VehicleModule } from './module/vehicle/vehicle.module'
     VehicleTypeModule,
     ColorModule,
     VehicleModule,
+    ParkingLotStatusModule,
+    ParkingLotModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],

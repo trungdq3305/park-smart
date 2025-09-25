@@ -9,7 +9,7 @@ export class VehicleType extends BaseEntity {
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId(),
   })
-  _id: mongoose.Schema.Types.ObjectId
+  _id: string
 
   @Prop({ required: true, unique: true })
   typeName: string

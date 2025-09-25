@@ -1,9 +1,10 @@
-import mongoose, { Model } from 'mongoose'
-import { CreateBrandDto } from './dto/brand.dto'
-import { Brand, BrandDocument } from './schemas/brand.schema'
-import { IBrandRepository } from './interfaces/ibrand.repository'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import mongoose, { Model } from 'mongoose'
+
+import { CreateBrandDto } from './dto/brand.dto'
+import { IBrandRepository } from './interfaces/ibrand.repository'
+import { Brand, BrandDocument } from './schemas/brand.schema'
 
 @Injectable()
 export class BrandRepository implements IBrandRepository {

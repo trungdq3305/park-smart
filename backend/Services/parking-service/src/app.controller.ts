@@ -1,10 +1,11 @@
 import { Controller, Get, UseGuards } from '@nestjs/common'
-import { AppService } from './app.service'
 import { ApiBearerAuth } from '@nestjs/swagger'
+
+import { AppService } from './app.service'
+import { Roles } from './common/decorators/roles.decorator'
+import { RoleEnum } from './common/enum/role.enum'
 import { JwtAuthGuard } from './guard/jwtAuth.guard'
 import { RolesGuard } from './guard/role.guard'
-import { RoleEnum } from './common/enum/role.enum'
-import { Roles } from './common/decorators/roles.decorator'
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

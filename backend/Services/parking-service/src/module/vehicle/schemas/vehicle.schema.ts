@@ -11,23 +11,23 @@ export class Vehicle extends BaseEntity {
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId(),
   })
-  _id: mongoose.Schema.Types.ObjectId
+  _id: string
 
   @Prop({ required: true, unique: true })
   plateNumber: string
 
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'Color' })
-  colorId: mongoose.Schema.Types.ObjectId
+  colorId: string
 
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'Brand' })
-  brandId: mongoose.Schema.Types.ObjectId
+  brandId: string
 
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,
     ref: 'VehicleType',
   })
-  vehicleTypeId: mongoose.Schema.Types.ObjectId
+  vehicleTypeId: string
 
   @Prop({ required: true })
   driverId: string

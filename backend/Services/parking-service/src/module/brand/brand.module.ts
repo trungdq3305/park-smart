@@ -1,12 +1,13 @@
+import { HttpModule } from '@nestjs/axios'
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
-import { Brand, BrandSchema } from './schemas/brand.schema'
+
 import { BrandController } from './brand.controller'
-import { IBrandService } from './interfaces/ibrand.service'
+import { BrandRepository } from './brand.repository'
 import { BrandService } from './brand.service'
 import { IBrandRepository } from './interfaces/ibrand.repository'
-import { BrandRepository } from './brand.repository'
-import { HttpModule } from '@nestjs/axios'
+import { IBrandService } from './interfaces/ibrand.service'
+import { Brand, BrandSchema } from './schemas/brand.schema'
 
 @Module({
   imports: [

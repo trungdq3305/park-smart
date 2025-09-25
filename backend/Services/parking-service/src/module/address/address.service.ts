@@ -7,18 +7,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
+import axios from 'axios'
+import { plainToInstance } from 'class-transformer'
 import { firstValueFrom } from 'rxjs'
-import { IAddressRepository } from './interfaces/iaddress.repository'
-import { IAddressService } from './interfaces/iaddress.service'
+
 import { IWardRepository } from '../ward/interfaces/iward.repository'
 import {
   AddressResponseDto,
   CreateAddressDto,
   UpdateAddressDto,
 } from './dto/address.dto'
+import { IAddressRepository } from './interfaces/iaddress.repository'
+import { IAddressService } from './interfaces/iaddress.service'
 import { Address } from './schemas/address.schema'
-import { plainToInstance } from 'class-transformer'
-import axios from 'axios'
 // Giữ lại các type cho Nominatim
 interface NominatimLocation {
   lat: string
@@ -66,12 +67,7 @@ export class AddressService implements IAddressService {
         }),
       )
 
-      if (
-        !response ||
-        typeof response !== 'object' ||
-        response === null ||
-        !('data' in response)
-      ) {
+      if (typeof response !== 'object' || !('data' in response)) {
         throw new HttpException(
           'Không nhận được dữ liệu hợp lệ từ dịch vụ định vị.',
           HttpStatus.SERVICE_UNAVAILABLE,
@@ -80,7 +76,7 @@ export class AddressService implements IAddressService {
       const locations = (response as { data: NominatimResponse }).data // <-- Đã sửa ở đây
 
       // Kiểm tra kết quả
-      if (!locations || locations.length === 0) {
+      if (locations.length === 0) {
         // <-- Sửa ở đây
         throw new HttpException(
           `Không thể tìm thấy địa chỉ: "${fullAddress}"`,
@@ -103,7 +99,7 @@ export class AddressService implements IAddressService {
       // Kiểm tra xem đây có phải là lỗi từ Axios không
       if (axios.isAxiosError(error) && error.response) {
         console.error(
-          `Lỗi từ Nominatim API - Status: ${error.response.status}`,
+          `Lỗi từ Nominatim API - Status: ${String(error.response.status)}`,
           JSON.stringify(error.response.data, null, 2),
         )
 
