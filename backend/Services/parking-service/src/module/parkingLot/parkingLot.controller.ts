@@ -60,6 +60,20 @@ export class ParkingLotController {
     required: true,
     description: 'Bán kính tìm kiếm (km)',
   })
+  @ApiQuery({
+    name: 'page',
+    type: Number,
+    required: true,
+    description: 'Số trang',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    type: Number,
+    required: true,
+    description: 'Số lượng mục trên trang',
+    example: 20,
+  })
   async findNearby(
     @Query() coordinates: CoordinatesDto,
     @Query() paginationQuery: PaginationQueryDto,
