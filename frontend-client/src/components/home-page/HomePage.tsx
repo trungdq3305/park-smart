@@ -1,7 +1,11 @@
 
 const HomePage: React.FC = () => {
     return (
-        <div>
+        <div
+
+            style={{
+                backgroundColor: "white",
+            }}>
             <h1>Welcome to the Home Page</h1>
         </div>
     )

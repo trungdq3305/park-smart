@@ -1,0 +1,38 @@
+.apple-navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 44px;
+    /* Apple navbar height */
+    background: rgba(55, 55, 57, 0.8);
+    /* Dark semi-transparent */
+    backdrop-filter: saturate(180%) blur(20px);
+    /* subtle blur */
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.apple-navbar ul {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.apple-navbar a {
+    text-decoration: none;
+    color: #f5f5f7;
+    font-size: 12px;
+    font-weight: 400;
+    transition: color 0.3s;
+}
+
+.apple-navbar a:hover {
+    color: #fff;
+}
