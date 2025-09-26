@@ -16,8 +16,10 @@ import {
 @Injectable() // Quan trọng: Để có thể inject vào Service
 @WebSocketGateway({
   cors: {
-    origin: '*', // Cho phép kết nối từ mọi nguồn (cần thiết cho mobile)
+    origin: '*',
   },
+  pingInterval: 10000, // Gửi một gói tin ping mỗi 10 giây
+  pingTimeout: 15000, // Nếu không nhận được phản hồi pong trong 15 giây, coi như mất kết nối
 })
 export class ParkingLotGateway
   implements OnGatewayConnection, OnGatewayDisconnect
