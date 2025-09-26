@@ -327,6 +327,19 @@
       ],
       "UpstreamPathTemplate": "/parking/swagger/{everything}",
       "UpstreamHttpMethod": [ "GET" ]
+    },
+    {
+      "UpstreamPathTemplate": "/",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 80
+        }
+      ],
+      "PassThrough": true
     }
   ],
   "GlobalConfiguration": {
