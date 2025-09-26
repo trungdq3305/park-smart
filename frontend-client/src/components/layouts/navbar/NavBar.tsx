@@ -5,13 +5,13 @@ const NavBar: React.FC = () => {
     <nav className="apple-navbar">
       <ul>
         <li>
-          <a href="#">Home</a>
+          <a href="/">Home</a>
         </li>
         <li>
           <a href="#">Terms & Policies</a>
         </li>
         <li>
-          <a href="#">Map</a>
+          <a href="/map">Map</a>
         </li>
         <li>
           <a href="#">FAQs</a>
