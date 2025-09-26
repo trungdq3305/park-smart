@@ -328,4 +328,40 @@ export class ParkingLotController {
       success: true,
     }
   }
+
+  @Post(':id/check-real-time-status')
+  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        change: {
+          type: 'number',
+          description: 'Sự thay đổi số chỗ trống (số dương tăng, số âm giảm)',
+        },
+      },
+      example: {
+        change: -1,
+      },
+    },
+  })
+  @ApiOperation({
+    summary: 'Cập nhật trạng thái thực tế của bãi đỗ xe (dành cho Mobile)',
+  })
+  async checkRealTimeStatus(
+    @Param() id: IdDto,
+    @Body('change') change: number,
+  ): Promise<ApiResponseDto<boolean>> {
+    const result =
+      await this.parkingLotService.updateAvailableSpotsForWebsocket(
+        id.id,
+        change,
+      )
+    return {
+      data: [result],
+      message: 'Cập nhật trạng thái thực tế thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
 }
