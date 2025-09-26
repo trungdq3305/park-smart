@@ -263,7 +263,7 @@
     {
       "UpstreamPathTemplate": "/parking/notifications/{everything}",
       "UpstreamHttpMethod": ["GET"],
-      "UpstreamScheme": "ws", // Quan trọng: Báo cho Ocelot đây là kết nối WebSocket
+      "UpstreamScheme": "wss", // Quan trọng: Báo cho Ocelot đây là kết nối WebSocket
 
       "DownstreamScheme": "ws",
       "DownstreamHostAndPorts": [
