@@ -49,7 +49,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unnecessary-condition': 'warn',
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',
-      'unicorn/prevent-abbreviations': 'error',
+      'unicorn/prevent-abbreviations': 'off',
       'no-console': ['warn', { 'allow': ['warn', 'error'] }],
       'eqeqeq': 'error',
       '@typescript-eslint/no-extraneous-class': 'off',

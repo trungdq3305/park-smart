@@ -32,6 +32,7 @@ namespace CoreService.Application
             services.AddScoped<AccountDisplayHelper>();
             services.AddScoped<IFaqApplication, FaqApplication>();
             services.AddScoped<ICommentApplication, CommentApplication>();
+            services.AddScoped<IPointMilestoneApplication, PointMilestoneApplication>();
             return services;
         }
     }

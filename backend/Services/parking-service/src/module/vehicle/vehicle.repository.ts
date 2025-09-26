@@ -160,4 +160,27 @@ export class VehicleRepository implements IVehicleRepository {
       .exec()
     return !!updatedVehicle
   }
+
+  async findAllDeletedVehicles(
+    page: number,
+    pageSize: number,
+    driverId: string,
+  ): Promise<{ data: Vehicle[]; total: number }> {
+    const conditions = { deletedAt: { $ne: null }, driverId: driverId }
+    const skip = (page - 1) * pageSize
+    const [data, total] = await Promise.all([
+      this.vehicleModel
+        .find(conditions)
+        .sort({ deletedAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .populate('colorId', 'colorName _id')
+        .populate('vehicleTypeId', 'typeName _id')
+        .populate('brandId', 'brandName _id')
+        .lean()
+        .exec(),
+      this.vehicleModel.countDocuments(conditions),
+    ])
+    return { data, total }
+  }
 }

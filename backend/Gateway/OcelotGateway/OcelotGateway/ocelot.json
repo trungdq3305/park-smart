@@ -261,6 +261,20 @@
       "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
     {
+      "UpstreamPathTemplate": "/notifications/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "UpstreamScheme": "ws", // Quan trọng: Báo cho Ocelot đây là kết nối WebSocket
+
+      "DownstreamScheme": "ws",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice", // Vẫn là service NestJS của bạn
+          "Port": 5000
+        }
+      ],
+      "DownstreamPathTemplate": "/{everything}"
+    },
+    {
       "DownstreamPathTemplate": "/",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

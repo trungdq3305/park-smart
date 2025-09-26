@@ -29,6 +29,11 @@ export interface IVehicleRepository {
   ): Promise<boolean>
   deleteVehicle(id: string, userId: string): Promise<boolean>
   restoreVehicle(id: string, userId: string): Promise<boolean>
+  findAllDeletedVehicles(
+    page: number,
+    pageSize: number,
+    driverId: string,
+  ): Promise<{ data: Vehicle[]; total: number }>
 }
 
 export const IVehicleRepository = Symbol('IVehicleRepository')

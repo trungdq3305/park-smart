@@ -39,6 +39,11 @@ export interface IVehicleService {
     id: IdDto,
     userId: string,
   ): Promise<{ success: boolean; message: string }>
+  findAllDeletedVehicles(
+    page: number,
+    pageSize: number,
+    driverId: string,
+  ): Promise<{ data: VehicleResponseDto[]; pagination: PaginationDto }>
 }
 
 export const IVehicleService = Symbol('IVehicleService')

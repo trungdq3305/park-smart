@@ -22,6 +22,7 @@ namespace CoreService.Repository
             services.AddScoped<IFaqRepository, FaqRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IFaqStatusRepository, FaqStatusRepository>();
+            services.AddScoped<IPointMilestoneRepository, PointMilestoneRepository>();
             return services;
         }
     }
