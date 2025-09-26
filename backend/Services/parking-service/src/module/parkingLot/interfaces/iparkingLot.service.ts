@@ -60,7 +60,7 @@ export interface IParkingLotService {
   updateAvailableSpotsForWebsocket(
     parkingLotId: string,
     change: number,
-  ): Promise<ParkingLot>
+  ): Promise<boolean>
 
   deleteParkingLot(id: IdDto, userId: string): Promise<boolean>
 }

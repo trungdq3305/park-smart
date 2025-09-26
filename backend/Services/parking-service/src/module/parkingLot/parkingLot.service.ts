@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
-import geohash from 'ngeohash'
+import * as geohash from 'ngeohash'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import {
@@ -56,8 +56,8 @@ export class ParkingLotService implements IParkingLotService {
 
   private determineRoomForParkingLot(address: Address): string {
     // Lấy kinh độ và vĩ độ từ document Address
-    const longitude = address.location.coordinates[0]
-    const latitude = address.location.coordinates[1]
+    const longitude = address.longitude
+    const latitude = address.latitude
 
     // Mã hóa tọa độ thành chuỗi geohash với độ chính xác là 7
     const roomName = geohash.encode(latitude, longitude, 7)
@@ -290,7 +290,7 @@ export class ParkingLotService implements IParkingLotService {
   async updateAvailableSpotsForWebsocket(
     parkingLotId: string,
     change: number,
-  ): Promise<ParkingLot> {
+  ): Promise<boolean> {
     // 1. Cập nhật DB và lấy về document mới (chỉ 1 lần gọi)
     const updatedParkingLot =
       await this.parkingLotRepository.updateAvailableSpots(parkingLotId, change)
@@ -307,7 +307,7 @@ export class ParkingLotService implements IParkingLotService {
     // Nếu không có address thì không thể xác định room, có thể bỏ qua hoặc báo lỗi
     if (!address) {
       console.error(`Không tìm thấy Address cho ParkingLot ID: ${parkingLotId}`)
-      return updatedParkingLot
+      return !!updatedParkingLot
     }
 
     // 3. Xác định roomName từ tọa độ của Address
@@ -322,7 +322,7 @@ export class ParkingLotService implements IParkingLotService {
     // 5. Ra lệnh cho Gateway phát sóng vào đúng room
     this.parkingLotGateway.sendSpotsUpdate(roomName, payload)
 
-    return updatedParkingLot
+    return !!updatedParkingLot
   }
 
   async deleteParkingLot(id: IdDto, userId: string): Promise<boolean> {

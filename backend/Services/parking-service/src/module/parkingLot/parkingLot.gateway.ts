@@ -44,7 +44,6 @@ export class ParkingLotGateway
     if (payload.oldRoom) {
       await client.leave(payload.oldRoom)
     }
-
     // Tham gia vào room mới
     await client.join(payload.newRoom)
   }
@@ -60,6 +59,7 @@ export class ParkingLotGateway
    * Gửi cập nhật số chỗ trống đến một khu vực cụ thể.
    */
   sendSpotsUpdate(roomName: string, payload: ParkingLotSpotsUpdateDto) {
+    console.log(roomName)
     this.server.to(roomName).emit('parking-lot-spots-updated', payload)
   }
 
