@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CoreService.Application.DTOs.CommentDtos;
 using CoreService.Application.DTOs.FaqDtos;
+using CoreService.Application.DTOs.PointDtos;
 using CoreService.Repository.Models;
 using System;
 using System.Collections.Generic;
@@ -32,6 +33,9 @@ namespace CoreService.Application.DTOs.AccountDtos
 
             CreateMap<Faq, FaqResponseDto>();
             CreateMap<Comment, CommentItemDto>();
+            CreateMap<PointMilestone, PointMilestoneItemDto>();
+            CreateMap<PointMilestoneCreateDto, PointMilestone>();
+            CreateMap<PointMilestoneUpdateDto, PointMilestone>();
         }
     }
 }
