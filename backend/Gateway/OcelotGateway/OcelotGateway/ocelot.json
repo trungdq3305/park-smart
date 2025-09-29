@@ -310,7 +310,7 @@
           "Port": 5000
         }
       ],
-      "UpstreamPathTemplate": "/parking/",
+      "UpstreamPathTemplate": "/",
       "UpstreamHttpMethod": ["GET"]
     }
   ],
