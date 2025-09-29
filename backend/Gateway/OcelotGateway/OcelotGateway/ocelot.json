@@ -287,7 +287,10 @@
           "Port": 5000
         }
       ],
-      "DownstreamPathTemplate": "/{everything}"
+      "DownstreamPathTemplate": "/{everything}",
+      "QoSOptions": {
+        "TimeoutValue": 3600000 // Tăng timeout lên 1 giờ (3,600,000 mili giây)
+      }
     },
     {
       "DownstreamPathTemplate": "/swagger/{everything}",

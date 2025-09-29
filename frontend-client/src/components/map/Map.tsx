@@ -9,7 +9,7 @@ const Map = () => {
 
   useEffect(() => {
     if (socketRef.current === null) {
-      const newSocket = io('wss://parksmarthcmc.io.vn/', {
+      const newSocket = io('wss://parksmarthcmc.io.vn', {
         path: '/parking/notifications/socket.io',
         transports: ['websocket'],
       })
