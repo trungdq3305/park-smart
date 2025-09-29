@@ -290,18 +290,6 @@
       "DownstreamPathTemplate": "/{everything}"
     },
     {
-      "DownstreamPathTemplate": "/",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "parkingservice",
-          "Port": 5000
-        }
-      ],
-      "UpstreamPathTemplate": "/parking/",
-      "UpstreamHttpMethod": ["GET"]
-    },
-    {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -314,8 +302,6 @@
       "UpstreamHttpMethod": ["GET"]
     },
     {
-      "UpstreamPathTemplate": "/parking/",
-      "UpstreamHttpMethod": ["GET"],
       "DownstreamPathTemplate": "/",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -323,7 +309,9 @@
           "Host": "parkingservice",
           "Port": 5000
         }
-      ]
+      ],
+      "UpstreamPathTemplate": "/parking/",
+      "UpstreamHttpMethod": ["GET"]
     }
   ],
   "GlobalConfiguration": {
