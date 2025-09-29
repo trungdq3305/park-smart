@@ -9,8 +9,8 @@ const Map = () => {
 
   useEffect(() => {
     if (socketRef.current === null) {
-      const newSocket = io('wss://parksmarthcmc.io.vn', {
-        path: '/parking/notifications/socket.io',
+      const newSocket = io('ws://parksmarthcmc.io.vn:5000', {
+        // KHÔNG cần `path` nữa vì kết nối trực tiếp đến NestJS
         transports: ['websocket'],
       })
 
