@@ -314,14 +314,14 @@
       "UpstreamHttpMethod": ["GET"]
     },
     {
-      "UpstreamPathTemplate": "/",
+      "UpstreamPathTemplate": "/parking/",
       "UpstreamHttpMethod": ["GET"],
-      "DownstreamPathTemplate": "/__whoami",
+      "DownstreamPathTemplate": "/",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "coreservice",
-          "Port": 8080
+          "Host": "parkingservice",
+          "Port": 5000
         }
       ]
     }
