@@ -179,7 +179,7 @@ class VehicleService {
 
     final url = Uri.parse('$_baseUrl/parking/vehicles/restore/$vehicleId');
 
-    final response = await http.post(
+    final response = await http.patch(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -307,7 +307,7 @@ class VehicleService {
       throw Exception('No authentication token found');
     }
 
-    final url = Uri.parse('$_baseUrl/parking/vehicles/all-deleted');
+    final url = Uri.parse('$_baseUrl/parking/vehicles/driver/all-deleted');
 
     final response = await http.get(
       url,
