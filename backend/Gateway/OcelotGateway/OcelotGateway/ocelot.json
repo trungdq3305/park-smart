@@ -145,6 +145,54 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/pointmilestones/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/pointmilestones/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/operators/{operatorId}/payments/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/operators/{operatorId}/payments/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/operators/{operatorId}/reservations/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/operators/{operatorId}/reservations/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -249,6 +297,46 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
+      "DownstreamPathTemplate": "/parking-lots/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/parking-lots/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+    },
+    {
+      "UpstreamPathTemplate": "/parking/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "UpstreamScheme": "wss",
+      "DownstreamScheme": "ws",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "DownstreamPathTemplate": "/{everything}",
+      "QoSOptions": {
+        "TimeoutValue": 3600000 // Tăng timeout lên 1 giờ (3,600,000 mili giây)
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/swagger/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice", // Sửa từ localhost thành parkingservice
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/swagger/{everything}",
+      "UpstreamHttpMethod": [ "GET" ]
+    },
+    {
       "DownstreamPathTemplate": "/",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -257,19 +345,7 @@
           "Port": 5000
         }
       ],
-      "UpstreamPathTemplate": "/parking/",
-      "UpstreamHttpMethod": [ "GET" ]
-    },
-    {
-      "DownstreamPathTemplate": "/swagger/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5000
-        }
-      ],
-      "UpstreamPathTemplate": "/parking/swagger/{everything}",
+      "UpstreamPathTemplate": "/",
       "UpstreamHttpMethod": [ "GET" ]
     }
   ],

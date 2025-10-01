@@ -1,5 +1,5 @@
-import { CreateAddressDto, UpdateAddressDto } from '../dto/address.dto'
-import { Address } from '../schemas/address.schema'
+import type { CreateAddressDto, UpdateAddressDto } from '../dto/address.dto'
+import type { Address } from '../schemas/address.schema'
 
 export interface IAddressRepository {
   createAddress(
@@ -18,16 +18,17 @@ export interface IAddressRepository {
   deleteAddress(id: string, userId: string): Promise<boolean>
   setAddressAsUsed(id: string): Promise<Address | null>
   findWithinBox(
-    bottomLeft: [number, number], // [lng, lat]
-    topRight: [number, number], // [lng, lat]
+    bottomLeft: [number, number],
+    topRight: [number, number],
     page: number,
     limit: number,
-  ): Promise<Address[]>
+  ): Promise<{ data: Address[]; total: number }>
   findNear(
     longitude: number,
     latitude: number,
     maxDistanceInKm: number,
   ): Promise<Address[]>
+  deleteAddressPermanently(id: string): Promise<boolean>
 }
 
 export const IAddressRepository = Symbol('IAddressRepository')

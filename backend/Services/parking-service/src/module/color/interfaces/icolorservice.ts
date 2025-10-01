@@ -1,4 +1,4 @@
-import { ColorResponseDto, CreateColorDto } from '../dto/color.dto'
+import type { ColorResponseDto, CreateColorDto } from '../dto/color.dto'
 
 export interface IColorService {
   createColor(

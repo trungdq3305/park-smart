@@ -7,16 +7,19 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets'
 import { Server, Socket } from 'socket.io'
+
 import {
-  ParkingLotSpotsUpdateDto,
   ParkingLotMinimalResponseDto,
+  ParkingLotSpotsUpdateDto,
 } from './dto/parkingLot.dto'
 
 @Injectable() // Quan trọng: Để có thể inject vào Service
 @WebSocketGateway({
   cors: {
-    origin: '*', // Cho phép kết nối từ mọi nguồn (cần thiết cho mobile)
+    origin: '*',
   },
+  pingInterval: 10000, // Gửi một gói tin ping mỗi 10 giây
+  pingTimeout: 15000, // Nếu không nhận được phản hồi pong trong 15 giây, coi như mất kết nối
 })
 export class ParkingLotGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -35,15 +38,21 @@ export class ParkingLotGateway
 
   // 2. Xử lý sự kiện từ Client
   @SubscribeMessage('join-room')
-  async handleJoinRoom(client: Socket, roomName: string) {
-    await client.join(roomName)
-    console.log(`Client ${client.id} joined room: ${roomName}`)
+  async handleJoinRoom(
+    client: Socket,
+    payload: { newRoom: string; oldRoom?: string },
+  ) {
+    // Nếu có room cũ, hãy rời khỏi nó trước
+    if (payload.oldRoom) {
+      await client.leave(payload.oldRoom)
+    }
+    // Tham gia vào room mới
+    await client.join(payload.newRoom)
   }
 
   @SubscribeMessage('leave-room')
   async handleLeaveRoom(client: Socket, roomName: string) {
     await client.leave(roomName)
-    console.log(`Client ${client.id} left room: ${roomName}`)
   }
 
   // 3. Các phương thức để Service gọi (để phát sóng)
@@ -52,6 +61,7 @@ export class ParkingLotGateway
    * Gửi cập nhật số chỗ trống đến một khu vực cụ thể.
    */
   sendSpotsUpdate(roomName: string, payload: ParkingLotSpotsUpdateDto) {
+    console.log(roomName)
     this.server.to(roomName).emit('parking-lot-spots-updated', payload)
   }
 

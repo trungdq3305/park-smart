@@ -1,5 +1,5 @@
-import { CreateVehicleDto, UpdateVehicleDto } from '../dto/vehicle.dto'
-import { Vehicle } from '../schemas/vehicle.schema'
+import type { CreateVehicleDto, UpdateVehicleDto } from '../dto/vehicle.dto'
+import type { Vehicle } from '../schemas/vehicle.schema'
 export interface IVehicleRepository {
   createVehicle(
     vehicle: CreateVehicleDto,
@@ -29,6 +29,11 @@ export interface IVehicleRepository {
   ): Promise<boolean>
   deleteVehicle(id: string, userId: string): Promise<boolean>
   restoreVehicle(id: string, userId: string): Promise<boolean>
+  findAllDeletedVehicles(
+    page: number,
+    pageSize: number,
+    driverId: string,
+  ): Promise<{ data: Vehicle[]; total: number }>
 }
 
 export const IVehicleRepository = Symbol('IVehicleRepository')

@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
-import { VehicleType, VehicleTypeDocument } from './schemas/vehicleType.schema'
+
 import { IVehicleTypeRepository } from './interfaces/ivehicleType.repository'
+import { VehicleType, VehicleTypeDocument } from './schemas/vehicleType.schema'
 
 @Injectable()
 export class VehicleTypeRepository implements IVehicleTypeRepository {

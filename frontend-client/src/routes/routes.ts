@@ -1,5 +1,6 @@
 import { lazy } from 'react'
 import type { LayoutRoute } from '../types/Route'
+import RealMap from '../pages/map/Map'
 
 // Các layout này được export dưới dạng export default
 const MainLayout = lazy(() => import('../components/layouts/layout/MainLayout'))
@@ -16,6 +17,11 @@ const routes: LayoutRoute[] = [
         component: LandingPage,
         exact: true,
       },
+      {
+        path: '/map',
+        component: RealMap,
+        exact: true,
+      }
     ],
   },
 ]

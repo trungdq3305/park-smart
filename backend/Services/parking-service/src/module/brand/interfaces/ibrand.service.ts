@@ -1,5 +1,5 @@
-import { BrandResponseDto } from '../dto/brand.dto'
-import { CreateBrandDto } from '../dto/brand.dto'
+import type { BrandResponseDto } from '../dto/brand.dto'
+import type { CreateBrandDto } from '../dto/brand.dto'
 
 export interface IBrandService {
   createBrand(

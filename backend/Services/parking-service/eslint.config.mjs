@@ -1,18 +1,33 @@
 import eslint from '@eslint/js';
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import eslintConfigPrettier from 'eslint-config-prettier';
 import globals from 'globals';
-import tseslint from 'typescript-eslint';
+// Dùng import * as để đảm bảo tương thích
+import * as tseslint from 'typescript-eslint';
+
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import unicorn from 'eslint-plugin-unicorn';
 
 export default tseslint.config(
+  // Bỏ qua các file không cần lint
   {
-    ignores: ['eslint.config.mjs', 'dist/', 'node_modules/'],
+    ignores: ['dist/', 'node_modules/', 'eslint.config.mjs'],
   },
+
+  // Cấu hình ESLint cơ bản
   eslint.configs.recommended,
-  {
-    files: ['**/*.ts', '**/*.tsx'],
-    extends: [...tseslint.configs.recommendedTypeChecked,
-      eslintPluginPrettierRecommended,
+
+  // Sử dụng hàm trợ giúp tseslint.config để tạo cấu hình cho TypeScript
+  // Đây là cách làm đúng chuẩn và ổn định nhất
+  ...tseslint.config({
+    files: ['**/*.ts'],
+    extends: [
+      ...tseslint.configs.strictTypeChecked,
+      ...tseslint.configs.stylisticTypeChecked,
     ],
+    plugins: {
+      'simple-import-sort': simpleImportSort,
+      'unicorn': unicorn,
+    },
     languageOptions: {
       parserOptions: {
         project: true,
@@ -20,44 +35,42 @@ export default tseslint.config(
       },
     },
     rules: {
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'off',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error', { 'argsIgnorePattern': '^_' }],
+      '@typescript-eslint/no-unsafe-call': 'error',
+      '@typescript-eslint/no-unsafe-argument': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
       '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-explicit-any': 'off',
-      'linebreak-style': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/no-misused-spread': 'off',
+      '@typescript-eslint/no-unnecessary-condition': 'warn',
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
+      'unicorn/prevent-abbreviations': 'off',
+      'no-console': ['warn', { 'allow': ['warn', 'error'] }],
+      'eqeqeq': 'error',
+      '@typescript-eslint/no-extraneous-class': 'off',
+      '@/lines-between-class-members': [
+        'error',
+        'always',
+        { 'exceptAfterSingleLine': true }
+      ],
     },
-  },
+  }),
+
+  // Cấu hình cho môi trường runtime
   {
     languageOptions: {
       globals: {
         ...globals.node,
         ...globals.jest,
       },
-      ecmaVersion: 'latest',
-      sourceType: 'module',
-    },
-    rules: {
-      'linebreak-style': 'off',
-      'prettier/prettier': [
-        'error', // hoặc 'warn'
-        {
-          singleQuote: true,
-          trailingComma: "all",
-          tabWidth: 2,
-          useTabs: false,
-          arrowParens: "always",
-          semi: false,
-          jsxSingleQuote: true,
-          printWidth: 80,
-          jsxBracketSameLine: false,
-          bracketSameLine: false,
-          endOfLine: 'auto',
-          isExternalModuleNameRelative: true,
-        }
-      ],
     },
   },
 
+  // Cấu hình Prettier (LUÔN ĐỂ CUỐI CÙNG)
+  eslintConfigPrettier,
 );

@@ -1,5 +1,5 @@
-import { CreateColorDto } from '../dto/color.dto'
-import { Color } from '../schemas/color.schema'
+import type { CreateColorDto } from '../dto/color.dto'
+import type { Color } from '../schemas/color.schema'
 
 export interface IColorRepository {
   createColor(color: CreateColorDto, userId: string): Promise<Color>

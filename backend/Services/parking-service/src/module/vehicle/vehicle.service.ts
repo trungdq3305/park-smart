@@ -4,21 +4,22 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import { IVehicleRepository } from './interfaces/ivehicle.repository'
-import { IVehicleService } from './interfaces/ivehicle.service'
-import { Vehicle } from './schemas/vehicle.schema'
+import { plainToInstance } from 'class-transformer'
+import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { IdDto } from 'src/common/dto/params.dto'
+
+import { IBrandRepository } from '../brand/interfaces/ibrand.repository'
+import { IColorRepository } from '../color/interfaces/icolor.repository'
+import { IVehicleTypeRepository } from '../vehicleType/interfaces/ivehicleType.repository'
 import {
   CreateVehicleDto,
-  PlateParamDto,
+  PlateParamDto as PlateParameterDto,
   UpdateVehicleDto,
   VehicleResponseDto,
 } from './dto/vehicle.dto'
-import { plainToInstance } from 'class-transformer'
-import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
-import { IVehicleTypeRepository } from '../vehicleType/interfaces/ivehicleType.repository'
-import { IColorRepository } from '../color/interfaces/icolor.repository'
-import { IBrandRepository } from '../brand/interfaces/ibrand.repository'
+import { IVehicleRepository } from './interfaces/ivehicle.repository'
+import { IVehicleService } from './interfaces/ivehicle.service'
+import { Vehicle } from './schemas/vehicle.schema'
 @Injectable()
 export class VehicleService implements IVehicleService {
   constructor(
@@ -100,7 +101,7 @@ export class VehicleService implements IVehicleService {
 
     let vehicle: Vehicle | null
 
-    if (existingVehicle && existingVehicle.deletedAt) {
+    if (existingVehicle?.deletedAt) {
       vehicle = await this.vehicleRepository.createVehicleIfDeleted(
         createVehicleDto,
         userId,
@@ -184,7 +185,7 @@ export class VehicleService implements IVehicleService {
   }
 
   async findVehicleByPlateNumber(
-    plateDto: PlateParamDto,
+    plateDto: PlateParameterDto,
   ): Promise<VehicleResponseDto> {
     const vehicle = await this.vehicleRepository.findVehicleByPlateNumber(
       plateDto.plateNumber,
@@ -243,7 +244,7 @@ export class VehicleService implements IVehicleService {
       message = 'Xóa xe thành công'
     }
     return {
-      success: !!deletedVehicle,
+      success: deletedVehicle,
       message,
     }
   }
@@ -264,8 +265,36 @@ export class VehicleService implements IVehicleService {
       message = 'Khôi phục xe thành công'
     }
     return {
-      success: !!restoredVehicle,
+      success: restoredVehicle,
       message,
+    }
+  }
+
+  async findAllDeletedVehicles(
+    page: number,
+    pageSize: number,
+    driverId: string,
+  ): Promise<{ data: VehicleResponseDto[]; pagination: PaginationDto }> {
+    const vehicles = await this.vehicleRepository.findAllDeletedVehicles(
+      page,
+      pageSize,
+      driverId,
+    )
+
+    if (vehicles.data.length === 0) {
+      throw new NotFoundException('Không tìm thấy xe đã xóa nào')
+    }
+
+    return {
+      data: vehicles.data.map((vehicle) =>
+        this.returnVehicleResponseDto(vehicle),
+      ),
+      pagination: {
+        currentPage: page,
+        pageSize,
+        totalItems: vehicles.total,
+        totalPages: Math.ceil(vehicles.total / pageSize),
+      },
     }
   }
 }

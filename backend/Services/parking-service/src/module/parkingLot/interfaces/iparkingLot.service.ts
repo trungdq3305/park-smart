@@ -1,24 +1,33 @@
-import { ParkingLot } from '../schemas/parkingLot.schema'
-import { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
-import {
-  CreateParkingLotDto,
-  UpdateParkingLotHistoryLogDto,
-  CoordinatesDto,
+import type { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
+import type { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
+import type {
+  IdDto,
+  ParkingLotIdDto,
+  ParkingLotStatusIdDto,
+} from 'src/common/dto/params.dto'
+
+import type {
   BoundingBoxDto,
+  CoordinatesDto,
+  CreateParkingLotDto,
   ParkingLotResponseDto,
+  UpdateParkingLotHistoryLogDto,
 } from '../dto/parkingLot.dto'
-import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
-import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
+import type { ParkingLot } from '../schemas/parkingLot.schema'
+import type { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
 
 export interface IParkingLotService {
-  getParkingLotDetails(id: string): Promise<ParkingLot>
+  getParkingLotDetails(id: IdDto): Promise<ParkingLotResponseDto>
 
   getAllParkingLots(
     paginationQuery: PaginationQueryDto,
+    parkingLotStatusId: string,
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   findNearbyParkingLots(
     coordinates: CoordinatesDto,
+    paginationQuery: PaginationQueryDto,
+    maxDistanceInKm: number,
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   findParkingLotsInBounds(
@@ -27,32 +36,33 @@ export interface IParkingLotService {
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
   getUpdateHistoryLogForParkingLot(
-    parkingLotId: string,
+    parkingLotId: ParkingLotIdDto,
   ): Promise<ParkingLotHistoryLog[]>
 
   createParkingLot(
     createDto: CreateParkingLotDto,
     userId: string,
-  ): Promise<ParkingLot>
+    currentIdOfUserRole: string,
+  ): Promise<ParkingLotResponseDto>
 
   requestParkingLotUpdate(
-    parkingLotId: string,
+    parkingLotId: ParkingLotIdDto,
     updateRequestDto: UpdateParkingLotHistoryLogDto,
     userId: string,
   ): Promise<ParkingLotHistoryLog>
 
   approveNewParkingLot(
-    parkingLotId: string,
-    isApproved: boolean,
+    parkingLotId: ParkingLotIdDto,
+    statusId: ParkingLotStatusIdDto,
     userId: string,
   ): Promise<ParkingLot>
 
   updateAvailableSpotsForWebsocket(
     parkingLotId: string,
     change: number,
-  ): Promise<ParkingLot>
+  ): Promise<boolean>
 
-  deleteParkingLot(id: string, userId: string): Promise<boolean>
+  deleteParkingLot(id: IdDto, userId: string): Promise<boolean>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

@@ -1,9 +1,10 @@
-import { Model } from 'mongoose'
-import { Vehicle } from './schemas/vehicle.schema'
-import { IVehicleRepository } from './interfaces/ivehicle.repository'
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
+
 import { CreateVehicleDto, UpdateVehicleDto } from './dto/vehicle.dto'
+import { IVehicleRepository } from './interfaces/ivehicle.repository'
+import { Vehicle } from './schemas/vehicle.schema'
 
 @Injectable()
 export class VehicleRepository implements IVehicleRepository {
@@ -158,5 +159,28 @@ export class VehicleRepository implements IVehicleRepository {
       .lean()
       .exec()
     return !!updatedVehicle
+  }
+
+  async findAllDeletedVehicles(
+    page: number,
+    pageSize: number,
+    driverId: string,
+  ): Promise<{ data: Vehicle[]; total: number }> {
+    const conditions = { deletedAt: { $ne: null }, driverId: driverId }
+    const skip = (page - 1) * pageSize
+    const [data, total] = await Promise.all([
+      this.vehicleModel
+        .find(conditions)
+        .sort({ deletedAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .populate('colorId', 'colorName _id')
+        .populate('vehicleTypeId', 'typeName _id')
+        .populate('brandId', 'brandName _id')
+        .lean()
+        .exec(),
+      this.vehicleModel.countDocuments(conditions),
+    ])
+    return { data, total }
   }
 }

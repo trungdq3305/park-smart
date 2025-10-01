@@ -1,6 +1,8 @@
 ﻿using CoreService.Application.Applications;
 using CoreService.Application.DTOs.CommentDtos;
 using CoreService.Application.Interfaces;
+using CoreService.Common.Helpers;
+using CoreService.Common.PaymentHelper;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Repositories;
 using Dotnet.Shared.ServiceClients;
@@ -32,6 +34,10 @@ namespace CoreService.Application
             services.AddScoped<AccountDisplayHelper>();
             services.AddScoped<IFaqApplication, FaqApplication>();
             services.AddScoped<ICommentApplication, CommentApplication>();
+            services.AddScoped<IPointMilestoneApplication, PointMilestoneApplication>();
+            services.AddScoped<IPaymentApp, PaymentApp>();
+            services.AddScoped<IXenditClient, XenditClient>();
+            services.AddScoped<IXenditPlatformService, XenditPlatformService>();
             return services;
         }
     }

@@ -1,13 +1,26 @@
-import { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
+import type { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
 export interface IParkingLotHistoryLogRepository {
-  createParkingLotHistoryLog(
-    parkingLotHistoryLog: ParkingLotHistoryLog,
+  updateParkingLot(
+    parkingLotHistory: Partial<ParkingLotHistoryLog>,
   ): Promise<ParkingLotHistoryLog>
+
   findByParkingLotId(
     parkingLotId: string,
   ): Promise<ParkingLotHistoryLog[] | null>
+
   updateParkingLotHistoryLogStatus(
     id: string,
+    userId: string,
+    statusId: string,
+  ): Promise<boolean>
+
+  deleteParkingLot(
+    id: string,
+    userId: string,
     statusId: string,
   ): Promise<boolean>
 }
+
+export const IParkingLotHistoryLogRepository = Symbol(
+  'IParkingLotHistoryLogRepository',
+)

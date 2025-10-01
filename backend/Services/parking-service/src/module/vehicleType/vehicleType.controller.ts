@@ -1,8 +1,9 @@
-import { Controller, Get, Inject, HttpStatus } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
-import { IVehicleTypeService } from './interfaces/ivehicleType.service'
+import { Controller, Get, HttpStatus, Inject } from '@nestjs/common'
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+
 import { VehicleTypeResponseDto } from './dto/vehicleTypeResponse.dto'
+import { IVehicleTypeService } from './interfaces/ivehicleType.service'
 
 @ApiTags('vehicle-types')
 @Controller('vehicle-types')

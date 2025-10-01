@@ -1,14 +1,15 @@
+import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
+
+import { BrandModule } from '../brand/brand.module'
+import { ColorModule } from '../color/color.module'
+import { VehicleTypeModule } from '../vehicleType/vehicleType.module'
 import { IVehicleRepository } from './interfaces/ivehicle.repository'
 import { IVehicleService } from './interfaces/ivehicle.service'
 import { Vehicle, VehicleSchema } from './schemas/vehicle.schema'
 import { VehicleController } from './vehicle.controller'
 import { VehicleRepository } from './vehicle.repository'
 import { VehicleService } from './vehicle.service'
-import { Module } from '@nestjs/common'
-import { ColorModule } from '../color/color.module'
-import { BrandModule } from '../brand/brand.module'
-import { VehicleTypeModule } from '../vehicleType/vehicleType.module'
 
 @Module({
   imports: [

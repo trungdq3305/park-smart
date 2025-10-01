@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
+
+import { IWardRepository } from './interfaces/iward.repository'
+import { IWardService } from './interfaces/iward.service'
 import { Ward, WardSchema } from './schemas/ward.schema'
 import { WardController } from './ward.controller'
-import { IWardService } from './interfaces/iward.service'
-import { WardService } from './ward.service'
-import { IWardRepository } from './interfaces/iward.repository'
 import { WardRepository } from './ward.repository'
+import { WardService } from './ward.service'
 
 @Module({
   imports: [
