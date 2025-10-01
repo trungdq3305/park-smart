@@ -54,7 +54,7 @@ export class VehicleRepository implements IVehicleRepository {
         { new: true },
       )
       .populate('colorId', 'colorName _id')
-      .populate('vehicleTypeId', 'typeName _id')
+
       .populate('brandId', 'brandName _id')
       .lean()
       .exec()
@@ -75,7 +75,6 @@ export class VehicleRepository implements IVehicleRepository {
         .skip(skip)
         .limit(pageSize)
         .populate('colorId', 'colorName _id')
-        .populate('vehicleTypeId', 'typeName _id')
         .populate('brandId', 'brandName _id')
         .lean()
         .exec(),
@@ -98,7 +97,6 @@ export class VehicleRepository implements IVehicleRepository {
         .skip(skip)
         .limit(pageSize)
         .populate('colorId', 'colorName _id')
-        .populate('vehicleTypeId', 'typeName _id')
         .populate('brandId', 'brandName _id')
         .lean()
         .exec(),
@@ -112,7 +110,6 @@ export class VehicleRepository implements IVehicleRepository {
     return this.vehicleModel
       .findOne({ _id: id })
       .populate('colorId', 'colorName _id')
-      .populate('vehicleTypeId', 'typeName _id')
       .populate('brandId', 'brandName _id')
       .lean()
       .exec()
@@ -122,7 +119,6 @@ export class VehicleRepository implements IVehicleRepository {
     const data = await this.vehicleModel
       .findOne({ plateNumber: plateNumber })
       .populate('colorId', 'colorName _id')
-      .populate('vehicleTypeId', 'typeName _id')
       .populate('brandId', 'brandName _id')
       .lean()
       .exec()
@@ -175,7 +171,7 @@ export class VehicleRepository implements IVehicleRepository {
         .skip(skip)
         .limit(pageSize)
         .populate('colorId', 'colorName _id')
-        .populate('vehicleTypeId', 'typeName _id')
+
         .populate('brandId', 'brandName _id')
         .lean()
         .exec(),
