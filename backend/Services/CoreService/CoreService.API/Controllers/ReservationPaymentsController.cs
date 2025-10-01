@@ -32,17 +32,17 @@ namespace CoreService.API.Controllers
 
         public class RefundDto { public long Amount { get; set; } }
 
-        [HttpPost("{reservationId}/refund")]
-        [Authorize(Roles = "Operator,Admin")]
-        public async Task<IActionResult> Refund(string operatorId, string reservationId, [FromBody] RefundDto dto)
-        {
-            // tìm invoice theo reservation
-            // (giản lược – bạn có thể extend repo để truy theo ReservationId)
-            return Ok(await _payment.RefundAsync(operatorId,
-                (await _payment.GetOperatorPaymentsAsync(operatorId))
-                    .First(x => x.ReservationId == reservationId).XenditInvoiceId,
-                dto.Amount));
-        }
+        //[HttpPost("{reservationId}/refund")]
+        //[Authorize(Roles = "Operator,Admin")]
+        //public async Task<IActionResult> Refund(string operatorId, string reservationId, [FromBody] RefundDto dto)
+        //{
+        //    // tìm invoice theo reservation
+        //    // (giản lược – bạn có thể extend repo để truy theo ReservationId)
+        //    return Ok(await _payment.RefundAsync(operatorId,
+        //        (await _payment.GetOperatorPaymentsAsync(operatorId))
+        //            .First(x => x.ReservationId == reservationId).XenditInvoiceId,
+        //        dto.Amount));
+        //}
     }
 
 }
