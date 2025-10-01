@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/screens/user/home_screen.dart';
-import 'package:mobile/screens/user/search_screen.dart';
+import 'package:mobile/screens/user/parking_lot_screen.dart';
 import 'package:mobile/screens/user/chat_screen.dart';
 import 'package:mobile/screens/user/recent_screen.dart';
 import 'package:mobile/screens/user/profile_screen.dart';
@@ -18,7 +18,7 @@ class _MainWrapperState extends State<MainWrapper> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    const SearchScreen(),
+    const ParkingLotScreen(),
     const ChatScreen(),
     const RecentScreen(),
     const ProfileScreen(),
