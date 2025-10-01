@@ -1,9 +1,12 @@
 using CoreService.Application;
+using CoreService.Application.Applications;
 using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
 using CoreService.Application.DTOs.EmailDtos;
+using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
+using CoreService.Common.PaymentHelper;
 using CoreService.Repository;
 using Dotnet.Shared.Extensions;
 using Dotnet.Shared.Mongo;
@@ -13,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using MongoDB.Driver;
@@ -32,6 +36,18 @@ builder.Services.AddHttpContextAccessor();
 builder.Services
 .AddRepository()
 .AddService();
+builder.Services.Configure<XenditOptions>(builder.Configuration.GetSection("Xendit"));
+
+builder.Services.AddHttpClient<IXenditClient, XenditClient>((sp, http) =>
+{
+    var opt = sp.GetRequiredService<IOptions<XenditOptions>>().Value;
+    http.BaseAddress = new Uri(opt.ApiBaseUrl);
+    var basic = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{opt.SecretKey}:"));
+    http.DefaultRequestHeaders.Authorization =
+        new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", basic);
+    http.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
 
 builder.Services.AddCors(options =>
 {
