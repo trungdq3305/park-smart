@@ -1,4 +1,5 @@
-﻿using CoreService.Repository.Models;
+﻿using CoreService.Application.DTOs.PaymentDtos.CoreService.Application.DTOs.PaymentDtos;
+using CoreService.Repository.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +14,16 @@ namespace CoreService.Application.Interfaces
             string operatorId, string reservationId, long amount,
             string successUrl, string failureUrl);
 
-        Task<IEnumerable<PaymentRecord>> GetOperatorPaymentsAsync(string operatorId, int take = 50);
+        //Task<IEnumerable<PaymentRecord>> GetOperatorPaymentsAsync(string operatorId, int take = 50);
 
-        Task<object> GetOperatorBalanceAsync(string operatorId);
-
+        //Task<object> GetOperatorBalanceAsync(string operatorId);
+        Task<BalanceDto> GetOperatorBalanceAsync(string operatorId);
+        Task<TransactionListDto> GetOperatorPaymentsAsync(
+            string operatorId,
+            DateTime? from = null, DateTime? to = null,
+            int limit = 50);
         Task<RefundRecord> RefundAsync(string operatorId, string xenditInvoiceId, long amount);
+        Task<PaymentTotalsDto> GetOperatorTotalsAsync(
+    string operatorId, DateTime? from = null, DateTime? to = null);
     }
 }
