@@ -45,5 +45,15 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	
+	<!-- Location permissions -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập vị trí để tìm kiếm bãi đỗ xe gần bạn và hiển thị trên bản đồ.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập vị trí để tìm kiếm bãi đỗ xe gần bạn và hiển thị trên bản đồ.</string>
+	
+	<!-- Google Maps API Key -->
+	<key>GMSApiKey</key>
+	<string>AIzaSyAd2AxK9Xk8BYaWFTZaVebCy_0EkDJm8X4</string>
 </dict>
 </plist>
