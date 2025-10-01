@@ -18,8 +18,8 @@ class _MainWrapperState extends State<MainWrapper> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    const ParkingLotScreen(),
     const ChatScreen(),
+    const ParkingLotScreen(),
     const RecentScreen(),
     const ProfileScreen(),
   ];
