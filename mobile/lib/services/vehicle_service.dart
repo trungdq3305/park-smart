@@ -179,7 +179,7 @@ class VehicleService {
 
     final url = Uri.parse('$_baseUrl/parking/vehicles/restore/$vehicleId');
 
-    final response = await http.post(
+    final response = await http.patch(
       url,
       headers: {
         'Content-Type': 'application/json',
@@ -296,6 +296,35 @@ class VehicleService {
     } else {
       throw Exception(
         'Failed to get vehicle: ${response.statusCode} - ${response.body}',
+      );
+    }
+  }
+
+  // Lấy danh sách xe đã xóa (lịch sử)
+  static Future<Map<String, dynamic>> getAllDeletedVehicles() async {
+    final token = await _getToken();
+    if (token == null) {
+      throw Exception('No authentication token found');
+    }
+
+    final url = Uri.parse('$_baseUrl/parking/vehicles/driver/all-deleted');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    print('Get all deleted vehicles response status: ${response.statusCode}');
+    print('Get all deleted vehicles response body: ${response.body}');
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception(
+        'Failed to get deleted vehicles: ${response.statusCode} - ${response.body}',
       );
     }
   }
