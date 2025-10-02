@@ -1169,62 +1169,62 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
           ),
 
           // Search radius slider
-          Positioned(
-            bottom: 100,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.radio_button_unchecked,
-                        color: Colors.green.shade600,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Bán kính tìm kiếm: ${_searchRadius.toStringAsFixed(1)} km',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Slider(
-                    value: _searchRadius,
-                    min: 1.0,
-                    max: 20.0,
-                    divisions: 19,
-                    activeColor: Colors.green,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchRadius = value;
-                      });
-                    },
-                    onChangeEnd: (value) {
-                      _loadNearbyParkingLots();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
+          // Positioned(
+          //   bottom: 100,
+          //   left: 16,
+          //   right: 16,
+          //   child: Container(
+          //     padding: const EdgeInsets.all(16),
+          //     decoration: BoxDecoration(
+          //       color: Colors.white,
+          //       borderRadius: BorderRadius.circular(12),
+          //       boxShadow: [
+          //         BoxShadow(
+          //           color: Colors.black.withOpacity(0.1),
+          //           blurRadius: 10,
+          //           offset: const Offset(0, 2),
+          //         ),
+          //       ],
+          //     ),
+          //     child: Column(
+          //       mainAxisSize: MainAxisSize.min,
+          //       children: [
+          //         Row(
+          //           children: [
+          //             Icon(
+          //               Icons.radio_button_unchecked,
+          //               color: Colors.green.shade600,
+          //             ),
+          //             const SizedBox(width: 8),
+          //             Text(
+          //               'Bán kính tìm kiếm: ${_searchRadius.toStringAsFixed(1)} km',
+          //               style: const TextStyle(
+          //                 fontSize: 16,
+          //                 fontWeight: FontWeight.w500,
+          //               ),
+          //             ),
+          //           ],
+          //         ),
+          //         const SizedBox(height: 8),
+          //         Slider(
+          //           value: _searchRadius,
+          //           min: 1.0,
+          //           max: 20.0,
+          //           divisions: 19,
+          //           activeColor: Colors.green,
+          //           onChanged: (value) {
+          //             setState(() {
+          //               _searchRadius = value;
+          //             });
+          //           },
+          //           onChangeEnd: (value) {
+          //             _loadNearbyParkingLots();
+          //           },
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
 
           // Loading indicator
           if (_isLoading)
