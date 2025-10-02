@@ -62,5 +62,15 @@ namespace CoreService.Repository.Repositories
             await _col.Find(x => x.ReservationId == reservationId)
                       .SortByDescending(x => x.CreatedAt)
                       .ToListAsync();
+
+        public async Task<PaymentRecord?> GetLatestByReservationIdAsync(string reservationId) =>
+        await _col.Find(x => x.ReservationId == reservationId)
+                  .SortByDescending(x => x.CreatedAt)
+                  .FirstOrDefaultAsync();
+
+        public async Task<PaymentRecord?> GetLatestByReservationAsync(string operatorId, string reservationId) =>
+            await _col.Find(x => x.OperatorId == operatorId && x.ReservationId == reservationId)
+                      .SortByDescending(x => x.CreatedAt)
+                      .FirstOrDefaultAsync();
     }
 }

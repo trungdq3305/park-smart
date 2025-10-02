@@ -18,5 +18,10 @@ namespace CoreService.Repository.Interfaces
 
         Task<IEnumerable<PaymentRecord>> GetByOperatorAsync(string operatorId, int take = 50);
         Task<IEnumerable<PaymentRecord>> GetByReservationAsync(string reservationId);
+
+        Task<PaymentRecord?> GetLatestByReservationIdAsync(string reservationId);
+
+        // (tuỳ chọn) lấy theo operator + reservation
+        Task<PaymentRecord?> GetLatestByReservationAsync(string operatorId, string reservationId);
     }
 }

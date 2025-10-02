@@ -30,19 +30,42 @@ namespace CoreService.API.Controllers
             return Ok(new { pr.XenditInvoiceId, pr.Status, pr.CheckoutUrl });
         }
 
-        public class RefundDto { public long Amount { get; set; } }
+        public class RefundDto
+        {
+            public long Amount { get; set; }               // null => full refund
+            public string Reason { get; set; } = "REQUESTED_BY_CUSTOMER";
+        }
 
-        //[HttpPost("{reservationId}/refund")]
-        //[Authorize(Roles = "Operator,Admin")]
-        //public async Task<IActionResult> Refund(string operatorId, string reservationId, [FromBody] RefundDto dto)
-        //{
-        //    // tìm invoice theo reservation
-        //    // (giản lược – bạn có thể extend repo để truy theo ReservationId)
-        //    return Ok(await _payment.RefundAsync(operatorId,
-        //        (await _payment.GetOperatorPaymentsAsync(operatorId))
-        //            .First(x => x.ReservationId == reservationId).XenditInvoiceId,
-        //        dto.Amount));
-        //}
+
+        [HttpPost("{reservationId}/refund")]
+        [Authorize(Roles = "Operator,Admin")]
+        public async Task<IActionResult> RefundByReservation(
+            string operatorId, string reservationId, [FromBody] RefundDto dto)
+        {
+            var rf = await _payment.RefundAsync(operatorId, reservationId, dto.Amount, dto.Reason);
+            return Ok(new
+            {
+                rf.Data.XenditRefundId,
+                rf.Data.Amount,
+                rf.Data.Status,
+                rf.Data.Reason
+            });
+        }
+
+        // (tuỳ chọn) Refund theo invoiceId
+        [HttpPost("invoices/{invoiceId}/refund")]
+        [Authorize(Roles = "Operator,Admin")]
+        public async Task<IActionResult> RefundByInvoice(string operatorId, string invoiceId, [FromBody] RefundDto dto)
+        {
+            var rf = await _payment.RefundByInvoiceAsync(operatorId, invoiceId, dto.Amount, dto.Reason);
+            return Ok(new
+            {
+                rf.XenditRefundId,
+                rf.Amount,
+                rf.Status,
+                rf.Reason
+            });
+        }
     }
 
 }
