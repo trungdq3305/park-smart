@@ -41,7 +41,7 @@ namespace CoreService.API.Controllers
         [HttpGet("balance")]
         [Authorize(Roles = "Operator,Admin")]
         public async Task<ActionResult<BalanceDto>> GetBalance(string operatorId)
-        => Ok(await _payment.GetOperatorBalanceAsync(operatorId));
+            => Ok(await _payment.GetOperatorBalanceAsync(operatorId));
 
         // GET /api/operators/{id}/payments/transactions?from=2025-10-01&to=2025-10-02&limit=50
         [HttpGet("transactions")]
@@ -49,10 +49,11 @@ namespace CoreService.API.Controllers
         public async Task<ActionResult<TransactionListDto>> GetTransactions(
             string operatorId, DateTime? from, DateTime? to, int limit = 50)
             => Ok(await _payment.GetOperatorPaymentsAsync(operatorId, from, to, limit));
+
         [HttpGet("totals")]
         [Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> GetTotals(string operatorId, DateTime? from, DateTime? to)
-    => Ok(await _payment.GetOperatorTotalsAsync(operatorId, from, to));
+            => Ok(await _payment.GetOperatorTotalsAsync(operatorId, from, to));
     }
 
     public class CreateAccountDto { public string Email { get; set; } public string BusinessName { get; set; } }
