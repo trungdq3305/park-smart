@@ -122,7 +122,7 @@ export class ParkingLotService implements IParkingLotService {
     )
 
     if (data.data.length === 0) {
-      throw new NotFoundException('Không tìm thấy bãi đỗ xe nào')
+      throw new NotFoundException('Không tìm thấy bãi đỗ xe nào gần vị trí này')
     }
 
     return {
@@ -168,7 +168,9 @@ export class ParkingLotService implements IParkingLotService {
     )
 
     if (data.data.length === 0) {
-      throw new NotFoundException('Không tìm thấy bãi đỗ xe nào')
+      throw new NotFoundException(
+        'Không tìm thấy bãi đỗ xe nào trong khu vực này',
+      )
     }
 
     return {
