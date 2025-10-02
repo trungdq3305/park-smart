@@ -12,8 +12,9 @@ namespace CoreService.Repository.Models
     {
         [BsonId, BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
-
+        [BsonRepresentation(BsonType.ObjectId)]
         public string ReservationId { get; set; }  // R123
+        [BsonRepresentation(BsonType.ObjectId)]
         public string OperatorId { get; set; }
         public string XenditInvoiceId { get; set; }
         public string ExternalId { get; set; }     // “RES-{ReservationId}-{ts}”

@@ -4,6 +4,7 @@ using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -176,30 +177,105 @@ namespace CoreService.Application.Applications
 
             return new TransactionListDto { Count = list.Count, Data = list };
         }
-        public async Task<RefundRecord> RefundAsync(string operatorId, string xenditInvoiceId, long amount)
+        public async Task<ApiResponse<RefundRecord>> RefundAsync(
+    string operatorId,
+    string reservationId,   // ƯU TIÊN refund theo reservation
+    long amount,
+    string? reason = null)
         {
+            // 1) Lấy sub-account + payment (invoice) gần nhất của reservation
             var acc = await _accRepo.GetByOperatorAsync(operatorId)
                       ?? throw new ApiException("Operator chưa có tài khoản thanh toán");
 
-            var body = new { invoice_id = xenditInvoiceId, amount = amount };
-            var res = await _x.PostAsync("/refunds", body, acc.XenditUserId); // Unified refunds (test)
+            var pr = await _payRepo.GetLatestByReservationIdAsync(reservationId)
+                     ?? throw new ApiException("Không tìm thấy payment của reservation");
+
+            if (string.IsNullOrWhiteSpace(pr.XenditInvoiceId))
+                throw new ApiException("Payment không có InvoiceId để hoàn tiền");
+
+            // (tuỳ nhu cầu) chặn nếu payment chưa thành công
+            // if (!string.Equals(pr.Status, "PAID", StringComparison.OrdinalIgnoreCase) &&
+            //     !string.Equals(pr.Status, "SETTLED", StringComparison.OrdinalIgnoreCase))
+            //     throw new ApiException($"Không thể hoàn tiền khi trạng thái thanh toán là {pr.Status}");
+
+            // 2) Gọi Unified Refunds
+            var body = new
+            {
+                invoice_id = pr.XenditInvoiceId,  // unified refunds hỗ trợ refund theo invoice_id
+                amount = amount,
+                reason = reason
+            };
+
+            // chống tạo trùng refund
+            var idem = $"rf-{pr.XenditInvoiceId}-{amount}";
+
+            var res = await _x.PostAsync("/refunds", body, forUserId: acc.XenditUserId, idempotencyKey: idem);
             var json = await res.Content.ReadAsStringAsync();
-            res.EnsureSuccessStatusCode();
+
+            if (!res.IsSuccessStatusCode)
+                throw new ApiException($"Xendit refund lỗi: {(int)res.StatusCode} {res.ReasonPhrase}. Body: {json}");
+
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            var refundId = root.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
+            var rStatus = root.TryGetProperty("status", out var stEl) ? stEl.GetString() : null;
+            var rAmount = root.TryGetProperty("amount", out var amEl) ? amEl.GetInt64() : amount;
+
+            if (string.IsNullOrEmpty(refundId))
+                throw new ApiException($"Không tìm thấy refund id trong response: {json}");
+
+            // 3) Lưu DB
+            var rf = new RefundRecord
+            {
+                PaymentId = pr.Id,
+                ReservationId = pr.ReservationId,
+                XenditRefundId = refundId,
+                Amount = rAmount,
+                Status = rStatus,
+                Reason = reason,
+                CreatedAt = DateTime.UtcNow
+            };
+            await _refundRepo.AddAsync(rf);
+
+            // (tuỳ nhu cầu) cập nhật trạng thái payment khi refund full:
+            // if (rAmount >= pr.Amount) { pr.Status = "REFUNDED"; await _payRepo.UpdateAsync(pr); }
+
+            return new ApiResponse<RefundRecord>(rf, true, "FAQ đã được tạo, chờ Admin duyệt", StatusCodes.Status201Created);
+        }
+        public async Task<RefundRecord> RefundByInvoiceAsync(string operatorId, string invoiceId, long amount, string? reason = null)
+        {
+            var acc = await _accRepo.GetByOperatorAsync(operatorId)
+                      ?? throw new ApiException("Operator chưa có tài khoản thanh toán");
+            var pr = await _payRepo.GetByInvoiceIdAsync(invoiceId)
+                     ?? throw new ApiException("Không tìm thấy payment theo invoice");
+
+            var body = new { invoice_id = invoiceId, amount, reason };
+            var res = await _x.PostAsync("/refunds", body, forUserId: acc.XenditUserId,
+                                         idempotencyKey: $"rf-{invoiceId}-{amount}");
+            var json = await res.Content.ReadAsStringAsync();
+            if (!res.IsSuccessStatusCode)
+                throw new ApiException($"Xendit refund lỗi: {(int)res.StatusCode} {res.ReasonPhrase}. Body: {json}");
 
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             var rid = doc.RootElement.GetProperty("id").GetString();
             var status = doc.RootElement.GetProperty("status").GetString();
+            var rAmt = doc.RootElement.TryGetProperty("amount", out var am) ? am.GetInt64() : amount;
 
             var rf = new RefundRecord
             {
-                PaymentId = (await _payRepo.GetByInvoiceIdAsync(xenditInvoiceId))?.Id,
+                PaymentId = pr.Id,
+                ReservationId = pr.ReservationId,
                 XenditRefundId = rid,
-                Amount = amount,
-                Status = status
+                Amount = rAmt,
+                Status = status,
+                Reason = reason,
+                CreatedAt = DateTime.UtcNow
             };
             await _refundRepo.AddAsync(rf);
             return rf;
         }
+
         public async Task<PaymentTotalsDto> GetOperatorTotalsAsync(
     string operatorId, DateTime? from = null, DateTime? to = null)
         {
