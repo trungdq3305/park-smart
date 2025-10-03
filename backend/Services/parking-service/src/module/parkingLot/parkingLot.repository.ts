@@ -366,4 +366,23 @@ export class ParkingLotRepository implements IParkingLotRepository {
       total: total,
     }
   }
+
+  async findAllForOperator(operatorId: string): Promise<ParkingLot[]> {
+    const parkingLots = await this.parkingLotModel
+      .find({ parkingLotOperatorId: operatorId })
+      .populate({
+        path: 'addressId',
+        select: 'fullAddress wardId latitude longitude',
+        populate: {
+          path: 'wardId',
+          select: 'wardName',
+        },
+      })
+      .populate({
+        path: 'parkingLotStatusId',
+        select: 'status',
+      })
+
+    return parkingLots
+  }
 }

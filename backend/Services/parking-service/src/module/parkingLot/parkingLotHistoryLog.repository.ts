@@ -70,4 +70,12 @@ export class ParkingLotHistoryLogRepository
     })
     return !!result
   }
+
+  async findAllForOperator(
+    operatorId: string,
+  ): Promise<ParkingLotHistoryLog[]> {
+    return await this.parkingLotHistoryLogModel
+      .find({ createdBy: operatorId })
+      .exec()
+  }
 }

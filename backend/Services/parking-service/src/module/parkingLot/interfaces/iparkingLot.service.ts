@@ -63,6 +63,8 @@ export interface IParkingLotService {
   ): Promise<boolean>
 
   deleteParkingLot(id: IdDto, userId: string): Promise<boolean>
+
+  findAllForOperator(operatorId: string): Promise<ParkingLotResponseDto[]>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

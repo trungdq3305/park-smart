@@ -39,6 +39,8 @@ export interface IParkingLotRepository {
     pageSize: number,
     statusId: string,
   ): Promise<{ data: ParkingLot[]; total: number }>
+
+  findAllForOperator(operatorId: string): Promise<ParkingLot[]>
 }
 
 export const IParkingLotRepository = Symbol('IParkingLotRepository')

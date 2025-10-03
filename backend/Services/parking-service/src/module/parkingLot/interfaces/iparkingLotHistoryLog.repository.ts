@@ -19,6 +19,8 @@ export interface IParkingLotHistoryLogRepository {
     userId: string,
     statusId: string,
   ): Promise<boolean>
+
+  findAllForOperator(operatorId: string): Promise<ParkingLotHistoryLog[]>
 }
 
 export const IParkingLotHistoryLogRepository = Symbol(

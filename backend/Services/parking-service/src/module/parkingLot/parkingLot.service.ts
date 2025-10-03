@@ -360,4 +360,15 @@ export class ParkingLotService implements IParkingLotService {
       )
     }
   }
+
+  async findAllForOperator(
+    operatorId: string,
+  ): Promise<ParkingLotResponseDto[]> {
+    const parkingLots =
+      await this.parkingLotRepository.findAllForOperator(operatorId)
+    if (parkingLots.length === 0) {
+      throw new NotFoundException('Không tìm thấy bãi đỗ xe nào')
+    }
+    return parkingLots.map((item) => this.returnParkingLotResponseDto(item))
+  }
 }

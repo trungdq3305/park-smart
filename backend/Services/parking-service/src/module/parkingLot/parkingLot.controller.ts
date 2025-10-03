@@ -181,6 +181,24 @@ export class ParkingLotController {
     }
   }
 
+  @Get('find-for-operator')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.OPERATOR)
+  @ApiOperation({ summary: 'Lấy tất cả bãi đỗ xe của một đơn vị vận hành' })
+  async findAllForOperator(
+    @GetCurrenIdOfUserRole() operatorId: string,
+  ): Promise<ApiResponseDto<ParkingLotResponseDto>> {
+    const parkingLots =
+      await this.parkingLotService.findAllForOperator(operatorId)
+    return {
+      data: parkingLots,
+      message: 'Lấy tất cả bãi đỗ xe thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả bãi đỗ xe cho admin' })
   @UseGuards(JwtAuthGuard)
