@@ -4,6 +4,7 @@ using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -28,8 +29,7 @@ namespace CoreService.Application.Applications
         { _x = x; _accRepo = accRepo; _payRepo = payRepo; _refundRepo = refundRepo; }
 
         public async Task<PaymentRecord> CreateReservationInvoiceAsync(
-    string operatorId, string reservationId, long amount,
-    string successUrl, string failureUrl)
+    string operatorId, string reservationId, long amount)
         {
             var acc = await _accRepo.GetByOperatorAsync(operatorId)
                         ?? throw new ApiException("Operator chưa có tài khoản thanh toán");
@@ -49,6 +49,18 @@ namespace CoreService.Application.Applications
 
             // 2) Tạo invoice
             var externalId = $"RES-{reservationId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            var baseReturn = "https://parksmart.vn/pay-result"; // <-- đổi theo project
+
+            // bạn có thể truyền đủ thông tin để front hiển thị & gọi confirm:
+            var successUrl = $"{baseReturn}?result=success" +
+                             $"&reservationId={Uri.EscapeDataString(reservationId)}" +
+                             $"&operatorId={Uri.EscapeDataString(operatorId)}" +
+                             $"&externalId={Uri.EscapeDataString(externalId)}";
+
+            var failureUrl = $"{baseReturn}?result=failure" +
+                             $"&reservationId={Uri.EscapeDataString(reservationId)}" +
+                             $"&operatorId={Uri.EscapeDataString(operatorId)}" +
+                             $"&externalId={Uri.EscapeDataString(externalId)}";
             var body = new
             {
                 external_id = externalId,
@@ -57,7 +69,8 @@ namespace CoreService.Application.Applications
                 description = $"Reservation #{reservationId}",
                 success_redirect_url = successUrl,
                 failure_redirect_url = failureUrl,
-                should_send_email = false
+                should_send_email = false,
+                invoice_duration = 60 
             };
 
             var res = await _x.PostAsync("/v2/invoices", body, forUserId: acc.XenditUserId);
@@ -348,6 +361,35 @@ namespace CoreService.Application.Applications
                 CountOutgoing = cntOut
             };
         }
+
+        // trong PaymentApp
+        public async Task<PaymentRecord?> GetLatestPaymentByReservationAsync(string reservationId)
+            => await _payRepo.GetLatestByReservationIdAsync(reservationId);
+
+        public async Task<string> GetInvoiceStatusAsync(string operatorId, string invoiceId)
+        {
+            var acc = await _accRepo.GetByOperatorAsync(operatorId)
+                      ?? throw new ApiException("Operator chưa có tài khoản Xendit");
+
+            var res = await _x.GetAsync($"/v2/invoices/{invoiceId}", acc.XenditUserId);
+            var json = await res.Content.ReadAsStringAsync();
+            if (!res.IsSuccessStatusCode)
+                throw new ApiException($"Xendit get invoice error {res.StatusCode}: {json}");
+
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var status = doc.RootElement.TryGetProperty("status", out var st) ? st.GetString() : "UNKNOWN";
+            return status ?? "UNKNOWN";
+        }
+
+        public async Task UpdatePaymentStatusAsync(string invoiceId, string newStatus)
+        {
+            var pr = await _payRepo.GetByInvoiceIdAsync(invoiceId);
+            if (pr == null) return;
+            pr.Status = newStatus;
+            pr.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow); ;
+            await _payRepo.UpdateAsync(pr);
+        }
+
 
     }
 
