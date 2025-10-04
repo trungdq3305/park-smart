@@ -5,7 +5,9 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common'
+import { InjectConnection } from '@nestjs/mongoose' // Import InjectConnection
 import { plainToInstance } from 'class-transformer'
+import { Connection } from 'mongoose' // Import Connection
 import * as geohash from 'ngeohash'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
@@ -18,6 +20,11 @@ import {
 import { IAddressRepository } from '../address/interfaces/iaddress.repository'
 import { Address } from '../address/schemas/address.schema'
 import { IParkingLotStatusRepository } from '../parkingLotStatus/interfaces/iparkingLotStatus.repository'
+import {
+  IParkingSpaceRepository,
+  ParkingSpaceCreationAttributes,
+} from '../parkingSpace/interfaces/iparkingSpace.repository'
+import { IParkingSpaceStatusRepository } from '../parkingSpaceStatus/interfaces/iparkingSpaceStatus.repository'
 import {
   BoundingBoxDto,
   CoordinatesDto,
@@ -43,7 +50,12 @@ export class ParkingLotService implements IParkingLotService {
     private readonly parkingLotStatusRepository: IParkingLotStatusRepository,
     @Inject(IAddressRepository)
     private readonly addressRepository: IAddressRepository,
+    @Inject(IParkingSpaceRepository)
+    private readonly parkingSpaceRepository: IParkingSpaceRepository,
+    @Inject(IParkingSpaceStatusRepository)
+    private readonly parkingSpaceStatusRepository: IParkingSpaceStatusRepository,
     private readonly parkingLotGateway: ParkingLotGateway,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
 
   private returnParkingLotResponseDto(
@@ -264,29 +276,118 @@ export class ParkingLotService implements IParkingLotService {
     return data
   }
 
+  // parking-lot.service.ts
+  // ...
+
   async approveNewParkingLot(
     parkingLotId: ParkingLotIdDto,
     statusId: ParkingLotStatusIdDto,
     userId: string,
   ): Promise<ParkingLot> {
-    const existingParkingLot =
-      await this.parkingLotRepository.findParkingLotById(
-        parkingLotId.parkingLotId,
-      )
-    if (!existingParkingLot) {
-      throw new NotFoundException('Không tìm thấy bãi đỗ xe')
+    // --- Bắt đầu Transaction ---
+    const session = await this.connection.startSession()
+    session.startTransaction()
+
+    try {
+      const existingParkingLot =
+        await this.parkingLotRepository.findParkingLotById(
+          parkingLotId.parkingLotId,
+        )
+      if (!existingParkingLot) {
+        throw new NotFoundException('Không tìm thấy bãi đỗ xe')
+      }
+
+      const parkingLotStatus =
+        await this.parkingLotStatusRepository.findParkingLotStatusById(
+          statusId.parkingLotStatusId,
+        )
+      if (!parkingLotStatus) {
+        throw new NotFoundException('Trạng thái bãi đỗ xe không tồn tại')
+      }
+
+      if (existingParkingLot.parkingLotStatusId === parkingLotStatus._id) {
+        throw new ConflictException(
+          'Bãi đỗ xe đã ở trạng thái này, vui lòng chọn trạng thái khác',
+        )
+      }
+
+      // --- Cập nhật trạng thái bãi đỗ xe ---
+      // Lưu ý: Hàm approveParkingLot trong repository cần được sửa để chấp nhận 'session'
+      const updatedParkingLot =
+        await this.parkingLotRepository.approveParkingLot(
+          parkingLotId.parkingLotId,
+          statusId.parkingLotStatusId,
+          userId,
+          session, // Truyền session vào
+        )
+
+      if (!updatedParkingLot) {
+        throw new InternalServerErrorException(
+          'Phê duyệt bãi đỗ xe thất bại do lỗi hệ thống',
+        )
+      }
+
+      // --- Logic tạo ô đỗ xe chỉ khi trạng thái là "Đã duyệt" ---
+      if (parkingLotStatus.status === 'Đã duyệt') {
+        const spacesToCreate: ParkingSpaceCreationAttributes[] = []
+        const defaultStatus =
+          await this.parkingSpaceStatusRepository.findParkingSpaceStatusByStatus(
+            'Trống',
+          )
+        if (!defaultStatus) {
+          throw new InternalServerErrorException(
+            'Trạng thái ô đỗ xe không tồn tại',
+          )
+        }
+        const defaultStatusId = defaultStatus
+
+        // Lặp qua từng tầng của bãi đỗ xe
+        for (let level = 1; level <= updatedParkingLot.totalLevel; level++) {
+          // --- 1. Tính toán số lượng ô dành cho xe điện trên tầng này ---
+          const numberOfElectricSpaces = Math.round(
+            (updatedParkingLot.totalCapacityEachLevel *
+              updatedParkingLot.electricCarPercentage) /
+              100,
+          )
+
+          // --- 2. Xác định tiền tố (prefix) cho mã ô đỗ xe ---
+          // Tầng 1 là tầng trệt (G), các tầng sau là lầu (L1, L2, ...)
+          const codePrefix = level === 1 ? 'G' : `L${(level - 1).toString()}`
+
+          // Lặp qua từng ô trên tầng hiện tại
+          for (let i = 1; i <= updatedParkingLot.totalCapacityEachLevel; i++) {
+            // --- 3. Quyết định ô này có phải là ô xe điện không ---
+            // Nếu thứ tự ô (i) nhỏ hơn hoặc bằng tổng số ô xe điện, thì đây là ô xe điện
+            const isElectric = i <= numberOfElectricSpaces
+
+            spacesToCreate.push({
+              parkingLotId: updatedParkingLot._id,
+              parkingSpaceStatusId: defaultStatusId,
+              // --- 4. Tạo mã mới theo định dạng yêu cầu ---
+              code: `${codePrefix}-${i.toString()}`, // Ví dụ: G-1, L1-1, L1-2...
+              level: level,
+              isElectricCar: isElectric,
+            })
+          }
+        }
+
+        if (spacesToCreate.length > 0) {
+          await this.parkingSpaceRepository.createMany(spacesToCreate, session)
+        }
+      }
+
+      // --- Nếu mọi thứ thành công, commit transaction ---
+      await session.commitTransaction()
+      return updatedParkingLot
+    } catch (error) {
+      // --- Nếu có lỗi, hủy bỏ mọi thay đổi ---
+      await session.abortTransaction()
+      // Ném lỗi ra ngoài để controller xử lý
+      throw error
+    } finally {
+      // --- Luôn kết thúc session ---
+      await session.endSession()
     }
-    const result = await this.parkingLotRepository.approveParkingLot(
-      parkingLotId.parkingLotId,
-      statusId.parkingLotStatusId,
-      userId,
-    )
-    if (!result) {
-      throw new InternalServerErrorException(
-        'Phê duyệt bãi đỗ xe thất bại do lỗi hệ thống',
-      )
-    }
-    return result
   }
 
   async updateAvailableSpotsForWebsocket(

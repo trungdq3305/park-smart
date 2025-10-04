@@ -13,6 +13,8 @@ import { BrandModule } from './module/brand/brand.module'
 import { ColorModule } from './module/color/color.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
 import { ParkingLotStatusModule } from './module/parkingLotStatus/parkingLotStatus.module'
+import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
+import { ParkingSpaceStatusModule } from './module/parkingSpaceStatus/parkingSpaceStatus.module'
 import { VehicleModule } from './module/vehicle/vehicle.module'
 import { WardModule } from './module/ward/ward.module'
 import { JwtStrategy } from './strategy/jwt.strategy'
@@ -44,6 +46,8 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     VehicleModule,
     ParkingLotStatusModule,
     ParkingLotModule,
+    ParkingSpaceModule,
+    ParkingSpaceStatusModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],

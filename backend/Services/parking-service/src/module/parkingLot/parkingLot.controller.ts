@@ -256,7 +256,7 @@ export class ParkingLotController {
     }
   }
 
-  @Patch(':id/approve')
+  @Patch(':id/approve-new-parking-lot')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN)
@@ -282,7 +282,7 @@ export class ParkingLotController {
     }
   }
 
-  @Post(':id/update-requests')
+  @Post(':id/send-update-requests')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN)
@@ -306,6 +306,36 @@ export class ParkingLotController {
       success: true,
     }
   }
+
+  /*
+    Đã ẩn endpoint duyệt yêu cầu cập nhật vì chưa code
+  
+  @Patch(':id/approve-update-requests')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
+  @ApiOperation({ summary: 'Duyệt hoặc từ chối yêu cầu cập nhật bãi đỗ xe' })
+  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiBody({ schema: { example: { parkingLotStatusId: '...' } } })
+  async approveUpdate(
+    @Param() parkingLotId: ParkingLotIdDto,
+    @Body('parkingLotStatusId') parkingLotStatusId: ParkingLotStatusIdDto,
+    @GetCurrentUserId() userId: string,
+  ): Promise<ApiResponseDto<ParkingLot>> {
+    const updatedParkingLot =
+      await this.parkingLotService.approveUpdateRequests(
+        parkingLotId,
+        parkingLotStatusId,
+        userId,
+      )
+    return {
+      data: updatedParkingLot,
+      message: 'Duyệt yêu cầu cập nhật thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+    */
 
   @Get(':id/history')
   @UseGuards(JwtAuthGuard)

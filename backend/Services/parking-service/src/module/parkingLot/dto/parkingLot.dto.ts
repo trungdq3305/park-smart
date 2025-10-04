@@ -83,6 +83,15 @@ export class CreateParkingLotDto {
   @IsNumber({}, { message: 'Tổng số tầng phải là một số' })
   @IsPositive({ message: 'Tổng số tầng phải là số dương' })
   totalLevel: number
+
+  @ApiProperty({
+    example: '20',
+    description: 'Phần trăm xe điện trong bãi đỗ xe (0-100)',
+  })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Phần trăm xe điện phải là một số' })
+  @IsPositive({ message: 'Phần trăm xe điện phải là số dương' })
+  electricCarPercentage: number
 }
 
 export class UpdateParkingLotHistoryLogDto {
@@ -151,6 +160,19 @@ export class UpdateParkingLotHistoryLogDto {
   @IsNumber({}, { message: 'Tổng số tầng phải là một số' })
   @IsPositive({ message: 'Tổng số tầng phải là số dương' })
   totalLevel: number
+
+  @ApiProperty({ example: '2024-09-01', description: 'Ngày có hiệu lực' })
+  @IsNotEmpty({ message: 'Ngày có hiệu lực không được để trống' })
+  effectiveDate: Date
+
+  @ApiProperty({
+    example: '20',
+    description: 'Phần trăm xe điện trong bãi đỗ xe (0-100)',
+  })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Phần trăm xe điện phải là một số' })
+  @IsPositive({ message: 'Phần trăm xe điện phải là số dương' })
+  electricCarPercentage: number
 }
 
 export class CoordinatesDto {
@@ -239,6 +261,9 @@ export class ParkingLotResponseDto {
   @Expose()
   @Transform(({ obj }) => obj.parkingLotStatusId?.status ?? obj.status) // Lấy tên status
   parkingLotStatusId: string // Trạng thái hiện tại (PENDING, APPROVED,...)
+
+  @Expose()
+  electricCarPercentage: number
 }
 
 @Exclude()

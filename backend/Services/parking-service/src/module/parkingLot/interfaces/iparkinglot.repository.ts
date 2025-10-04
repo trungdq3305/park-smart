@@ -1,3 +1,5 @@
+import type { ClientSession } from 'mongoose'
+
 import type { ParkingLot } from '../schemas/parkingLot.schema'
 
 export interface IParkingLotRepository {
@@ -15,6 +17,7 @@ export interface IParkingLotRepository {
     id: string,
     statusId: string,
     userId: string,
+    session?: ClientSession,
   ): Promise<ParkingLot | null>
 
   findByCoordinates(

@@ -3,6 +3,8 @@ import { MongooseModule } from '@nestjs/mongoose'
 
 import { AddressModule } from '../address/address.module'
 import { ParkingLotStatusModule } from '../parkingLotStatus/parkingLotStatus.module'
+import { ParkingSpaceModule } from '../parkingSpace/parkingSpace.module'
+import { ParkingSpaceStatusModule } from '../parkingSpaceStatus/parkingSpaceStatus.module'
 import { IParkingLotRepository } from './interfaces/iparkinglot.repository'
 import { IParkingLotService } from './interfaces/iparkingLot.service'
 import { IParkingLotHistoryLogRepository } from './interfaces/iparkingLotHistoryLog.repository'
@@ -25,6 +27,8 @@ import {
     ]),
     AddressModule,
     ParkingLotStatusModule,
+    ParkingSpaceModule,
+    ParkingSpaceStatusModule,
   ],
   controllers: [ParkingLotController],
   providers: [

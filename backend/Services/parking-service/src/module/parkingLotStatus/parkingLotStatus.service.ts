@@ -1,9 +1,4 @@
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common'
+import { Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { IdDto } from 'src/common/dto/params.dto'
 

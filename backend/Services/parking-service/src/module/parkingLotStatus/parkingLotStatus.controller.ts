@@ -21,7 +21,7 @@ export class ParkingLotStatusController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Danh sách trạng thái bãi đỗ xe',
-    type: ApiResponseDto<ParkingLotStatusResponseDto[]>, // Trả về một mảng
+    type: ApiResponseDto<ParkingLotStatusResponseDto>, // Trả về một mảng
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,

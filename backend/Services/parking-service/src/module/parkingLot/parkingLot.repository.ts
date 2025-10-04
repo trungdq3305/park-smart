@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Inject } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Model, Types } from 'mongoose'
+import { ClientSession, Model, Types } from 'mongoose'
 
-import { IAddressRepository } from '../address/interfaces/iaddress.repository'
 import { IParkingLotRepository } from './interfaces/iparkinglot.repository'
 import { ParkingLot } from './schemas/parkingLot.schema'
 
@@ -12,8 +10,6 @@ export class ParkingLotRepository implements IParkingLotRepository {
   constructor(
     @InjectModel(ParkingLot.name)
     private parkingLotModel: Model<ParkingLot>,
-    @Inject(IAddressRepository)
-    private readonly addressRepository: IAddressRepository,
   ) {}
 
   async createParkingLot(
@@ -117,14 +113,15 @@ export class ParkingLotRepository implements IParkingLotRepository {
       .exec()
   }
 
-  approveParkingLot(
-    id: string,
+  async approveParkingLot(
+    parkingLotId: string,
     statusId: string,
     userId: string,
+    session?: ClientSession, // Thêm tham số session tùy chọn
   ): Promise<ParkingLot | null> {
-    const data = this.parkingLotModel
-      .findOneAndUpdate(
-        { _id: id },
+    return this.parkingLotModel
+      .findByIdAndUpdate(
+        parkingLotId,
         {
           $set: {
             parkingLotStatusId: statusId,
@@ -132,11 +129,9 @@ export class ParkingLotRepository implements IParkingLotRepository {
             updatedAt: new Date(),
           },
         },
-        { new: true },
+        { new: true, session: session }, // Thêm option session vào câu lệnh Mongoose
       )
-      .lean()
       .exec()
-    return data
   }
 
   async findByCoordinates(

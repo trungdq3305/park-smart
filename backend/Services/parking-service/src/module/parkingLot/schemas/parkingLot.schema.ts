@@ -52,6 +52,9 @@ export class ParkingLot extends BaseEntity {
     ref: 'ParkingLotStatus',
   })
   parkingLotStatusId: string
+
+  @Prop({ required: true, type: Number })
+  electricCarPercentage: number
 }
 
 export const ParkingLotSchema = SchemaFactory.createForClass(ParkingLot)

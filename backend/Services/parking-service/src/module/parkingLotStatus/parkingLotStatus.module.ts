@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
+import { ParkingSpaceModule } from '../parkingSpace/parkingSpace.module'
 import { IParkingLotStatusRepository } from './interfaces/iparkingLotStatus.repository'
 import { IParkingLotStatusService } from './interfaces/iparkingLotStatus.service'
 import { ParkingLotStatusController } from './parkingLotStatus.controller'
@@ -16,6 +17,7 @@ import {
     MongooseModule.forFeature([
       { name: ParkingLotStatus.name, schema: ParkingLotStatusSchema },
     ]),
+    ParkingSpaceModule,
   ],
   controllers: [ParkingLotStatusController],
   providers: [
