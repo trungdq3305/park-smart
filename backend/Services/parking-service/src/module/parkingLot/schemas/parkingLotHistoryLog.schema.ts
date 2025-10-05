@@ -57,6 +57,9 @@ export class ParkingLotHistoryLog extends BaseEntity {
 
   @Prop({ required: true, type: Number })
   electricCarPercentage: number
+
+  @Prop({ required: false, type: String })
+  requestCode: string
 }
 
 export const ParkingLotHistoryLogSchema =

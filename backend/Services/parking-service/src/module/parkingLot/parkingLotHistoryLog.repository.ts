@@ -67,6 +67,7 @@ export class ParkingLotHistoryLogRepository
       parkingLotStatusId: new Types.ObjectId(statusId),
       createdBy: userId,
       updatedBy: userId,
+      requestCode: `REQ-${Date.now().toString()}`,
     })
     return !!result
   }
@@ -77,5 +78,43 @@ export class ParkingLotHistoryLogRepository
     return await this.parkingLotHistoryLogModel
       .find({ createdBy: operatorId })
       .exec()
+  }
+
+  async approveParkingLotUpdate(
+    parkingLotId: string,
+    statusId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const data = await this.parkingLotHistoryLogModel.findOne({
+      parkingLotId: parkingLotId,
+    })
+    const updateData = await this.parkingLotHistoryLogModel.create({
+      ...data?.toObject(),
+      parkingLotStatusId: new Types.ObjectId(statusId),
+      createdBy: userId,
+      updatedBy: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    return !!updateData
+  }
+
+  async approveParkingLotDelete(
+    parkingLotId: string,
+    statusId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const data = await this.parkingLotHistoryLogModel.findOne({
+      parkingLotId: parkingLotId,
+    })
+    const deletedData = await this.parkingLotHistoryLogModel.create({
+      ...data?.toObject(),
+      parkingLotStatusId: new Types.ObjectId(statusId),
+      createdBy: userId,
+      updatedBy: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    return !!deletedData
   }
 }

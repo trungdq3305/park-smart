@@ -21,6 +21,18 @@ export interface IParkingLotHistoryLogRepository {
   ): Promise<boolean>
 
   findAllForOperator(operatorId: string): Promise<ParkingLotHistoryLog[]>
+
+  approveParkingLotUpdate(
+    parkingLotId: string,
+    statusId: string,
+    userId: string,
+  ): Promise<boolean>
+
+  approveParkingLotDelete(
+    parkingLotId: string,
+    statusId: string,
+    userId: string,
+  ): Promise<boolean>
 }
 
 export const IParkingLotHistoryLogRepository = Symbol(

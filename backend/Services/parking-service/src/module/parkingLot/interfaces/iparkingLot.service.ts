@@ -13,7 +13,6 @@ import type {
   ParkingLotResponseDto,
   UpdateParkingLotHistoryLogDto,
 } from '../dto/parkingLot.dto'
-import type { ParkingLot } from '../schemas/parkingLot.schema'
 import type { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
 
 export interface IParkingLotService {
@@ -45,7 +44,7 @@ export interface IParkingLotService {
     currentIdOfUserRole: string,
   ): Promise<ParkingLotResponseDto>
 
-  requestParkingLotUpdate(
+  sendRequestUpdateParkingLot(
     parkingLotId: ParkingLotIdDto,
     updateRequestDto: UpdateParkingLotHistoryLogDto,
     userId: string,
@@ -55,16 +54,31 @@ export interface IParkingLotService {
     parkingLotId: ParkingLotIdDto,
     statusId: ParkingLotStatusIdDto,
     userId: string,
-  ): Promise<ParkingLot>
+  ): Promise<{ data: boolean; message: string; responseCode: number }>
 
   updateAvailableSpotsForWebsocket(
     parkingLotId: string,
     change: number,
   ): Promise<boolean>
 
-  deleteParkingLot(id: IdDto, userId: string): Promise<boolean>
+  sendRequestDeleteParkingLot(
+    id: IdDto,
+    userId: string,
+  ): Promise<{ data: boolean; message: string; responseCode: number }>
 
   findAllForOperator(operatorId: string): Promise<ParkingLotResponseDto[]>
+
+  approveParkingLotUpdate(
+    parkingLotId: ParkingLotIdDto,
+    statusId: ParkingLotStatusIdDto,
+    userId: string,
+  ): Promise<{ data: boolean; message: string; responseCode: number }>
+
+  approveParkingLotDelete(
+    parkingLotId: ParkingLotIdDto,
+    statusId: ParkingLotStatusIdDto,
+    userId: string,
+  ): Promise<{ data: boolean; message: string; responseCode: number }>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

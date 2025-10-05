@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  HttpStatus,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -250,7 +251,7 @@ export class ParkingLotService implements IParkingLotService {
     return this.returnParkingLotResponseDto(data)
   }
 
-  async requestParkingLotUpdate(
+  async sendRequestUpdateParkingLot(
     parkingLotId: ParkingLotIdDto,
     updateRequestDto: UpdateParkingLotHistoryLogDto,
     userId: string,
@@ -270,6 +271,7 @@ export class ParkingLotService implements IParkingLotService {
       createdBy: userId,
       createdAt: new Date(),
       parkingLotStatusId: parkingStatus,
+      requestCode: `REQ-${Date.now().toString()}`, // Tạo mã yêu cầu duy nhất
     }
     const data =
       await this.parkingLotHistoryLogRepository.updateParkingLot(dataSend)
@@ -283,7 +285,7 @@ export class ParkingLotService implements IParkingLotService {
     parkingLotId: ParkingLotIdDto,
     statusId: ParkingLotStatusIdDto,
     userId: string,
-  ): Promise<ParkingLot> {
+  ): Promise<{ data: boolean; message: string; responseCode: number }> {
     // --- Bắt đầu Transaction ---
     const session = await this.connection.startSession()
     session.startTransaction()
@@ -378,10 +380,19 @@ export class ParkingLotService implements IParkingLotService {
 
       // --- Nếu mọi thứ thành công, commit transaction ---
       await session.commitTransaction()
-      return updatedParkingLot
+      return {
+        data: true,
+        message: 'Phê duyệt bãi đỗ xe thành công',
+        responseCode: HttpStatus.OK,
+      }
     } catch (error) {
       // --- Nếu có lỗi, hủy bỏ mọi thay đổi ---
       await session.abortTransaction()
+      return {
+        data: false,
+        message: 'Phê duyệt bãi đỗ xe thất bại do lỗi hệ thống',
+        responseCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      }
       // Ném lỗi ra ngoài để controller xử lý
       throw error
     } finally {
@@ -428,7 +439,10 @@ export class ParkingLotService implements IParkingLotService {
     return !!updatedParkingLot
   }
 
-  async deleteParkingLot(id: IdDto, userId: string): Promise<boolean> {
+  async sendRequestDeleteParkingLot(
+    id: IdDto,
+    userId: string,
+  ): Promise<{ data: boolean; message: string; responseCode: number }> {
     const existingParkingLot =
       await this.parkingLotRepository.findParkingLotById(id.id)
     if (!existingParkingLot) {
@@ -454,11 +468,17 @@ export class ParkingLotService implements IParkingLotService {
           'Xóa bãi đỗ xe thất bại do lỗi hệ thống',
         )
       }
-      return result
+      return {
+        data: true,
+        message: 'Yêu cầu xóa bãi đỗ xe đã được gửi thành công',
+        responseCode: HttpStatus.OK,
+      }
     } catch {
-      throw new InternalServerErrorException(
-        'Xóa bãi đỗ xe thất bại do lỗi hệ thống',
-      )
+      return {
+        data: false,
+        message: 'Yêu cầu xóa bãi đỗ xe thất bại do lỗi hệ thống',
+        responseCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      }
     }
   }
 
@@ -471,5 +491,84 @@ export class ParkingLotService implements IParkingLotService {
       throw new NotFoundException('Không tìm thấy bãi đỗ xe nào')
     }
     return parkingLots.map((item) => this.returnParkingLotResponseDto(item))
+  }
+
+  async approveParkingLotUpdate(
+    parkingLotId: ParkingLotIdDto,
+    statusId: ParkingLotStatusIdDto,
+    userId: string,
+  ): Promise<{ data: boolean; message: string; responseCode: number }> {
+    const existingParkingLot =
+      await this.parkingLotRepository.findParkingLotById(
+        parkingLotId.parkingLotId,
+      )
+    if (!existingParkingLot) {
+      throw new NotFoundException('Không tìm thấy bãi đỗ xe')
+    }
+    const parkingLotStatus =
+      await this.parkingLotStatusRepository.findParkingLotStatusById(
+        statusId.parkingLotStatusId,
+      )
+    if (!parkingLotStatus) {
+      throw new NotFoundException('Trạng thái bãi đỗ xe không tồn tại')
+    }
+    const result =
+      await this.parkingLotHistoryLogRepository.approveParkingLotUpdate(
+        parkingLotId.parkingLotId,
+        statusId.parkingLotStatusId,
+        userId,
+      )
+    if (!result) {
+      return {
+        data: false,
+        message:
+          'Phê duyệt yêu cầu cập nhật bãi đỗ xe thất bại do lỗi hệ thống',
+        responseCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      }
+    }
+    return {
+      data: true,
+      message: 'Phê duyệt yêu cầu cập nhật bãi đỗ xe bãi đỗ xe thành công',
+      responseCode: HttpStatus.OK,
+    }
+  }
+
+  async approveParkingLotDelete(
+    parkingLotId: ParkingLotIdDto,
+    statusId: ParkingLotStatusIdDto,
+    userId: string,
+  ): Promise<{ data: boolean; message: string; responseCode: number }> {
+    const existingParkingLot =
+      await this.parkingLotRepository.findParkingLotById(
+        parkingLotId.parkingLotId,
+      )
+    if (!existingParkingLot) {
+      throw new NotFoundException('Không tìm thấy bãi đỗ xe')
+    }
+    const parkingLotStatus =
+      await this.parkingLotStatusRepository.findParkingLotStatusById(
+        statusId.parkingLotStatusId,
+      )
+    if (!parkingLotStatus) {
+      throw new NotFoundException('Trạng thái bãi đỗ xe không tồn tại')
+    }
+    const result =
+      await this.parkingLotHistoryLogRepository.approveParkingLotDelete(
+        parkingLotId.parkingLotId,
+        statusId.parkingLotStatusId,
+        userId,
+      )
+    if (!result) {
+      return {
+        data: false,
+        message: 'Phê duyệt yêu cầu xóa bãi đỗ xe thất bại do lỗi hệ thống',
+        responseCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      }
+    }
+    return {
+      data: true,
+      message: 'Phê duyệt yêu cầu xóa bãi đỗ xe bãi đỗ xe thành công',
+      responseCode: HttpStatus.OK,
+    }
   }
 }
