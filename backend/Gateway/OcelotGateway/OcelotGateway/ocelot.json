@@ -193,6 +193,22 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/images/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/images/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
