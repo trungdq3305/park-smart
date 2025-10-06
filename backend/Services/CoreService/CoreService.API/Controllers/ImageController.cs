@@ -13,7 +13,7 @@ namespace CoreService.API.Controllers
 
         public record UploadReq(string OwnerType, string OwnerId, string? Description);
 
-        [HttpPost("image")]
+        [HttpPost("upload")]
         [RequestSizeLimit(20_000_000)]
         public async Task<IActionResult> Upload(
     IFormFile file, 
