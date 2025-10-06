@@ -12,7 +12,6 @@
   align-items: center;
   justify-content: center;
   padding-left: 60px;
-  
 }
 
 .homepage-text {
@@ -103,19 +102,19 @@
     gap: 40px;
     padding: 20px;
   }
-  
+
   .homepage-content {
     padding-left: 20px;
   }
-  
+
   .homepage-image {
     padding-right: 20px;
   }
-  
+
   .homepage-title {
     font-size: 2.5rem;
   }
-  
+
   .homepage-description {
     font-size: 1.1rem;
   }
