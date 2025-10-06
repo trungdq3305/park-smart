@@ -38,6 +38,7 @@ namespace CoreService.Application
             services.AddScoped<IPaymentApp, PaymentApp>();
             services.AddScoped<IXenditClient, XenditClient>();
             services.AddScoped<IXenditPlatformService, XenditPlatformService>();
+            services.AddScoped<IImageApplication, ImageApplication>();
             return services;
         }
     }
