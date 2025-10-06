@@ -5,6 +5,7 @@
   padding: 60px 0;
   position: relative;
   overflow-x: hidden;
+  scroll-margin-top: 60px; /* Account for fixed navbar */
 }
 
 .container {

@@ -17,7 +17,7 @@ const HomePage: React.FC = () => {
   const termPoliciesData = data?.data || []
 
   return (
-    <div className="homepage-container">
+    <div id="home" className="homepage-container">
       <Slogan />
       <HeaderBanner />
       <TermsPoliciesSection data={termPoliciesData} isLoading={isLoading} />

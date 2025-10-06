@@ -143,7 +143,7 @@ const TermsPoliciesSection: React.FC<TermsPoliciesSectionProps> = ({ data, isLoa
   // Memoized loading state
   const loadingContent = useMemo(
     () => (
-      <div className="terms-page">
+      <section id="terms-policies" className="terms-page">
         <div className="container">
           <div className="page-header">
             <h1>Terms & Policies</h1>
@@ -155,7 +155,7 @@ const TermsPoliciesSection: React.FC<TermsPoliciesSectionProps> = ({ data, isLoa
             <div className="skeleton-text short"></div>
           </div>
         </div>
-      </div>
+      </section>
     ),
     []
   )
@@ -163,7 +163,7 @@ const TermsPoliciesSection: React.FC<TermsPoliciesSectionProps> = ({ data, isLoa
   // Memoized empty state
   const emptyContent = useMemo(
     () => (
-      <div className="terms-page">
+      <section id="terms-policies" className="terms-page">
         <div className="container">
           <div className="page-header">
             <h1>Terms & Policies</h1>
@@ -173,7 +173,7 @@ const TermsPoliciesSection: React.FC<TermsPoliciesSectionProps> = ({ data, isLoa
             <p>No terms and policies information</p>
           </div>
         </div>
-      </div>
+      </section>
     ),
     []
   )
@@ -222,7 +222,7 @@ const TermsPoliciesSection: React.FC<TermsPoliciesSectionProps> = ({ data, isLoa
   }
 
   return (
-    <div className="terms-page">
+    <section id="terms-policies" className="terms-page">
       <div className="container">
         <div
           ref={headerRefCallback}
@@ -234,7 +234,7 @@ const TermsPoliciesSection: React.FC<TermsPoliciesSectionProps> = ({ data, isLoa
 
         <div className="terms-content">{termsItems}</div>
       </div>
-    </div>
+    </section>
   )
 }
 
