@@ -12,8 +12,7 @@ namespace CoreService.Application.Interfaces
     public interface IPaymentApp
     {
         Task<PaymentRecord> CreateReservationInvoiceAsync(
-            string operatorId, string reservationId, long amount,
-            string successUrl, string failureUrl);
+            string operatorId, string reservationId, long amount);
 
         //Task<IEnumerable<PaymentRecord>> GetOperatorPaymentsAsync(string operatorId, int take = 50);
 
@@ -32,5 +31,8 @@ namespace CoreService.Application.Interfaces
         Task<RefundRecord> RefundByInvoiceAsync(string operatorId, string invoiceId, long amount, string? reason = null);
         Task<PaymentTotalsDto> GetOperatorTotalsAsync(
     string operatorId, DateTime? from = null, DateTime? to = null);
+        Task<PaymentRecord?> GetLatestPaymentByReservationAsync(string reservationId);
+        Task<string> GetInvoiceStatusAsync(string operatorId, string invoiceId);
+        Task UpdatePaymentStatusAsync(string invoiceId, string newStatus);
     }
 }

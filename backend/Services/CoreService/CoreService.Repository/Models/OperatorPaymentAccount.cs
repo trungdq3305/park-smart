@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Dotnet.Shared.Helpers;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,6 @@ namespace CoreService.Repository.Models
 
         public string XenditUserId { get; set; }   // user_id sub-account (xenPlatform)
         public string Status { get; set; }         // ACTIVE/PENDING/RESTRICTED
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
     }
 }
