@@ -1,3 +1,5 @@
+import type { ClientSession } from 'mongoose'
+
 import type { CreateAddressDto, UpdateAddressDto } from '../dto/address.dto'
 import type { Address } from '../schemas/address.schema'
 
@@ -16,7 +18,7 @@ export interface IAddressRepository {
     userId: string,
   ): Promise<Address | null>
   deleteAddress(id: string, userId: string): Promise<boolean>
-  setAddressAsUsed(id: string): Promise<Address | null>
+  setAddressAsUsed(id: string, session: ClientSession): Promise<Address | null>
   findWithinBox(
     bottomLeft: [number, number],
     topRight: [number, number],

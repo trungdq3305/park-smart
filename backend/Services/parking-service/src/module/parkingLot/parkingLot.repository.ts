@@ -12,11 +12,47 @@ export class ParkingLotRepository implements IParkingLotRepository {
     private parkingLotModel: Model<ParkingLot>,
   ) {}
 
+  updateParkingLot(
+    id: string,
+    updateData: Partial<ParkingLot>,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null> {
+    return this.parkingLotModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            ...updateData,
+          },
+        },
+        { new: true, session },
+      )
+      .exec()
+  }
+
+  deleteParkingLot(
+    id: string,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null> {
+    return this.parkingLotModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            deletedAt: new Date(),
+          },
+        },
+        { new: true, session },
+      )
+      .exec()
+  }
+
   async createParkingLot(
-    parkingLotData: Partial<ParkingLot>, // Nhận dữ liệu đã xử lý từ Service
+    parkingLotData: Partial<ParkingLot>,
+    session?: ClientSession,
   ): Promise<ParkingLot | null> {
     const newParkingLot = new this.parkingLotModel(parkingLotData)
-    await newParkingLot.save()
+    await newParkingLot.save({ session })
     return this.parkingLotModel
       .findById(newParkingLot._id)
       .populate({
@@ -143,7 +179,6 @@ export class ParkingLotRepository implements IParkingLotRepository {
     parkingLotStatus: string,
   ): Promise<{ data: ParkingLot[]; total: number }> {
     const skipAmount = (page - 1) * pageSize
-    const statusObjectId = new Types.ObjectId(parkingLotStatus)
     const radiusInRadians = maxDistanceInKm / 6378.1
 
     const results = await this.parkingLotModel.aggregate([
@@ -164,7 +199,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
               $centerSphere: [[longitude, latitude], radiusInRadians],
             },
           },
-          parkingLotStatusId: statusObjectId,
+          parkingLotStatus: parkingLotStatus,
         },
       },
       {

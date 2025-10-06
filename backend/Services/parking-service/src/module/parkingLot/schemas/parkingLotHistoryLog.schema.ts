@@ -1,26 +1,47 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { HydratedDocument } from 'mongoose'
-import mongoose from 'mongoose'
+import mongoose, { HydratedDocument, Schema as MongooseSchema } from 'mongoose'
 import { BaseEntity } from 'src/common/schema/baseEntity.schema'
+
+import { RequestType } from '../enums/parkingLot.enum'
 
 export type ParkingLotHistoryLogDocument =
   HydratedDocument<ParkingLotHistoryLog>
 
-@Schema()
+@Schema({ timestamps: true })
 export class ParkingLotHistoryLog extends BaseEntity {
+  // Giữ lại _id như bình thường
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId(),
   })
   _id: string
 
+  // Giữ lại parkingLotId để biết log này của bãi xe nào
   @Prop({
     required: true,
-    type: mongoose.Schema.Types.ObjectId,
+    type: MongooseSchema.Types.ObjectId,
     ref: 'ParkingLot',
   })
   parkingLotId: string
 
+  // (NÊN THÊM) Ghi lại loại sự kiện
+  @Prop({
+    required: true,
+    type: String,
+    enum: Object.values(RequestType),
+  })
+  eventType: string
+
+  // (SỬA) Đổi tên và đặt làm tham chiếu bắt buộc
+  // Đây là liên kết để biết yêu cầu nào đã gây ra log này
+  @Prop({
+    required: true,
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'ParkingLotRequest',
+  })
+  requestId: string
+
+  // ---- CÁC TRƯỜNG SNAPSHOT DỮ LIỆU (GIỮ NGUYÊN) ----
   @Prop({ required: false, type: String })
   openTime: string
 
@@ -42,24 +63,19 @@ export class ParkingLotHistoryLog extends BaseEntity {
   @Prop({ required: true, type: Number })
   totalLevel: number
 
-  @Prop({ required: true, type: Date })
-  effectiveDate: Date
-
-  @Prop({ required: true, type: Date })
-  approvalDate: Date
-
-  @Prop({
-    required: true,
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ParkingLotStatus',
-  })
-  parkingLotStatusId: string
-
   @Prop({ required: true, type: Number })
   electricCarPercentage: number
 
-  @Prop({ required: false, type: String })
-  requestCode: string
+  // Giữ lại effectiveDate để biết thay đổi này có hiệu lực từ khi nào
+  @Prop({ required: true, type: Date })
+  effectiveDate: Date
+
+  @Prop({
+    required: true,
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'ParkingLotRequest',
+  })
+  parkingLotRequestId: string
 }
 
 export const ParkingLotHistoryLogSchema =

@@ -5,6 +5,7 @@ import type { ParkingLot } from '../schemas/parkingLot.schema'
 export interface IParkingLotRepository {
   createParkingLot(
     parkingLotData: Partial<ParkingLot>,
+    session?: ClientSession,
   ): Promise<ParkingLot | null>
 
   findParkingLotById(id: string): Promise<ParkingLot | null>
@@ -44,6 +45,17 @@ export interface IParkingLotRepository {
   ): Promise<{ data: ParkingLot[]; total: number }>
 
   findAllForOperator(operatorId: string): Promise<ParkingLot[]>
+
+  updateParkingLot(
+    id: string,
+    updateData: Partial<ParkingLot>,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null>
+
+  deleteParkingLot(
+    id: string,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null>
 }
 
 export const IParkingLotRepository = Symbol('IParkingLotRepository')

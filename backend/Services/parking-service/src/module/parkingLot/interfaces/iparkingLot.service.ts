@@ -1,21 +1,24 @@
 import type { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import type { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
-import type {
-  IdDto,
-  ParkingLotIdDto,
-  ParkingLotStatusIdDto,
-} from 'src/common/dto/params.dto'
+import type { IdDto, ParkingLotIdDto } from 'src/common/dto/params.dto'
 
 import type {
   BoundingBoxDto,
   CoordinatesDto,
+  CreateParkingLotDeleteRequestDto,
   CreateParkingLotDto,
+  CreateParkingLotUpdateRequestDto,
+  ParkingLotHistoryLogResponseDto,
+  ParkingLotRequestResponseDto,
   ParkingLotResponseDto,
-  UpdateParkingLotHistoryLogDto,
+  ReviewRequestDto,
 } from '../dto/parkingLot.dto'
-import type { ParkingLotHistoryLog } from '../schemas/parkingLotHistoryLog.schema'
 
 export interface IParkingLotService {
+  // =================================================================
+  // == Core ParkingLot Read Operations (Giữ nguyên)
+  // =================================================================
+
   getParkingLotDetails(id: IdDto): Promise<ParkingLotResponseDto>
 
   getAllParkingLots(
@@ -34,51 +37,82 @@ export interface IParkingLotService {
     paginationQuery: PaginationQueryDto,
   ): Promise<{ data: ParkingLotResponseDto[]; pagination: PaginationDto }>
 
-  getUpdateHistoryLogForParkingLot(
-    parkingLotId: ParkingLotIdDto,
-  ): Promise<ParkingLotHistoryLog[]>
+  findAllForOperator(operatorId: string): Promise<ParkingLotResponseDto[]>
 
-  createParkingLot(
+  // =================================================================
+  // == Initial Creation Workflow (Giữ nguyên)
+  // =================================================================
+
+  createCreateRequest(
     createDto: CreateParkingLotDto,
     userId: string,
-    currentIdOfUserRole: string,
-  ): Promise<ParkingLotResponseDto>
+    operatorId: string,
+  ): Promise<ParkingLotRequestResponseDto>
 
-  sendRequestUpdateParkingLot(
-    parkingLotId: ParkingLotIdDto,
-    updateRequestDto: UpdateParkingLotHistoryLogDto,
-    userId: string,
-  ): Promise<ParkingLotHistoryLog>
+  // =================================================================
+  // == Update/Delete Request Workflow (for Parking Lot Owner) - (SỬA ĐỔI)
+  // =================================================================
 
-  approveNewParkingLot(
+  createUpdateRequest(
     parkingLotId: ParkingLotIdDto,
-    statusId: ParkingLotStatusIdDto,
+    updateRequestDto: CreateParkingLotUpdateRequestDto,
     userId: string,
+    operatorId: string,
+  ): Promise<ParkingLotRequestResponseDto>
+
+  createDeleteRequest(
+    parkingLotId: ParkingLotIdDto,
+    deleteRequestDto: CreateParkingLotDeleteRequestDto,
+    userId: string,
+    operatorId: string,
+  ): Promise<ParkingLotRequestResponseDto>
+
+  // =================================================================
+  // == Admin Review Workflow - (SỬA ĐỔI)
+  // =================================================================
+
+  reviewRequest(
+    requestId: IdDto,
+    reviewDto: ReviewRequestDto,
+    adminId: string,
   ): Promise<{ data: boolean; message: string; responseCode: number }>
+
+  // =================================================================
+  // == Data Retrieval for History & Requests - (SỬA ĐỔI)
+  // =================================================================
+
+  /**
+   * Lấy danh sách CÁC YÊU CẦU (pending, approved, etc.) của một bãi xe.
+   */
+  getRequestsForParkingLot(
+    parkingLotId: ParkingLotIdDto,
+  ): Promise<ParkingLotRequestResponseDto[]>
+
+  /**
+   * Lấy LỊCH SỬ THAY ĐỔI ĐÃ ÁP DỤNG của một bãi xe.
+   */
+  getHistoryForParkingLot(
+    parkingLotId: ParkingLotIdDto,
+  ): Promise<ParkingLotHistoryLogResponseDto[]>
+
+  // =================================================================
+  // == System/CRON Job Workflow - (MỚI)
+  // =================================================================
+
+  /**
+   * Tìm và xử lý các yêu cầu đã được duyệt và đến hạn.
+   * Hàm này sẽ được gọi bởi CRON job.
+   */
+  processApprovedRequests(): Promise<{ processed: number; failed: number }>
+
+  // =================================================================
+  // == Other Utilities
+  // =================================================================
 
   updateAvailableSpotsForWebsocket(
     parkingLotId: string,
     change: number,
   ): Promise<boolean>
-
-  sendRequestDeleteParkingLot(
-    id: IdDto,
-    userId: string,
-  ): Promise<{ data: boolean; message: string; responseCode: number }>
-
-  findAllForOperator(operatorId: string): Promise<ParkingLotResponseDto[]>
-
-  approveParkingLotUpdate(
-    parkingLotId: ParkingLotIdDto,
-    statusId: ParkingLotStatusIdDto,
-    userId: string,
-  ): Promise<{ data: boolean; message: string; responseCode: number }>
-
-  approveParkingLotDelete(
-    parkingLotId: ParkingLotIdDto,
-    statusId: ParkingLotStatusIdDto,
-    userId: string,
-  ): Promise<{ data: boolean; message: string; responseCode: number }>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')
