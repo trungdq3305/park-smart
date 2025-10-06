@@ -4,10 +4,17 @@ import TermsPoliciesSection from '../terms-policies/TermsPoliciesSection'
 import './HomePage.css'
 import type { TermPolicy } from '../../types/termPolicty'
 import { useGetTermsPoliciesQuery } from '../../features/terms-policies/termsAPI'
+import type { FAQ } from '../../types/faqs'
 
 interface TermsPoliciesResponse {
   data: {
     data: TermPolicy[]
+  }
+  isLoading: boolean
+}
+interface FAQsResponse {
+  data: {
+    data: FAQ[]
   }
   isLoading: boolean
 }
