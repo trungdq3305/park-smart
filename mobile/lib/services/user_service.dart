@@ -35,9 +35,6 @@ class UserService {
   static Future<String?> getToken() async {
     // Thử đọc token từ storage trực tiếp
     final accessToken = await storage.read(key: 'accessToken');
-    print(
-      'AccessToken from storage: ${accessToken != null ? 'Found' : 'Not found'}',
-    );
 
     if (accessToken != null && accessToken.isNotEmpty) {
       return accessToken;
@@ -45,14 +42,12 @@ class UserService {
 
     // Thử đọc từ userData
     final userData = await getUserData();
-    print('UserData keys: ${userData?.keys.toList()}');
 
     final token =
         userData?['backendToken'] ??
         userData?['idToken'] ??
         userData?['accessToken'];
 
-    print('Token found: ${token != null ? 'Yes' : 'No'}');
     return token;
   }
 
@@ -67,6 +62,19 @@ class UserService {
     await storage.delete(key: 'data');
     await storage.delete(key: 'accessToken');
     await storage.delete(key: 'refreshToken');
+
+    // Clear WebView session để cho phép chọn tài khoản khác
+    await _clearWebViewSession();
+  }
+
+  // Clear WebView session để force account selection
+  static Future<void> _clearWebViewSession() async {
+    try {
+      // Lưu flag để WebView biết cần clear session
+      await storage.write(key: 'clearWebViewSession', value: 'true');
+    } catch (e) {
+      // Handle error setting WebView session clear flag
+    }
   }
 
   // Lấy email

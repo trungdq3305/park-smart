@@ -46,15 +46,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await _authService.login(email, password);
-      print('Login response in screen: $response');
-      print('Response type: ${response.runtimeType}');
 
       // Lưu toàn bộ response data vào storage
       try {
         await storage.write(key: 'data', value: jsonEncode(response));
-        print('Data saved to storage successfully');
       } catch (e) {
-        print('Error saving to storage: $e');
         // Thử lưu dưới dạng string nếu jsonEncode fail
         await storage.write(key: 'data', value: response.toString());
       }
@@ -101,11 +97,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      print('Starting Google Login via API...');
-
       // Gọi API để lấy URL hoặc token
       final response = await _authService.googleLogin();
-      print('Google Login API Response: $response');
 
       if (!mounted) return;
 
@@ -114,7 +107,6 @@ class _LoginScreenState extends State<LoginScreen> {
           (response['data'].toString().startsWith('http') ||
               response['type'] == 'html')) {
         final loginUrl = response['data'].toString();
-        print('Opening WebView with URL: $loginUrl');
 
         // Mở WebView để đăng nhập Google
         final result = await Navigator.push(
@@ -140,11 +132,9 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       } else {
         // API trả về token trực tiếp
-        print('Login successful with token');
         Navigator.pushReplacementNamed(context, '/main');
       }
     } catch (e) {
-      print('Google Login Error: $e');
       setState(() => _errorMessage = 'Lỗi đăng nhập Google: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -172,7 +162,6 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('Không thể mở trình duyệt');
       }
     } catch (e) {
-      print('Error opening browser: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
