@@ -1,7 +1,11 @@
 import 'dart:math';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../widgets/navigation/repositories/directions_repository.dart';
 
 class NavigationService {
+  static final DirectionsRepository _directionsRepository =
+      DirectionsRepository();
+
   /// Calculate distance between two points in meters
   static double calculateDistance(LatLng point1, LatLng point2) {
     const double earthRadius = 6371000; // Earth's radius in meters
@@ -37,14 +41,22 @@ class NavigationService {
 
   /// Generate realistic route points between two locations
   static List<LatLng> generateRealisticRoute(LatLng start, LatLng end) {
+    print(
+      '🛣️ Generating fallback route from ${start.latitude},${start.longitude} to ${end.latitude},${end.longitude}',
+    );
+
     final List<LatLng> points = [start];
 
     // Calculate distance to determine number of intermediate points
     final double distance = calculateDistance(start, end);
+    print('🛣️ Distance: ${distance}m');
+
     final int numPoints = (distance / 50).round().clamp(
       10,
       50,
     ); // 1 point per 50m, min 10, max 50
+
+    print('🛣️ Number of points: $numPoints');
 
     // Create a more realistic route with slight curves
     for (int i = 1; i < numPoints; i++) {
@@ -65,6 +77,7 @@ class NavigationService {
     }
 
     points.add(end);
+    print('🛣️ Generated ${points.length} route points');
     return points;
   }
 
@@ -162,13 +175,60 @@ class NavigationService {
     return '$minutes phút';
   }
 
-  /// Get route information using local calculation only
-  static Map<String, dynamic> getRouteInfo(LatLng start, LatLng end) {
+  /// Get route information using Google Directions API
+  static Future<Map<String, dynamic>> getRouteInfo(
+    LatLng start,
+    LatLng end,
+  ) async {
+    try {
+      print('🧭 Getting directions from Google Directions API...');
+      final directions = await _directionsRepository.getDirections(
+        origin: start,
+        destination: end,
+      );
+
+      if (directions != null) {
+        print('✅ Directions received successfully');
+
+        // Use polyline points directly
+        final List<LatLng> points = directions.polylinePoints;
+
+        return {
+          'points': points,
+          'instructions': directions.instructions,
+          'estimatedTime': directions.totalDuration,
+          'estimatedDistance': directions.totalDistance,
+          'summary': 'Tuyến đường từ Google Maps',
+          'bounds': directions.bounds,
+          'startLocation': {
+            'latitude': start.latitude,
+            'longitude': start.longitude,
+          },
+          'endLocation': {'latitude': end.latitude, 'longitude': end.longitude},
+        };
+      } else {
+        print('⚠️ Directions API failed, using fallback');
+        return _getFallbackRoute(start, end);
+      }
+    } catch (e) {
+      print('❌ Error getting directions: $e');
+      return _getFallbackRoute(start, end);
+    }
+  }
+
+  /// Fallback route calculation when API fails
+  static Map<String, dynamic> _getFallbackRoute(LatLng start, LatLng end) {
+    print('🛣️ Creating fallback route...');
+
     final double distance = calculateDistance(start, end);
     final List<LatLng> points = generateRealisticRoute(start, end);
     final List<Map<String, dynamic>> instructions = getDetailedInstructions(
       start,
       end,
+    );
+
+    print(
+      '🛣️ Fallback route created: ${points.length} points, ${instructions.length} instructions',
     );
 
     return {

@@ -549,10 +549,11 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
+                  onPressed: () async {
+                    // Close bottom sheet first
                     Navigator.pop(context);
-                    // ⬅️ Call the modified function
-                    _navigateToParkingLot(parkingLot);
+                    // Then start navigation
+                    await _navigateToParkingLot(parkingLot);
                   },
                   icon: const Icon(Icons.directions),
                   label: const Text('Chỉ đường'),
@@ -585,7 +586,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
   }
 
   // ⬅️ MODIFIED: Function to start in-app navigation
-  void _navigateToParkingLot(Map<String, dynamic> parkingLot) async {
+  Future<void> _navigateToParkingLot(Map<String, dynamic> parkingLot) async {
     print('🧭 Starting navigation to parking lot...');
 
     // Extract coordinates from parking lot
@@ -600,18 +601,23 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     );
 
     if (lat != null && lng != null && _currentPosition != null) {
-      Navigator.pop(context); // Close bottom sheet
-      print('🧭 Bottom sheet closed, loading route...');
+      print('🧭 Loading route...');
+      print('🧭 Map controller: $_mapController');
+      print('🧭 Map loaded: $_mapLoaded');
+      print('🧭 Widget mounted: $mounted');
 
       // Load route using NavigationService
       await _loadRouteToDestination(lat, lng, address);
+      print('🧭 Route loaded successfully');
     } else {
       print('❌ Missing coordinates or current position');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không thể lấy tọa độ hoặc vị trí hiện tại'),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể lấy tọa độ hoặc vị trí hiện tại'),
+          ),
+        );
+      }
     }
   }
 
@@ -648,18 +654,38 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       final end = LatLng(lat, lng);
 
       print('🧭 Calling NavigationService.getRouteInfo...');
-      final route = NavigationService.getRouteInfo(start, end);
+      final route = await NavigationService.getRouteInfo(start, end);
       print('🧭 Route generated: ${route['summary']}');
 
       print('🧭 Processing route...');
+      print('🧭 Route keys: ${route.keys}');
+      print('🧭 Route points type: ${route['points'].runtimeType}');
+      print('🧭 Route instructions type: ${route['instructions'].runtimeType}');
       _processRoute(route);
 
       if (mounted) {
         print('🧭 Setting route state...');
+        print('🧭 Current route points: ${_routePoints.length}');
+        print('🧭 Current route polylines: ${_routePolylines.length}');
+        print('🧭 Current hasRoute: $_hasRoute');
+
         setState(() {
           _hasRoute = true;
           _isLoading = false;
         });
+
+        print('🧭 After setState - hasRoute: $_hasRoute');
+        print('🧭 After setState - routePoints: ${_routePoints.length}');
+        print('🧭 After setState - routePolylines: ${_routePolylines.length}');
+
+        // Ensure we have a valid route
+        if (_routePoints.isEmpty) {
+          print('❌ No route points after processing, showing error');
+          setState(() {
+            _errorMessage = 'Không thể tạo tuyến đường. Vui lòng thử lại.';
+            _hasRoute = false;
+          });
+        }
       }
       print('🧭 Route processed successfully');
     } catch (e) {
@@ -682,60 +708,155 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
   ) async { ... }
   */
 
+  // Trong file parking_lot_screen.dart
+
+  // ... (Các biến trạng thái và phương thức khác)
+
   void _processRoute(Map<String, dynamic> route) {
-    print('🧭 Processing route: ${route.keys}');
+    print('🧭 Processing route...');
+    print('🧭 Route keys: ${route.keys.toList()}');
+
+    // Lấy dữ liệu points và instructions dưới dạng dynamic
+    final points = route['points'];
+    final instructions = route['instructions'];
+
+    print(
+      '🧭 Route data: points=${(points as List?)?.length ?? 0}, instructions=${(instructions as List?)?.length ?? 0}',
+    );
 
     try {
       if (mounted) {
         setState(() {
-          _routePoints = List<LatLng>.from(route['points'] ?? []);
-          _routeInstructions = List<Map<String, dynamic>>.from(
-            route['instructions'] ?? [],
-          );
+          // 1. Xử lý Points:
+          if (points is List && points.isNotEmpty) {
+            print('🧭 Processing ${points.length} points...');
+            print(
+              '🧭 First point: ${points[0]} (type: ${points[0].runtimeType})',
+            );
+
+            _routePoints = points
+                .map((p) {
+                  print('🧭 Processing point: $p (type: ${p.runtimeType})');
+                  if (p is LatLng) {
+                    print('🧭 Direct LatLng: ${p.latitude}, ${p.longitude}');
+                    return p;
+                  } else if (p is Map &&
+                      p.containsKey('latitude') &&
+                      p.containsKey('longitude')) {
+                    print('🧭 Map LatLng: ${p['latitude']}, ${p['longitude']}');
+                    return LatLng(p['latitude'], p['longitude']);
+                  } else {
+                    print(
+                      '❌ Unknown point format: $p (type: ${p.runtimeType})',
+                    );
+                    return null;
+                  }
+                })
+                .where((p) => p != null)
+                .cast<LatLng>()
+                .toList();
+            print('🧭 Parsed ${_routePoints.length} points successfully');
+          } else {
+            print('❌ No points to process');
+            _routePoints = <LatLng>[];
+          }
+
+          // 2. Xử lý Instructions:
+          if (instructions is List && instructions.isNotEmpty) {
+            print('🧭 Processing ${instructions.length} instructions...');
+            print(
+              '🧭 First instruction: ${instructions[0]} (type: ${instructions[0].runtimeType})',
+            );
+
+            _routeInstructions = instructions
+                .map((i) {
+                  print(
+                    '🧭 Processing instruction: $i (type: ${i.runtimeType})',
+                  );
+                  if (i is Map<String, dynamic>) {
+                    print('🧭 Direct Map: ${i.keys}');
+                    return i;
+                  } else {
+                    print(
+                      '❌ Unknown instruction format: $i (type: ${i.runtimeType})',
+                    );
+                    return null;
+                  }
+                })
+                .where((i) => i != null)
+                .cast<Map<String, dynamic>>()
+                .toList();
+            print(
+              '🧭 Parsed ${_routeInstructions.length} instructions successfully',
+            );
+          } else {
+            print('❌ No instructions to process');
+            _routeInstructions = <Map<String, dynamic>>[];
+          }
+
           _estimatedTime = route['estimatedTime'];
           _estimatedDistance = route['estimatedDistance'];
 
-          // Create blue polyline for the route
+          // 3. Tạo Polyline
+          print('🧭 Creating polyline with ${_routePoints.length} points...');
           if (_routePoints.isNotEmpty) {
+            print('🧭 First point: ${_routePoints[0]}');
+            print('🧭 Last point: ${_routePoints[_routePoints.length - 1]}');
+
             _routePolylines = [
               Polyline(
                 polylineId: const PolylineId('route'),
                 points: _routePoints,
                 color: Colors.blue,
                 width: 6,
+                // Tạo hiệu ứng nét đứt cho tuyến đường
                 patterns: [PatternItem.dash(30), PatternItem.gap(10)],
               ),
             ];
+            print('🧭 Polyline created with ${_routePoints.length} points');
+
+            // Cập nhật bounds camera để vừa với tuyến đường
+            if (_mapController != null && route['bounds'] is LatLngBounds) {
+              final bounds = route['bounds'] as LatLngBounds;
+              print('🧭 Animating camera to bounds: $bounds');
+
+              // Đặt một độ trễ nhỏ để Map ổn định
+              Future.delayed(const Duration(milliseconds: 100), () {
+                if (mounted && _mapController != null) {
+                  _mapController!.animateCamera(
+                    CameraUpdate.newLatLngBounds(bounds, 100.0),
+                  );
+                  print('🧭 Camera animated to bounds');
+                }
+              });
+            }
+          } else {
+            // Trường hợp route không có points (rất hiếm, nhưng để an toàn)
+            print('❌ No points to create polyline');
+            _routePolylines = [];
           }
 
-          _hasRoute = true;
-          _showNavigationUI = true;
+          // Đánh dấu đã có tuyến đường
+          _hasRoute = _routePoints.isNotEmpty;
         });
-      }
 
-      print(
-        '🧭 Route processed: ${_routePoints.length} points, ${_routeInstructions.length} instructions',
-      );
+        print(
+          '🧭 Route processed successfully: ${_routePoints.length} points, ${_routeInstructions.length} instructions',
+        );
+      }
     } catch (e) {
       print('❌ Error processing route: $e');
+      // Đảm bảo trạng thái sạch nếu có lỗi
       if (mounted) {
         setState(() {
-          _errorMessage = 'Lỗi xử lý tuyến đường: $e';
-          _isLoading = false;
+          _routePoints = <LatLng>[];
+          _routeInstructions = <Map<String, dynamic>>[];
+          _routePolylines = [];
+          _hasRoute = false;
         });
       }
     }
   }
-
-  // ⬅️ REMOVED/SIMPLIFIED: No longer needed for in-app polylines
-  /*
-  void _updateRoutePolylines() { ... }
-  */
-
-  // ⬅️ REMOVED/SIMPLIFIED: No longer needed for in-app instructions
-  /*
-  void _updateCurrentInstruction() { ... }
-  */
 
   // ⬅️ MODIFIED: Start in-app navigation with GPS tracking
   void _startNavigation() {
@@ -1221,32 +1342,47 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                     zoom: 15,
                   ),
                   markers: _markers,
-                  polylines: Set<Polyline>.from(_routePolylines),
+                  polylines: _routePolylines.toSet(),
                   onMapCreated: (GoogleMapController controller) {
                     print('🗺️ Google Map created successfully');
+                    print('🗺️ Map controller: $controller');
+                    print('🗺️ Previous controller: $_mapController');
+                    print('🗺️ Widget mounted: $mounted');
+                    print('🗺️ Has route: $_hasRoute');
+                    print('🗺️ Route polylines: ${_routePolylines.length}');
                     _mapController = controller;
+                    print('🗺️ Map controller set: $_mapController');
 
                     // Force update markers after map is ready
                     Future.delayed(const Duration(milliseconds: 500), () {
-                      print('🔄 Force updating markers after map ready...');
-                      _updateMarkers();
+                      if (mounted) {
+                        print('🔄 Force updating markers after map ready...');
+                        _updateMarkers();
+                      } else {
+                        print('❌ Widget not mounted, skipping marker update');
+                      }
                     });
 
                     // Mark map as loaded and cancel auto-fallback
-                    setState(() {
+                    if (mounted) {
                       _mapLoaded = true;
                       _showMapFallback = false;
-                    });
+                      print('🗺️ Map loaded state updated without setState');
+                    }
                   },
                   onCameraMove: (CameraPosition position) {
                     // Update bounds for in-bounds search
-                    _mapController?.getVisibleRegion().then((bounds) {
-                      _currentBounds = bounds;
-                    });
+                    if (mounted) {
+                      _mapController?.getVisibleRegion().then((bounds) {
+                        if (mounted) {
+                          _currentBounds = bounds;
+                        }
+                      });
+                    }
                   },
                   onCameraIdle: () {
                     // Load parking lots in current view when camera stops moving
-                    if (!_isNavigating) {
+                    if (mounted && !_isNavigating) {
                       _loadParkingLotsInBounds();
                     }
                   },
@@ -1255,6 +1391,8 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                   mapType: MapType.normal,
                   mapToolbarEnabled: false,
                   zoomControlsEnabled: true,
+                  // Add key to prevent widget recreation
+                  key: const ValueKey('google_map'),
                   compassEnabled: true,
                   liteModeEnabled: false,
                   buildingsEnabled: true,
@@ -1262,25 +1400,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                 ),
 
                 // ⬅️ Navigation overlay (REMOVED or COMMENTED OUT)
-                /*
-                NavigationOverlay(
-                  isVisible: _isNavigating,
-                  currentInstruction: _currentInstruction,
-                  nextInstruction: _nextInstruction,
-                  distanceToNext: _distanceToNext,
-                  timeToNext: _timeToNext,
-                  isMuted: _isMuted,
-                  onClose: _stopNavigation,
-                  onMute: () {
-                    setState(() {
-                      _isMuted = !_isMuted;
-                    });
-                  },
-                  onShowInstructions: () {
-                    // ... (Instructions UI REMOVED) ...
-                  },
-                ),
-                */
                 // A simpler, temporary overlay to show navigation is external
                 if (_isNavigating)
                   Positioned(
@@ -1329,6 +1448,29 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                       ),
                       child: Text(
                         _isNavigating ? 'Navigating' : 'Route Ready',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Route debug indicator
+                if (_hasRoute)
+                  Positioned(
+                    top: 180,
+                    right: 16,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _routePoints.isNotEmpty
+                            ? Colors.green
+                            : Colors.red,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Route: ${_routePoints.length} pts',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -1471,26 +1613,115 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
             ),
           ),
 
-          // Navigation controls
-          // ⬅️ The NavigationControls widget is reused to manage the external navigation state
+          // Navigation controls - Always show when there's a route
           if (_hasRoute)
             Positioned(
               bottom: 0,
               left: 0,
               right: 0,
-              child: NavigationControls(
-                // _startNavigation will now only update the UI state to reflect external nav
-                onStartNavigation: _startNavigation,
-                onStopNavigation: _stopNavigation,
-                onShowAlternatives: null, // Disable for now
-                isNavigating: _isNavigating,
-                hasRoute: _hasRoute,
-                estimatedTime: _estimatedTime,
-                estimatedDistance: _estimatedDistance,
-                destination: _destination,
-                destinationName: _destinationName,
+              child: Container(
+                color: Colors.transparent,
+                child: NavigationControls(
+                  onStartNavigation: _startNavigation,
+                  onStopNavigation: _stopNavigation,
+                  onShowAlternatives: null, // Disable for now
+                  isNavigating: _isNavigating,
+                  hasRoute: _hasRoute,
+                  estimatedTime: _estimatedTime,
+                  estimatedDistance: _estimatedDistance,
+                  destination: _destination,
+                  destinationName: _destinationName,
+                ),
               ),
             ),
+
+          // // Fallback UI when no route is available
+          // if (!_hasRoute && _isLoading == false && _currentPosition != null)
+          //   Positioned(
+          //     bottom: 0,
+          //     left: 0,
+          //     right: 0,
+          //     child: Container(
+          //       margin: const EdgeInsets.all(16),
+          //       padding: const EdgeInsets.all(16),
+          //       decoration: BoxDecoration(
+          //         color: Colors.white,
+          //         borderRadius: BorderRadius.circular(12),
+          //         boxShadow: [
+          //           BoxShadow(
+          //             color: Colors.black.withOpacity(0.1),
+          //             blurRadius: 8,
+          //             offset: const Offset(0, 2),
+          //           ),
+          //         ],
+          //       ),
+          //       child: Column(
+          //         mainAxisSize: MainAxisSize.min,
+          //         children: [
+          //           Icon(Icons.route, color: Colors.orange, size: 32),
+          //           const SizedBox(height: 8),
+          //           Text(
+          //             'Không thể tạo tuyến đường',
+          //             style: const TextStyle(
+          //               fontSize: 16,
+          //               fontWeight: FontWeight.w600,
+          //               color: Colors.orange,
+          //             ),
+          //           ),
+          //           const SizedBox(height: 4),
+          //           Text(
+          //             'Vui lòng thử lại hoặc chọn bãi đỗ xe khác',
+          //             style: TextStyle(
+          //               fontSize: 14,
+          //               color: Colors.grey.shade600,
+          //             ),
+          //           ),
+          //           const SizedBox(height: 12),
+          //           Row(
+          //             children: [
+          //               Expanded(
+          //                 child: OutlinedButton(
+          //                   onPressed: () {
+          //                     setState(() {
+          //                       _hasRoute = false;
+          //                       _routePolylines = [];
+          //                       _routePoints = [];
+          //                       _routeInstructions = [];
+          //                       _estimatedTime = null;
+          //                       _estimatedDistance = null;
+          //                       _destination = null;
+          //                       _destinationName = null;
+          //                     });
+          //                   },
+          //                   child: const Text('Đóng'),
+          //                 ),
+          //               ),
+          //               const SizedBox(width: 12),
+          //               Expanded(
+          //                 child: ElevatedButton(
+          //                   onPressed: () {
+          //                     // Retry navigation
+          //                     if (_destination != null) {
+          //                       _loadRouteToDestination(
+          //                         _destination!.latitude,
+          //                         _destination!.longitude,
+          //                         _destinationName ?? 'Đích đến',
+          //                       );
+          //                     }
+          //                   },
+          //                   style: ElevatedButton.styleFrom(
+          //                     backgroundColor: Colors.blue,
+          //                     foregroundColor: Colors.white,
+          //                   ),
+          //                   child: const Text('Thử lại'),
+          //                 ),
+          //               ),
+          //             ],
+          //           ),
+          //         ],
+          //       ),
+          //     ),
+          //   ),
 
           // Navigation UI overlay
           if (_showNavigationUI && _isNavigationActive)
