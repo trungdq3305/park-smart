@@ -16,8 +16,10 @@ import {
 @Injectable() // Quan trọng: Để có thể inject vào Service
 @WebSocketGateway({
   cors: {
-    origin: '*', // Cho phép kết nối từ mọi nguồn (cần thiết cho mobile)
+    origin: '*',
   },
+  pingInterval: 10000, // Gửi một gói tin ping mỗi 10 giây
+  pingTimeout: 15000, // Nếu không nhận được phản hồi pong trong 15 giây, coi như mất kết nối
 })
 export class ParkingLotGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -44,7 +46,6 @@ export class ParkingLotGateway
     if (payload.oldRoom) {
       await client.leave(payload.oldRoom)
     }
-
     // Tham gia vào room mới
     await client.join(payload.newRoom)
   }
@@ -60,6 +61,7 @@ export class ParkingLotGateway
    * Gửi cập nhật số chỗ trống đến một khu vực cụ thể.
    */
   sendSpotsUpdate(roomName: string, payload: ParkingLotSpotsUpdateDto) {
+    console.log(roomName)
     this.server.to(roomName).emit('parking-lot-spots-updated', payload)
   }
 

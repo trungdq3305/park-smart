@@ -3,6 +3,7 @@ import '../../../services/vehicle_service.dart';
 import '../../../widgets/vehicle/vehicle_card.dart';
 import '../../../widgets/vehicle/vehicle_dialogs.dart';
 import '../../../widgets/vehicle/state_widgets.dart';
+import 'deleted_vehicles_history_screen.dart';
 
 class MyCarScreen extends StatefulWidget {
   const MyCarScreen({super.key});
@@ -399,6 +400,15 @@ class _MyCarScreenState extends State<MyCarScreen>
     );
   }
 
+  void _showDeletedVehiclesHistory() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const DeletedVehiclesHistoryScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -413,6 +423,20 @@ class _MyCarScreenState extends State<MyCarScreen>
         elevation: 0,
         centerTitle: true,
         actions: [
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              onPressed: _showDeletedVehiclesHistory,
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.history_rounded, size: 20),
+              ),
+            ),
+          ),
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: IconButton(

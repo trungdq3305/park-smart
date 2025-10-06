@@ -113,6 +113,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
         { $inc: { availableSpots: change } },
         { new: true },
       )
+      .lean()
       .exec()
   }
 

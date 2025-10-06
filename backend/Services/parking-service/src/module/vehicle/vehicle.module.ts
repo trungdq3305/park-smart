@@ -3,7 +3,6 @@ import { MongooseModule } from '@nestjs/mongoose'
 
 import { BrandModule } from '../brand/brand.module'
 import { ColorModule } from '../color/color.module'
-import { VehicleTypeModule } from '../vehicleType/vehicleType.module'
 import { IVehicleRepository } from './interfaces/ivehicle.repository'
 import { IVehicleService } from './interfaces/ivehicle.service'
 import { Vehicle, VehicleSchema } from './schemas/vehicle.schema'
@@ -17,7 +16,6 @@ import { VehicleService } from './vehicle.service'
     MongooseModule.forFeature([{ name: Vehicle.name, schema: VehicleSchema }]),
     ColorModule,
     BrandModule,
-    VehicleTypeModule,
   ],
   controllers: [VehicleController],
   providers: [
