@@ -23,9 +23,9 @@ const FAQsSection: React.FC<FAQsSectionProps> = ({ data, isLoading }) => {
           const itemId = entry.target.getAttribute('data-faq-id')
           if (itemId) {
             if (entry.isIntersecting) {
-              setVisibleItems(prev => new Set([...prev, itemId]))
+              setVisibleItems((prev) => new Set([...prev, itemId]))
             } else {
-              setVisibleItems(prev => {
+              setVisibleItems((prev) => {
                 const newSet = new Set(prev)
                 newSet.delete(itemId)
                 return newSet
@@ -36,7 +36,7 @@ const FAQsSection: React.FC<FAQsSectionProps> = ({ data, isLoading }) => {
       },
       {
         threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
+        rootMargin: '0px 0px -50px 0px',
       }
     )
   }, [])
@@ -66,7 +66,7 @@ const FAQsSection: React.FC<FAQsSectionProps> = ({ data, isLoading }) => {
   }, [observer, headerObserver])
 
   const toggleFAQ = (id: string) => {
-    setOpenItems(prev => {
+    setOpenItems((prev) => {
       const newSet = new Set(prev)
       if (newSet.has(id)) {
         newSet.delete(id)
@@ -77,27 +77,27 @@ const FAQsSection: React.FC<FAQsSectionProps> = ({ data, isLoading }) => {
     })
   }
 
-  const setItemRef = useMemo(() => (id: string) => (element: HTMLDivElement | null) => {
-    if (element) {
-      itemRefs.current.set(id, element)
-      observer.observe(element)
-    } else {
-      const existingElement = itemRefs.current.get(id)
-      if (existingElement) {
-        observer.unobserve(existingElement)
-        itemRefs.current.delete(id)
+  const setItemRef = useMemo(
+    () => (id: string) => (element: HTMLDivElement | null) => {
+      if (element) {
+        itemRefs.current.set(id, element)
+        observer.observe(element)
+      } else {
+        const existingElement = itemRefs.current.get(id)
+        if (existingElement) {
+          observer.unobserve(existingElement)
+          itemRefs.current.delete(id)
+        }
       }
-    }
-  }, [observer])
+    },
+    [observer]
+  )
 
   if (isLoading) {
     return (
       <section id="faqs" ref={sectionRef} className="faqs-section">
         <div className="container">
-          <div 
-            ref={headerRef}
-            className={`section-header ${isHeaderVisible ? 'animate-in' : ''}`}
-          >
+          <div ref={headerRef} className={`section-header ${isHeaderVisible ? 'animate-in' : ''}`}>
             <h2>Frequently Asked Questions</h2>
             <p>Find answers to common questions about our parking system</p>
           </div>
@@ -118,10 +118,7 @@ const FAQsSection: React.FC<FAQsSectionProps> = ({ data, isLoading }) => {
     return (
       <section id="faqs" ref={sectionRef} className="faqs-section">
         <div className="container">
-          <div 
-            ref={headerRef}
-            className={`section-header ${isHeaderVisible ? 'animate-in' : ''}`}
-          >
+          <div ref={headerRef} className={`section-header ${isHeaderVisible ? 'animate-in' : ''}`}>
             <h2>Frequently Asked Questions</h2>
             <p>Find answers to common questions about our parking system</p>
           </div>
@@ -136,47 +133,46 @@ const FAQsSection: React.FC<FAQsSectionProps> = ({ data, isLoading }) => {
   return (
     <section id="faqs" ref={sectionRef} className="faqs-section">
       <div className="container">
-        <div 
-          ref={headerRef}
-          className={`section-header ${isHeaderVisible ? 'animate-in' : ''}`}
-        >
+        <div ref={headerRef} className={`section-header ${isHeaderVisible ? 'animate-in' : ''}`}>
           <h2>Frequently Asked Questions</h2>
           <p>Find answers to common questions about our parking system</p>
         </div>
-        
+
         <div className="faqs-content">
           {data.map((faq, index) => (
-            <div 
+            <div
               key={faq.id || `faq-${index}`}
               ref={setItemRef(faq.id || `faq-${index}`)}
               data-faq-id={faq.id || `faq-${index}`}
               className={`faq-item ${visibleItems.has(faq.id || `faq-${index}`) ? 'animate-in' : ''} ${openItems.has(faq.id || `faq-${index}`) ? 'open' : ''}`}
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <button 
+              <button
                 className="faq-question"
                 onClick={() => toggleFAQ(faq.id || `faq-${index}`)}
                 aria-expanded={openItems.has(faq.id || `faq-${index}`)}
               >
                 <span className="question-text">{faq.question}</span>
                 <span className="expand-icon">
-                  <svg 
+                  <svg
                     className={`chevron ${openItems.has(faq.id || `faq-${index}`) ? 'rotated' : ''}`}
-                    viewBox="0 0 24 24" 
+                    viewBox="0 0 24 24"
                     fill="none"
                   >
-                    <path 
-                      d="M6 9l6 6 6-6" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
+                    <path
+                      d="M6 9l6 6 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
                 </span>
               </button>
-              
-              <div className={`faq-answer ${openItems.has(faq.id || `faq-${index}`) ? 'open' : ''}`}>
+
+              <div
+                className={`faq-answer ${openItems.has(faq.id || `faq-${index}`) ? 'open' : ''}`}
+              >
                 <div className="answer-content">
                   <p>{faq.answer}</p>
                   <div className="faq-meta">

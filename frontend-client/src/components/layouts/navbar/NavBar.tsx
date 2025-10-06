@@ -19,7 +19,9 @@ const NavBar: React.FC = () => {
     <nav className="apple-navbar">
       <ul>
         <li>
-          <a href="#home" onClick={handleHomeClick}>Home</a>
+          <a href="#home" onClick={handleHomeClick}>
+            Home
+          </a>
         </li>
         <li>
           <a href="#terms-policies" onClick={(e) => handleNavClick(e, 'terms-policies')}>

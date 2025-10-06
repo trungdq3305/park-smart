@@ -9,7 +9,7 @@ export const useSmoothScroll = () => {
 
       window.scrollTo({
         top: offsetPosition,
-        behavior: 'smooth'
+        behavior: 'smooth',
       })
     }
   }, [])
@@ -17,12 +17,12 @@ export const useSmoothScroll = () => {
   const scrollToTop = useCallback(() => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: 'smooth',
     })
   }, [])
 
   return {
     scrollToSection,
-    scrollToTop
+    scrollToTop,
   }
 }

@@ -16,7 +16,7 @@ interface TermsPoliciesResponse {
 }
 interface FAQsResponse {
   data: {
-    data:{
+    data: {
       data: FAQ[]
     }
   }
