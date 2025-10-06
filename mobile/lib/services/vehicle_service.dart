@@ -30,7 +30,7 @@ class VehicleService {
   static Future<Map<String, dynamic>> createVehicle({
     required String plateNumber,
     required String colorId,
-    required String vehicleTypeId,
+    required bool isElectricCar,
     required String brandId,
   }) async {
     final token = await _getToken();
@@ -43,7 +43,7 @@ class VehicleService {
     final body = {
       'plateNumber': plateNumber,
       'colorId': colorId,
-      'vehicleTypeId': vehicleTypeId,
+      'isElectricCar': isElectricCar,
       'brandId': brandId,
     };
 
@@ -103,7 +103,7 @@ class VehicleService {
   static Future<Map<String, dynamic>> updateVehicle({
     required String vehicleId,
     String? colorId,
-    String? vehicleTypeId,
+    bool? isElectricCar,
     String? brandId,
   }) async {
     final token = await _getToken();
@@ -112,13 +112,10 @@ class VehicleService {
     }
 
     final url = Uri.parse('$_baseUrl/parking/vehicles/$vehicleId');
-    print('Update vehicle URL: $url');
-    print('Vehicle ID: $vehicleId');
-    print('Token: ${token.substring(0, 20)}...');
 
     final Map<String, dynamic> body = {};
     if (colorId != null) body['colorId'] = colorId;
-    if (vehicleTypeId != null) body['vehicleTypeId'] = vehicleTypeId;
+    if (isElectricCar != null) body['isElectricCar'] = isElectricCar;
     if (brandId != null) body['brandId'] = brandId;
 
     print('Update request body: $body');
@@ -244,32 +241,6 @@ class VehicleService {
     } else {
       throw Exception(
         'Failed to get colors: ${response.statusCode} - ${response.body}',
-      );
-    }
-  }
-
-  // Lấy danh sách loại xe (types)
-  static Future<Map<String, dynamic>> getVehicleTypes() async {
-    final token = await _getToken();
-    if (token == null) {
-      throw Exception('No authentication token found');
-    }
-
-    final url = Uri.parse('$_baseUrl/parking/vehicle-types');
-
-    final response = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception(
-        'Failed to get vehicle types: ${response.statusCode} - ${response.body}',
       );
     }
   }

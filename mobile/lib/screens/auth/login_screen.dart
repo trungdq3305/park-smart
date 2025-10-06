@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import '../../services/auth_service.dart';
+import '../../services/user_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'forgot_password_screen.dart';
 import 'webview_login_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -19,12 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController passwordController = TextEditingController();
   final AuthService _authService = AuthService();
   final storage = const FlutterSecureStorage();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-    // Sử dụng Web client ID để có thể lấy idToken
-    clientId:
-        '595180731029-l00vridqa54h8uckh8lgijul6ulv69sm.apps.googleusercontent.com',
-  );
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -55,12 +49,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await storage.write(key: 'data', value: response.toString());
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
-
-      // Chuyển sang màn hình Home
-      Navigator.pushReplacementNamed(context, '/main');
+      // Kiểm tra role của user (chỉ cho login email)
+      await _checkUserRole();
     } catch (e) {
       // Cố gắng lấy thông điệp dễ đọc từ exception
       String message = e.toString();
@@ -171,6 +161,100 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     }
+  }
+
+  // Kiểm tra role của user sau khi login (chỉ cho login email)
+  Future<void> _checkUserRole() async {
+    try {
+      // Đợi một chút để token được lưu
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final isDriver = await UserService.isDriver();
+
+      if (isDriver) {
+        // User là Driver - cho phép đăng nhập
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
+          Navigator.pushReplacementNamed(context, '/main');
+        }
+      } else {
+        // User không phải Driver - hiển thị thông báo và logout
+        await _authService.logout();
+        await UserService.logout();
+
+        if (mounted) {
+          _showPermissionDeniedDialog();
+        }
+      }
+    } catch (e) {
+      // Nếu không kiểm tra được role, vẫn cho phép đăng nhập
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Đăng nhập thành công")));
+        Navigator.pushReplacementNamed(context, '/main');
+      }
+    }
+  }
+
+  // Hiển thị dialog thông báo phân quyền
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(Icons.warning, color: Colors.orange, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Phân quyền không hợp lệ',
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: const Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tài khoản của bạn không có quyền sử dụng ứng dụng di động.',
+                  style: TextStyle(fontSize: 16),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Vui lòng sử dụng tài khoản có vai trò "Driver" để đăng nhập.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'Để thay đổi phân quyền, vui lòng liên hệ quản trị viên hoặc truy cập website.',
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _isLoading = false;
+                  _errorMessage = null;
+                });
+              },
+              child: const Text('Đóng'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override

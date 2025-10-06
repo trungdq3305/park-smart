@@ -95,6 +95,59 @@ class UserService {
     return userInfo?['photoUrl'];
   }
 
+  // Decode JWT token để lấy thông tin role
+  static Future<Map<String, dynamic>?> decodeJWTToken(String token) async {
+    try {
+      // Kiểm tra nếu token là JSON object thay vì JWT
+      if (token.startsWith('{')) {
+        return json.decode(token) as Map<String, dynamic>;
+      }
+
+      // Xử lý JWT token
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        return null;
+      }
+
+      String payload = parts[1].padRight(
+        parts[1].length + ((4 - parts[1].length % 4) % 4),
+        '=',
+      );
+      final decoded = utf8.decode(base64Url.decode(payload));
+      return json.decode(decoded) as Map<String, dynamic>;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Kiểm tra role của user từ token
+  static Future<String?> getUserRole() async {
+    try {
+      // Thử lấy từ API trước
+      final apiData = await getUserProfile();
+      if (apiData['data'] != null) {
+        return apiData['data']['roleName'];
+      }
+    } catch (e) {
+      // Fallback to token
+    }
+
+    // Fallback: decode từ token
+    final token = await getToken();
+    if (token != null) {
+      final claims = await decodeJWTToken(token);
+      return claims?['role'] ?? claims?['roles'];
+    }
+
+    return null;
+  }
+
+  // Kiểm tra xem user có phải Driver không
+  static Future<bool> isDriver() async {
+    final role = await getUserRole();
+    return role?.toLowerCase() == 'driver';
+  }
+
   // API: Lấy thông tin user từ backend
   static Future<Map<String, dynamic>> getUserProfile() async {
     final token = await getToken();
