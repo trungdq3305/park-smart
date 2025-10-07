@@ -1,94 +1,60 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { io, Socket } from 'socket.io-client'
 
 const Map = () => {
-  const socketRef = useRef<Socket | null>(null)
+  // 1. Dùng useState để lưu trữ socket instance và trạng thái kết nối
+  const [socket, setSocket] = useState<Socket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  // ✨ BƯỚC 1: Thêm state mới
-  const [lastMessage, setLastMessage] = useState<any>(null)
 
+  // 2. Dùng useEffect để kết nối và dọn dẹp khi component unmount
   useEffect(() => {
-    if (socketRef.current === null) {
-      const newSocket = io('ws://parksmarthcmc.io.vn:5000', {
-        // KHÔNG cần `path` nữa vì kết nối trực tiếp đến NestJS
-        transports: ['websocket'],
-      })
+    // Kết nối đến Ocelot Gateway
 
-      socketRef.current = newSocket
+    const newSocket = io('wss://parksmarthcmc.io.vn', {
+      path: '/notifications/socket.io',
+      transports: ['websocket'],
+    })
 
-      newSocket.on('connect', () => {
-        console.log('✅ WebSocket Connected! Socket ID:', newSocket.id)
-        setIsConnected(true)
-      })
+    // Lưu socket instance vào state
+    setSocket(newSocket)
 
-      newSocket.on('disconnect', (reason) => {
-        console.log('❌ WebSocket Disconnected! Reason:', reason)
-        setIsConnected(false)
-      })
+    // Lắng nghe sự kiện kết nối thành công
+    newSocket.on('connect', () => {
+      console.log('✅ WebSocket Connected!')
+      setIsConnected(true)
+    })
 
-      newSocket.on('connect_error', (error) => {
-        console.error('WebSocket Connection Error:', error.message)
-      })
+    // Lắng nghe sự kiện mất kết nối
+    newSocket.on('disconnect', () => {
+      console.log('❌ WebSocket Disconnected!')
+      setIsConnected(false)
+    })
 
-      // ✨ BƯỚC 2: Thêm trình lắng nghe sự kiện từ server
-      newSocket.on('parking-lot-spots-updated', (data) => {
-        console.log('📬 Received spots update:', data)
-        setLastMessage({ event: 'parking-lot-spots-updated', payload: data })
-      })
-
-      newSocket.on('new-parking-lot-added', (data) => {
-        console.log('📬 Received new parking lot:', data)
-        setLastMessage({ event: 'new-parking-lot-added', payload: data })
-      })
-    }
-
+    // Quan trọng: Dọn dẹp (cleanup) khi component bị unmount
     return () => {
-      if (socketRef.current && socketRef.current.connected) {
-        console.log('Dọn dẹp và ngắt kết nối socket...')
-        socketRef.current.disconnect()
-        socketRef.current = null
-      }
+      newSocket.disconnect()
     }
-  }, [])
+  }, []) // Mảng rỗng [] đảm bảo useEffect này chỉ chạy 1 lần duy nhất
 
+  // 3. Dùng một useEffect khác để tham gia room sau khi đã kết nối thành công
   useEffect(() => {
-    if (isConnected && socketRef.current) {
-      const roomName = 'room_w3gvw8b'
-      socketRef.current.emit('join-room', { newRoom: roomName })
+    // Chỉ thực hiện khi đã kết nối và có socket instance
+    if (isConnected && socket) {
+      const roomName = 'room_w3gvw8b' // Tên room của bạn
+
+      // Gửi sự kiện 'join-room'
+      socket.emit('join-room', {
+        newRoom: roomName,
+      })
+
       console.log('Đã gửi yêu cầu tham gia room:', roomName)
     }
-  }, [isConnected])
+  }, [isConnected, socket]) // Chạy lại khi isConnected hoặc socket thay đổi
 
   return (
     <div style={{ padding: '100px' }}>
-      <p>
-        Trạng thái kết nối:{' '}
-        {isConnected ? (
-          <span style={{ color: 'green' }}>Đã kết nối</span>
-        ) : (
-          <span style={{ color: 'red' }}>Đang chờ...</span>
-        )}
-      </p>
-
-      {/* ✨ BƯỚC 3: Hiển thị dữ liệu nhận được */}
-      {lastMessage && (
-        <div
-          style={{
-            marginTop: '20px',
-            border: '1px solid #ccc',
-            padding: '10px',
-            background: '#f9f9f9',
-            borderRadius: '5px',
-          }}
-        >
-          <p>
-            <strong>Tin nhắn cuối cùng nhận được:</strong>
-          </p>
-          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
-            {JSON.stringify(lastMessage, null, 2)}
-          </pre>
-        </div>
-      )}
+      <p>Trạng thái kết nối: {isConnected ? 'Đã kết nối' : 'Đang chờ...'}</p>
+      {/* Giao diện của bạn */}
     </div>
   )
 }

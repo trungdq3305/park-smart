@@ -1,0 +1,153 @@
+.homepage-main {
+  display: flex;
+  align-items: center;
+  min-height: 80vh;
+  width: 100%;
+}
+
+/* Left content section */
+.homepage-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: 60px;
+}
+
+.homepage-text {
+  max-width: 600px;
+  text-align: center;
+}
+
+.homepage-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 30px 0;
+  line-height: 1.1;
+}
+
+.title-line-1 {
+  display: block;
+}
+
+.title-line-2 {
+  display: block;
+  margin-left: 20px;
+}
+
+.homepage-description {
+  font-size: 1.2rem;
+  color: #5a6c7d;
+  line-height: 1.6;
+  margin: 0 0 40px 0;
+  font-weight: 400;
+}
+
+.homepage-cta-button {
+  background: #19d24a;
+  color: white;
+  border: none;
+  padding: 16px 32px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.homepage-cta-button:hover {
+  background: #19d24a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}
+
+.homepage-disclaimer {
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  line-height: 1.4;
+  margin: 0;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Right image section */
+.homepage-image {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-right: 60px;
+}
+
+.city-illustration {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .homepage-main {
+    flex-direction: column;
+    gap: 40px;
+    padding: 20px;
+  }
+
+  .homepage-content {
+    padding-left: 20px;
+  }
+
+  .homepage-image {
+    padding-right: 20px;
+  }
+
+  .homepage-title {
+    font-size: 2.5rem;
+  }
+
+  .homepage-description {
+    font-size: 1.1rem;
+  }
+}
+
+/* Keyframe animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.homepage-text {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.homepage-image {
+  animation: fadeInScale 0.8s ease-out forwards;
+  animation-delay: 0.2s;
+}

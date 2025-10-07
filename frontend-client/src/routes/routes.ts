@@ -21,7 +21,7 @@ const routes: LayoutRoute[] = [
         path: '/map',
         component: RealMap,
         exact: true,
-      }
+      },
     ],
   },
 ]
