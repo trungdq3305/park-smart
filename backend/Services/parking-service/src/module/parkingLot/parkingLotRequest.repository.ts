@@ -113,7 +113,60 @@ export class ParkingLotRequestRepository
       .exec()
   }
 
-  async findAllRequests(): Promise<ParkingLotRequest[]> {
-    return await this.parkingLotRequestModel.find({}).lean().exec()
+  async findAllRequests(): Promise<any[]> {
+    // Thay đổi kiểu trả về nếu cần
+    const requests = await this.parkingLotRequestModel.aggregate([
+      // Stage 1: "Join" với collection 'addresses'
+      {
+        $lookup: {
+          from: 'addresses',
+          localField: 'payload.addressId',
+          foreignField: '_id',
+          as: 'addressInfo',
+        },
+      },
+
+      // Stage 2: Chuyển mảng kết quả join thành object
+      {
+        $unwind: {
+          path: '$addressInfo',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      // Stage 3: Định hình lại toàn bộ document (Project)
+      // Thay vì dùng $addFields và $project riêng, ta gộp vào một bước.
+      {
+        $project: {
+          // 1. Giữ lại các trường gốc bạn muốn có trong kết quả
+          _id: 1,
+          requestType: 1,
+          status: 1,
+          effectiveDate: 1,
+          createdAt: 1,
+          // Liệt kê thêm các trường khác ở cấp cao nhất nếu có...
+
+          // 2. Xây dựng lại trường 'payload'
+          payload: {
+            // Dùng $mergeObjects để gộp payload gốc với thông tin address mới
+            $mergeObjects: [
+              '$payload', // Giữ lại toàn bộ các trường của payload gốc
+              {
+                address: '$addressInfo', // Thêm trường 'address' mới từ kết quả lookup
+              },
+            ],
+          },
+        },
+      },
+
+      // Stage 4: Sắp xếp kết quả cuối cùng
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ])
+
+    return requests
   }
 }

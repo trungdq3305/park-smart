@@ -197,8 +197,8 @@ export class ParkingLotController {
   ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
     const data = await this.parkingLotService.createCreateRequest(
       createDto,
-      currentIdOfUserRole,
       userId,
+      currentIdOfUserRole,
     )
     return {
       data: [data],

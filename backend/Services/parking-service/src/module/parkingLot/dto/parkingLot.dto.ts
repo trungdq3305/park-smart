@@ -79,6 +79,9 @@ export class AddressDto {
   @Expose()
   @Transform(({ obj }) => obj.fullAddress) // Giả sử fullAddress đã đầy đủ
   fullAddress: string
+
+  @Expose()
+  wardId: any
 }
 export class CreateParkingLotDto {
   @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4567' })
