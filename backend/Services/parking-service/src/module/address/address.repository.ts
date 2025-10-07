@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import mongoose, { Model } from 'mongoose'
+import mongoose, { ClientSession, Model } from 'mongoose'
 
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto'
 import { IAddressRepository } from './interfaces/iaddress.repository'
@@ -87,7 +87,10 @@ export class AddressRepository implements IAddressRepository {
     return result.modifiedCount > 0
   }
 
-  async setAddressAsUsed(id: string): Promise<Address | null> {
+  async setAddressAsUsed(
+    id: string,
+    session: ClientSession,
+  ): Promise<Address | null> {
     return this.addressModel
       .findByIdAndUpdate(
         id,
@@ -96,7 +99,7 @@ export class AddressRepository implements IAddressRepository {
             isUsed: true,
           },
         },
-        { new: true },
+        { new: true, session: session },
       )
       .exec()
   }

@@ -1,9 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import mongoose, { HydratedDocument } from 'mongoose'
 
-export type ParkingLotStatusDocument = HydratedDocument<ParkingLotStatus>
+export type ParkingSpaceStatusDocument = HydratedDocument<ParkingSpaceStatus>
+
 @Schema()
-export class ParkingLotStatus {
+export class ParkingSpaceStatus {
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId(),
@@ -12,10 +13,7 @@ export class ParkingLotStatus {
 
   @Prop({ required: true, unique: true })
   status: string
-
-  @Prop({ required: true, type: Number })
-  order: number
 }
 
-export const ParkingLotStatusSchema =
-  SchemaFactory.createForClass(ParkingLotStatus)
+export const ParkingSpaceStatusSchema =
+  SchemaFactory.createForClass(ParkingSpaceStatus)
