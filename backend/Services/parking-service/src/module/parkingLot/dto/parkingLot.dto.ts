@@ -79,6 +79,9 @@ export class AddressDto {
   @Expose()
   @Transform(({ obj }) => obj.fullAddress) // Giả sử fullAddress đã đầy đủ
   fullAddress: string
+
+  @Expose()
+  wardId: any
 }
 export class CreateParkingLotDto {
   @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4567' })
@@ -215,6 +218,41 @@ export class ReviewRequestDto {
 // == DTOs for Responses (trả về cho client)
 // =================================================================
 
+export class PayloadWithAddressDto {
+  // --- CÁC TRƯỜNG BẠN VỪA YÊU CẦU ---
+  @Expose()
+  openTime: string
+
+  @Expose()
+  closeTime: string
+
+  @Expose()
+  is24Hours: boolean
+
+  @Expose()
+  maxVehicleHeight: number
+
+  @Expose()
+  maxVehicleWidth: number
+
+  @Expose()
+  totalCapacityEachLevel: number
+
+  @Expose()
+  totalLevel: number
+
+  @Expose()
+  electricCarPercentage: number
+
+  @Expose()
+  parkingLotOperatorId: string
+
+  // --- TRƯỜNG ADDRESS ĐÃ ĐƯỢC POPULATE ---
+  @Expose()
+  @Type(() => AddressDto) // Dùng AddressDto để transform object này
+  addressId: AddressDto
+}
+
 @Exclude()
 export class ParkingLotResponseDto {
   @Expose()
@@ -276,7 +314,8 @@ export class ParkingLotRequestResponseDto {
   status: string
 
   @Expose()
-  payload: Record<string, any>
+  @Type(() => PayloadWithAddressDto)
+  payload: PayloadWithAddressDto
 
   @Expose()
   effectiveDate: Date

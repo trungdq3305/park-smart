@@ -191,10 +191,7 @@ export class VehicleService implements IVehicleService {
       userId,
     )
 
-    await this.checkCondtionToCreateVehicle(
-      vehicle.colorId,
-      vehicle.brandId,
-    )
+    await this.checkCondtionToCreateVehicle(vehicle.colorId, vehicle.brandId)
 
     let message: string
     let success: boolean
