@@ -114,19 +114,27 @@ export class ParkingLotRequestRepository
   }
 
   async findAllRequests(): Promise<any[]> {
-    // Thay đổi kiểu trả về nếu cần
     const requests = await this.parkingLotRequestModel.aggregate([
+      // STAGE 0: Chuyển đổi addressId từ String sang ObjectId
+      // Thêm một trường tạm thời để chứa ObjectId đã được chuyển đổi
+      {
+        $addFields: {
+          convertedAddressId: { $toObjectId: '$payload.addressId' },
+        },
+      },
+
       // Stage 1: "Join" với collection 'addresses'
       {
         $lookup: {
           from: 'addresses',
-          localField: 'payload.addressId',
+          // <<< THAY ĐỔI: Sử dụng trường ObjectId đã được chuyển đổi
+          localField: 'convertedAddressId',
           foreignField: '_id',
           as: 'addressInfo',
         },
       },
 
-      // Stage 2: Chuyển mảng kết quả join thành object
+      // Stage 2: $unwind (Giữ nguyên)
       {
         $unwind: {
           path: '$addressInfo',
@@ -134,32 +142,46 @@ export class ParkingLotRequestRepository
         },
       },
 
-      // Stage 3: Định hình lại toàn bộ document (Project)
-      // Thay vì dùng $addFields và $project riêng, ta gộp vào một bước.
+      {
+        $lookup: {
+          from: 'wards',
+          localField: 'addressInfo.wardId',
+          foreignField: '_id',
+          as: 'wardInfo',
+        },
+      },
+
+      { $unwind: { path: '$wardInfo', preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          // Ghi đè trường 'wardId' bên trong 'addressInfo'
+          // bằng toàn bộ object 'wardInfo' đã được lookup
+          'addressInfo.wardId': { wardName: '$wardInfo.wardName' },
+        },
+      },
+      {
+        $unset: 'payload.addressId',
+      },
+      // Stage 3: $project (Giữ nguyên logic, nhưng có thể dọn dẹp trường tạm)
       {
         $project: {
-          // 1. Giữ lại các trường gốc bạn muốn có trong kết quả
           _id: 1,
           requestType: 1,
           status: 1,
           effectiveDate: 1,
           createdAt: 1,
-          // Liệt kê thêm các trường khác ở cấp cao nhất nếu có...
-
-          // 2. Xây dựng lại trường 'payload'
           payload: {
-            // Dùng $mergeObjects để gộp payload gốc với thông tin address mới
             $mergeObjects: [
-              '$payload', // Giữ lại toàn bộ các trường của payload gốc
+              '$payload',
               {
-                address: '$addressInfo', // Thêm trường 'address' mới từ kết quả lookup
+                addressId: '$addressInfo',
               },
             ],
           },
         },
       },
 
-      // Stage 4: Sắp xếp kết quả cuối cùng
+      // Stage 4: $sort (Giữ nguyên)
       {
         $sort: {
           createdAt: -1,
