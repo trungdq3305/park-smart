@@ -5,7 +5,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Exclude, Expose, Transform } from 'class-transformer'
 
 @Exclude()
-export class ParkingLotStatusResponseDto {
+export class ParkingSpaceStatusResponseDto {
   @Expose()
   @Transform(({ obj }) => obj._id.toString())
   _id: string

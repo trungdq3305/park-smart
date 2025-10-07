@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 
 export class ApiResponseDto<T> {
   @ApiProperty({ isArray: true })
-  data: T[]
+  data: T | T[]
 
   @ApiProperty({ example: true })
   success: boolean
