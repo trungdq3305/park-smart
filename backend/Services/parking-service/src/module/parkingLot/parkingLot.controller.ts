@@ -208,12 +208,15 @@ export class ParkingLotController {
     }
   }
 
-  @Post(':id/send-update-requests')
+  @Post(':parkingLotId/send-update-requests')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Gửi yêu cầu cập nhật thông tin bãi đỗ xe' })
-  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiParam({
+    name: 'parkingLotId',
+    description: 'ID của bãi đỗ xe',
+  })
   @ApiBody({ type: CreateParkingLotUpdateRequestDto })
   async requestUpdate(
     @Param() parkingLotId: ParkingLotIdDto,
@@ -235,21 +238,21 @@ export class ParkingLotController {
     }
   }
 
-  @Post(':id/send-delete-requests')
+  @Post(':parkingLotId/send-delete-requests')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Tạo yêu cầu xóa một bãi đỗ xe' })
-  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiParam({ name: 'parkingLotId', description: 'ID của bãi đỗ xe' })
   @ApiBody({ type: CreateParkingLotDeleteRequestDto })
   async sendRequestDeleteParkingLot(
-    @Param() id: ParkingLotIdDto,
+    @Param() parkingLotId: ParkingLotIdDto,
     @GetCurrentUserId() userId: string,
     @Body() deleteDto: CreateParkingLotDeleteRequestDto,
     @GetCurrenIdOfUserRole() operatorId: string,
   ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
     const result = await this.parkingLotService.createDeleteRequest(
-      id,
+      parkingLotId,
       deleteDto,
       userId,
       operatorId,
