@@ -213,7 +213,7 @@ export class ParkingLotController {
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN)
   @ApiOperation({ summary: 'Gửi yêu cầu cập nhật thông tin bãi đỗ xe' })
-  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiParam({ name: 'parkingLotId', description: 'ID của bãi đỗ xe' })
   @ApiBody({ type: CreateParkingLotUpdateRequestDto })
   async requestUpdate(
     @Param() parkingLotId: ParkingLotIdDto,
