@@ -383,10 +383,6 @@ export class ParkingLotRepository implements IParkingLotRepository {
           select: 'wardName',
         },
       })
-      .populate({
-        path: 'parkingLotStatusId',
-        select: 'status',
-      })
 
     return parkingLots
   }
