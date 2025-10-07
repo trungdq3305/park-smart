@@ -199,6 +199,15 @@ export class ParkingLotService implements IParkingLotService {
     session.startTransaction()
     let parkingLotRequest: ParkingLotRequest
 
+    const existingParkingLot =
+      await this.parkingLotRepository.findParkingLotById(
+        parkingLotId.parkingLotId,
+      )
+
+    if (!existingParkingLot) {
+      throw new NotFoundException('Bãi đỗ xe không tồn tại.')
+    }
+
     try {
       const { effectiveDate, ...payloadData } = updateRequestDto
       const payload = { ...payloadData, operatorId }
@@ -244,7 +253,17 @@ export class ParkingLotService implements IParkingLotService {
   ): Promise<ParkingLotRequestResponseDto> {
     const session = await this.connection.startSession()
     session.startTransaction()
+
     let parkingLotRequest: ParkingLotRequest
+
+    const existingParkingLot =
+      await this.parkingLotRepository.findParkingLotById(
+        parkingLotId.parkingLotId,
+      )
+
+    if (!existingParkingLot) {
+      throw new NotFoundException('Bãi đỗ xe không tồn tại.')
+    }
 
     try {
       const { effectiveDate } = deleteRequestDto
