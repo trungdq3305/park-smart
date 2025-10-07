@@ -149,7 +149,7 @@ export class ParkingLotService implements IParkingLotService {
 
     try {
       const { effectiveDate, ...payloadData } = createDto
-      const payload = { ...payloadData, operatorId }
+      const payload = { ...payloadData, parkingLotOperatorId: operatorId }
 
       const requestData: Partial<ParkingLotRequest> = {
         payload: payload,
@@ -356,8 +356,7 @@ export class ParkingLotService implements IParkingLotService {
         // =================================================================
         // == BẮT ĐẦU LOGIC XỬ LÝ THEO LOẠI YÊU CẦU
         // =================================================================
-
-        if (request.requestType === RequestType[RequestType.CREATE]) {
+        if ((request.requestType as RequestType) === RequestType.CREATE) {
           // --- XỬ LÝ CHO YÊU CẦU TẠO MỚI ---
           if (!request.payload) {
             throw new Error('Dữ liệu để tạo bãi đỗ xe không tồn tại')
@@ -370,6 +369,7 @@ export class ParkingLotService implements IParkingLotService {
             availableSpots:
               request.payload.totalCapacityEachLevel *
               request.payload.totalLevel,
+            parkingLotStatus: RequestStatus.APPROVED,
           }
 
           const newParkingLot =
@@ -650,5 +650,10 @@ export class ParkingLotService implements IParkingLotService {
       throw new NotFoundException('Không tìm thấy bãi đỗ xe nào')
     }
     return parkingLots.map((item) => this.returnParkingLotResponseDto(item))
+  }
+
+  async getAllRequest(): Promise<ParkingLotRequestResponseDto[]> {
+    const requests = await this.parkingLotRequestRepository.findAllRequests()
+    return requests.map((item) => this.returnParkingLotRequestResponseDto(item))
   }
 }

@@ -113,6 +113,8 @@ export interface IParkingLotService {
     parkingLotId: string,
     change: number,
   ): Promise<boolean>
+
+  getAllRequest(): Promise<ParkingLotRequestResponseDto[]>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

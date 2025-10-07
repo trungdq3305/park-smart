@@ -254,8 +254,7 @@ export class ParkingLotResponseDto {
   parkingLotOperatorId: string
 
   @Expose()
-  @Transform(({ obj }) => obj.parkingLotStatusId?.status ?? obj.status)
-  parkingLotStatusId: string
+  parkingLotStatus: string
 
   @Expose()
   electricCarPercentage: number

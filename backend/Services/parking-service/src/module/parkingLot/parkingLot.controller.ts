@@ -29,6 +29,7 @@ import {
   IdDto,
   ParkingLotIdDto,
   ParkingLotStatusIdDto,
+  RequestIdDto,
 } from 'src/common/dto/params.dto'
 import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
@@ -43,6 +44,7 @@ import {
   ParkingLotRequestResponseDto,
   ParkingLotResponseDto,
   RequestStatusDto,
+  ReviewRequestDto,
 } from './dto/parkingLot.dto'
 import { RequestStatus } from './enums/parkingLot.enum'
 import { IParkingLotService } from './interfaces/iparkingLot.service'
@@ -206,6 +208,60 @@ export class ParkingLotController {
     }
   }
 
+  @Post(':id/send-update-requests')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
+  @ApiOperation({ summary: 'Gửi yêu cầu cập nhật thông tin bãi đỗ xe' })
+  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiBody({ type: CreateParkingLotUpdateRequestDto })
+  async requestUpdate(
+    @Param() parkingLotId: ParkingLotIdDto,
+    @Body() updateDto: CreateParkingLotUpdateRequestDto,
+    @GetCurrentUserId() userId: string,
+    @GetCurrenIdOfUserRole() operatorId: string,
+  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
+    const historyLog = await this.parkingLotService.createUpdateRequest(
+      parkingLotId,
+      updateDto,
+      userId,
+      operatorId,
+    )
+    return {
+      data: [historyLog],
+      message: 'Gửi yêu cầu cập nhật thành công',
+      statusCode: HttpStatus.CREATED,
+      success: true,
+    }
+  }
+
+  @Post(':id/send-delete-requests')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
+  @ApiOperation({ summary: 'Tạo yêu cầu xóa một bãi đỗ xe' })
+  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiBody({ type: CreateParkingLotDeleteRequestDto })
+  async sendRequestDeleteParkingLot(
+    @Param() id: ParkingLotIdDto,
+    @GetCurrentUserId() userId: string,
+    @Body() deleteDto: CreateParkingLotDeleteRequestDto,
+    @GetCurrenIdOfUserRole() operatorId: string,
+  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
+    const result = await this.parkingLotService.createDeleteRequest(
+      id,
+      deleteDto,
+      userId,
+      operatorId,
+    )
+    return {
+      data: [result],
+      message: 'Gửi yêu cầu xóa bãi đỗ xe thành công',
+      statusCode: HttpStatus.CREATED,
+      success: true,
+    }
+  }
+
   @Get('find-for-operator')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -213,12 +269,29 @@ export class ParkingLotController {
   @ApiOperation({ summary: 'Lấy tất cả bãi đỗ xe của một đơn vị vận hành' })
   async findAllForOperator(
     @GetCurrenIdOfUserRole() operatorId: string,
-  ): Promise<ApiResponseDto<ParkingLotResponseDto>> {
+  ): Promise<ApiResponseDto<ParkingLotResponseDto[]>> {
     const parkingLots =
       await this.parkingLotService.findAllForOperator(operatorId)
     return {
       data: parkingLots,
       message: 'Lấy tất cả bãi đỗ xe thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
+  @Get('all-requests')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
+  @ApiOperation({ summary: 'Lấy tất cả yêu cầu bãi đỗ xe' })
+  async findAllRequests(): Promise<
+    ApiResponseDto<ParkingLotRequestResponseDto[]>
+  > {
+    const requests = await this.parkingLotService.getAllRequest()
+    return {
+      data: requests,
+      message: 'Lấy tất cả yêu cầu bãi đỗ xe thành công',
       statusCode: HttpStatus.OK,
       success: true,
     }
@@ -281,96 +354,7 @@ export class ParkingLotController {
     }
   }
 
-  @Post(':id/send-update-requests')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @Roles(RoleEnum.ADMIN)
-  @ApiOperation({ summary: 'Gửi yêu cầu cập nhật thông tin bãi đỗ xe' })
-  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
-  @ApiBody({ type: CreateParkingLotUpdateRequestDto })
-  async requestUpdate(
-    @Param() parkingLotId: ParkingLotIdDto,
-    @Body() updateDto: CreateParkingLotUpdateRequestDto,
-    @GetCurrentUserId() userId: string,
-    @GetCurrenIdOfUserRole() operatorId: string,
-  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
-    const historyLog = await this.parkingLotService.createUpdateRequest(
-      parkingLotId,
-      updateDto,
-      userId,
-      operatorId,
-    )
-    return {
-      data: [historyLog],
-      message: 'Gửi yêu cầu cập nhật thành công',
-      statusCode: HttpStatus.CREATED,
-      success: true,
-    }
-  }
-
-  @Post(':id/send-delete-requests')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
-  @ApiOperation({ summary: 'Tạo yêu cầu xóa một bãi đỗ xe' })
-  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
-  @ApiBody({ type: CreateParkingLotDeleteRequestDto })
-  async sendRequestDeleteParkingLot(
-    @Param() id: ParkingLotIdDto,
-    @GetCurrentUserId() userId: string,
-    @Body() deleteDto: CreateParkingLotDeleteRequestDto,
-    @GetCurrenIdOfUserRole() operatorId: string,
-  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
-    const result = await this.parkingLotService.createDeleteRequest(
-      id,
-      deleteDto,
-      userId,
-      operatorId,
-    )
-    return {
-      data: [result],
-      message: 'Gửi yêu cầu xóa bãi đỗ xe thành công',
-      statusCode: HttpStatus.CREATED,
-      success: true,
-    }
-  }
-
-  // @Patch(':id/approve-update-requests')
-  // @UseGuards(JwtAuthGuard)
-  // @ApiBearerAuth()
-  // @Roles(RoleEnum.ADMIN)
-  // @ApiOperation({ summary: 'Duyệt hoặc từ chối yêu cầu cập nhật bãi đỗ xe' })
-  // @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
-  // @ApiBody({ type: ParkingLotStatusIdDto })
-  // async approveUpdate(
-  //   @Param() parkingLotId: ParkingLotIdDto,
-  //   @Body('parkingLotStatusId') parkingLotStatusId: ParkingLotStatusIdDto,
-  //   @GetCurrentUserId() userId: string,
-  // ): Promise<ApiResponseDto<boolean>> {
-  //   const updatedParkingLot =
-  //     await this.parkingLotService.approveParkingLotUpdate(
-  //       parkingLotId,
-  //       parkingLotStatusId,
-  //       userId,
-  //     )
-  //   return {
-  //     data: [updatedParkingLot.data],
-  //     message: updatedParkingLot.message,
-  //     statusCode: updatedParkingLot.responseCode,
-  //     success: true,
-  //   }
-  // }
-
-  // @Patch(':id/approve-delete-requests')
-  // @UseGuards(JwtAuthGuard)
-  // @ApiBearerAuth()
-  // @Roles(RoleEnum.ADMIN)
-  // @ApiOperation({ summary: 'Duyệt hoặc từ chối yêu cầu xóa bãi đỗ xe' })
-  // @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
-  // @ApiBody({ type: ParkingLotStatusIdDto })
-  // approveDelete(): Promise<void> {
-  //   throw new Error('Method not implemented.')
-  // }
+  // Removed duplicate findAllForOperator method for 'operator/my-lots' route
 
   @Get(':id/history')
   @UseGuards(JwtAuthGuard)
@@ -422,6 +406,92 @@ export class ParkingLotController {
     return {
       data: [result],
       message: 'Cập nhật trạng thái thực tế thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
+  @Patch('requests/:requestId/review')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
+  @ApiOperation({ summary: '[Admin] Duyệt/Từ chối một yêu cầu bất kỳ' })
+  @ApiParam({ name: 'requestId', description: 'ID của yêu cầu (Request)' })
+  @ApiBody({ type: ReviewRequestDto })
+  async reviewRequest(
+    @Param() { requestId: requestId }: RequestIdDto,
+    @Body() reviewDto: ReviewRequestDto,
+    @GetCurrentUserId() adminId: string,
+  ): Promise<ApiResponseDto<boolean>> {
+    const result = await this.parkingLotService.reviewRequest(
+      { id: requestId },
+      reviewDto,
+      adminId,
+    )
+    return {
+      data: result.data,
+      message: result.message,
+      statusCode: result.responseCode,
+      success: true,
+    }
+  }
+
+  @Get(':parkingLotId/requests')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR) // Cả Admin và Operator liên quan đều có thể xem
+  @ApiOperation({
+    summary: '[Admin/Operator] Lấy danh sách các YÊU CẦU của một bãi xe',
+  })
+  @ApiParam({ name: 'parkingLotId', description: 'ID của bãi đỗ xe' })
+  async getRequestsForParkingLot(
+    @Param() parkingLotId: ParkingLotIdDto,
+  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto[]>> {
+    const requests =
+      await this.parkingLotService.getRequestsForParkingLot(parkingLotId)
+    return {
+      data: requests,
+      message: 'Lấy danh sách yêu cầu thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
+  @Get(':parkingLotId/history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
+  @ApiOperation({
+    summary: '[Admin/Operator] Lấy LỊCH SỬ THAY ĐỔI đã áp dụng của bãi xe',
+  })
+  @ApiParam({ name: 'parkingLotId', description: 'ID của bãi đỗ xe' })
+  async getHistoryForParkingLot(
+    @Param() parkingLotId: ParkingLotIdDto,
+  ): Promise<ApiResponseDto<ParkingLotHistoryLogResponseDto[]>> {
+    const history =
+      await this.parkingLotService.getHistoryForParkingLot(parkingLotId)
+    return {
+      data: history,
+      message: 'Lấy lịch sử thay đổi thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
+  @Post('trigger-process-approved-requests')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
+  @ApiOperation({
+    summary: 'Kích hoạt xử lý các yêu cầu đã duyệt và đến hạn (CRON Job)',
+  })
+  async triggerProcessApprovedRequests(): Promise<
+    ApiResponseDto<{ processed: number; failed: number }>
+  > {
+    const result = await this.parkingLotService.processApprovedRequests()
+    return {
+      data: [result],
+      message: 'Xử lý yêu cầu đã duyệt và đến hạn thành công',
       statusCode: HttpStatus.OK,
       success: true,
     }

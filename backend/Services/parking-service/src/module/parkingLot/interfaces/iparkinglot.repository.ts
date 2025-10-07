@@ -5,7 +5,7 @@ import type { ParkingLot } from '../schemas/parkingLot.schema'
 export interface IParkingLotRepository {
   createParkingLot(
     parkingLotData: Partial<ParkingLot>,
-    session?: ClientSession,
+    session: ClientSession,
   ): Promise<ParkingLot | null>
 
   findParkingLotById(id: string): Promise<ParkingLot | null>

@@ -31,6 +31,8 @@ export interface IParkingLotRequestRepository {
   findApprovedAndDueRequests(): Promise<ParkingLotRequest[]>
 
   findByParkingLotId(parkingLotId: string): Promise<ParkingLotRequest[]>
+
+  findAllRequests(): Promise<ParkingLotRequest[]>
 }
 
 export const IParkingLotRequestRepository = Symbol(

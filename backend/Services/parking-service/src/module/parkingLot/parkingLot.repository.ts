@@ -49,23 +49,22 @@ export class ParkingLotRepository implements IParkingLotRepository {
 
   async createParkingLot(
     parkingLotData: Partial<ParkingLot>,
-    session?: ClientSession,
+    session: ClientSession,
   ): Promise<ParkingLot | null> {
-    const newParkingLot = new this.parkingLotModel(parkingLotData)
-    await newParkingLot.save({ session })
-    return this.parkingLotModel
-      .findById(newParkingLot._id)
+    const newParkingLotDoc = new this.parkingLotModel(parkingLotData)
+    await newParkingLotDoc.save({ session })
+    const data = await this.parkingLotModel
+      .findById(newParkingLotDoc._id)
       .populate({
         path: 'addressId',
         populate: {
           path: 'wardId',
         },
       })
-      .populate({
-        path: 'parkingLotStatusId',
-      })
       .lean() // lean() sẽ chuyển đổi ObjectId thành string
+      .session(session)
       .exec()
+    return data
   }
 
   findParkingLotById(id: string): Promise<ParkingLot | null> {
@@ -180,7 +179,6 @@ export class ParkingLotRepository implements IParkingLotRepository {
   ): Promise<{ data: ParkingLot[]; total: number }> {
     const skipAmount = (page - 1) * pageSize
     const radiusInRadians = maxDistanceInKm / 6378.1
-
     const results = await this.parkingLotModel.aggregate([
       // Các stage $lookup, $unwind, $match, $sort vẫn giữ nguyên
       {
@@ -218,15 +216,6 @@ export class ParkingLotRepository implements IParkingLotRepository {
             // Các bước populate
             {
               $lookup: {
-                from: 'parkinglotstatuses',
-                localField: 'parkingLotStatusId',
-                foreignField: '_id',
-                as: 'parkingLotStatusId',
-              },
-            },
-            { $unwind: '$parkingLotStatusId' },
-            {
-              $lookup: {
                 from: 'wards',
                 localField: 'address.wardId',
                 foreignField: '_id',
@@ -248,7 +237,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
                 totalLevel: 1,
                 availableSpots: 1,
                 parkingLotOperatorId: 1,
-                parkingLotStatusId: '$parkingLotStatusId',
+                parkingLotStatus: 1,
                 addressId: {
                   _id: '$address._id',
                   fullAddress: '$address.fullAddress',
@@ -322,20 +311,6 @@ export class ParkingLotRepository implements IParkingLotRepository {
             // Lookup các thông tin cần thiết
             {
               $lookup: {
-                from: 'parkinglotstatuses',
-                localField: 'parkingLotStatusId',
-                foreignField: '_id',
-                as: 'parkingLotStatusId',
-              },
-            },
-            {
-              $unwind: {
-                path: '$parkingLotStatusId',
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $lookup: {
                 from: 'wards',
                 localField: 'address.wardId',
                 foreignField: '_id',
@@ -364,7 +339,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
                 availableSpots: 1,
                 parkingLotOperatorId: 1,
                 // Trả về cả object status để DTO có thể lấy `status`
-                parkingLotStatusId: '$parkingLotStatusId',
+                parkingLotStatus: 1,
 
                 // Tái cấu trúc lại field `addressId` thành một object mới
                 // khớp với cấu trúc của AddressDto

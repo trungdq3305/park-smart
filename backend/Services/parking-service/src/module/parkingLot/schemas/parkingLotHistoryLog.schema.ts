@@ -69,13 +69,6 @@ export class ParkingLotHistoryLog extends BaseEntity {
   // Giữ lại effectiveDate để biết thay đổi này có hiệu lực từ khi nào
   @Prop({ required: true, type: Date })
   effectiveDate: Date
-
-  @Prop({
-    required: true,
-    type: MongooseSchema.Types.ObjectId,
-    ref: 'ParkingLotRequest',
-  })
-  parkingLotRequestId: string
 }
 
 export const ParkingLotHistoryLogSchema =

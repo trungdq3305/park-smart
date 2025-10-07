@@ -112,4 +112,8 @@ export class ParkingLotRequestRepository
       .lean()
       .exec()
   }
+
+  async findAllRequests(): Promise<ParkingLotRequest[]> {
+    return await this.parkingLotRequestModel.find({}).lean().exec()
+  }
 }
