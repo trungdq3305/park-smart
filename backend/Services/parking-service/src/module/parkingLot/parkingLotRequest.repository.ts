@@ -113,7 +113,82 @@ export class ParkingLotRequestRepository
       .exec()
   }
 
-  async findAllRequests(): Promise<ParkingLotRequest[]> {
-    return await this.parkingLotRequestModel.find({}).lean().exec()
+  async findAllRequests(): Promise<any[]> {
+    const requests = await this.parkingLotRequestModel.aggregate([
+      // STAGE 0: Chuyển đổi addressId từ String sang ObjectId
+      // Thêm một trường tạm thời để chứa ObjectId đã được chuyển đổi
+      {
+        $addFields: {
+          convertedAddressId: { $toObjectId: '$payload.addressId' },
+        },
+      },
+
+      // Stage 1: "Join" với collection 'addresses'
+      {
+        $lookup: {
+          from: 'addresses',
+          // <<< THAY ĐỔI: Sử dụng trường ObjectId đã được chuyển đổi
+          localField: 'convertedAddressId',
+          foreignField: '_id',
+          as: 'addressInfo',
+        },
+      },
+
+      // Stage 2: $unwind (Giữ nguyên)
+      {
+        $unwind: {
+          path: '$addressInfo',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+
+      {
+        $lookup: {
+          from: 'wards',
+          localField: 'addressInfo.wardId',
+          foreignField: '_id',
+          as: 'wardInfo',
+        },
+      },
+
+      { $unwind: { path: '$wardInfo', preserveNullAndEmptyArrays: true } },
+      {
+        $addFields: {
+          // Ghi đè trường 'wardId' bên trong 'addressInfo'
+          // bằng toàn bộ object 'wardInfo' đã được lookup
+          'addressInfo.wardId': { wardName: '$wardInfo.wardName' },
+        },
+      },
+      {
+        $unset: 'payload.addressId',
+      },
+      // Stage 3: $project (Giữ nguyên logic, nhưng có thể dọn dẹp trường tạm)
+      {
+        $project: {
+          _id: 1,
+          requestType: 1,
+          status: 1,
+          effectiveDate: 1,
+          createdAt: 1,
+          payload: {
+            $mergeObjects: [
+              '$payload',
+              {
+                addressId: '$addressInfo',
+              },
+            ],
+          },
+        },
+      },
+
+      // Stage 4: $sort (Giữ nguyên)
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+    ])
+
+    return requests
   }
 }

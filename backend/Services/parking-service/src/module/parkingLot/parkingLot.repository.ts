@@ -380,9 +380,11 @@ export class ParkingLotRepository implements IParkingLotRepository {
         select: 'fullAddress wardId latitude longitude',
         populate: {
           path: 'wardId',
-          select: 'wardName',
+          select: 'wardName -_id',
         },
       })
+      .lean() // <--- THÊM DÒNG NÀY ĐỂ CHUYỂN ĐỔI KẾT QUẢ
+      .exec() // .exec() là tùy chọn nhưng là good practice khi dùng với lean
 
     return parkingLots
   }
