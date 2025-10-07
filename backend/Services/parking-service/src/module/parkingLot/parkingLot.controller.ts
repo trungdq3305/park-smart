@@ -208,10 +208,10 @@ export class ParkingLotController {
     }
   }
 
-  @Post(':parkingLotId/send-update-requests')
+  @Post('send-update-requests/:parkingLotId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Roles(RoleEnum.ADMIN)
+  @Roles(RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Gửi yêu cầu cập nhật thông tin bãi đỗ xe' })
   @ApiParam({
     name: 'parkingLotId',
@@ -238,10 +238,10 @@ export class ParkingLotController {
     }
   }
 
-  @Post(':parkingLotId/send-delete-requests')
+  @Post('send-delete-requests/:parkingLotId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
+  @Roles(RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Tạo yêu cầu xóa một bãi đỗ xe' })
   @ApiParam({ name: 'parkingLotId', description: 'ID của bãi đỗ xe' })
   @ApiBody({ type: CreateParkingLotDeleteRequestDto })
