@@ -40,7 +40,7 @@ const Map = () => {
   useEffect(() => {
     // Chỉ thực hiện khi đã kết nối và có socket instance
     if (isConnected && socket) {
-      const roomName = 'room_w3gvw8b' // Tên room của bạn
+      const roomName = 'room_123456' // Tên room của bạn
 
       // Gửi sự kiện 'join-room'
       socket.emit('join-room', {
