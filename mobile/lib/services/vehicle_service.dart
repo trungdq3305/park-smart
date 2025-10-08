@@ -289,14 +289,31 @@ class VehicleService {
     );
 
     print('Get all deleted vehicles response status: ${response.statusCode}');
-    print('Get all deleted vehicles response body: ${response.body}');
+    if (response.statusCode == 404) {
+      try {
+        final Map<String, dynamic> bodyJson = jsonDecode(response.body);
+        final String? message = bodyJson['message'] as String?;
+        if (message != null && message.isNotEmpty) {
+          print(message);
+        }
+      } catch (_) {
+        // If body isn't JSON or doesn't contain message, skip printing body
+      }
+    }
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
+    } else if (response.statusCode == 404) {
+      try {
+        final Map<String, dynamic> bodyJson = jsonDecode(response.body);
+        final String message =
+            (bodyJson['message'] as String?) ?? 'Không tìm thấy xe đã xóa nào';
+        throw Exception(message);
+      } catch (_) {
+        throw Exception('Không tìm thấy xe đã xóa nào');
+      }
     } else {
-      throw Exception(
-        'Failed to get deleted vehicles: ${response.statusCode} - ${response.body}',
-      );
+      throw Exception('Failed to get deleted vehicles: ${response.statusCode}');
     }
   }
 }

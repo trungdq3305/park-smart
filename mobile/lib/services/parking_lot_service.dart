@@ -357,4 +357,52 @@ class ParkingLotService {
       rethrow;
     }
   }
+
+  /// Cập nhật trạng thái thực tế của bãi đỗ xe (tăng/giảm availableSpots)
+  /// POST /parking/parking-lots/:id/check-real-time-status { change }
+  static Future<Map<String, dynamic>> checkRealTimeStatus({
+    required String parkingLotId,
+    required int change,
+  }) async {
+    try {
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/parking-lots/$parkingLotId/check-real-time-status',
+      );
+
+      final body = jsonEncode({'change': change});
+
+      print('⚡ Check realtime status:');
+      print('  URL: $uri');
+      print('  Body: $body');
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: body,
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        final errorBody = response.body;
+        throw Exception(
+          'Failed to check realtime status: ${response.statusCode} - $errorBody',
+        );
+      }
+    } catch (e) {
+      print('❌ Exception in checkRealTimeStatus: $e');
+      rethrow;
+    }
+  }
 }

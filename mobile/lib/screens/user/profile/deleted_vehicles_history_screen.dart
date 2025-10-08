@@ -18,6 +18,7 @@ class _DeletedVehiclesHistoryScreenState
   List<Map<String, dynamic>> deletedVehicles = [];
   bool isLoading = true;
   String? errorMessage;
+  String? emptyMessage;
 
   // Animation controllers
   late AnimationController _fadeController;
@@ -71,6 +72,7 @@ class _DeletedVehiclesHistoryScreenState
     setState(() {
       isLoading = true;
       errorMessage = null;
+      emptyMessage = null;
     });
 
     try {
@@ -82,10 +84,20 @@ class _DeletedVehiclesHistoryScreenState
         isLoading = false;
       });
     } catch (e) {
-      setState(() {
-        errorMessage = e.toString();
-        isLoading = false;
-      });
+      // If service threw the 404 message, treat as empty state with that message
+      final String msg = e.toString();
+      if (msg.contains('Không tìm thấy xe đã xóa nào')) {
+        setState(() {
+          deletedVehicles = [];
+          emptyMessage = 'Không tìm thấy xe đã xóa nào';
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = msg;
+          isLoading = false;
+        });
+      }
     }
   }
 
@@ -156,7 +168,7 @@ class _DeletedVehiclesHistoryScreenState
     }
 
     if (deletedVehicles.isEmpty) {
-      return const DeletedVehiclesEmptyState();
+      return DeletedVehiclesEmptyState(message: emptyMessage);
     }
 
     return RefreshIndicator(

@@ -580,6 +580,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -1634,94 +1635,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                 ),
               ),
             ),
-
-          // // Fallback UI when no route is available
-          // if (!_hasRoute && _isLoading == false && _currentPosition != null)
-          //   Positioned(
-          //     bottom: 0,
-          //     left: 0,
-          //     right: 0,
-          //     child: Container(
-          //       margin: const EdgeInsets.all(16),
-          //       padding: const EdgeInsets.all(16),
-          //       decoration: BoxDecoration(
-          //         color: Colors.white,
-          //         borderRadius: BorderRadius.circular(12),
-          //         boxShadow: [
-          //           BoxShadow(
-          //             color: Colors.black.withOpacity(0.1),
-          //             blurRadius: 8,
-          //             offset: const Offset(0, 2),
-          //           ),
-          //         ],
-          //       ),
-          //       child: Column(
-          //         mainAxisSize: MainAxisSize.min,
-          //         children: [
-          //           Icon(Icons.route, color: Colors.orange, size: 32),
-          //           const SizedBox(height: 8),
-          //           Text(
-          //             'Không thể tạo tuyến đường',
-          //             style: const TextStyle(
-          //               fontSize: 16,
-          //               fontWeight: FontWeight.w600,
-          //               color: Colors.orange,
-          //             ),
-          //           ),
-          //           const SizedBox(height: 4),
-          //           Text(
-          //             'Vui lòng thử lại hoặc chọn bãi đỗ xe khác',
-          //             style: TextStyle(
-          //               fontSize: 14,
-          //               color: Colors.grey.shade600,
-          //             ),
-          //           ),
-          //           const SizedBox(height: 12),
-          //           Row(
-          //             children: [
-          //               Expanded(
-          //                 child: OutlinedButton(
-          //                   onPressed: () {
-          //                     setState(() {
-          //                       _hasRoute = false;
-          //                       _routePolylines = [];
-          //                       _routePoints = [];
-          //                       _routeInstructions = [];
-          //                       _estimatedTime = null;
-          //                       _estimatedDistance = null;
-          //                       _destination = null;
-          //                       _destinationName = null;
-          //                     });
-          //                   },
-          //                   child: const Text('Đóng'),
-          //                 ),
-          //               ),
-          //               const SizedBox(width: 12),
-          //               Expanded(
-          //                 child: ElevatedButton(
-          //                   onPressed: () {
-          //                     // Retry navigation
-          //                     if (_destination != null) {
-          //                       _loadRouteToDestination(
-          //                         _destination!.latitude,
-          //                         _destination!.longitude,
-          //                         _destinationName ?? 'Đích đến',
-          //                       );
-          //                     }
-          //                   },
-          //                   style: ElevatedButton.styleFrom(
-          //                     backgroundColor: Colors.blue,
-          //                     foregroundColor: Colors.white,
-          //                   ),
-          //                   child: const Text('Thử lại'),
-          //                 ),
-          //               ),
-          //             ],
-          //           ),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
 
           // Navigation UI overlay
           if (_showNavigationUI && _isNavigationActive)
