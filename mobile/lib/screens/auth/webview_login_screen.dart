@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class WebViewLoginScreen extends StatefulWidget {
   final String url;
@@ -19,6 +20,7 @@ class WebViewLoginScreen extends StatefulWidget {
 class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
+  static const _storage = FlutterSecureStorage();
 
   @override
   void initState() {
@@ -51,11 +53,9 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
             _checkForJsonResponse();
           },
           onWebResourceError: (WebResourceError error) {
-            print('WebView error: ${error.description}');
+            // Handle WebView error
           },
           onNavigationRequest: (NavigationRequest request) {
-            print('Navigation to: ${request.url}');
-
             // Kiểm tra URL callback để lấy token
             if (request.url.contains('park-smart://login-success')) {
               // Extract token từ URL
@@ -63,7 +63,6 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
               final token = uri.queryParameters['token'];
 
               if (token != null) {
-                print('Token received: $token');
                 widget.onSuccess(token);
                 Navigator.of(context).pop(true);
                 return NavigationDecision.prevent;
@@ -73,8 +72,40 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
             return NavigationDecision.navigate;
           },
         ),
-      )
-      ..loadRequest(Uri.parse(widget.url));
+      );
+
+    // Clear session và load URL với tham số force account selection
+    _loadLoginUrl();
+  }
+
+  Future<void> _loadLoginUrl() async {
+    try {
+      // Kiểm tra xem có cần clear session không
+      final shouldClearSession = await _storage.read(
+        key: 'clearWebViewSession',
+      );
+
+      if (shouldClearSession == 'true') {
+        // Clear cookies và session trước khi load
+        await _controller.clearCache();
+        await _controller.clearLocalStorage();
+
+        // Xóa flag sau khi đã clear
+        await _storage.delete(key: 'clearWebViewSession');
+      }
+
+      // Thêm tham số để force account selection
+      String loginUrl = widget.url;
+      if (loginUrl.contains('?')) {
+        loginUrl += '&prompt=select_account';
+      } else {
+        loginUrl += '?prompt=select_account';
+      }
+
+      await _controller.loadRequest(Uri.parse(loginUrl));
+    } catch (e) {
+      // Handle error loading login URL
+    }
   }
 
   Future<void> _checkForJsonResponse() async {
@@ -85,29 +116,48 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
       );
       final content = html.toString();
 
-      print('Page content: $content');
-
       // Kiểm tra nếu chứa JSON response với message "Đăng nhập thành công"
       if (content.contains('Đăng nhập thành công') &&
           content.contains('data')) {
-        print('Detected successful login JSON response');
+        // Xử lý content để loại bỏ escape characters
+        String cleanContent = content;
 
-        // Extract token từ JSON content (không remove quotes)
-        final tokenMatch = RegExp(r'"data":"([^"]+)"').firstMatch(content);
-        if (tokenMatch != null) {
-          final token = tokenMatch.group(1);
-          print('Extracted token: $token');
+        // Nếu content bắt đầu và kết thúc bằng dấu ngoặc kép, loại bỏ chúng
+        if (cleanContent.startsWith('"') && cleanContent.endsWith('"')) {
+          cleanContent = cleanContent.substring(1, cleanContent.length - 1);
+        }
 
-          if (token != null) {
+        // Thay thế các escape characters
+        cleanContent = cleanContent.replaceAll('\\"', '"');
+        cleanContent = cleanContent.replaceAll('\\n', '\n');
+        cleanContent = cleanContent.replaceAll('\\t', '\t');
+        cleanContent = cleanContent.replaceAll('\\\\', '\\');
+
+        try {
+          // Parse JSON để lấy token
+          final Map<String, dynamic> jsonData = json.decode(cleanContent);
+          final token = jsonData['data'] as String?;
+
+          if (token != null && token.isNotEmpty) {
             widget.onSuccess(token);
             Navigator.of(context).pop(true);
           }
-        } else {
-          print('Failed to extract token from content');
+        } catch (jsonError) {
+          // Fallback: thử extract token bằng regex nếu JSON parsing thất bại
+          final tokenMatch = RegExp(
+            r'"data":"([^"]+)"',
+          ).firstMatch(cleanContent);
+          if (tokenMatch != null) {
+            final token = tokenMatch.group(1);
+            if (token != null) {
+              widget.onSuccess(token);
+              Navigator.of(context).pop(true);
+            }
+          }
         }
       }
     } catch (e) {
-      print('Error checking JSON response: $e');
+      // Handle error checking JSON response
     }
   }
 
@@ -123,17 +173,17 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
           onPressed: () => Navigator.of(context).pop(false),
         ),
       ),
-      body: Stack(
-        children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-              ),
-            ),
-        ],
-      ),
+      // body: Stack(
+      //   children: [
+      //     WebViewWidget(controller: _controller),
+      //     if (_isLoading)
+      //       const Center(
+      //         child: CircularProgressIndicator(
+      //           valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+      //         ),
+      //       ),
+      //   ],
+      // ),
     );
   }
 }
