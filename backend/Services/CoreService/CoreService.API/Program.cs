@@ -59,6 +59,15 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Allow5173", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // Ch? cho phép URL này
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 builder.Services.AddScoped<JwtTokenHelper>();
 // Authentication + JWT
 builder.Services.Configure<AppSecurityOptions>(
@@ -201,6 +210,7 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwaggerUI();
 }
 //app.UseHttpsRedirection();
+app.UseCors("Allow5173");
 app.UseCors("AllowAll");
 app.UseMiddleware<ExceptionMiddleware>();
 
