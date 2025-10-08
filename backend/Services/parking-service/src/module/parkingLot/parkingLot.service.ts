@@ -11,13 +11,11 @@ import { InjectConnection } from '@nestjs/mongoose' // Import InjectConnection
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import { ClientSession, Connection } from 'mongoose' // Import Connection
-import * as geohash from 'ngeohash'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto, ParkingLotIdDto } from 'src/common/dto/params.dto'
 
 import { IAddressRepository } from '../address/interfaces/iaddress.repository'
-import { Address } from '../address/schemas/address.schema'
 import {
   IParkingSpaceRepository,
   ParkingSpaceCreationAttributes,
@@ -78,7 +76,7 @@ export class ParkingLotService implements IParkingLotService {
     })
   }
 
-  private determineRoomForParkingLot(address: Address): string {
+  private determineRoomForParkingLot(): string {
     return `room_${String(123456)}`
   }
 
@@ -640,7 +638,7 @@ export class ParkingLotService implements IParkingLotService {
     }
 
     // 3. Xác định roomName từ tọa độ của Address
-    const roomName = this.determineRoomForParkingLot(address)
+    const roomName = this.determineRoomForParkingLot()
 
     // 4. Chuẩn bị payload nhỏ gọn để gửi đi
     const payload: ParkingLotSpotsUpdateDto = {
