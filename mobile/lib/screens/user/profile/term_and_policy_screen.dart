@@ -280,7 +280,11 @@ class _TermPolicyDetailScreenState extends State<_TermPolicyDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: AppBar(
+        title: Text(widget.title),
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+      ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _error != null
