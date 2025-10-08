@@ -9,7 +9,7 @@ const Login: React.FC = () => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
 
-    const onFinish = async (values: any) => {
+    const onFinish = async (values: {email: string, password: string}) => {
         setLoading(true);
         try {
             // Handle login logic here
