@@ -26,6 +26,10 @@ namespace CoreService.Repository
             services.AddScoped<IOperatorPaymentAccountRepo, OperatorPaymentAccountRepo>();
             services.AddScoped<IPaymentRecordRepo, PaymentRecordRepo>();
             services.AddScoped<IRefundRecordRepo, RefundRecordRepo>();
+            services.AddScoped<IImageRepository, ImageRepository>();
+            services.AddScoped<IPromotionRepository, PromotionRepository>();
+            services.AddScoped<IPromotionRuleRepository, PromotionRuleRepository>();
+            services.AddScoped<IEventRepository, EventRepository>();
             return services;
         }
     }

@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
+import { ScheduleModule } from '@nestjs/schedule'
 
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
@@ -12,9 +13,9 @@ import { AddressModule } from './module/address/address.module'
 import { BrandModule } from './module/brand/brand.module'
 import { ColorModule } from './module/color/color.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
-import { ParkingLotStatusModule } from './module/parkingLotStatus/parkingLotStatus.module'
+import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
+import { ParkingSpaceStatusModule } from './module/parkingSpaceStatus/parkingSpaceStatus.module'
 import { VehicleModule } from './module/vehicle/vehicle.module'
-import { VehicleTypeModule } from './module/vehicleType/vehicleType.module'
 import { WardModule } from './module/ward/ward.module'
 import { JwtStrategy } from './strategy/jwt.strategy'
 @Module({
@@ -22,6 +23,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     ConfigModule.forRoot({
       isGlobal: true, // Rất quan trọng!
     }),
+    ScheduleModule.forRoot(),
     CacheModule.register({
       isGlobal: true, // <-- Quan trọng nhất: Đặt module này ở chế độ toàn cục
       ttl: 300 * 1000, // 5 phút
@@ -41,11 +43,11 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     WardModule,
     AddressModule,
     BrandModule,
-    VehicleTypeModule,
     ColorModule,
     VehicleModule,
-    ParkingLotStatusModule,
     ParkingLotModule,
+    ParkingSpaceModule,
+    ParkingSpaceStatusModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],

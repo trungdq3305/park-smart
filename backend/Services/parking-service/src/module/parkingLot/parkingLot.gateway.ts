@@ -9,7 +9,7 @@ import {
 import { Server, Socket } from 'socket.io'
 
 import {
-  ParkingLotMinimalResponseDto,
+  ParkingLotResponseDto,
   ParkingLotSpotsUpdateDto,
 } from './dto/parkingLot.dto'
 
@@ -61,14 +61,14 @@ export class ParkingLotGateway
    * Gửi cập nhật số chỗ trống đến một khu vực cụ thể.
    */
   sendSpotsUpdate(roomName: string, payload: ParkingLotSpotsUpdateDto) {
-    console.log(roomName)
+    console.log(payload)
     this.server.to(roomName).emit('parking-lot-spots-updated', payload)
   }
 
   /**
    * Gửi thông tin về một bãi đỗ xe mới được thêm vào một khu vực.
    */
-  sendNewParkingLot(roomName: string, payload: ParkingLotMinimalResponseDto) {
+  sendNewParkingLot(roomName: string, payload: ParkingLotResponseDto) {
     this.server.to(roomName).emit('new-parking-lot-added', payload)
   }
 }

@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Dotnet.Shared.Helpers;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -12,8 +13,9 @@ namespace CoreService.Repository.Models
     {
         [BsonId, BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
-
+        [BsonRepresentation(BsonType.ObjectId)]
         public string ReservationId { get; set; }  // R123
+        [BsonRepresentation(BsonType.ObjectId)]
         public string OperatorId { get; set; }
         public string XenditInvoiceId { get; set; }
         public string ExternalId { get; set; }     // “RES-{ReservationId}-{ts}”
@@ -22,7 +24,8 @@ namespace CoreService.Repository.Models
         public string Status { get; set; }         // PENDING/PAID/EXPIRED/FAILED/REFUNDED
         public string XenditUserId { get; set; }   // for-user-id
         public string CheckoutUrl { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+        public DateTime UpdatedAt { get; set; } 
         public DateTime? PaidAt { get; set; }
         public DateTime? RefundedAt { get; set; }
     }

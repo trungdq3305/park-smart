@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose'
-import { Model, Types } from 'mongoose'
+import { ClientSession, Model, Types } from 'mongoose'
 
 import { IParkingLotHistoryLogRepository } from './interfaces/iparkingLotHistoryLog.repository'
 import { ParkingLotHistoryLog } from './schemas/parkingLotHistoryLog.schema'
@@ -12,6 +12,14 @@ export class ParkingLotHistoryLogRepository
     private parkingLotHistoryLogModel: Model<ParkingLotHistoryLog>,
   ) {}
 
+  create(
+    logData: Partial<ParkingLotHistoryLog>,
+    session: ClientSession,
+  ): Promise<ParkingLotHistoryLog> {
+    const newLog = new this.parkingLotHistoryLogModel(logData)
+    return newLog.save({ session })
+  }
+
   async updateParkingLot(
     parkingLotHistory: Partial<ParkingLotHistoryLog>,
   ): Promise<ParkingLotHistoryLog> {
@@ -23,7 +31,7 @@ export class ParkingLotHistoryLogRepository
 
   async findByParkingLotId(
     parkingLotId: string,
-  ): Promise<ParkingLotHistoryLog[] | null> {
+  ): Promise<ParkingLotHistoryLog[]> {
     return await this.parkingLotHistoryLogModel
       .find({ parkingLotId: new Types.ObjectId(parkingLotId) })
       .exec()
@@ -67,7 +75,54 @@ export class ParkingLotHistoryLogRepository
       parkingLotStatusId: new Types.ObjectId(statusId),
       createdBy: userId,
       updatedBy: userId,
+      requestCode: `REQ-${Date.now().toString()}`,
     })
     return !!result
+  }
+
+  async findAllForOperator(
+    operatorId: string,
+  ): Promise<ParkingLotHistoryLog[]> {
+    return await this.parkingLotHistoryLogModel
+      .find({ createdBy: operatorId })
+      .exec()
+  }
+
+  async approveParkingLotUpdate(
+    parkingLotId: string,
+    statusId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const data = await this.parkingLotHistoryLogModel.findOne({
+      parkingLotId: parkingLotId,
+    })
+    const updateData = await this.parkingLotHistoryLogModel.create({
+      ...data?.toObject(),
+      parkingLotStatusId: new Types.ObjectId(statusId),
+      createdBy: userId,
+      updatedBy: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    return !!updateData
+  }
+
+  async approveParkingLotDelete(
+    parkingLotId: string,
+    statusId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const data = await this.parkingLotHistoryLogModel.findOne({
+      parkingLotId: parkingLotId,
+    })
+    const deletedData = await this.parkingLotHistoryLogModel.create({
+      ...data?.toObject(),
+      parkingLotStatusId: new Types.ObjectId(statusId),
+      createdBy: userId,
+      updatedBy: userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+    return !!deletedData
   }
 }

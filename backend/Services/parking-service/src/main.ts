@@ -45,13 +45,13 @@ async function bootstrap() {
 
   const port = configService.get<number>('PORT') || 5000
   await app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
+    console.log(`Example app listening on port ${String(port)}`)
   })
   console.log(
-    `Swagger UI available at http://localhost:${port}/swagger/index.html`,
+    `Swagger UI available at http://localhost:${String(port)}/swagger/index.html`,
   )
   console.log(
-    `API documentation available at http://localhost:${port}/swagger-json`,
+    `API documentation available at http://localhost:${String(port)}/swagger-json`,
   )
 }
 

@@ -1,13 +1,13 @@
-import React from "react"
+import React from 'react'
 
-import { Layout } from "antd"
-import Map from "../../components/map/Map"
+import { Layout } from 'antd'
+import Map from '../../components/map/Map'
 
 const RealMap: React.FC = () => {
-    return (
-        <Layout>
-            <Map />
-        </Layout>
-    )
+  return (
+    <Layout>
+      <Map />
+    </Layout>
+  )
 }
-export default RealMap;
+export default RealMap

@@ -1,4 +1,5 @@
-﻿using MongoDB.Bson;
+﻿using Dotnet.Shared.Helpers;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
@@ -12,10 +13,14 @@ namespace CoreService.Repository.Models
     {
         [BsonId, BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
-        public string PaymentId { get; set; }      // PaymentRecord.Id
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string PaymentId { get; set; }
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string ReservationId { get; set; }
         public string XenditRefundId { get; set; }
         public long Amount { get; set; }
-        public string Status { get; set; }         // SUCCEEDED/FAILED/PENDING
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string Status { get; set; }
+        public string? Reason { get; set; }
+        public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
     }
 }

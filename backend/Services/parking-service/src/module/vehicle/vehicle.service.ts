@@ -10,7 +10,6 @@ import { IdDto } from 'src/common/dto/params.dto'
 
 import { IBrandRepository } from '../brand/interfaces/ibrand.repository'
 import { IColorRepository } from '../color/interfaces/icolor.repository'
-import { IVehicleTypeRepository } from '../vehicleType/interfaces/ivehicleType.repository'
 import {
   CreateVehicleDto,
   PlateParamDto as PlateParameterDto,
@@ -25,8 +24,6 @@ export class VehicleService implements IVehicleService {
   constructor(
     @Inject(IVehicleRepository)
     private readonly vehicleRepository: IVehicleRepository,
-    @Inject(IVehicleTypeRepository)
-    private readonly vehicleTypeRepository: IVehicleTypeRepository,
     @Inject(IColorRepository)
     private readonly colorRepository: IColorRepository,
     @Inject(IBrandRepository)
@@ -49,20 +46,7 @@ export class VehicleService implements IVehicleService {
     })
   }
 
-  private async checkCondtionToCreateVehicle(
-    vehicleTypeId: string,
-    colorId: string,
-    brandId: string,
-  ) {
-    const vehicleType =
-      await this.vehicleTypeRepository.findVehicleTypeById(vehicleTypeId)
-
-    if (!vehicleType) {
-      throw new NotFoundException(
-        `Loại xe với ID "${vehicleTypeId}" không tồn tại. Vui lòng kiểm tra lại thông tin loại xe.`,
-      )
-    }
-
+  private async checkCondtionToCreateVehicle(colorId: string, brandId: string) {
     const color = await this.colorRepository.findColorById(colorId)
     if (!color) {
       throw new NotFoundException(
@@ -94,7 +78,6 @@ export class VehicleService implements IVehicleService {
     }
 
     await this.checkCondtionToCreateVehicle(
-      createVehicleDto.vehicleTypeId,
       createVehicleDto.colorId,
       createVehicleDto.brandId,
     )
@@ -208,11 +191,7 @@ export class VehicleService implements IVehicleService {
       userId,
     )
 
-    await this.checkCondtionToCreateVehicle(
-      vehicle.vehicleTypeId,
-      vehicle.colorId,
-      vehicle.brandId,
-    )
+    await this.checkCondtionToCreateVehicle(vehicle.colorId, vehicle.brandId)
 
     let message: string
     let success: boolean

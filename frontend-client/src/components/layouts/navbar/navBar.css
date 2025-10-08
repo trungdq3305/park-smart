@@ -36,3 +36,13 @@
 .apple-navbar a:hover {
   color: #959393;
 }
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure proper spacing for fixed navbar */
+body {
+  padding-top: 44px; /* Apple navbar height */
+}

@@ -19,6 +19,7 @@ services:
     volumes:
       - /etc/ssl/ocelot/parksmart.pfx:/https/certs/parksmart.pfx:ro
       - core_keys:/keys
+      - /var/www/park-smart/uploads:/app/uploads
     networks:
       - backend
 

@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -51,11 +52,12 @@ builder.Services.AddHttpClient<IXenditClient, XenditClient>((sp, http) =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:5173") // Ch? cho phép URL này
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // <-- R?T QUAN TR?NG KHI CÓ XÁC TH?C
     });
 });
 builder.Services.AddScoped<JwtTokenHelper>();
@@ -153,12 +155,19 @@ builder.Services.AddControllers(options =>
     options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.Never;
 });
-
+builder.Services.AddSingleton<IFileStorageService, FileStorageService>();
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.SuppressModelStateInvalidFilter = true; // ? Không ?? framework t? return 400
 });
 var app = builder.Build();
+var uploadRoot = app.Configuration["Upload:RootPath"] ?? "/app/uploads";
+Directory.CreateDirectory(uploadRoot);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadRoot),
+    RequestPath = app.Configuration["Upload:RequestPath"] ?? "/uploads"
+});
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
@@ -193,7 +202,8 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwaggerUI();
 }
 //app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+
+app.UseCors("AllowSpecificOrigin");
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();   // ? parse token tr??c
