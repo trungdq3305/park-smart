@@ -10,6 +10,7 @@ class RealtimeService {
 
   IO.Socket? _socket;
   StreamController<Map<String, dynamic>>? _controller;
+  final Set<String> _pendingRooms = <String>{};
 
   String get _httpBase => dotenv.env['BASE_URL'] ?? '';
 
@@ -58,7 +59,15 @@ class RealtimeService {
       );
 
       _socket!.onConnect((_) {
+        // join initial room
         _socket!.emit('join-room', {'newRoom': roomName});
+        // join any pending rooms queued before connection
+        if (_pendingRooms.isNotEmpty) {
+          for (final r in _pendingRooms) {
+            _socket!.emit('join-room', {'newRoom': r});
+          }
+          _pendingRooms.clear();
+        }
       });
 
       _socket!.on('parking-lot-spots-updated', (data) {
@@ -77,6 +86,14 @@ class RealtimeService {
     }();
 
     return _controller!.stream;
+  }
+
+  void joinRoom(String roomName) {
+    if (_socket != null && _socket!.connected) {
+      _socket!.emit('join-room', {'newRoom': roomName});
+    } else {
+      _pendingRooms.add(roomName);
+    }
   }
 
   void dispose() {
