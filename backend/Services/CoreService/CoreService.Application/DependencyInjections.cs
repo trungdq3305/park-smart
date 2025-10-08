@@ -39,6 +39,8 @@ namespace CoreService.Application
             services.AddScoped<IXenditClient, XenditClient>();
             services.AddScoped<IXenditPlatformService, XenditPlatformService>();
             services.AddScoped<IImageApplication, ImageApplication>();
+            services.AddScoped<IPromotionApplication, PromotionApplication>();
+            services.AddScoped<IEventApplication, EventApplication>();
             return services;
         }
     }
