@@ -202,7 +202,7 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwaggerUI();
 }
 //app.UseHttpsRedirection();
-app.UseRouting();
+
 app.UseCors("AllowSpecificOrigin");
 app.UseMiddleware<ExceptionMiddleware>();
 
