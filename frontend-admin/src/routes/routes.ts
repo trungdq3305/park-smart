@@ -13,10 +13,10 @@ const routes: LayoutRoute[] = [
       {
         path: '/login',
         component: LoginPage,
-        exact: true,
+        // role: ['admin'],
       },
     ],
-  },
+  }
 ]
 
 export default routes

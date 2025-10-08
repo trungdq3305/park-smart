@@ -1,12 +1,7 @@
-import { Layout } from 'antd'
 import type React from 'react'
-import Login from '../components/LoginPage'
+import Login from '../components/login/LoginPage'
 
 const LoginPage: React.FC = () => {
-    return (
-        <Layout>
-            <Login />
-        </Layout>
-    )
+    return <Login />
 }
 export default LoginPage

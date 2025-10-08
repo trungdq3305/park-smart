@@ -1,0 +1,310 @@
+/* Login Page Styles */
+.login-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* Override Ant Design default styles */
+.login-container .ant-typography {
+    margin-bottom: 0;
+}
+
+.login-container .ant-typography h1,
+.login-container .ant-typography h2,
+.login-container .ant-typography h3 {
+    margin-bottom: 0;
+}
+
+/* Left Promotional Section */
+.promotional-section {
+    flex: 2;
+    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    height: 100vh;
+    min-height: 100vh;
+}
+
+.promotional-content {
+    z-index: 2;
+    text-align: center;
+    color: white;
+    padding: 2rem;
+    max-width: 500px;
+}
+
+.star-icon {
+    font-size: 3rem;
+    margin-bottom: 1.5rem;
+    display: block;
+}
+
+.promotional-section .promotional-title {
+    color: white;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.promotional-section .promotional-description {
+    color: white;
+    font-size: 1.2rem;
+    line-height: 1.6;
+    margin-bottom: 3rem;
+    opacity: 0.9;
+}
+
+.promotional-section .copyright {
+    color: white;
+    font-size: 0.9rem;
+    opacity: 0.7;
+    position: absolute;
+    bottom: 2rem;
+    left: 2rem;
+}
+
+/* Geometric Patterns */
+.geometric-patterns {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.pattern {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+}
+
+.pattern-1 {
+    width: 200px;
+    height: 200px;
+    top: 10%;
+    right: 10%;
+    animation: float 6s ease-in-out infinite;
+}
+
+.pattern-2 {
+    width: 150px;
+    height: 150px;
+    bottom: 20%;
+    left: 15%;
+    animation: float 8s ease-in-out infinite reverse;
+}
+
+.pattern-3 {
+    width: 100px;
+    height: 100px;
+    top: 50%;
+    left: 5%;
+    animation: float 10s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+        transform: translateY(-20px) rotate(180deg);
+    }
+}
+
+/* Right Login Form Section */
+.login-form-section {
+    flex: 1;
+    background: #fafafa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    height: 100vh;
+    min-height: 100vh;
+}
+
+.login-form-container {
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-form-section .brand-title {
+    color: #1f2937;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.login-form-section .welcome-title {
+    color: #1f2937;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+/* Signup prompt styles */
+.login-form-section .signup-prompt {
+    color: #6b7280;
+    font-size: 0.95rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    display: block;
+}
+
+.login-form-section .signup-link {
+    color: #1f2937;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+/* Forgot password styles */
+.login-form-section .forgot-password {
+    text-align: center;
+}
+
+.login-form-section .forgot-password .ant-typography {
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+.login-form-section .forgot-link {
+    color: #1f2937;
+    text-decoration: underline;
+    font-weight: 500;
+}
+
+
+/* Form Styles */
+.login-form {
+    margin-bottom: 1.5rem;
+}
+
+.login-form .login-input {
+    border: none;
+    border-bottom: 2px solid #e5e7eb;
+    border-radius: 0;
+    padding: 0.75rem 0;
+    background: transparent;
+    font-size: 1rem;
+}
+
+.login-form .login-input:focus {
+    border-bottom-color: #1f2937;
+    box-shadow: none;
+}
+
+.login-form .login-input .ant-input-prefix {
+    color: #9ca3af;
+    margin-right: 0.75rem;
+}
+
+.login-form .login-button {
+    background: #1f2937;
+    border: none;
+    height: 48px;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    margin-top: 1rem;
+}
+
+.login-form .login-button:hover {
+    background: #374151;
+}
+
+/* Google Login Button */
+.login-form-section .google-login-button {
+    height: 48px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    color: #1f2937;
+    background: white;
+    margin-bottom: 1.5rem;
+}
+
+.login-form-section .google-login-button:hover {
+    border-color: #d1d5db;
+    background: #f9fafb;
+}
+
+.login-form-section .google-login-button .anticon {
+    margin-right: 0.5rem;
+}
+
+/* Divider */
+.login-form-section .divider {
+    color: #9ca3af;
+    font-size: 0.9rem;
+    margin: 1.5rem 0;
+}
+
+.login-form-section .divider::before,
+.login-form-section .divider::after {
+    border-color: #e5e7eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .login-container {
+        flex-direction: column;
+        height: 100vh;
+    }
+    
+    .promotional-section {
+        flex: 1;
+        height: 50vh;
+        min-height: 50vh;
+    }
+    
+    .login-form-section {
+        flex: 1;
+        height: 50vh;
+        min-height: 50vh;
+        padding: 1rem;
+    }
+    
+    .promotional-section .promotional-title {
+        font-size: 2rem;
+    }
+    
+    .promotional-section .promotional-description {
+        font-size: 1rem;
+    }
+    
+    .login-form-section .brand-title {
+        font-size: 2rem;
+    }
+    
+    .login-form-section .welcome-title {
+        font-size: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .promotional-content {
+        padding: 1rem;
+    }
+    
+    .login-form-container {
+        padding: 0.5rem;
+    }
+    
+    .promotional-section .promotional-title {
+        font-size: 1.5rem;
+    }
+    
+    .login-form-section .brand-title {
+        font-size: 1.8rem;
+    }
+}
