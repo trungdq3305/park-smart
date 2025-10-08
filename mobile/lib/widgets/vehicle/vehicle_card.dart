@@ -21,7 +21,8 @@ class VehicleCard extends StatelessWidget {
     final plateNumber = vehicle['plateNumber'] ?? 'N/A';
     final brand = vehicle['brandId']?['brandName'] ?? 'N/A';
     final color = vehicle['colorId']?['colorName'] ?? 'N/A';
-    final type = vehicle['vehicleTypeId']?['typeName'] ?? 'N/A';
+    final isElectric = vehicle['isElectricCar'] ?? false;
+    final type = isElectric ? 'Xe điện' : 'Xe xăng';
     final isActive = vehicle['isActive'] ?? true;
 
     return Container(
@@ -121,19 +122,12 @@ class VehicleCard extends StatelessWidget {
 
   Widget _buildStatusBadge(bool isActive) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: isActive
-            ? Colors.green.shade100
-            : Colors.red.shade100,
+        color: isActive ? Colors.green.shade100 : Colors.red.shade100,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: isActive
-              ? Colors.green.shade300
-              : Colors.red.shade300,
+          color: isActive ? Colors.green.shade300 : Colors.red.shade300,
           width: 1,
         ),
       ),
@@ -152,9 +146,7 @@ class VehicleCard extends StatelessWidget {
           Text(
             isActive ? 'Hoạt động' : 'Không hoạt động',
             style: TextStyle(
-              color: isActive
-                  ? Colors.green.shade700
-                  : Colors.red.shade700,
+              color: isActive ? Colors.green.shade700 : Colors.red.shade700,
               fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
@@ -247,10 +239,7 @@ class VehicleCard extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-              side: BorderSide(
-                color: Colors.red.shade300,
-                width: 1.5,
-              ),
+              side: BorderSide(color: Colors.red.shade300, width: 1.5),
             ),
           ),
         ),

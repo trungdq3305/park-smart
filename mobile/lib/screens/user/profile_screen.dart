@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/screens/user/profile/term_and_policy_screen.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
 import 'package:mobile/services/user_service.dart';
 import 'profile/personal_info_screen.dart';
@@ -340,6 +341,17 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const BookingHistoryScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildTile(
+                      icon: Icons.note_alt_outlined,
+                      title: 'Điều khoản & Dịch vụ',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const TermAndPolicyScreen(),
                           ),
                         );
                       },

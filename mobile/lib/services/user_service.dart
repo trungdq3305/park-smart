@@ -35,9 +35,6 @@ class UserService {
   static Future<String?> getToken() async {
     // Thử đọc token từ storage trực tiếp
     final accessToken = await storage.read(key: 'accessToken');
-    print(
-      'AccessToken from storage: ${accessToken != null ? 'Found' : 'Not found'}',
-    );
 
     if (accessToken != null && accessToken.isNotEmpty) {
       return accessToken;
@@ -45,14 +42,12 @@ class UserService {
 
     // Thử đọc từ userData
     final userData = await getUserData();
-    print('UserData keys: ${userData?.keys.toList()}');
 
     final token =
         userData?['backendToken'] ??
         userData?['idToken'] ??
         userData?['accessToken'];
 
-    print('Token found: ${token != null ? 'Yes' : 'No'}');
     return token;
   }
 
@@ -67,6 +62,19 @@ class UserService {
     await storage.delete(key: 'data');
     await storage.delete(key: 'accessToken');
     await storage.delete(key: 'refreshToken');
+
+    // Clear WebView session để cho phép chọn tài khoản khác
+    await _clearWebViewSession();
+  }
+
+  // Clear WebView session để force account selection
+  static Future<void> _clearWebViewSession() async {
+    try {
+      // Lưu flag để WebView biết cần clear session
+      await storage.write(key: 'clearWebViewSession', value: 'true');
+    } catch (e) {
+      // Handle error setting WebView session clear flag
+    }
   }
 
   // Lấy email
@@ -85,6 +93,59 @@ class UserService {
   static Future<String?> getUserPhoto() async {
     final userInfo = await getUserInfo();
     return userInfo?['photoUrl'];
+  }
+
+  // Decode JWT token để lấy thông tin role
+  static Future<Map<String, dynamic>?> decodeJWTToken(String token) async {
+    try {
+      // Kiểm tra nếu token là JSON object thay vì JWT
+      if (token.startsWith('{')) {
+        return json.decode(token) as Map<String, dynamic>;
+      }
+
+      // Xử lý JWT token
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        return null;
+      }
+
+      String payload = parts[1].padRight(
+        parts[1].length + ((4 - parts[1].length % 4) % 4),
+        '=',
+      );
+      final decoded = utf8.decode(base64Url.decode(payload));
+      return json.decode(decoded) as Map<String, dynamic>;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Kiểm tra role của user từ token
+  static Future<String?> getUserRole() async {
+    try {
+      // Thử lấy từ API trước
+      final apiData = await getUserProfile();
+      if (apiData['data'] != null) {
+        return apiData['data']['roleName'];
+      }
+    } catch (e) {
+      // Fallback to token
+    }
+
+    // Fallback: decode từ token
+    final token = await getToken();
+    if (token != null) {
+      final claims = await decodeJWTToken(token);
+      return claims?['role'] ?? claims?['roles'];
+    }
+
+    return null;
+  }
+
+  // Kiểm tra xem user có phải Driver không
+  static Future<bool> isDriver() async {
+    final role = await getUserRole();
+    return role?.toLowerCase() == 'driver';
   }
 
   // API: Lấy thông tin user từ backend
