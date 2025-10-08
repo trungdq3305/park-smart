@@ -22,12 +22,8 @@ export class Vehicle extends BaseEntity {
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'Brand' })
   brandId: string
 
-  @Prop({
-    required: true,
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'VehicleType',
-  })
-  vehicleTypeId: string
+  @Prop({ required: true, type: Boolean })
+  isElectricCar: boolean
 
   @Prop({ required: true })
   driverId: string

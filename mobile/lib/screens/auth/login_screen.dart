@@ -4,6 +4,8 @@ import '../../services/auth_service.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'forgot_password_screen.dart';
+import 'webview_login_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -97,94 +99,88 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
+
     try {
-      print('Starting Google Sign-In...');
-      final account = await _googleSignIn.signIn();
-      print('Google Sign-In account: $account');
+      print('Starting Google Login via API...');
 
-      if (account == null) {
-        setState(() => _errorMessage = 'Đã hủy đăng nhập Google');
-        return;
-      }
+      // Gọi API để lấy URL hoặc token
+      final response = await _authService.googleLogin();
+      print('Google Login API Response: $response');
 
-      print('Getting authentication...');
-      final auth = await account.authentication;
-      print('Auth object: $auth');
-      print('ID Token: ${auth.idToken}');
-      print('Access Token: ${auth.accessToken}');
+      if (!mounted) return;
 
-      final idToken = auth.idToken;
-      if (idToken == null) {
-        setState(
-          () => _errorMessage =
-              'Không lấy được idToken từ Google. Vui lòng kiểm tra cấu hình Google Sign-In.',
+      // Kiểm tra nếu API trả về URL để mở WebView hoặc HTML response
+      if (response['data'] != null &&
+          (response['data'].toString().startsWith('http') ||
+              response['type'] == 'html')) {
+        final loginUrl = response['data'].toString();
+        print('Opening WebView with URL: $loginUrl');
+
+        // Mở WebView để đăng nhập Google
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => WebViewLoginScreen(
+              url: loginUrl,
+              onSuccess: (token) async {
+                // Lưu token và chuyển trang
+                await _authService.saveToken(token);
+                Navigator.pushReplacementNamed(context, '/main');
+              },
+            ),
+          ),
         );
-        return;
+
+        if (result == true) {
+          // Đăng nhập thành công
+          Navigator.pushReplacementNamed(context, '/main');
+        } else {
+          // Nếu WebView thất bại, thử mở trình duyệt hệ thống
+          await _openInSystemBrowser(loginUrl);
+        }
+      } else {
+        // API trả về token trực tiếp
+        print('Login successful with token');
+        Navigator.pushReplacementNamed(context, '/main');
       }
+    } catch (e) {
+      print('Google Login Error: $e');
+      setState(() => _errorMessage = 'Lỗi đăng nhập Google: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
-      print(
-        'Google Sign-In successful. ID Token: ${idToken.substring(0, 20)}...',
-      ); // Debug log
+  Future<void> _openInSystemBrowser(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
 
-      // Lưu thông tin user ngay lập tức
-      final userData = {
-        'user': {
-          'email': account.email,
-          'name': account.displayName,
-          'id': account.id,
-          'photoUrl': account.photoUrl,
-        },
-        'idToken': idToken,
-        'accessToken': auth.accessToken,
-        'loginType': 'google',
-        'loginTime': DateTime.now().toIso8601String(),
-      };
-
-      print('Saving user data: $userData');
-      await storage.write(key: 'data', value: jsonEncode(userData));
-
-      // Thử gọi API backend (không bắt buộc)
-      try {
-        final response = await _authService.googleLogin(idToken);
-        print('API Response: $response');
-        // Cập nhật với response từ backend
-        userData['backendResponse'] = response;
-        await storage.write(key: 'data', value: jsonEncode(userData));
-
-        if (!mounted) return;
+        // Hiển thị thông báo cho user
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Đã mở trình duyệt. Sau khi đăng nhập thành công, quay lại app.',
+              ),
+              duration: Duration(seconds: 5),
+            ),
+          );
+        }
+      } else {
+        throw Exception('Không thể mở trình duyệt');
+      }
+    } catch (e) {
+      print('Error opening browser: $e');
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Đăng nhập Google thành công")),
-        );
-      } catch (apiError) {
-        print('API Error: $apiError');
-        // Vẫn tiếp tục với local data nếu API fail
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Đăng nhập Google thành công (local mode)"),
+          SnackBar(
+            content: Text('Lỗi mở trình duyệt: $e'),
+            backgroundColor: Colors.red,
           ),
         );
       }
-
-      Navigator.pushReplacementNamed(context, '/main');
-    } catch (e) {
-      print('Google Sign-In Error: $e'); // Debug log
-      String errorMessage = 'Lỗi đăng nhập Google';
-
-      if (e.toString().contains('sign_in_failed')) {
-        errorMessage =
-            'Lỗi cấu hình Google Sign-In. Vui lòng kiểm tra lại cài đặt.';
-      } else if (e.toString().contains('network_error')) {
-        errorMessage = 'Lỗi kết nối mạng. Vui lòng thử lại.';
-      } else if (e.toString().contains('sign_in_canceled')) {
-        errorMessage = 'Đã hủy đăng nhập Google';
-      } else {
-        errorMessage = e.toString().replaceFirst('Exception: ', '');
-      }
-
-      setState(() => _errorMessage = errorMessage);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 

@@ -14,7 +14,6 @@ import { ColorModule } from './module/color/color.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
 import { ParkingLotStatusModule } from './module/parkingLotStatus/parkingLotStatus.module'
 import { VehicleModule } from './module/vehicle/vehicle.module'
-import { VehicleTypeModule } from './module/vehicleType/vehicleType.module'
 import { WardModule } from './module/ward/ward.module'
 import { JwtStrategy } from './strategy/jwt.strategy'
 @Module({
@@ -41,7 +40,6 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     WardModule,
     AddressModule,
     BrandModule,
-    VehicleTypeModule,
     ColorModule,
     VehicleModule,
     ParkingLotStatusModule,

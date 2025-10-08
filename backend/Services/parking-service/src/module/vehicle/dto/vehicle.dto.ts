@@ -3,7 +3,13 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
-import { IsMongoId, IsNotEmpty, IsString, Matches } from 'class-validator'
+import {
+  IsBoolean,
+  IsMongoId,
+  IsNotEmpty,
+  IsString,
+  Matches,
+} from 'class-validator'
 
 // ===================================================================================
 // DTOs for REQUEST BODY
@@ -23,10 +29,10 @@ export class CreateVehicleDto {
   @IsNotEmpty({ message: 'Mã màu không được để trống' })
   colorId: string
 
-  @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4569' })
-  @IsMongoId({ message: 'Mã loại xe không hợp lệ' })
-  @IsNotEmpty({ message: 'Mã loại xe không được để trống' })
-  vehicleTypeId: string
+  @ApiProperty({ example: true })
+  @IsNotEmpty({ message: 'Loại xe không được để trống' })
+  @IsBoolean({ message: 'Loại xe phải là true hoặc false' })
+  isElectricCar: boolean
 
   @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4568' })
   @IsMongoId({ message: 'Mã hãng xe không hợp lệ' })
@@ -39,9 +45,10 @@ export class UpdateVehicleDto {
   @IsMongoId({ message: 'Mã màu không hợp lệ' })
   colorId: string
 
-  @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4569', required: false })
-  @IsMongoId({ message: 'Mã loại xe không hợp lệ' })
-  vehicleTypeId: string
+  @ApiProperty({ example: true })
+  @IsNotEmpty({ message: 'Loại xe không được để trống' })
+  @IsBoolean({ message: 'Loại xe phải là true hoặc false' })
+  isElectricCar: boolean
 
   @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4568', required: false })
   @IsMongoId({ message: 'Mã hãng xe không hợp lệ' })
@@ -94,17 +101,6 @@ class BrandInVehicleDto {
 }
 
 @Exclude()
-class VehicleTypeInVehicleDto {
-  @Expose()
-  @Transform(({ obj }) => obj._id.toString())
-  _id: string
-
-  @Expose()
-  @Transform(({ obj }) => obj.typeName)
-  typeName: string
-}
-
-@Exclude()
 export class VehicleResponseDto {
   @Expose()
   @Transform(({ obj }) => obj._id.toString())
@@ -125,6 +121,5 @@ export class VehicleResponseDto {
   brandId: BrandInVehicleDto
 
   @Expose()
-  @Type(() => VehicleTypeInVehicleDto)
-  vehicleTypeId: VehicleTypeInVehicleDto
+  isElectricCar: boolean
 }
