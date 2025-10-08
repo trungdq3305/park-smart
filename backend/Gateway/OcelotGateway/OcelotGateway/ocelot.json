@@ -357,6 +357,18 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/parking-spaces/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/parking-spaces/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST" ]
+    },
+    {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
