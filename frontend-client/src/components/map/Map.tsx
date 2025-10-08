@@ -8,7 +8,7 @@ const Map = () => {
   const [receivedData, setReceivedData] = useState<any[]>([])
 
   useEffect(() => {
-    const newSocket = io('ws://localhost:5000', {
+    const newSocket = io('ws://parksmarthcmc.io.vn:5000', {
       path: '/socket.io',
       transports: ['websocket'],
     })

@@ -15,7 +15,10 @@ export interface IParkingSpaceRepository {
     spaces: ParkingSpaceCreationAttributes[], // Định nghĩa kiểu dữ liệu chính xác hơn ở đây
     session?: ClientSession, // Thêm tham số session tùy chọn
   ): Promise<boolean>
-  findByParkingLotId(parkingLotId: string): Promise<ParkingSpace[]>
+  findByParkingLotId(
+    parkingLotId: string,
+    level: number,
+  ): Promise<ParkingSpace[]>
   findById(id: string): Promise<ParkingSpace | null>
   updateStatus(
     id: string,
