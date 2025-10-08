@@ -53,7 +53,7 @@ const Login: React.FC = () => {
                     <Title level={3} className="welcome-title">Welcome Back!</Title>
                     
                     <Text className="signup-prompt">
-                        Don't have an account? <Link href="#" className="signup-link">Create a new account now,</Link> it's FREE! Takes less than a minute.
+                       Sign in to your admin account.
                     </Text>
 
                     <Form
