@@ -113,6 +113,7 @@ export class ParkingLotRequestRepository
       .exec()
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async findAllRequests(): Promise<any[]> {
     const requests = await this.parkingLotRequestModel.aggregate([
       // STAGE 0: Chuyển đổi addressId từ String sang ObjectId

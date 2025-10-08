@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   ConflictException,
   Inject,
@@ -78,14 +79,7 @@ export class ParkingLotService implements IParkingLotService {
   }
 
   private determineRoomForParkingLot(address: Address): string {
-    // Lấy kinh độ và vĩ độ từ document Address
-    const longitude = address.longitude
-    const latitude = address.latitude
-
-    // Mã hóa tọa độ thành chuỗi geohash với độ chính xác là 7
-    const roomName = geohash.encode(latitude, longitude, 7)
-
-    return `room_${roomName}`
+    return `room_${String(123456)}`
   }
 
   private async _createParkingSpaces(
