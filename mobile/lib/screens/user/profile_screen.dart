@@ -344,6 +344,17 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                         );
                       },
                     ),
+                    _buildTile(
+                      icon: Icons.note_alt_outlined,
+                      title: 'Điều khoản & Dịch vụ',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const MyCarScreen(),
+                          ),
+                        );
+                      },
+                    ),
                     const SizedBox(height: 20),
                     // Logout button
                     Container(
