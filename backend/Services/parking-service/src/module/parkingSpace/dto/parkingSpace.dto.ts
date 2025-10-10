@@ -42,6 +42,17 @@ export class UpdateParkingSpaceStatusDto {
   @IsNotEmpty({
     message: 'parkingSpaceStatusId không được để trống',
   })
-  @IsMongoId({ message: 'parkingSpaceStatusId phải là một MongoID'  })
+  @IsMongoId({ message: 'parkingSpaceStatusId phải là một MongoID' })
   parkingSpaceStatusId: string
+}
+
+@Exclude()
+export class ParkingSpaceUpdateRealTimeDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  @Type(() => ParkingSpaceStatusDto)
+  parkingSpaceStatusId: ParkingSpaceStatusDto
 }
