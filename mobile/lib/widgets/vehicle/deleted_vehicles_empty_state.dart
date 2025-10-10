@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class DeletedVehiclesEmptyState extends StatelessWidget {
-  const DeletedVehiclesEmptyState({super.key});
+  final String? message;
+
+  const DeletedVehiclesEmptyState({super.key, this.message});
 
   static const Color cardColor = Colors.white;
 
@@ -46,7 +48,7 @@ class DeletedVehiclesEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Không có xe đã xóa',
+              message ?? 'Không có xe đã xóa',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w600,
@@ -54,11 +56,12 @@ class DeletedVehiclesEmptyState extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Chưa có xe nào bị xóa trong lịch sử',
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
+            if (message == null)
+              Text(
+                'Chưa có xe nào bị xóa trong lịch sử',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
           ],
         ),
       ),
