@@ -1,24 +1,40 @@
 import React, { useState } from 'react';
-import { Button, Input, Form, Typography } from 'antd';
+import { Button, Input, Form, Typography, notification } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import './LoginPage.css';
-
-const { Title, Text, Link } = Typography;
+import { useLoginMutation } from '../../features/auth/authApi';
+import Cookies from 'js-cookie';
+const { Title, Text } = Typography;
 
 const Login: React.FC = () => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
+    const [login] = useLoginMutation()
 
     const onFinish = async (values: {email: string, password: string}) => {
         setLoading(true);
         try {
-            // Handle login logic here
-            console.log('Login values:', values);
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        } catch (error) {
-            console.error('Login error:', error);
-        } finally {
+            const response = await login({
+              email: values.email || '',
+              password: values.password,
+            }).unwrap()
+      
+            const token = response.data
+      
+            if (token) {
+              Cookies.set('userToken', token, { expires: 7 })
+            } else {
+              notification.error({
+                message: 'Lỗi phản hồi',
+                description: 'Không tìm thấy token trong phản hồi từ server.',
+              })
+            }
+          }catch (error) {
+            notification.error({
+              message: 'Đăng nhập thất bại',
+              description: 'Đã xảy ra lỗi không xác định'
+            })
+          } finally {
             setLoading(false);
         }
     };

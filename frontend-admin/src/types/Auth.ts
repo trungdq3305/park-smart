@@ -10,6 +10,7 @@ export interface UserData {
   fullName: string
   phoneNumber: string
   adminId: string
+  exp: boolean
 }
 
 export interface AuthState {
