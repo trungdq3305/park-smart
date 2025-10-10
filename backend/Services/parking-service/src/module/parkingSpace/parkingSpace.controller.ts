@@ -1,7 +1,6 @@
 // src/parking-space/parking-space.controller.ts
 
 import {
-  Body,
   Controller,
   Get,
   HttpStatus,
@@ -11,7 +10,6 @@ import {
   Query,
 } from '@nestjs/common'
 import {
-  ApiBody,
   ApiOperation,
   ApiParam,
   ApiQuery,
@@ -32,7 +30,7 @@ export class ParkingSpaceController {
     private readonly parkingSpaceService: IParkingSpaceService,
   ) {}
 
-  // Route: GET 
+  // Route: GET
   @Get()
   @ApiOperation({ summary: 'Lấy tất cả vị trí đỗ xe của một bãi xe' })
   @ApiQuery({
@@ -92,6 +90,43 @@ export class ParkingSpaceController {
       data: [space],
       statusCode: HttpStatus.OK,
       message: 'Lấy chi tiết vị trí đỗ xe thành công.',
+      success: true,
+    }
+  }
+
+  @Patch(':id/status/:statusId')
+  @ApiOperation({ summary: 'Cập nhật trạng thái vị trí đỗ xe' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của vị trí đỗ xe',
+    type: String,
+  })
+  @ApiParam({
+    name: 'statusId',
+    description: 'ID của trạng thái mới',
+    type: String,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cập nhật trạng thái vị trí đỗ xe thành công.',
+    type: ParkingSpaceResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy vị trí đỗ xe.',
+  })
+  async updateStatus(
+    @Param('id') id: string,
+    @Param('statusId') statusId: string,
+  ): Promise<ApiResponseDto<ParkingSpaceResponseDto>> {
+    const updatedSpace = await this.parkingSpaceService.updateStatus(
+      id,
+      statusId,
+    )
+    return {
+      data: [updatedSpace],
+      statusCode: HttpStatus.OK,
+      message: 'Cập nhật trạng thái vị trí đỗ xe thành công.',
       success: true,
     }
   }

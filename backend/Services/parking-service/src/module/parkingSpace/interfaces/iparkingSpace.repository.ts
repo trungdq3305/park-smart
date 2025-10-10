@@ -24,11 +24,12 @@ export interface IParkingSpaceRepository {
     id: string,
     parkingSpaceStatusId: string,
     session?: ClientSession, // Thêm tham số session tùy chọn
-  ): Promise<ParkingSpace | null>
+  ): Promise<any>
   deleteByParkingLotId(
     parkingLotId: string,
     session?: ClientSession, // Thêm tham số session tùy chọn
   ): Promise<void>
+  findParkingLotOperatorIdBySpaceId(id: string): Promise<string | null>
 }
 
 export const IParkingSpaceRepository = Symbol('IParkingSpaceRepository')

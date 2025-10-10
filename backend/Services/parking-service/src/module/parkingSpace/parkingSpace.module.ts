@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { IParkingSpaceRepository } from './interfaces/iparkingSpace.repository'
 import { IParkingSpaceService } from './interfaces/iparkingSpace.service'
 import { ParkingSpaceController } from './parkingSpace.controller'
+import { ParkingSpaceGateway } from './parkingSpace.gateway'
 import { ParkingSpaceRepository } from './parkingSpace.repository'
 import { ParkingSpaceService } from './parkingSpace.service'
 import { ParkingSpace, ParkingSpaceSchema } from './schemas/parkingSpace.schema'
@@ -24,6 +25,7 @@ import { ParkingSpace, ParkingSpaceSchema } from './schemas/parkingSpace.schema'
       provide: IParkingSpaceService,
       useClass: ParkingSpaceService,
     },
+    ParkingSpaceGateway, // Đăng ký Gateway
   ],
   exports: [IParkingSpaceRepository, IParkingSpaceService], // Xuất các provider nếu cần sử dụng ở module khác
 })
