@@ -41,6 +41,8 @@ namespace CoreService.Application
             services.AddScoped<IImageApplication, ImageApplication>();
             services.AddScoped<IPromotionApplication, PromotionApplication>();
             services.AddScoped<IEventApplication, EventApplication>();
+            services.AddScoped<IBlacklistApplication, BlacklistApplication>();
+            services.AddScoped<IFavouriteParkingLotApplication, FavouriteParkingLotApplication>();
             return services;
         }
     }

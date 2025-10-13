@@ -68,9 +68,9 @@ namespace CoreService.API.Controllers
         [AllowAnonymous] // redirect từ Xendit không có auth
         public async Task<IActionResult> Confirm(
             [FromQuery] string operatorId,
-            [FromQuery] string reservationId,
-            [FromQuery] string externalId,
-            [FromQuery] string result // "success" | "failure"
+            [FromQuery] string reservationId
+            //[FromQuery] string externalId,
+            //[FromQuery] string result // "success" | "failure"
         )
         {
             // 1) Lấy payment record mới nhất theo reservation
