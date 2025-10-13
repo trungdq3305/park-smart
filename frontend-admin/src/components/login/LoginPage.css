@@ -35,7 +35,7 @@
   text-align: center;
   color: white;
   padding: 2rem;
-  max-width: 500px;
+  max-width: 50vh;
 }
 
 .star-icon {
@@ -86,24 +86,24 @@
 }
 
 .pattern-1 {
-  width: 200px;
-  height: 200px;
+  width: 20vh;
+  height: 20vh;
   top: 10%;
   right: 10%;
   animation: float 6s ease-in-out infinite;
 }
 
 .pattern-2 {
-  width: 150px;
-  height: 150px;
+  width: 15vh;
+  height: 15vh;
   bottom: 20%;
   left: 15%;
   animation: float 8s ease-in-out infinite reverse;
 }
 
 .pattern-3 {
-  width: 100px;
-  height: 100px;
+  width: 10vh;
+  height: 10vh;
   top: 50%;
   left: 5%;
   animation: float 10s ease-in-out infinite;
@@ -112,10 +112,10 @@
 @keyframes float {
   0%,
   100% {
-    transform: translateY(0px) rotate(0deg);
+    transform: translateY(0vh) rotate(0deg);
   }
   50% {
-    transform: translateY(-20px) rotate(180deg);
+    transform: translateY(-2vh) rotate(180deg);
   }
 }
 
@@ -133,7 +133,7 @@
 
 .login-form-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 40vh;
 }
 
 .login-form-section .brand-title {
@@ -190,7 +190,7 @@
 
 .login-form .login-input {
   border: none;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 0.2vh solid #e5e7eb;
   border-radius: 0;
   padding: 0.75rem 0;
   background: transparent;
@@ -210,10 +210,10 @@
 .login-form .login-button {
   background: #1f2937;
   border: none;
-  height: 48px;
+  height: 4.8vh;
   font-size: 1rem;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 0.8vh;
   margin-top: 1rem;
 }
 
@@ -223,11 +223,11 @@
 
 /* Google Login Button */
 .login-form-section .google-login-button {
-  height: 48px;
+  height: 4.8vh;
   font-size: 1rem;
   font-weight: 500;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
+  border: 0.2vh solid #e5e7eb;
+  border-radius: 0.8vh;
   color: #1f2937;
   background: white;
   margin-bottom: 1.5rem;
