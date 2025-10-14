@@ -9,13 +9,16 @@ const { Title, Text } = Typography;
 interface LoginFormProps {
   onSwitchToRegister: () => void;
 }
-
+interface LoginFormValues {
+  email: string;
+  password: string;
+}
 const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [login] = useLoginMutation();
 
-  const onFinish = async (values: { email: string; password: string }) => {
+  const onFinish = async (values: LoginFormValues) => {
     setLoading(true);
     try {
       const response = await login({

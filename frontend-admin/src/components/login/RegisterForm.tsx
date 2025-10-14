@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Input, Form, Typography, notification } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
+import { useRegisterMutation } from '../../features/auth/authApi';
 
 const { Title, Text } = Typography;
 
@@ -8,11 +9,19 @@ interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
 
+interface RegisterFormValues {
+  email: string;
+  password: string;
+  phoneNumber: string;
+  fullName: string;
+}
+
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+const [register] = useRegisterMutation();
 
-  const onFinish = async (values: any) => {
+  const onFinish = async (values: RegisterFormValues) => {
     setLoading(true);
     try {
       // TODO: Implement register API call
