@@ -41,10 +41,29 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           description: 'Không tìm thấy token trong phản hồi từ server.',
         });
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      let errorMessage = 'Đã xảy ra lỗi không xác định';
+    
+      // Kiểm tra nếu error là một đối tượng
+      if (error && typeof error === 'object') {
+        // Kiểm tra lỗi từ data.error (dựa trên ví dụ API)
+        if ('data' in error && error.data && typeof error.data === 'object' && 'error' in error.data) {
+          errorMessage = (error.data as { error: string }).error;
+        }
+        // Kiểm tra lỗi từ message (nếu có)
+        else if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        }
+        // Kiểm tra lỗi từ meta.response.data (nếu lỗi từ Axios hoặc tương tự)
+        else if ('meta' in error && error.meta && typeof error.meta === 'object' && 'response' in error.meta && error.meta.response && typeof error.meta.response === 'object' && 'data' in error.meta.response && error.meta.response.data && typeof error.meta.response.data === 'object' && 'error' in error.meta.response.data) {
+          errorMessage = (error.meta.response.data as { error: string }).error;
+        }
+      }
+    
       notification.error({
-        message: 'Đăng nhập thất bại',
-        description: 'Đã xảy ra lỗi không xác định'
+        message: 'Đăng ký thất bại',
+        description: errorMessage,
+        duration: 4.5,
       });
     } finally {
       setLoading(false);
