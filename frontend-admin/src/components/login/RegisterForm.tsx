@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button, Input, Form, Typography, notification } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
 import { useRegisterMutation } from '../../features/auth/authApi';
-import Cookies from 'js-cookie';
 
 const { Title, Text } = Typography;
 
@@ -39,10 +38,6 @@ const [register] = useRegisterMutation();
         duration: 4.5,
       })
       form.resetFields()
-
-      setTimeout(() => {
-        onSwitchToLogin()
-      }, 2000)
 
     } catch (error: unknown) {
       let errorMessage = 'Đã xảy ra lỗi không xác định';
@@ -110,7 +105,13 @@ const [register] = useRegisterMutation();
 
         <Form.Item
           name="phoneNumber"
-          rules={[{ required: true, message: 'Please input your phone number!' }]}
+          rules={[
+            { required: true, message: 'Vui lòng nhập số điện thoại!' },
+            {
+              pattern: /^\d{10,11}$/,
+              message: 'Số điện thoại không hợp lệ',
+            },
+          ]}
         >
           <Input
             prefix={<PhoneOutlined />}
@@ -121,16 +122,22 @@ const [register] = useRegisterMutation();
         </Form.Item>
 
         <Form.Item
-          name="password"
-          rules={[{ required: true, message: 'Please input your password!' }]}
-        >
-          <Input.Password
-            prefix={<LockOutlined />}
-            placeholder="Password"
-            size="large"
-            className="login-input"
-          />
-        </Form.Item>
+  name="password"
+  rules={[
+    { required: true, message: 'Vui lòng nhập mật khẩu!' },
+    {
+      pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+      message: 'Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt!',
+    },
+  ]}
+>
+  <Input.Password
+    prefix={<LockOutlined />}
+    placeholder="Mật khẩu"
+    size="large"
+    className="login-input"
+  />
+</Form.Item>
 
         <Form.Item
           name="confirmPassword"
