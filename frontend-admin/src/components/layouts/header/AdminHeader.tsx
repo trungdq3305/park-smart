@@ -1,69 +1,48 @@
 import React from 'react'
-import { Layout, Breadcrumb, Button, Dropdown, Menu, Avatar, Space } from 'antd'
+import { Layout, Button, Dropdown, Avatar, Space } from 'antd'
 import {
-  ShareAltOutlined,
   SettingOutlined,
-  BellOutlined,
   UserOutlined,
   LogoutOutlined
 } from '@ant-design/icons'
-import { useBreadcrumb } from '../../../hooks/useBreadcrumb'
 import './AdminHeader.css'
-
+import Cookies from 'js-cookie'
 const { Header } = Layout
 
 const AdminHeader: React.FC = () => {
-  const breadcrumbItems = useBreadcrumb()
-  
-  const userMenu = (
-    <Menu
-      items={[
-        {
-          key: '1',
-          label: 'Profile',
-          icon: <UserOutlined />,
-        },
-        {
-          key: '2',
-          label: 'Settings',
-          icon: <SettingOutlined />,
-        },
-        {
-          type: 'divider',
-        },
-        {
-          key: '3',
-          label: 'Logout',
-          icon: <LogoutOutlined />,
-          danger: true,
-        },
-      ]}
-    />
-  )
+  const userData = Cookies.get('userData') ? JSON.parse(Cookies.get('userData')!) : null
+  const fullName = userData?.fullName || 'Admin User'
+  const userMenuItems = [
+    {
+      key: '1',
+      label: 'Profile',
+      icon: <UserOutlined />,
+    },
+    {
+      key: '2',
+      label: 'Settings',
+      icon: <SettingOutlined />,
+    },
+    {
+      type: 'divider' as const,
+    },
+    {
+      key: '3',
+      label: 'Logout',
+      icon: <LogoutOutlined />,
+      danger: true,
+    },
+  ]
 
   return (
     <Header className="admin-header">
       <div className="header-left">
-        <Breadcrumb
-          items={breadcrumbItems}
-          separator=">"
-          style={{ fontSize: '14px', color: '#8c8c8c' }}
-        />
+       <h3>Welcome back, {fullName}, let's manage your parking lots !</h3>
       </div>
 
       <div className="header-right">
         <Space size="middle">
-          <Button
-            type="text"
-            icon={<BellOutlined />}
-            className="header-action-btn"
-          />
-          <Button
-            type="text"
-            icon={<ShareAltOutlined />}
-            className="header-action-btn"
-          />
-          <Dropdown overlay={userMenu} trigger={['click']} placement="bottomRight">
+          <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
             <Button
               type="text"
               className="user-menu-btn"
@@ -76,7 +55,7 @@ const AdminHeader: React.FC = () => {
                   marginRight: '8px'
                 }}
               />
-              Admin User
+              {fullName}
             </Button>
           </Dropdown>
         </Space>
