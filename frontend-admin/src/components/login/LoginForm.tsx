@@ -13,6 +13,7 @@ interface LoginFormValues {
   email: string;
   password: string;
 }
+
 const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);

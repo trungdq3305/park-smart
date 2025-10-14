@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button, Input, Form, Typography, notification } from 'antd';
 import { UserOutlined, LockOutlined, PhoneOutlined } from '@ant-design/icons';
 import { useRegisterMutation } from '../../features/auth/authApi';
+import Cookies from 'js-cookie';
 
 const { Title, Text } = Typography;
 
@@ -24,24 +25,40 @@ const [register] = useRegisterMutation();
   const onFinish = async (values: RegisterFormValues) => {
     setLoading(true);
     try {
-      // TODO: Implement register API call
-      console.log('Register data:', values);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const registerData = {
+        email: values.email ,
+        password: values.password,
+        phoneNumber: values.phoneNumber.trim(),
+        fullName: values.fullName.trim(),
+      }
+      await register(registerData).unwrap();
       
       notification.success({
-        message: 'Đăng ký thành công',
-        description: 'Tài khoản operator đã được tạo!'
-      });
-      
-      // Switch back to login form
-      onSwitchToLogin();
-      form.resetFields();
-    } catch (error) {
+        message: 'Đăng ký thành công!',
+        description: `Người dùng ${values.fullName} đã tạo tài khoản thành công với email đăng nhập là ${values.email}`,
+        duration: 4.5,
+      })
+      form.resetFields()
+
+      setTimeout(() => {
+        onSwitchToLogin()
+      }, 2000)
+
+    } catch (error: unknown) {
+      let errorMessage = 'Đã xảy ra lỗi không xác định';
+    
+      // Kiểm tra nếu error là một đối tượng có thuộc tính data hoặc message
+      if (error && typeof error === 'object') {
+        if ('data' in error && error.data && typeof error.data === 'object' && 'message' in error.data) {
+          errorMessage = (error.data as { message: string }).message;
+        } else if ('message' in error && typeof error.message === 'string') {
+          errorMessage = error.message;
+        }
+      }
       notification.error({
         message: 'Đăng ký thất bại',
-        description: 'Đã xảy ra lỗi không xác định'
+        description: errorMessage,
+        duration: 4.5,
       });
     } finally {
       setLoading(false);
