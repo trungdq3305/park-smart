@@ -1,12 +1,26 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Typography } from 'antd';
 import './LoginPage.css';
 import LoginForm from './LoginForm';
 import RegisterForm from './RegisterForm';
+import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 const { Title, Text } = Typography;
 
 const Login: React.FC = () => {
+
+    const navigate = useNavigate()
+
+    useEffect(() => {
+      const userData = Cookies.get('userData')
+        ? JSON.parse(Cookies.get('userData') as string)
+        : null
+      if (userData) {
+        navigate('/')
+      }
+    }, [navigate])
+    
     const [isLogin, setIsLogin] = useState(true);
 
     const toggleMode = () => {
