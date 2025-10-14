@@ -37,7 +37,6 @@ const [register] = useRegisterMutation();
         description: `Người dùng ${values.fullName} đã tạo tài khoản thành công với email đăng nhập là ${values.email}`,
         duration: 4.5,
       })
-      form.resetFields()
 
     }catch (error: unknown) {
       let errorMessage = 'Đã xảy ra lỗi không xác định';
