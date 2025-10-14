@@ -1,44 +1,17 @@
-    import React, { useState } from 'react';
-    import { Button, Input, Form, Typography, notification } from 'antd';
-    import { UserOutlined, LockOutlined } from '@ant-design/icons';
-    import './LoginPage.css';
-    import { useLoginMutation } from '../../features/auth/authApi';
-    import Cookies from 'js-cookie';
-import Link from 'antd/es/typography/Link';
-    const { Title, Text } = Typography;
+import React, { useState } from 'react';
+import { Typography } from 'antd';
+import './LoginPage.css';
+import LoginForm from './LoginForm';
+import RegisterForm from './RegisterForm';
 
-    const Login: React.FC = () => {
-        const [form] = Form.useForm();
-        const [loading, setLoading] = useState(false);
-        const [login] = useLoginMutation()
+const { Title, Text } = Typography;
 
-        const onFinish = async (values: {email: string, password: string}) => {
-            setLoading(true);
-            try {
-                const response = await login({
-                email: values.email || '',
-                password: values.password,
-                }).unwrap()
-        
-                const token = response.data
-        
-                if (token) {
-                Cookies.set('userToken', token, { expires: 7 })
-                } else {
-                notification.error({
-                    message: 'Lỗi phản hồi',
-                    description: 'Không tìm thấy token trong phản hồi từ server.',
-                })
-                }
-            }catch (error) {
-                notification.error({
-                message: 'Đăng nhập thất bại',
-                description: 'Đã xảy ra lỗi không xác định'
-                })
-            } finally {
-                setLoading(false);
-            }
-        };
+const Login: React.FC = () => {
+    const [isLogin, setIsLogin] = useState(true);
+
+    const toggleMode = () => {
+        setIsLogin(!isLogin);
+    };
 
         return (
             <div className="login-container">
@@ -63,63 +36,13 @@ import Link from 'antd/es/typography/Link';
                     </div>
                 </div>
 
-                {/* Right Login Form Section */}
+                {/* Right Form Section */}
                 <div className="login-form-section">
-                    <div className="login-form-container">
-                        <Title level={2} className="brand-title">ParkSmart</Title>
-                        <Title level={3} className="welcome-title">Welcome Back!</Title>
-                        
-                        <Text className="signup-prompt">
-                        Want to be an operator? <Link href="#" className="signup-link">Create an operator account now,</Link> it's FREE! Takes less than a minute.
-                    </Text>
-                        <Form
-                            form={form}
-                            name="login"
-                            onFinish={onFinish}
-                            layout="vertical"
-                            className="login-form"
-                        >
-                            <Form.Item
-                                name="email"
-                                rules={[
-                                    { required: true, message: 'Please input your email!' },
-                                    { type: 'email', message: 'Please enter a valid email!' }
-                                ]}
-                            >
-                                <Input
-                                    prefix={<UserOutlined />}
-                                    placeholder="Email"
-                                    size="large"
-                                    className="login-input"
-                                />
-                            </Form.Item>
-
-                            <Form.Item
-                                name="password"
-                                rules={[{ required: true, message: 'Please input your password!' }]}
-                            >
-                                <Input.Password
-                                    prefix={<LockOutlined />}
-                                    placeholder="Password"
-                                    size="large"
-                                    className="login-input"
-                                />
-                            </Form.Item>
-
-                            <Form.Item>
-                                <Button
-                                    type="primary"
-                                    htmlType="submit"
-                                    size="large"
-                                    loading={loading}
-                                    className="login-button"
-                                    block
-                                >
-                                    Login Now
-                                </Button>
-                            </Form.Item>
-                        </Form>
-                    </div>
+                    {isLogin ? (
+                        <LoginForm onSwitchToRegister={toggleMode} />
+                    ) : (
+                        <RegisterForm onSwitchToLogin={toggleMode} />
+                    )}
                 </div>
             </div>
         );
