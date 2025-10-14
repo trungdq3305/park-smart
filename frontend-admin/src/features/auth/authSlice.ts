@@ -12,7 +12,7 @@ const userToken = Cookies.get('userToken')
 
 const initialState: AuthState = {
   userData,
-  userToken: userToken ? { accessToken: userToken } : null,
+  userToken: userToken ? { data: userToken } : null,
   isAuthenticated: !!userData,
   isLoading: false,
 }
@@ -33,18 +33,14 @@ const authSlice = createSlice({
         email: decodedToken.email,
         id: decodedToken.id,
         role: decodedToken.role,
-        name: decodedToken.name,
+        fullName: decodedToken.fullName,
         phoneNumber: decodedToken.phoneNumber,
         exp: decodedToken.exp,
-        facility: {
-          _id: decodedToken.facility?._id || '',
-          facilityName: decodedToken.facility?.facilityName || '',
-          address: decodedToken.facility?.address || '',
-        },
-        gender: decodedToken.gender,
+        department: decodedToken.department,
+        adminId: decodedToken.adminId,
       }
 
-      state.userToken = { accessToken: token }
+      state.userToken = { data: token }
       state.isAuthenticated = true
 
       const expirationDate = new Date(Number(state.userData.exp) * 1000)
@@ -52,7 +48,7 @@ const authSlice = createSlice({
         expires: expirationDate,
       })
       Cookies.set('userToken', token, { expires: expirationDate })
-      if (state.userData.role === 'Customer') {
+      if (state.userData.role === 'Admin') {
         window.location.href = '/'
       } else {
         window.location.href = `/${state.userData.role.toLowerCase().replace(/ /g, '-')}`
@@ -71,5 +67,4 @@ const authSlice = createSlice({
 
 export const { login, logout, setLoading } = authSlice.actions
 export default authSlice.reducer
-export const selectAuthUser = (state: { authSlice: AuthState }) =>
-  state.authSlice
+export const selectAuthUser = (state: { authSlice: AuthState }) => state.authSlice

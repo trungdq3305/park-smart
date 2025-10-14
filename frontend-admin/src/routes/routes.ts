@@ -5,16 +5,20 @@ import type { LayoutRoute } from '../types/Route'
 const MainLayout = lazy(() => import('../components/layouts/layout/MainLayout'))
 
 // --- Các Trang (tải lười - lazy loading) ---
-const LandingPage = lazy(() => import('../pages/landing/LandingPage'))
+const LoginPage = lazy(() => import('../pages/LoginPage'))
+const ManageAccountPage = lazy(() => import('../pages/admin/ManageAccountPage'))
 
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
     data: [
       {
+        path: '/login',
+        component: LoginPage,
+      },
+      {
         path: '/',
-        component: LandingPage,
-        exact: true,
+        component: ManageAccountPage,
       },
     ],
   },

@@ -1,20 +1,16 @@
 export interface UserToken {
-  accessToken: string
+  data: string // JWT token
 }
 
 export interface UserData {
   email: string
   id: string
-  facility: {
-    _id: string
-    facilityName: string
-    address: string
-  }
+  department: string
   role: string
-  name: string
+  fullName: string
   phoneNumber: string
+  adminId: string
   exp: boolean
-  gender: string
 }
 
 export interface AuthState {
