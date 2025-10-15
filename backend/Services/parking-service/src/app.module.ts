@@ -10,6 +10,7 @@ import { AppService } from './app.service'
 import { DatabaseConfig } from './config/database.config'
 import { JwtAuthGuard } from './guard/jwtAuth.guard'
 import { AddressModule } from './module/address/address.module'
+import { BasisModule } from './module/basis/basis.module'
 import { BrandModule } from './module/brand/brand.module'
 import { ColorModule } from './module/color/color.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
@@ -48,6 +49,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     ParkingLotModule,
     ParkingSpaceModule,
     ParkingSpaceStatusModule,
+    BasisModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
