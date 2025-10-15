@@ -32,6 +32,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) =>
   // Menu items cho ứng dụng Park Smart
   const menuItems = [
     {
+      key: '/admin/manage-account',
+      icon: <TeamOutlined />,
+      label: 'Users',
+      badge: '164',
+      active: true,
+    },
+    {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'Dashboard',
@@ -62,12 +69,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) =>
       key: '/companies',
       icon: <BankOutlined />,
       label: 'Companies',
-    },
-    {
-      key: '/users',
-      icon: <TeamOutlined />,
-      label: 'Users',
-      badge: '164',
     },
     {
       key: '/vehicles',

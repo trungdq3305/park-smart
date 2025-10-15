@@ -22,7 +22,12 @@ const routes: LayoutRoute[] = [
     layout: AdminLayout,
     data: [
       {
-        path: '/',
+        path: '/admin',
+        component: ManageAccountPage,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/manage-account',
         component: ManageAccountPage,
         role: ['Admin'],
       },
