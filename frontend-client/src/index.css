@@ -29,6 +29,6 @@
 body {
   margin: 0;
   font-family: 'Inter', sans-serif !important;
-  min-width: 320px;
+  min-width: 32vh;
   min-height: 100vh;
 }

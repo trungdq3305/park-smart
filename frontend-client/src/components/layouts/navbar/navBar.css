@@ -3,13 +3,13 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 44px;
+  height: 4.4vh;
   /* Apple navbar height */
   background: rgba(55, 55, 57, 0.8);
   /* Dark semi-transparent */
-  backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(2vh);
   /* subtle blur */
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(2vh);
 
   display: flex;
   align-items: center;
@@ -28,7 +28,7 @@
 .apple-navbar a {
   text-decoration: none;
   color: #f5f5f7;
-  font-size: 12px;
+  font-size: 1.2vh;
   font-weight: 400;
   transition: color 0.3s;
 }
@@ -44,5 +44,5 @@ html {
 
 /* Ensure proper spacing for fixed navbar */
 body {
-  padding-top: 44px; /* Apple navbar height */
+  padding-top: 4.4vh; /* Apple navbar height */
 }
