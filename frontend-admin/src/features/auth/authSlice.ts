@@ -49,7 +49,7 @@ const authSlice = createSlice({
       })
       Cookies.set('userToken', token, { expires: expirationDate })
       if (state.userData.role === 'Admin') {
-        window.location.href = '/'
+        window.location.href = '/admin/manage-account'
       } else {
         window.location.href = `/${state.userData.role.toLowerCase().replace(/ /g, '-')}`
       }
