@@ -3,10 +3,10 @@ import { apiSlice } from "../apis/apiSlice"
 export const accountAPI = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAccount: builder.query({
-      query: ({currentPage, pageSize}) => ({
+      query: ({page, pageSize}) => ({
         url: '/core/accounts',
         method: 'GET',
-        params: { currentPage, pageSize },
+        params: { page, pageSize },
       }),
       transformResponse: (res) => res,
       providesTags: ['account'],

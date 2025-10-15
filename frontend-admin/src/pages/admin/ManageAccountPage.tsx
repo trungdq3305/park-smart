@@ -43,7 +43,7 @@ const ManageAccountPage: React.FC = () => {
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
 
   const { data, isLoading } = useGetAccountQuery<ListAccountResponse>({
-    currentPage,
+    page : currentPage,
     pageSize
   })
 
