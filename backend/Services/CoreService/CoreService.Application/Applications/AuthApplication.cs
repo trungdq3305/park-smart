@@ -44,7 +44,10 @@ namespace CoreService.Application.Applications
             {
                 throw new ApiException("Thông tin đăng nhập không hợp lệ", StatusCodes.Status401Unauthorized);
             }
-
+            if (!account.IsActive && account.RoleId == "68bee1f500a9410adb97d3a0")
+            {
+                throw new ApiException("Tài khoản đang chờ được Admin xác thực ", StatusCodes.Status401Unauthorized);
+            }
             var activedAccount = await _accountRepo.GetActivedByEmailAsync(request.Email);
             if (activedAccount == null)
             {
