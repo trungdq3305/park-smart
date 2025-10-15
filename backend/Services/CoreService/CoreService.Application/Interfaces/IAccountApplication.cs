@@ -12,7 +12,7 @@ namespace CoreService.Application.Interfaces
 {
     public interface IAccountApplication
     {
-        Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetAllAsync(int? page, int? pageSize);
+        Task<ApiResponse<AccountListResponseDto>> GetAllAsync(int? page, int? pageSize);
         Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetByRoleAsync(string role, int? page, int? pageSize);
         Task<ApiResponse<AccountDetailDto>> GetByIdAsync(string id);
         //Task<ApiResponse<Account>> CreateAsync(Account account);
