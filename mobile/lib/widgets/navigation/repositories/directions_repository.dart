@@ -39,7 +39,10 @@ class DirectionsRepository {
           '&destination=${destination.latitude},${destination.longitude}'
           '&key=$apiKey'
           '&language=vi'
-          '&mode=driving';
+          '&mode=driving'
+          '&alternatives=true'
+          '&avoid=tolls'
+          '&units=metric';
 
       print('🧭 Requesting directions: $url');
 
@@ -49,18 +52,36 @@ class DirectionsRepository {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('📡 API Response status: ${data['status']}');
+        print('📡 Response body length: ${response.body.length}');
 
         if (data['status'] == 'OK') {
           print('✅ Directions API successful');
+
+          // Debug route information
+          if (data['routes'] != null && data['routes'].isNotEmpty) {
+            final route = data['routes'][0];
+            print(
+              '📡 Route overview_polyline: ${route['overview_polyline'] != null ? 'Present' : 'Missing'}',
+            );
+            if (route['overview_polyline'] != null) {
+              print(
+                '📡 Polyline length: ${route['overview_polyline']['points']?.length ?? 0}',
+              );
+            }
+            print('📡 Route legs: ${route['legs']?.length ?? 0}');
+          }
+
           return Directions.fromMap(data);
         } else {
           print(
             '❌ Directions API error: ${data['status']} - ${data['error_message'] ?? 'Unknown error'}',
           );
+          print('❌ Full response: ${response.body}');
           return null;
         }
       } else {
         print('❌ HTTP error: ${response.statusCode}');
+        print('❌ Response body: ${response.body}');
         return null;
       }
     } catch (e) {

@@ -60,7 +60,11 @@ class Directions {
 
     // Decode polyline manually
     final polylineString = data['overview_polyline']['points'];
-    final List<LatLng> polylinePoints = _decodePolyline(polylineString);
+    print('🔍 Polyline string length: ${polylineString?.length ?? 0}');
+    print('🔍 Polyline string preview: ${polylineString?.substring(0, 50)}...');
+
+    final List<LatLng> polylinePoints = _decodePolyline(polylineString ?? '');
+    print('🔍 Decoded points count: ${polylinePoints.length}');
 
     return Directions(
       bounds: bounds,
@@ -71,36 +75,58 @@ class Directions {
     );
   }
 
-  // Simple polyline decoder
+  // Improved polyline decoder for Google Directions API
   static List<LatLng> _decodePolyline(String polyline) {
     final List<LatLng> points = [];
     int index = 0;
     int lat = 0;
     int lng = 0;
 
+    print('🔍 Decoding polyline: ${polyline.length} characters');
+
     while (index < polyline.length) {
       int b, shift = 0, result = 0;
+
+      // Decode latitude
       do {
+        if (index >= polyline.length) break;
         b = polyline.codeUnitAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
+
       int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
       lat += dlat;
 
+      // Decode longitude
       shift = 0;
       result = 0;
       do {
+        if (index >= polyline.length) break;
         b = polyline.codeUnitAt(index++) - 63;
         result |= (b & 0x1f) << shift;
         shift += 5;
       } while (b >= 0x20);
+
       int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
       lng += dlng;
 
-      points.add(LatLng(lat / 1e5, lng / 1e5));
+      // Convert to LatLng and add to points
+      final double latitude = lat / 1e5;
+      final double longitude = lng / 1e5;
+
+      // Validate coordinates
+      if (latitude >= -90 &&
+          latitude <= 90 &&
+          longitude >= -180 &&
+          longitude <= 180) {
+        points.add(LatLng(latitude, longitude));
+      } else {
+        print('⚠️ Invalid coordinates: lat=$latitude, lng=$longitude');
+      }
     }
 
+    print('✅ Decoded ${points.length} points from polyline');
     return points;
   }
 }

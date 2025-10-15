@@ -51,27 +51,39 @@ class NavigationService {
     final double distance = calculateDistance(start, end);
     print('🛣️ Distance: ${distance}m');
 
-    final int numPoints = (distance / 50).round().clamp(
-      10,
-      50,
-    ); // 1 point per 50m, min 10, max 50
+    final int numPoints = (distance / 25).round().clamp(
+      20,
+      100,
+    ); // 1 point per 25m, min 20, max 100 for smoother route
 
     print('🛣️ Number of points: $numPoints');
 
-    // Create a more realistic route with slight curves
+    // Create a more realistic route with multiple curves and waypoints
     for (int i = 1; i < numPoints; i++) {
       final double ratio = i / numPoints;
 
-      // Add slight curve to make route more realistic
-      final double curveOffset =
-          sin(ratio * pi) * 0.0002; // Slightly larger curve offset
+      // Create multiple curves for more realistic road-like path
+      final double curve1 = sin(ratio * pi * 2) * 0.0001; // Primary curve
+      final double curve2 = sin(ratio * pi * 4) * 0.00005; // Secondary curve
+      final double curve3 = sin(ratio * pi * 8) * 0.00002; // Tertiary curve
+
+      // Add some randomness for more natural look
+      final double randomOffset = (sin(ratio * pi * 16) * 0.00001);
 
       final double lat =
           start.latitude +
           (end.latitude - start.latitude) * ratio +
-          curveOffset;
+          curve1 +
+          curve2 +
+          curve3 +
+          randomOffset;
+
       final double lng =
-          start.longitude + (end.longitude - start.longitude) * ratio;
+          start.longitude +
+          (end.longitude - start.longitude) * ratio +
+          curve1 * 0.5 +
+          curve2 * 0.3 +
+          randomOffset;
 
       points.add(LatLng(lat, lng));
     }
