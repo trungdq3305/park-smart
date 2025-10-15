@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react'
-import { Modal, Button, Descriptions, Tag, message, Dropdown } from 'antd'
+import React, { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { message, Dropdown, Button } from 'antd'
 import type { MenuProps } from 'antd'
 import { MoreOutlined, EyeOutlined, EditOutlined, KeyOutlined, DeleteOutlined, PauseOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { AccountDetailsModal, DeleteConfirmModal } from '../../components/modals'
 import { 
   useGetAccountQuery, 
   useDeleteAccountMutation, 
@@ -29,10 +31,12 @@ interface ListAccountResponse {
 }
 
 const ManageAccountPage: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState(1)
-  const [pageSize, setPageSize] = useState(5)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [roleFilter, setRoleFilter] = useState('all')
+  const [searchParams, setSearchParams] = useSearchParams()
+  
+  // Get values from URL parameters with defaults
+  const currentPage = parseInt(searchParams.get('page') || '1', 10)
+  const pageSize = 5 // Fixed page size, not from URL
+  
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -49,22 +53,30 @@ const ManageAccountPage: React.FC = () => {
   const accounts = data?.data?.pagedAccounts?.data || []
   const totalItems = data?.data?.pagedAccounts?.totalItems || 0
   const totalPages = Math.ceil(totalItems / pageSize)
-const totalAdmins = data?.data?.totalAdmins || 0
-const totalOperators = data?.data?.totalOperators || 0
-const totalDrivers = data?.data?.totalDrivers || 0
-  // Filter accounts based on search term and role
-  const filteredAccounts = useMemo(() => {
-    return accounts.filter((account: Account) => {
-      const matchesSearch = 
-        account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        account.phoneNumber.includes(searchTerm) ||
-        account.roleName.toLowerCase().includes(searchTerm.toLowerCase())
-      
-      const matchesRole = roleFilter === 'all' || account.roleName === roleFilter
-      
-      return matchesSearch && matchesRole
+  const totalAdmins = data?.data?.totalAdmins || 0
+  const totalOperators = data?.data?.totalOperators || 0
+  const totalDrivers = data?.data?.totalDrivers || 0
+
+  // Functions to update URL parameters
+  const updateSearchParams = (updates: Record<string, string | number | null>) => {
+    const newSearchParams = new URLSearchParams(searchParams)
+    
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === '' || value === 'all') {
+        newSearchParams.delete(key)
+      } else {
+        newSearchParams.set(key, value.toString())
+      }
     })
-  }, [accounts, searchTerm, roleFilter])
+    
+    setSearchParams(newSearchParams, { replace: true })
+  }
+
+  const handlePageChange = (page: number) => {
+    updateSearchParams({ page })
+  }
+
+
 
   const handleViewDetails = (account: Account) => {
     setSelectedAccount(account)
@@ -76,9 +88,6 @@ const totalDrivers = data?.data?.totalDrivers || 0
     setSelectedAccount(null)
   }
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
 
   const handleDeleteAccount = (account: Account) => {
     setAccountToDelete(account)
@@ -117,21 +126,22 @@ const totalDrivers = data?.data?.totalDrivers || 0
     setShowModal(true)
   }
 
-  const getRoleBadgeColor = (roleName: string) => {
-    switch (roleName.toLowerCase()) {
-      case 'admin':
-        return 'purple'
-      case 'operator':
-        return 'blue'
-      case 'driver':
-        return 'orange'
-      default:
-        return 'default'
-    }
-  }
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? 'badge-active' : 'badge-inactive'
+  }
+
+  const getRoleBadgeColor = (roleName: string) => {
+    switch (roleName.toLowerCase()) {
+      case 'admin':
+        return 'badge-admin'
+      case 'operator':
+        return 'badge-operator'
+      case 'driver':
+        return 'badge-driver'
+      default:
+        return 'badge-default'
+    }
   }
 
   const getMenuItems = (account: Account): MenuProps['items'] => [
@@ -193,47 +203,6 @@ const totalDrivers = data?.data?.totalDrivers || 0
       </div>
 
       <div className="page-content">
-        {/* Search and Filter Section */}
-        <div className="search-filter-section">
-          <div className="search-box">
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo email, số điện thoại hoặc vai trò..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="search-input"
-            />
-            <button className="search-button">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
-          </div>
-
-          <div className="filter-section">
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="role-filter"
-            >
-              <option value="all">Tất cả vai trò</option>
-              <option value="admin">Admin</option>
-              <option value="operator">Operator</option>
-              <option value="driver">Driver</option>
-            </select>
-
-            <select
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-              className="page-size-select"
-            >
-              <option value={5}>5 / trang</option>
-              <option value={10}>10 / trang</option>
-              <option value={20}>20 / trang</option>
-              <option value={50}>50 / trang</option>
-            </select>
-          </div>
-        </div>
 
         {/* Stats Cards */}
         <div className="stats-section">
@@ -271,7 +240,7 @@ const totalDrivers = data?.data?.totalDrivers || 0
         <div className="table-container">
           <div className="table-header">
             <h3>Danh sách tài khoản</h3>
-            <span className="table-count">{filteredAccounts.length} tài khoản</span>
+            <span className="table-count">{accounts.length} tài khoản</span>
           </div>
 
           <div className="table-wrapper">
@@ -286,7 +255,7 @@ const totalDrivers = data?.data?.totalDrivers || 0
                 </tr>
               </thead>
               <tbody>
-                {filteredAccounts.map((account: Account) => (
+                {accounts.map((account: Account) => (
                   <tr key={account._id}>
                     <td>
                       <div className="account-info">
@@ -371,178 +340,20 @@ const totalDrivers = data?.data?.totalDrivers || 0
       </div>
 
       {/* Account Details Modal */}
-      <Modal
-        title="Chi tiết tài khoản"
+      <AccountDetailsModal
         open={showModal}
-        onCancel={handleCloseModal}
-        width={800}
-        footer={[
-          <Button key="close" onClick={handleCloseModal}>
-            Đóng
-          </Button>,
-          <Button 
-            key="edit" 
-            type="primary"
-            onClick={() => {
-              handleCloseModal()
-              handleEditAccount(selectedAccount!)
-            }}
-          >
-            Chỉnh sửa
-          </Button>
-        ]}
-      >
-        {selectedAccount && (
-          <div className="account-details-content">
-            <Descriptions title="Thông tin cơ bản" bordered column={2}>
-              <Descriptions.Item label="Email">
-                {selectedAccount.email}
-              </Descriptions.Item>
-              <Descriptions.Item label="Số điện thoại">
-                {selectedAccount.phoneNumber}
-              </Descriptions.Item>
-              <Descriptions.Item label="Vai trò">
-                <Tag color={getRoleBadgeColor(selectedAccount.roleName)}>
-                  {selectedAccount.roleName}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái">
-                <Tag color={selectedAccount.isActive ? 'green' : 'red'}>
-                  {selectedAccount.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Lần đăng nhập cuối" span={2}>
-                {selectedAccount.lastLoginAt 
-                  ? new Date(selectedAccount.lastLoginAt).toLocaleString('vi-VN')
-                  : 'Chưa đăng nhập'
-                }
-              </Descriptions.Item>
-            </Descriptions>
-
-            {/* Role-specific details */}
-            {selectedAccount.driverDetail && (
-              <Descriptions 
-                title="Thông tin Driver" 
-                bordered 
-                column={2}
-                style={{ marginTop: 16 }}
-              >
-                <Descriptions.Item label="Tên đầy đủ">
-                  {selectedAccount.driverDetail.fullName}
-                </Descriptions.Item>
-                <Descriptions.Item label="Giới tính">
-                  {selectedAccount.driverDetail.gender ? 'Nam' : 'Nữ'}
-                </Descriptions.Item>
-                <Descriptions.Item label="Điểm tín dụng">
-                  {selectedAccount.driverDetail.creditPoint}
-                </Descriptions.Item>
-                <Descriptions.Item label="Điểm tích lũy">
-                  {selectedAccount.driverDetail.accumulatedPoints}
-                </Descriptions.Item>
-                <Descriptions.Item label="Xác thực">
-                  <Tag color={selectedAccount.driverDetail.isVerified ? 'green' : 'red'}>
-                    {selectedAccount.driverDetail.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                  </Tag>
-                </Descriptions.Item>
-              </Descriptions>
-            )}
-
-            {selectedAccount.operatorDetail && (
-              <Descriptions 
-                title="Thông tin Operator" 
-                bordered 
-                column={2}
-                style={{ marginTop: 16 }}
-              >
-                <Descriptions.Item label="Tên đầy đủ">
-                  {selectedAccount.operatorDetail.fullName}
-                </Descriptions.Item>
-                <Descriptions.Item label="Tên công ty">
-                  {selectedAccount.operatorDetail.companyName}
-                </Descriptions.Item>
-                <Descriptions.Item label="Mã số thuế">
-                  {selectedAccount.operatorDetail.taxCode}
-                </Descriptions.Item>
-                <Descriptions.Item label="Email liên hệ">
-                  {selectedAccount.operatorDetail.contactEmail}
-                </Descriptions.Item>
-                <Descriptions.Item label="Xác thực">
-                  <Tag color={selectedAccount.operatorDetail.isVerified ? 'green' : 'red'}>
-                    {selectedAccount.operatorDetail.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                  </Tag>
-                </Descriptions.Item>
-              </Descriptions>
-            )}
-
-            {selectedAccount.adminDetail && (
-              <Descriptions 
-                title="Thông tin Admin" 
-                bordered 
-                column={2}
-                style={{ marginTop: 16 }}
-              >
-                <Descriptions.Item label="Tên đầy đủ">
-                  {selectedAccount.adminDetail.fullName}
-                </Descriptions.Item>
-                <Descriptions.Item label="Phòng ban">
-                  {selectedAccount.adminDetail.department}
-                </Descriptions.Item>
-                <Descriptions.Item label="Chức vụ">
-                  {selectedAccount.adminDetail.position}
-                </Descriptions.Item>
-              </Descriptions>
-            )}
-          </div>
-        )}
-      </Modal>
+        onClose={handleCloseModal}
+        account={selectedAccount}
+        onEdit={handleEditAccount}
+      />
 
       {/* Delete Confirmation Modal */}
-      <Modal
-        title="Xác nhận xóa tài khoản"
+      <DeleteConfirmModal
         open={showDeleteConfirm}
-        onCancel={() => setShowDeleteConfirm(false)}
-        width={500}
-        footer={[
-          <Button key="cancel" onClick={() => setShowDeleteConfirm(false)}>
-            Hủy
-          </Button>,
-          <Button 
-            key="delete" 
-            type="primary" 
-            danger
-            onClick={confirmDeleteAccount}
-          >
-            Xóa tài khoản
-          </Button>
-        ]}
-      >
-        {accountToDelete && (
-          <div className="delete-confirmation-content">
-            <div className="warning-section">
-              <div className="warning-icon">⚠️</div>
-              <div className="warning-text">
-                <h3>Bạn có chắc chắn muốn xóa tài khoản này?</h3>
-                <p>
-                  Tài khoản <strong>{accountToDelete.email}</strong> sẽ bị xóa vĩnh viễn và không thể khôi phục.
-                </p>
-              </div>
-            </div>
-            
-            <div className="account-preview">
-              <div className="account-avatar">
-                {accountToDelete.email.charAt(0).toUpperCase()}
-              </div>
-              <div className="account-info">
-                <h4>{accountToDelete.email}</h4>
-                <p>{accountToDelete.phoneNumber}</p>
-                <Tag color={getRoleBadgeColor(accountToDelete.roleName)}>
-                  {accountToDelete.roleName}
-                </Tag>
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDeleteAccount}
+        account={accountToDelete}
+      />
     </div>
   )
 }
