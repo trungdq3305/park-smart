@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { message, Dropdown, Button } from 'antd'
 import type { MenuProps } from 'antd'
-import { MoreOutlined, EyeOutlined, EditOutlined, KeyOutlined, DeleteOutlined, PauseOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import { MoreOutlined, EyeOutlined, KeyOutlined, DeleteOutlined, PauseOutlined, PlayCircleOutlined } from '@ant-design/icons'
 import { AccountDetailsModal, DeleteConfirmModal } from '../../components/modals'
 import { 
   useGetAccountQuery, 
@@ -121,10 +121,6 @@ const ManageAccountPage: React.FC = () => {
     }
   }
 
-  const handleEditAccount = (account: Account) => {
-    setSelectedAccount(account)
-    setShowModal(true)
-  }
 
 
   const getStatusBadge = (isActive: boolean) => {
@@ -150,12 +146,6 @@ const ManageAccountPage: React.FC = () => {
       label: 'Xem profile',
       icon: <EyeOutlined />,
       onClick: () => handleViewDetails(account)
-    },
-    {
-      key: 'edit',
-      label: 'Chỉnh sửa chi tiết',
-      icon: <EditOutlined />,
-      onClick: () => handleEditAccount(account)
     },
     {
       key: 'permission',
@@ -344,7 +334,6 @@ const ManageAccountPage: React.FC = () => {
         open={showModal}
         onClose={handleCloseModal}
         account={selectedAccount}
-        onEdit={handleEditAccount}
       />
 
       {/* Delete Confirmation Modal */}

@@ -6,14 +6,12 @@ interface AccountDetailsModalProps {
   open: boolean
   onClose: () => void
   account: Account | null
-  onEdit: (account: Account) => void
 }
 
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
   open,
   onClose,
-  account,
-  onEdit
+  account
 }) => {
   const getRoleBadgeColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {
@@ -28,12 +26,6 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     }
   }
 
-  const handleEdit = () => {
-    if (account) {
-      onClose()
-      onEdit(account)
-    }
-  }
 
   return (
     <Modal
@@ -44,13 +36,6 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
       footer={[
         <Button key="close" onClick={onClose}>
           Đóng
-        </Button>,
-        <Button 
-          key="edit" 
-          type="primary"
-          onClick={handleEdit}
-        >
-          Chỉnh sửa
         </Button>
       ]}
     >
