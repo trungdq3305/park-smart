@@ -30,6 +30,10 @@ namespace CoreService.Repository
             services.AddScoped<IPromotionRepository, PromotionRepository>();
             services.AddScoped<IPromotionRuleRepository, PromotionRuleRepository>();
             services.AddScoped<IEventRepository, EventRepository>();
+            services.AddScoped<IBlacklistRepository, BlacklistRepository>();
+            services.AddScoped<IFavouriteParkingLotRepository, FavouriteParkingLotRepository>();
+            services.AddScoped<IReportCategoryRepository, ReportCategoryRepository>();
+            services.AddScoped<IReportRepository, ReportRepository>();
             return services;
         }
     }
