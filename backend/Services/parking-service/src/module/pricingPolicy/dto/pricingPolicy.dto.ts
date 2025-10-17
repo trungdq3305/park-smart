@@ -1,38 +1,155 @@
-// import { ApiProperty } from '@nestjs/swagger'
-// import { Exclude, Expose, Transform, Type } from 'class-transformer'
-// import { IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+import { ApiProperty } from '@nestjs/swagger'
+import { Exclude, Expose, Transform, Type } from 'class-transformer'
+import {
+  IsMongoId,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator'
 
 // --- DTO for Request Bodies ---
 export class CreatePricingPolicyDto {
-  // @ApiProperty({ example: '29 Lê Duẩn' })
-  // @IsNotEmpty()
-  // @IsString()
-  // fullAddress: string
-  // @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
-  // @IsNotEmpty()
-  // @IsMongoId()
-  // wardId: string
-}
+  @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
+  @IsNotEmpty()
+  @IsMongoId()
+  basisId: string
 
-export class UpdatePricingPolicyDto {
-  // @ApiProperty({ example: '30 Nguyễn Huệ', required: false })
-  // @IsOptional()
-  // @IsString()
-  // fullAddress: string
-  // @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1b', required: false })
-  // @IsOptional()
-  // @IsMongoId()
-  // wardId: string
+  @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
+  @IsNotEmpty()
+  @IsMongoId()
+  tieredRateSetId: string
+
+  @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
+  @IsNotEmpty()
+  @IsMongoId()
+  packageRateSetId: string
+
+  @ApiProperty({ example: 'Gói theo tháng', description: 'Tên chính sách giá' })
+  @IsNotEmpty()
+  @IsString()
+  name: string
+
+  @ApiProperty({ example: '100000', description: 'Giá theo giờ' })
+  @IsOptional()
+  @IsNumber()
+  pricePerHour: number
+
+  @ApiProperty({
+    example: '100000',
+    description: 'Giá cố định cho một khoảng thời gian nhất định',
+  })
+  @IsOptional()
+  @IsNumber()
+  fixedPrice: number
 }
 
 // --- DTO for Responses ---
+@Exclude()
+export class BasisDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  basisName: string
+
+  @Expose()
+  description: string
+}
+// --- DTO lồng nhau cho PackageRate ---
+@Exclude()
+export class PackageRateDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  timePackage: string
+
+  @Expose()
+  price: number
+}
+
+// --- DTO lồng nhau cho TieredRate (một bậc giá) ---
+@Exclude()
+export class TieredRateDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  fromHour: number
+
+  @Expose()
+  toHour: number
+
+  @Expose()
+  price: number
+}
+
+// --- DTO lồng nhau cho TieredRateSet (chứa nhiều bậc giá) ---
+@Exclude()
+export class TieredRateSetDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  /**
+   * Mảng này là kết quả của việc populate/lookup từ bảng tiered_rate
+   */
+  @Expose()
+  @Type(() => TieredRateDto)
+  @ValidateNested({ each: true })
+  tieredRates: TieredRateDto[]
+}
+
+// --- DTO Phản hồi Chính ---
+@Exclude()
 export class PricingPolicyResponseDto {
-  // @ApiProperty({ example: '29 Lê Duẩn' })
-  // @IsNotEmpty()
-  // @IsString()
-  // fullAddress: string
-  // @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
-  // @IsNotEmpty()
-  // @IsMongoId()
-  // wardId: string
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  pricePerHour: number
+
+  @Expose()
+  fixedPrice: number
+
+  /**
+   * Trường basisId đã được populate thành đối tượng BasisDto
+   */
+  @Expose()
+  @Type(() => BasisDto)
+  @ValidateNested()
+  basisId: BasisDto
+
+  /**
+   * Trường tieredRateSetId đã được populate thành đối tượng TieredRateSetDto
+   * (có thể là null nếu đây không phải là chính sách giá bậc thang)
+   */
+  @Expose()
+  @Type(() => TieredRateSetDto)
+  @ValidateNested()
+  tieredRateSetId: TieredRateSetDto
+
+  /**
+   * Trường packageRateId đã được populate thành đốiD:\HỌC TẬP\DATN\database\ERD\13_10\bãi đỗ xe - ERD.drawio
+   * (có thể là null nếu đây không phải là chính sách giá gói)
+   */
+  @Expose()
+  @Type(() => PackageRateDto)
+  @ValidateNested()
+  packageRateId: PackageRateDto
 }
