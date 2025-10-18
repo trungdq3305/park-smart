@@ -124,7 +124,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) =>
               className="collapse-btn"
             />
           </div>
-          
         </div>
 
         {/* Navigation Menu */}
@@ -132,7 +131,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) =>
           <Menu
             mode="inline"
             selectedKeys={selectedKeys}
-            items={menuItems.map(item => ({
+            items={menuItems.map((item) => ({
               key: item.key,
               icon: item.icon,
               label: (
@@ -150,7 +149,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) =>
             className="navigation-menu"
           />
         </div>
-
       </div>
     </Sider>
   )

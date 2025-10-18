@@ -8,11 +8,7 @@ interface AccountDetailsModalProps {
   account: Account | null
 }
 
-const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
-  open,
-  onClose,
-  account
-}) => {
+const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
   const getRoleBadgeColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {
       case 'admin':
@@ -26,7 +22,6 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
     }
   }
 
-
   return (
     <Modal
       title="Chi tiết tài khoản"
@@ -36,22 +31,16 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
       footer={[
         <Button key="close" onClick={onClose}>
           Đóng
-        </Button>
+        </Button>,
       ]}
     >
       {account && (
         <div className="account-details-content">
           <Descriptions title="Thông tin cơ bản" bordered column={2}>
-            <Descriptions.Item label="Email">
-              {account.email}
-            </Descriptions.Item>
-            <Descriptions.Item label="Số điện thoại">
-              {account.phoneNumber}
-            </Descriptions.Item>
+            <Descriptions.Item label="Email">{account.email}</Descriptions.Item>
+            <Descriptions.Item label="Số điện thoại">{account.phoneNumber}</Descriptions.Item>
             <Descriptions.Item label="Vai trò">
-              <Tag color={getRoleBadgeColor(account.roleName)}>
-                {account.roleName}
-              </Tag>
+              <Tag color={getRoleBadgeColor(account.roleName)}>{account.roleName}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Trạng thái">
               <Tag color={account.isActive ? 'green' : 'red'}>
@@ -59,21 +48,15 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Lần đăng nhập cuối" span={2}>
-              {account.lastLoginAt 
+              {account.lastLoginAt
                 ? new Date(account.lastLoginAt).toLocaleString('vi-VN')
-                : 'Chưa đăng nhập'
-              }
+                : 'Chưa đăng nhập'}
             </Descriptions.Item>
           </Descriptions>
 
           {/* Role-specific details */}
           {account.driverDetail && (
-            <Descriptions 
-              title="Thông tin Driver" 
-              bordered 
-              column={2}
-              style={{ marginTop: 16 }}
-            >
+            <Descriptions title="Thông tin Driver" bordered column={2} style={{ marginTop: 16 }}>
               <Descriptions.Item label="Tên đầy đủ">
                 {account.driverDetail.fullName}
               </Descriptions.Item>
@@ -95,12 +78,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
           )}
 
           {account.operatorDetail && (
-            <Descriptions 
-              title="Thông tin Operator" 
-              bordered 
-              column={2}
-              style={{ marginTop: 16 }}
-            >
+            <Descriptions title="Thông tin Operator" bordered column={2} style={{ marginTop: 16 }}>
               <Descriptions.Item label="Tên đầy đủ">
                 {account.operatorDetail.fullName}
               </Descriptions.Item>
@@ -122,21 +100,14 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({
           )}
 
           {account.adminDetail && (
-            <Descriptions 
-              title="Thông tin Admin" 
-              bordered 
-              column={2}
-              style={{ marginTop: 16 }}
-            >
+            <Descriptions title="Thông tin Admin" bordered column={2} style={{ marginTop: 16 }}>
               <Descriptions.Item label="Tên đầy đủ">
                 {account.adminDetail.fullName}
               </Descriptions.Item>
               <Descriptions.Item label="Phòng ban">
                 {account.adminDetail.department}
               </Descriptions.Item>
-              <Descriptions.Item label="Chức vụ">
-                {account.adminDetail.position}
-              </Descriptions.Item>
+              <Descriptions.Item label="Chức vụ">{account.adminDetail.position}</Descriptions.Item>
             </Descriptions>
           )}
         </div>

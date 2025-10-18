@@ -16,10 +16,7 @@ function OperatorLayout() {
         background: '#f5f5f5',
       }}
     >
-      <OperatorSidebar 
-        collapsed={collapsed} 
-        onCollapse={setCollapsed}
-      />
+      <OperatorSidebar collapsed={collapsed} onCollapse={setCollapsed} />
       <Layout
         style={{
           marginLeft: collapsed ? '10vh' : '35vh',

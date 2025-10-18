@@ -4,6 +4,6 @@ export interface Driver {
   fullName: string
   gender: boolean
   isVerified: boolean
-  creditPoint : number
-  accumulatedPoints : number
+  creditPoint: number
+  accumulatedPoints: number
 }

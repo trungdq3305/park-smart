@@ -16,10 +16,7 @@ function AdminLayout() {
         background: '#f5f5f5',
       }}
     >
-      <AdminSidebar 
-        collapsed={collapsed} 
-        onCollapse={setCollapsed}
-      />
+      <AdminSidebar collapsed={collapsed} onCollapse={setCollapsed} />
       <Layout
         style={{
           marginLeft: collapsed ? '10vh' : '35vh',

@@ -110,7 +110,6 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ collapsed, onCollapse
               className="collapse-btn"
             />
           </div>
-          
         </div>
 
         {/* Navigation Menu */}
@@ -118,7 +117,7 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ collapsed, onCollapse
           <Menu
             mode="inline"
             selectedKeys={selectedKeys}
-            items={menuItems.map(item => ({
+            items={menuItems.map((item) => ({
               key: item.key,
               icon: item.icon,
               label: (
@@ -136,7 +135,6 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ collapsed, onCollapse
             className="navigation-menu"
           />
         </div>
-
       </div>
     </Sider>
   )

@@ -2,29 +2,36 @@ import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { message, Dropdown, Button } from 'antd'
 import type { MenuProps } from 'antd'
-import { MoreOutlined, EyeOutlined, KeyOutlined, DeleteOutlined, PauseOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import {
+  MoreOutlined,
+  EyeOutlined,
+  KeyOutlined,
+  DeleteOutlined,
+  PauseOutlined,
+  PlayCircleOutlined,
+} from '@ant-design/icons'
 import { AccountDetailsModal, DeleteConfirmModal } from '../../components/modals'
-import { 
-  useGetAccountQuery, 
-  useDeleteAccountMutation, 
-  useToggleAccountStatusMutation 
+import {
+  useGetAccountQuery,
+  useDeleteAccountMutation,
+  useToggleAccountStatusMutation,
 } from '../../features/accountAPI'
 import type { Account } from '../../types/Account'
 import './ManageAccountPage.css'
 
 interface ListAccountResponse {
   data: {
-    data :{
+    data: {
       pagedAccounts: {
         data: Account[]
         currentPage: number
         pageSize: number
         totalItems: number
       }
-  totalAdmins :number
-  totalDrivers :number
-  totalOperators :number
-  totalUsers :number
+      totalAdmins: number
+      totalDrivers: number
+      totalOperators: number
+      totalUsers: number
     }
   }
   isLoading: boolean
@@ -32,19 +39,19 @@ interface ListAccountResponse {
 
 const ManageAccountPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  
+
   // Get values from URL parameters with defaults
   const currentPage = parseInt(searchParams.get('page') || '1', 10)
   const pageSize = 5 // Fixed page size, not from URL
-  
+
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
 
   const { data, isLoading } = useGetAccountQuery<ListAccountResponse>({
-    page : currentPage,
-    pageSize
+    page: currentPage,
+    pageSize,
   })
 
   const [deleteAccount] = useDeleteAccountMutation()
@@ -60,7 +67,7 @@ const ManageAccountPage: React.FC = () => {
   // Functions to update URL parameters
   const updateSearchParams = (updates: Record<string, string | number | null>) => {
     const newSearchParams = new URLSearchParams(searchParams)
-    
+
     Object.entries(updates).forEach(([key, value]) => {
       if (value === null || value === '' || value === 'all') {
         newSearchParams.delete(key)
@@ -68,15 +75,13 @@ const ManageAccountPage: React.FC = () => {
         newSearchParams.set(key, value.toString())
       }
     })
-    
+
     setSearchParams(newSearchParams, { replace: true })
   }
 
   const handlePageChange = (page: number) => {
     updateSearchParams({ page })
   }
-
-
 
   const handleViewDetails = (account: Account) => {
     setSelectedAccount(account)
@@ -87,7 +92,6 @@ const ManageAccountPage: React.FC = () => {
     setShowModal(false)
     setSelectedAccount(null)
   }
-
 
   const handleDeleteAccount = (account: Account) => {
     setAccountToDelete(account)
@@ -112,7 +116,7 @@ const ManageAccountPage: React.FC = () => {
     try {
       await toggleAccountStatus({
         id: account._id,
-        isActive: !account.isActive
+        isActive: !account.isActive,
       }).unwrap()
       message.success(`Trạng thái tài khoản ${account.email} đã được cập nhật!`)
     } catch (error) {
@@ -120,8 +124,6 @@ const ManageAccountPage: React.FC = () => {
       message.error('Có lỗi xảy ra khi cập nhật trạng thái tài khoản!')
     }
   }
-
-
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? 'badge-active' : 'badge-inactive'
@@ -145,7 +147,7 @@ const ManageAccountPage: React.FC = () => {
       key: 'view',
       label: 'Xem profile',
       icon: <EyeOutlined />,
-      onClick: () => handleViewDetails(account)
+      onClick: () => handleViewDetails(account),
     },
     {
       key: 'permission',
@@ -153,24 +155,24 @@ const ManageAccountPage: React.FC = () => {
       icon: <KeyOutlined />,
       onClick: () => {
         message.info('Tính năng thay đổi quyền đang được phát triển')
-      }
+      },
     },
     {
-      type: 'divider'
+      type: 'divider',
     },
     {
       key: 'toggle',
       label: account.isActive ? 'Vô hiệu hóa' : 'Kích hoạt',
       icon: account.isActive ? <PauseOutlined /> : <PlayCircleOutlined />,
-      onClick: () => handleToggleStatus(account)
+      onClick: () => handleToggleStatus(account),
     },
     {
       key: 'delete',
       label: 'Xóa tài khoản',
       icon: <DeleteOutlined />,
       danger: true,
-      onClick: () => handleDeleteAccount(account)
-    }
+      onClick: () => handleDeleteAccount(account),
+    },
   ]
 
   if (isLoading) {
@@ -184,7 +186,6 @@ const ManageAccountPage: React.FC = () => {
     )
   }
 
-
   return (
     <div className="manage-account-page">
       <div className="page-header">
@@ -193,7 +194,6 @@ const ManageAccountPage: React.FC = () => {
       </div>
 
       <div className="page-content">
-
         {/* Stats Cards */}
         <div className="stats-section">
           <div className="stat-card">
@@ -269,10 +269,9 @@ const ManageAccountPage: React.FC = () => {
                       </span>
                     </td>
                     <td>
-                      {account.lastLoginAt 
+                      {account.lastLoginAt
                         ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
-                        : 'Chưa đăng nhập'
-                      }
+                        : 'Chưa đăng nhập'}
                     </td>
                     <td>
                       <div className="action-cell">
@@ -281,8 +280,8 @@ const ManageAccountPage: React.FC = () => {
                           trigger={['click']}
                           placement="bottomRight"
                         >
-                          <Button 
-                            type="text" 
+                          <Button
+                            type="text"
                             icon={<MoreOutlined />}
                             className="action-dropdown-trigger"
                             title="Thao tác"
@@ -298,16 +297,16 @@ const ManageAccountPage: React.FC = () => {
 
           {/* Pagination */}
           <div className="pagination">
-            <button 
+            <button
               className="pagination-btn"
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
             >
               Trước
             </button>
-            
+
             <div className="pagination-numbers">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
                   className={`pagination-number ${currentPage === page ? 'active' : ''}`}
@@ -318,7 +317,7 @@ const ManageAccountPage: React.FC = () => {
               ))}
             </div>
 
-            <button 
+            <button
               className="pagination-btn"
               disabled={currentPage === totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
@@ -330,11 +329,7 @@ const ManageAccountPage: React.FC = () => {
       </div>
 
       {/* Account Details Modal */}
-      <AccountDetailsModal
-        open={showModal}
-        onClose={handleCloseModal}
-        account={selectedAccount}
-      />
+      <AccountDetailsModal open={showModal} onClose={handleCloseModal} account={selectedAccount} />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
