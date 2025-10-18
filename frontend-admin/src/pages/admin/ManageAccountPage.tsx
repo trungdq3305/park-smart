@@ -48,6 +48,7 @@ const ManageAccountPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
+  const [isPageLoading, setIsPageLoading] = useState(false)
 
   const { data, isLoading } = useGetAccountQuery<ListAccountResponse>({
     page: currentPage,
@@ -80,7 +81,13 @@ const ManageAccountPage: React.FC = () => {
   }
 
   const handlePageChange = (page: number) => {
+    setIsPageLoading(true)
     updateSearchParams({ page })
+    
+    // Reset loading state after a short delay to show the loading effect
+    setTimeout(() => {
+      setIsPageLoading(false)
+    }, 500)
   }
 
   const handleViewDetails = (account: Account) => {
@@ -175,7 +182,7 @@ const ManageAccountPage: React.FC = () => {
     },
   ]
 
-  if (isLoading) {
+  if (isLoading && !isPageLoading) {
     return (
       <div className="manage-account-page">
         <div className="loading-container">
@@ -234,6 +241,12 @@ const ManageAccountPage: React.FC = () => {
           </div>
 
           <div className="table-wrapper">
+            {isPageLoading && (
+              <div className="table-loading-overlay">
+                <div className="loading-spinner"></div>
+                <p>Đang tải trang...</p>
+              </div>
+            )}
             <table className="accounts-table">
               <thead>
                 <tr>
@@ -299,18 +312,19 @@ const ManageAccountPage: React.FC = () => {
           <div className="pagination">
             <button
               className="pagination-btn"
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isPageLoading}
               onClick={() => handlePageChange(currentPage - 1)}
             >
-              Trước
+              {isPageLoading ? '...' : 'Trước'}
             </button>
 
             <div className="pagination-numbers">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
-                  className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                  className={`pagination-number ${currentPage === page ? 'active' : ''} ${isPageLoading ? 'loading' : ''}`}
                   onClick={() => handlePageChange(page)}
+                  disabled={isPageLoading}
                 >
                   {page}
                 </button>
@@ -319,10 +333,10 @@ const ManageAccountPage: React.FC = () => {
 
             <button
               className="pagination-btn"
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || isPageLoading}
               onClick={() => handlePageChange(currentPage + 1)}
             >
-              Sau
+              {isPageLoading ? '...' : 'Sau'}
             </button>
           </div>
         </div>
