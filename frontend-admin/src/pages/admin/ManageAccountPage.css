@@ -587,38 +587,7 @@
   text-align: center;
 }
 
-/* Table Loading Overlay */
-.table-loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.9);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-  backdrop-filter: blur(2px);
-}
-
-.table-loading-overlay .loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid #e5e7eb;
-  border-top: 3px solid #3b82f6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-bottom: 12px;
-}
-
-.table-loading-overlay p {
-  color: #6b7280;
-  font-size: 14px;
-  margin: 0;
-  font-weight: 500;
-}
+/* Table Loading Overlay - Removed, now using PaginationLoading component */
 
 .loading-spinner {
   width: 40px;

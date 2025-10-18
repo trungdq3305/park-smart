@@ -11,6 +11,7 @@ import {
   PlayCircleOutlined,
 } from '@ant-design/icons'
 import { AccountDetailsModal, DeleteConfirmModal } from '../../components/modals'
+import { PaginationLoading } from '../../components/common'
 import {
   useGetAccountQuery,
   useDeleteAccountMutation,
@@ -241,13 +242,8 @@ const ManageAccountPage: React.FC = () => {
           </div>
 
           <div className="table-wrapper">
-            {isPageLoading && (
-              <div className="table-loading-overlay">
-                <div className="loading-spinner"></div>
-                <p>Đang tải trang...</p>
-              </div>
-            )}
-            <table className="accounts-table">
+            <PaginationLoading isLoading={isPageLoading} loadingText="Đang tải trang...">
+              <table className="accounts-table">
               <thead>
                 <tr>
                   <th>Thông tin tài khoản</th>
@@ -306,6 +302,7 @@ const ManageAccountPage: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            </PaginationLoading>
           </div>
 
           {/* Pagination */}
