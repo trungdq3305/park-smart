@@ -1,0 +1,70 @@
+/* OperatorHeader.css */
+.operator-header {
+  background: #ffffff;
+  padding: 0 2.4vh;
+  height: 8vh;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 0.1vh 0.3vh rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-left h3 {
+  margin: 0;
+  font-size: 2.4vh;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.6vh;
+}
+
+.user-menu-btn {
+  display: flex;
+  align-items: center;
+  padding: 0.8vh 1.6vh;
+  border-radius: 0.8vh;
+  transition: all 0.2s ease;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.user-menu-btn:hover {
+  background-color: #f5f5f5;
+  color: #52c41a;
+}
+
+.user-menu-btn .ant-avatar {
+  margin-right: 0.8vh;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .operator-header {
+    padding: 0 1.6vh;
+    height: 6vh;
+  }
+  
+  .header-left h3 {
+    font-size: 1.8vh;
+  }
+  
+  .user-menu-btn {
+    padding: 0.4vh 0.8vh;
+    font-size: 1.4vh;
+  }
+}
