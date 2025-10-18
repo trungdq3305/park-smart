@@ -1,38 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Layout } from 'antd'
 import OperatorHeader from '../header/OperatorHeader'
 import OperatorSidebar from '../sideBar/OperatorSidebar'
+import { useMobileMenu } from '../../../hooks/useMobileMenu'
 
 const { Content } = Layout
 
 function OperatorLayout() {
   const [collapsed, setCollapsed] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768)
-      if (window.innerWidth > 768) {
-        setMobileMenuOpen(false)
-      }
-    }
-
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
+  const { isMobile, mobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useMobileMenu()
 
   // Use useCallback for event handlers to prevent unnecessary re-renders
-  const handleMobileMenuToggle = useCallback(() => {
-    setMobileMenuOpen(prev => !prev)
-  }, [])
-
-  const handleOverlayClick = useCallback(() => {
-    setMobileMenuOpen(false)
-  }, [])
-
   const handleCollapse = useCallback((collapsed: boolean) => {
     setCollapsed(collapsed)
   }, [])
@@ -49,14 +28,14 @@ function OperatorLayout() {
         onCollapse={handleCollapse}
         isMobile={isMobile}
         mobileOpen={mobileMenuOpen}
-        onMobileToggle={handleMobileMenuToggle}
+        onMobileToggle={toggleMobileMenu}
       />
       
       {/* Mobile Overlay */}
       {isMobile && mobileMenuOpen && (
         <div 
           className="mobile-overlay show"
-          onClick={handleOverlayClick}
+          onClick={closeMobileMenu}
         />
       )}
       
@@ -68,7 +47,7 @@ function OperatorLayout() {
         }}
       >
         <OperatorHeader 
-          onMobileMenuToggle={handleMobileMenuToggle}
+          onMobileMenuToggle={toggleMobileMenu}
           isMobile={isMobile}
         />
         <Content
