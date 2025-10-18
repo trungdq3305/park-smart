@@ -21,9 +21,18 @@ const { Sider } = Layout
 interface OperatorSidebarProps {
   collapsed: boolean
   onCollapse: (collapsed: boolean) => void
+  isMobile?: boolean
+  mobileOpen?: boolean
+  onMobileToggle?: () => void
 }
 
-const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ collapsed, onCollapse }) => {
+const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ 
+  collapsed, 
+  onCollapse, 
+  isMobile = false, 
+  mobileOpen = false,
+  onMobileToggle 
+}) => {
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -80,6 +89,10 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ collapsed, onCollapse
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key)
+    // Close mobile menu after navigation
+    if (isMobile && onMobileToggle) {
+      onMobileToggle()
+    }
   }
 
   const selectedKeys = [location.pathname]
@@ -88,10 +101,10 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ collapsed, onCollapse
     <Sider
       trigger={null}
       collapsible
-      collapsed={collapsed}
-      className="operator-sidebar"
-      width={280}
-      collapsedWidth={80}
+      collapsed={isMobile ? false : collapsed}
+      className={`operator-sidebar ${isMobile && mobileOpen ? 'mobile-open' : ''}`}
+      width={isMobile ? 280 : 280}
+      collapsedWidth={isMobile ? 0 : 80}
     >
       <div className="sidebar-content">
         {/* Header Section */}
@@ -103,12 +116,14 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ collapsed, onCollapse
               </div>
               {!collapsed && <span className="logo-text">Park Smart</span>}
             </div>
-            <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => onCollapse(!collapsed)}
-              className="collapse-btn"
-            />
+            {!isMobile && (
+              <Button
+                type="text"
+                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                onClick={() => onCollapse(!collapsed)}
+                className="collapse-btn"
+              />
+            )}
           </div>
         </div>
 

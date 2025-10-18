@@ -79,3 +79,100 @@
   color: #d9d9d9;
   margin: 0 0.8vh;
 }
+
+/* Mobile Menu Toggle Button */
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 2.4vh;
+  color: #1a1a1a;
+  cursor: pointer;
+  padding: 0.8vh;
+  border-radius: 0.6vh;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background-color: #f5f5f5;
+  color: #667eea;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .admin-header {
+    padding: 0 2vh;
+    height: 5.5vh;
+    margin: 1.2vh 1.2vh 0 1.2vh;
+  }
+
+  .header-left h3 {
+    font-size: 1.8vh;
+  }
+
+  .user-menu-btn {
+    padding: 0.6vh 1vh;
+    font-size: 1.3vh;
+    height: 4.2vh;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-header {
+    padding: 0 1.6vh;
+    height: 5vh;
+    margin: 0.8vh 0.8vh 0 0.8vh;
+    position: relative;
+  }
+
+  .mobile-menu-toggle {
+    display: block;
+    order: -1;
+    margin-right: 1.6vh;
+  }
+
+  .header-left h3 {
+    font-size: 1.6vh;
+    flex: 1;
+  }
+
+  .user-menu-btn {
+    padding: 0.4vh 0.8vh;
+    font-size: 1.2vh;
+    height: 3.8vh;
+  }
+
+  .user-menu-btn .ant-avatar {
+    width: 2.4vh;
+    height: 2.4vh;
+    margin-right: 0.6vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-header {
+    padding: 0 1.2vh;
+    height: 4.5vh;
+    margin: 0.6vh 0.6vh 0 0.6vh;
+  }
+
+  .header-left h3 {
+    font-size: 1.4vh;
+  }
+
+  .user-menu-btn {
+    padding: 0.3vh 0.6vh;
+    font-size: 1.1vh;
+    height: 3.4vh;
+  }
+
+  .user-menu-btn span {
+    display: none;
+  }
+
+  .user-menu-btn .ant-avatar {
+    width: 2vh;
+    height: 2vh;
+    margin-right: 0;
+  }
+}

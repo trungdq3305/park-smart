@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Layout } from 'antd'
 import OperatorHeader from '../header/OperatorHeader'
@@ -8,6 +8,34 @@ const { Content } = Layout
 
 function OperatorLayout() {
   const [collapsed, setCollapsed] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768)
+      if (window.innerWidth > 768) {
+        setMobileMenuOpen(false)
+      }
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Use useCallback for event handlers to prevent unnecessary re-renders
+  const handleMobileMenuToggle = useCallback(() => {
+    setMobileMenuOpen(prev => !prev)
+  }, [])
+
+  const handleOverlayClick = useCallback(() => {
+    setMobileMenuOpen(false)
+  }, [])
+
+  const handleCollapse = useCallback((collapsed: boolean) => {
+    setCollapsed(collapsed)
+  }, [])
 
   return (
     <Layout
@@ -16,23 +44,41 @@ function OperatorLayout() {
         background: '#f5f5f5',
       }}
     >
-      <OperatorSidebar collapsed={collapsed} onCollapse={setCollapsed} />
+      <OperatorSidebar 
+        collapsed={collapsed} 
+        onCollapse={handleCollapse}
+        isMobile={isMobile}
+        mobileOpen={mobileMenuOpen}
+        onMobileToggle={handleMobileMenuToggle}
+      />
+      
+      {/* Mobile Overlay */}
+      {isMobile && mobileMenuOpen && (
+        <div 
+          className="mobile-overlay show"
+          onClick={handleOverlayClick}
+        />
+      )}
+      
       <Layout
         style={{
-          marginLeft: collapsed ? '10vh' : '35vh',
-          transition: 'margin-left 0.2s ease',
+          marginLeft: isMobile ? 0 : (collapsed ? '10vh' : '35vh'),
+          transition: 'margin-left 0.3s ease',
           background: '#f5f5f5',
         }}
       >
-        <OperatorHeader />
+        <OperatorHeader 
+          onMobileMenuToggle={handleMobileMenuToggle}
+          isMobile={isMobile}
+        />
         <Content
           style={{
-            margin: '1.6vh',
-            padding: '2.4vh',
+            margin: isMobile ? '0.8vh' : '1.6vh',
+            padding: isMobile ? '1.6vh' : '2.4vh',
             background: '#ffffff',
-            borderRadius: '2vh',
+            borderRadius: isMobile ? '1.2vh' : '2vh',
             boxShadow: '0 0.1vh 0.3vh rgba(0, 0, 0, 0.1)',
-            minHeight: 'calc(100vh - 12vh)',
+            minHeight: isMobile ? 'calc(100vh - 8vh)' : 'calc(100vh - 12vh)',
             overflow: 'auto',
           }}
         >

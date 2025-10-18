@@ -23,9 +23,18 @@ const { Sider } = Layout
 interface AdminSidebarProps {
   collapsed: boolean
   onCollapse: (collapsed: boolean) => void
+  isMobile?: boolean
+  mobileOpen?: boolean
+  onMobileToggle?: () => void
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) => {
+const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
+  collapsed, 
+  onCollapse, 
+  isMobile = false, 
+  mobileOpen = false,
+  onMobileToggle 
+}) => {
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -94,6 +103,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) =>
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key)
+    // Close mobile menu after navigation
+    if (isMobile && onMobileToggle) {
+      onMobileToggle()
+    }
   }
 
   const selectedKeys = [location.pathname]
@@ -102,10 +115,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) =>
     <Sider
       trigger={null}
       collapsible
-      collapsed={collapsed}
-      className="admin-sidebar"
-      width={280}
-      collapsedWidth={80}
+      collapsed={isMobile ? false : collapsed}
+      className={`admin-sidebar ${isMobile && mobileOpen ? 'mobile-open' : ''}`}
+      width={isMobile ? 280 : 280}
+      collapsedWidth={isMobile ? 0 : 80}
     >
       <div className="sidebar-content">
         {/* Header Section */}
@@ -117,12 +130,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ collapsed, onCollapse }) =>
               </div>
               {!collapsed && <span className="logo-text">Park Smart</span>}
             </div>
-            <Button
-              type="text"
-              icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-              onClick={() => onCollapse(!collapsed)}
-              className="collapse-btn"
-            />
+            {!isMobile && (
+              <Button
+                type="text"
+                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                onClick={() => onCollapse(!collapsed)}
+                className="collapse-btn"
+              />
+            )}
           </div>
         </div>
 
