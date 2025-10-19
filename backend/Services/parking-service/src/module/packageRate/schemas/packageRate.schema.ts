@@ -18,6 +18,9 @@ export class PackageRate extends BaseEntity {
 
   @Prop({ required: true, type: Number })
   price: number
+
+  @Prop({ type: Boolean })
+  isUsed: boolean
 }
 
 export const PackageRateSchema = SchemaFactory.createForClass(PackageRate)
