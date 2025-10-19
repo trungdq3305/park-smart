@@ -1,7 +1,7 @@
 import React from 'react'
 import { Layout, Button, Dropdown, Avatar, Space } from 'antd'
 import { SettingOutlined, UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
-import './OperatorHeader.css'
+import './AdminHeader.css'
 import Cookies from 'js-cookie'
 import { useLogout } from '../../../hooks/useLogout'
 const { Header } = Layout
@@ -13,7 +13,7 @@ interface OperatorHeaderProps {
 
 const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
   const userData = Cookies.get('userData') ? JSON.parse(Cookies.get('userData')!) : null
-  const fullName = userData?.fullName || 'Operator User'
+  const fullName = userData?.fullName || 'Admin User'
   const logout = useLogout()
   const userMenuItems = [
     {
@@ -41,7 +41,7 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
   ]
 
   return (
-    <Header className="operator-header">
+    <Header className="admin-header">
       {isMobile && (
         <button 
           className="mobile-menu-toggle"
@@ -56,7 +56,7 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
         <h3>
           {isMobile 
             ? `Welcome, ${fullName.split(' ')[0]}!` 
-            : `Welcome back, ${fullName}, let's manage your parking operations !`
+            : `Welcome back, ${fullName}, let's manage your parking lots !`
           }
         </h3>
       </div>
@@ -69,7 +69,7 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
                 size={isMobile ? 24 : 32}
                 icon={<UserOutlined />}
                 style={{
-                  background: 'linear-gradient(135deg, #52c41a 0%, #73d13d 100%)',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   marginRight: isMobile ? '6px' : '8px',
                 }}
               />
