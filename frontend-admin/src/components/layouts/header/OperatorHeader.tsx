@@ -2,7 +2,7 @@ import React from 'react'
 import { Layout, Button, Dropdown, Avatar, Space } from 'antd'
 import { SettingOutlined, UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
 import './AdminHeader.css'
-import Cookies from 'js-cookie'
+import { getUserFullName } from '../../../utils/userData'
 import { useLogout } from '../../../hooks/useLogout'
 const { Header } = Layout
 
@@ -12,8 +12,7 @@ interface OperatorHeaderProps {
 }
 
 const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
-  const userData = Cookies.get('userData') ? JSON.parse(Cookies.get('userData')!) : null
-  const fullName = userData?.fullName || 'Admin User'
+  const fullName = getUserFullName('Admin User')
   const logout = useLogout()
   const userMenuItems = [
     {
