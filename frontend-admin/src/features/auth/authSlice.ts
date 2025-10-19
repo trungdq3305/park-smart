@@ -26,17 +26,11 @@ const authSlice = createSlice({
     login: (state, action: PayloadAction<{ token: string }>) => {
       const { token } = action.payload
 
-      const decodedToken: any = jwtDecode(token)
+      const decodedToken = jwtDecode<UserData>(token)
 
       state.userData = {
-        email: decodedToken.email,
-        id: decodedToken.id,
-        role: decodedToken.role,
-        fullName: decodedToken.fullName,
-        phoneNumber: decodedToken.phoneNumber,
-        exp: decodedToken.exp,
-        department: decodedToken.department,
-        adminId: decodedToken.adminId,
+        ...decodedToken,
+        exp: Boolean(decodedToken.exp),
       }
 
       state.userToken = { data: token }
