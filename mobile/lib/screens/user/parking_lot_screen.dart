@@ -91,37 +91,52 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
   /// Handle real-time parking lot updates
   void _handleParkingLotUpdate(Map<String, dynamic> data) {
+    print('🔍 DEBUG: Processing parking lot update: $data');
+
     // Update parking lot data in real-time
-    final parkingLotId = data['parkingLotId'] ?? data['id'];
+    final parkingLotId = data['parkingLotId'] ?? data['id'] ?? data['_id'];
     final availableSpots = data['availableSpots'];
+
+    print(
+      '🔍 DEBUG: Parking lot ID: $parkingLotId, Available spots: $availableSpots',
+    );
 
     if (parkingLotId != null && availableSpots != null) {
       // Find and update the parking lot in the list
+      bool found = false;
       setState(() {
         for (int i = 0; i < _parkingLots.length; i++) {
           final lot = _parkingLots[i];
           final lotId = lot['id'] ?? lot['_id'];
 
           if (lotId == parkingLotId) {
+            print('✅ DEBUG: Found and updating parking lot: $lotId');
             _parkingLots[i] = {...lot, 'availableSpots': availableSpots};
+            found = true;
             break;
           }
         }
       });
 
-      // Update markers to reflect new data
-      _updateMarkers();
+      if (found) {
+        // Update markers to reflect new data
+        _updateMarkers();
 
-      // Show notification
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Cập nhật bãi đỗ xe: $availableSpots chỗ trống'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        // Show notification
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Cập nhật bãi đỗ xe: $availableSpots chỗ trống'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        print('⚠️ DEBUG: Parking lot not found in current list: $parkingLotId');
       }
+    } else {
+      print('⚠️ DEBUG: Missing parking lot ID or available spots');
     }
   }
 
@@ -383,6 +398,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
   }
 
   void _updateMarkers() {
+    print('🔄 DEBUG: Updating markers...');
     Set<Marker> markers = {};
 
     // Add current location marker
@@ -418,10 +434,14 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
           (parkingLot['totalCapacityEachLevel'] ?? 0) *
           (parkingLot['totalLevel'] ?? 1);
 
+      // Use actual parking lot ID for marker ID
+      final parkingLotId = parkingLot['id'] ?? parkingLot['_id'] ?? 'unknown_$i';
+
       if (lat != null && lng != null) {
+        print('📍 DEBUG: Creating marker for parking lot $parkingLotId: $availableSpots/$totalCapacity chỗ trống');
         markers.add(
           Marker(
-            markerId: MarkerId('parking_lot_$i'),
+            markerId: MarkerId('parking_lot_$parkingLotId'),
             position: LatLng(lat, lng),
             infoWindow: InfoWindow(
               title: 'Bãi đỗ xe',
