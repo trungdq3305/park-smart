@@ -3,18 +3,33 @@ import type { LayoutRoute } from '../types/Route'
 
 // Các layout này được export dưới dạng export default
 const MainLayout = lazy(() => import('../components/layouts/layout/MainLayout'))
-
+const AdminLayout = lazy(() => import('../components/layouts/layout/AdminLayout'))
 // --- Các Trang (tải lười - lazy loading) ---
-const LandingPage = lazy(() => import('../pages/landing/LandingPage'))
+const LoginPage = lazy(() => import('../pages/LoginPage'))
+const ManageAccountPage = lazy(() => import('../pages/admin/ManageAccountPage'))
 
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
     data: [
       {
-        path: '/',
-        component: LandingPage,
-        exact: true,
+        path: '/login',
+        component: LoginPage,
+      },
+    ],
+  },
+  {
+    layout: AdminLayout,
+    data: [
+      {
+        path: '/admin',
+        component: ManageAccountPage,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/manage-account',
+        component: ManageAccountPage,
+        role: ['Admin'],
       },
     ],
   },

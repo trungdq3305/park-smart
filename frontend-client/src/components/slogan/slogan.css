@@ -1,15 +1,14 @@
 .slogan-container {
   width: 80%;
   justify-self: center;
-  margin-top: 40px;
 }
 
 .slogan {
   text-align: center;
   color: #333;
-  border-bottom: #aaa7a7 1px solid;
+  border-bottom: #aaa7a7 0.1vh solid;
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(3vh);
   animation: fadeUp 1.5s ease forwards;
 }
 
@@ -17,7 +16,7 @@
 @keyframes fadeUp {
   0% {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(3vh);
   }
 
   100% {

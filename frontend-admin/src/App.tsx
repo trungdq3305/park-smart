@@ -19,7 +19,7 @@ function App() {
             height: '100vh',
           }}
         >
-          <Spin size='large' />
+          <Spin size="large" />
         </div>
       }
     >
@@ -52,7 +52,7 @@ function App() {
         })}
 
         {/* Trang fallback */}
-        <Route path='*' element={<NotFound />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   )
