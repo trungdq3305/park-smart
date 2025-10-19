@@ -4,17 +4,19 @@ import {
   DashboardOutlined,
   BarChartOutlined,
   FileTextOutlined,
+  AppstoreOutlined,
+  BankOutlined,
+  TeamOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CarOutlined,
   EnvironmentOutlined,
   WalletOutlined,
   HistoryOutlined,
-  SettingOutlined,
-  UserOutlined,
+  SafetyOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
-import './OperatorSidebar.css'
+import './AdminSidebar.css'
 
 const { Sider } = Layout
 
@@ -36,54 +38,66 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Menu items for operator dashboard
+  // Menu items aligned to Admin sidebar
   const menuItems = [
     {
-      key: '/operator/dashboard',
+      key: '/admin/manage-account',
+      icon: <TeamOutlined />,
+      label: 'Users',
+      badge: '164',
+      active: true,
+    },
+    {
+      key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'Dashboard',
     },
     {
-      key: '/operator/parking-spots',
+      key: '/parking-spots',
       icon: <EnvironmentOutlined />,
       label: 'Parking Spots',
       badge: '12/15',
       active: true,
     },
     {
-      key: '/operator/vehicles',
-      icon: <CarOutlined />,
-      label: 'Vehicles',
-    },
-    {
-      key: '/operator/payments',
-      icon: <WalletOutlined />,
-      label: 'Payments',
-    },
-    {
-      key: '/operator/analytics',
+      key: '/analytics',
       icon: <BarChartOutlined />,
       label: 'Analytics',
     },
     {
-      key: '/operator/reports',
+      key: '/reports',
       icon: <FileTextOutlined />,
       label: 'Reports',
     },
     {
-      key: '/operator/history',
+      key: '/integrations',
+      icon: <AppstoreOutlined />,
+      label: 'Integrations',
+    },
+    {
+      key: '/companies',
+      icon: <BankOutlined />,
+      label: 'Companies',
+    },
+    {
+      key: '/vehicles',
+      icon: <CarOutlined />,
+      label: 'Vehicles',
+    },
+    {
+      key: '/payments',
+      icon: <WalletOutlined />,
+      label: 'Payments',
+    },
+    {
+      key: '/history',
       icon: <HistoryOutlined />,
       label: 'History',
     },
     {
-      key: '/operator/customers',
-      icon: <UserOutlined />,
-      label: 'Customers',
-    },
-    {
-      key: '/operator/settings',
-      icon: <SettingOutlined />,
-      label: 'Settings',
+      key: '/security',
+      icon: <SafetyOutlined />,
+      label: 'Security',
     },
   ]
 
@@ -102,7 +116,7 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       trigger={null}
       collapsible
       collapsed={isMobile ? false : collapsed}
-      className={`operator-sidebar ${isMobile && mobileOpen ? 'mobile-open' : ''}`}
+      className={`admin-sidebar ${isMobile && mobileOpen ? 'mobile-open' : ''}`}
       width={isMobile ? 280 : 280}
       collapsedWidth={isMobile ? 0 : 80}
     >
