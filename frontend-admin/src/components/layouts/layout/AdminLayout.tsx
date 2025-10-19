@@ -23,33 +23,27 @@ function AdminLayout() {
         background: '#f5f5f5',
       }}
     >
-      <AdminSidebar 
-        collapsed={collapsed} 
+      <AdminSidebar
+        collapsed={collapsed}
         onCollapse={handleCollapse}
         isMobile={isMobile}
         mobileOpen={mobileMenuOpen}
         onMobileToggle={toggleMobileMenu}
       />
-      
+
       {/* Mobile Overlay */}
       {isMobile && mobileMenuOpen && (
-        <div 
-          className="mobile-overlay show"
-          onClick={closeMobileMenu}
-        />
+        <div className="mobile-overlay show" onClick={closeMobileMenu} />
       )}
-      
+
       <Layout
         style={{
-          marginLeft: isMobile ? 0 : (collapsed ? '10vh' : '35vh'),
+          marginLeft: isMobile ? 0 : collapsed ? '10vh' : '35vh',
           transition: 'margin-left 0.3s ease',
           background: '#f5f5f5',
         }}
       >
-        <AdminHeader 
-          onMobileMenuToggle={toggleMobileMenu}
-          isMobile={isMobile}
-        />
+        <AdminHeader onMobileMenuToggle={toggleMobileMenu} isMobile={isMobile} />
         <Content
           style={{
             margin: isMobile ? '0.8vh' : '1.6vh',

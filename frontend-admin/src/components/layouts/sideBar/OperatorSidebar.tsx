@@ -28,12 +28,12 @@ interface OperatorSidebarProps {
   onMobileToggle?: () => void
 }
 
-const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ 
-  collapsed, 
-  onCollapse, 
-  isMobile = false, 
+const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
+  collapsed,
+  onCollapse,
+  isMobile = false,
   mobileOpen = false,
-  onMobileToggle 
+  onMobileToggle,
 }) => {
   const navigate = useNavigate()
   const location = useLocation()

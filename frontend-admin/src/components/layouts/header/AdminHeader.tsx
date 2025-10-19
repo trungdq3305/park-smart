@@ -14,7 +14,7 @@ interface AdminHeaderProps {
 const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
   const fullName = getUserFullName('Admin User')
   const logout = useLogout()
-  
+
   const userMenuItems = [
     {
       key: '1',
@@ -43,7 +43,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
   return (
     <Header className="admin-header">
       {isMobile && (
-        <button 
+        <button
           className="mobile-menu-toggle"
           onClick={onMobileMenuToggle}
           aria-label="Toggle mobile menu"
@@ -51,13 +51,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
           <MenuOutlined />
         </button>
       )}
-      
+
       <div className="header-left">
         <h3>
-          {isMobile 
-            ? `Welcome, ${fullName.split(' ')[0]}!` 
-            : `Welcome back, ${fullName}, let's manage your parking lots !`
-          }
+          {isMobile
+            ? `Welcome, ${fullName.split(' ')[0]}!`
+            : `Welcome back, ${fullName}, let's manage your parking lots !`}
         </h3>
       </div>
 

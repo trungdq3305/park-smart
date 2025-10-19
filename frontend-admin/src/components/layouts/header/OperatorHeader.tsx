@@ -42,7 +42,7 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
   return (
     <Header className="admin-header">
       {isMobile && (
-        <button 
+        <button
           className="mobile-menu-toggle"
           onClick={onMobileMenuToggle}
           aria-label="Toggle mobile menu"
@@ -50,13 +50,12 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
           <MenuOutlined />
         </button>
       )}
-      
+
       <div className="header-left">
         <h3>
-          {isMobile 
-            ? `Welcome, ${fullName.split(' ')[0]}!` 
-            : `Welcome back, ${fullName}, let's manage your parking lots !`
-          }
+          {isMobile
+            ? `Welcome, ${fullName.split(' ')[0]}!`
+            : `Welcome back, ${fullName}, let's manage your parking lots !`}
         </h3>
       </div>
 
