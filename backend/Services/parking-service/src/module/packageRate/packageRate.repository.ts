@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
+import { ClientSession, Model } from 'mongoose'
 
 import { IPackageRateRepository } from './interfaces/ipackageRate.repository'
 import { PackageRate } from './schemas/packageRate.schema'
@@ -10,37 +10,81 @@ export class PackageRateRepository implements IPackageRateRepository {
     private readonly packageRateModel: Model<PackageRate>,
   ) {}
 
-  createPackageRate(
+  async createPackageRate(
     packageRate: Partial<PackageRate>,
     userId: string,
+    session: ClientSession,
   ): Promise<PackageRate | null> {
-    throw new Error('Method not implemented.')
+    const createdPackageRate = new this.packageRateModel({
+      ...packageRate,
+      createdBy: userId,
+    })
+
+    const savedDocument = await createdPackageRate.save({ session })
+    return savedDocument.toObject()
   }
 
-  findPackageRateById(id: string): Promise<PackageRate | null> {
-    throw new Error('Method not implemented.')
+  async findPackageRateById(id: string): Promise<PackageRate | null> {
+    const packageRate = await this.packageRateModel
+      .findOne({ _id: id, deletedAt: false })
+      .lean()
+      .exec()
+    return packageRate
   }
 
-  findAllPackageRatesByCreator(
+  async findAllPackageRatesByCreator(
     userId: string,
     page: number,
     pageSize: number,
   ): Promise<{ data: PackageRate[]; total: number }> {
-    throw new Error('Method not implemented.')
+    const skip = (page - 1) * pageSize
+    const [data, total] = await Promise.all([
+      this.packageRateModel
+        .find({ createdBy: userId, deletedAt: false })
+        .skip(skip)
+        .limit(pageSize)
+        .lean()
+        .exec(),
+      this.packageRateModel
+        .countDocuments({ createdBy: userId, deletedAt: false })
+        .exec(),
+    ])
+    return { data, total }
   }
 
-  softDeletePackageRate(id: string): Promise<boolean> {
-    throw new Error('Method not implemented.')
+  async softDeletePackageRate(
+    id: string,
+    session: ClientSession,
+  ): Promise<boolean> {
+    const result = await this.packageRateModel.updateOne(
+      { _id: id },
+      { $set: { deletedAt: new Date() } },
+      { session },
+    )
+    return result.modifiedCount > 0
   }
 
-  deletePackageRatePermanently(id: string): Promise<boolean> {
-    throw new Error('Method not implemented.')
+  async deletePackageRatePermanently(
+    id: string,
+    session: ClientSession,
+  ): Promise<boolean> {
+    const result = await this.packageRateModel.deleteOne(
+      { _id: id },
+      { session },
+    )
+    return result.deletedCount > 0.00000000
   }
-  
-  setPackageRateInUsed(
+
+  async setPackageRateInUsed(
     id: string,
     isUsed: boolean,
-  ): Promise<PackageRate | null> {
-    throw new Error('Method not implemented.')
+    session: ClientSession,
+  ): Promise<boolean> {
+    const result = await this.packageRateModel.updateOne(
+      { _id: id, deletedAt: null },
+      { $set: { isUsed } },
+      { session },
+    )
+    return result.modifiedCount > 0
   }
 }

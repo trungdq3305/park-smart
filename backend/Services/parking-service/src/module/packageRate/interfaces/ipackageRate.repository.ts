@@ -1,3 +1,5 @@
+import type { ClientSession } from 'mongoose'
+
 import type { PackageRate } from '../schemas/packageRate.schema'
 
 export interface IPackageRateRepository {
@@ -10,6 +12,7 @@ export interface IPackageRateRepository {
   createPackageRate(
     packageRate: Partial<PackageRate>,
     userId: string,
+    session: ClientSession,
   ): Promise<PackageRate | null>
 
   /**
@@ -37,7 +40,7 @@ export interface IPackageRateRepository {
    * @param id ID của gói giá cần xóa mềm.
    * @returns Trả về true nếu xóa mềm thành công, ngược lại false.
    */
-  softDeletePackageRate(id: string): Promise<boolean>
+  softDeletePackageRate(id: string, session: ClientSession): Promise<boolean>
 
   /**
    * Xóa vĩnh viễn một gói giá khỏi cơ sở dữ liệu.
@@ -45,7 +48,10 @@ export interface IPackageRateRepository {
    * @param id ID của gói giá cần xóa vĩnh viễn.
    * @returns Trả về true nếu xóa thành công, ngược lại false.
    */
-  deletePackageRatePermanently(id: string): Promise<boolean>
+  deletePackageRatePermanently(
+    id: string,
+    session: ClientSession,
+  ): Promise<boolean>
 
   /**
    * Đánh dấu một gói giá là đang được sử dụng hoặc không.
@@ -54,7 +60,11 @@ export interface IPackageRateRepository {
    * @param isUsed Trạng thái sử dụng (true hoặc false).
    * @returns Gói giá đã được cập nhật.
    */
-  setPackageRateInUsed(id: string, isUsed: boolean): Promise<PackageRate | null>
+  setPackageRateInUsed(
+    id: string,
+    isUsed: boolean,
+    session: ClientSession,
+  ): Promise<boolean>
 }
 
 export const IPackageRateRepository = Symbol('IPackageRateRepository')
