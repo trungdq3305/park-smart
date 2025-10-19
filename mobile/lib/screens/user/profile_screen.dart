@@ -364,6 +364,9 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
 
+                    // Debug menu item
+                    
+
                     const SizedBox(height: 20),
                     // Logout button
                     Container(

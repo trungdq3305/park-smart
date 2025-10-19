@@ -6,6 +6,7 @@ import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/parking_lot_service.dart';
+import '../../services/socket_service.dart';
 import '../../widgets/app_scaffold.dart';
 import 'booking_reservation/booking_screen.dart';
 import 'package:mobile/widgets/parking_lot_map/parking_lot_bottom_sheet.dart';
@@ -39,12 +40,17 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       false; // Show map by default, fallback to list if needed
   bool _mapLoaded = false; // Track if map has loaded successfully
 
+  // Socket service for real-time updates
+  final SocketService _socketService = SocketService();
+  bool _isSocketConnected = false;
+
   // Removed navigation state variables as we're using external Google Maps
 
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _initializeSocket();
 
     // Auto-fallback to list view if map doesn't load within 15 seconds
     Future.delayed(const Duration(seconds: 15), () {
@@ -58,7 +64,65 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
   @override
   void dispose() {
+    _socketService.dispose();
     super.dispose();
+  }
+
+  /// Initialize socket connection for real-time updates
+  void _initializeSocket() {
+    _socketService.initialize();
+
+    // Listen to connection status
+    _socketService.connectionStatusStream.listen((isConnected) {
+      if (mounted) {
+        setState(() {
+          _isSocketConnected = isConnected;
+        });
+      }
+    });
+
+    // Listen to parking lot updates
+    _socketService.parkingLotUpdateStream.listen((data) {
+      if (mounted) {
+        _handleParkingLotUpdate(data);
+      }
+    });
+  }
+
+  /// Handle real-time parking lot updates
+  void _handleParkingLotUpdate(Map<String, dynamic> data) {
+    // Update parking lot data in real-time
+    final parkingLotId = data['parkingLotId'] ?? data['id'];
+    final availableSpots = data['availableSpots'];
+
+    if (parkingLotId != null && availableSpots != null) {
+      // Find and update the parking lot in the list
+      setState(() {
+        for (int i = 0; i < _parkingLots.length; i++) {
+          final lot = _parkingLots[i];
+          final lotId = lot['id'] ?? lot['_id'];
+
+          if (lotId == parkingLotId) {
+            _parkingLots[i] = {...lot, 'availableSpots': availableSpots};
+            break;
+          }
+        }
+      });
+
+      // Update markers to reflect new data
+      _updateMarkers();
+
+      // Show notification
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Cập nhật bãi đỗ xe: $availableSpots chỗ trống'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    }
   }
 
   // ... (rest of _getCurrentLocation, _getAddressFromPosition, _loadNearbyParkingLots, _loadParkingLotsInBounds remains the same) ...
@@ -166,6 +230,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     });
 
     try {
+      // 1. Gọi API để lấy danh sách các bãi đỗ xe gần đó
       final response = await ParkingLotService.getNearbyParkingLots(
         longitude: _currentPosition!.longitude,
         latitude: _currentPosition!.latitude,
@@ -173,27 +238,36 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         pageSize: 20,
       );
 
-      // Handle nested array structure: data[0] contains the actual array
+      // Xử lý dữ liệu trả về từ API
       final responseData = response['data'];
-      List<Map<String, dynamic>> parkingLots = [];
-
+      List<Map<String, dynamic>> loadedParkingLots = [];
       if (responseData != null &&
           responseData is List &&
           responseData.isNotEmpty) {
-        // Check if it's nested array structure
         if (responseData[0] is List) {
-          parkingLots = List<Map<String, dynamic>>.from(responseData[0] ?? []);
+          loadedParkingLots = List<Map<String, dynamic>>.from(
+            responseData[0] ?? [],
+          );
         } else {
-          // Direct array structure
-          parkingLots = List<Map<String, dynamic>>.from(responseData);
+          loadedParkingLots = List<Map<String, dynamic>>.from(responseData);
         }
       }
 
+      // 2. Cập nhật state với dữ liệu mới từ API
       setState(() {
-        _parkingLots = parkingLots;
-        _isLoading = false;
+        _parkingLots = loadedParkingLots;
       });
 
+      // 3. (QUAN TRỌNG) Tham gia room mặc định để nhận cập nhật real-time
+      if (_isSocketConnected) {
+        print('🚀 Tham gia room mặc định để nhận cập nhật real-time...');
+        // Server sử dụng room mặc định room_123456
+        _socketService.joinParkingLotRoom('123456');
+      } else {
+        print('⚠️ Socket chưa kết nối, không thể tham gia room');
+      }
+
+      // 4. Cập nhật các marker trên bản đồ
       _updateMarkers();
     } catch (e) {
       setState(() {
@@ -218,6 +292,10 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         } else {
           _errorMessage = 'Lỗi tải bãi đỗ xe: $e';
         }
+      });
+    } finally {
+      // Luôn đảm bảo tắt trạng thái loading dù thành công hay thất bại
+      setState(() {
         _isLoading = false;
       });
     }
@@ -232,6 +310,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     });
 
     try {
+      // 1. Gọi API để lấy danh sách các bãi đỗ xe trong tầm nhìn bản đồ
       final response = await ParkingLotService.getParkingLotsInBounds(
         bottomLeftLng: _currentBounds!.southwest.longitude,
         bottomLeftLat: _currentBounds!.southwest.latitude,
@@ -240,27 +319,36 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         pageSize: 50,
       );
 
-      // Handle nested array structure: data[0] contains the actual array
+      // Xử lý dữ liệu trả về từ API
       final responseData = response['data'];
-      List<Map<String, dynamic>> parkingLots = [];
-
+      List<Map<String, dynamic>> loadedParkingLots = [];
       if (responseData != null &&
           responseData is List &&
           responseData.isNotEmpty) {
-        // Check if it's nested array structure
         if (responseData[0] is List) {
-          parkingLots = List<Map<String, dynamic>>.from(responseData[0] ?? []);
+          loadedParkingLots = List<Map<String, dynamic>>.from(
+            responseData[0] ?? [],
+          );
         } else {
-          // Direct array structure
-          parkingLots = List<Map<String, dynamic>>.from(responseData);
+          loadedParkingLots = List<Map<String, dynamic>>.from(responseData);
         }
       }
 
+      // 2. Cập nhật state với dữ liệu mới
       setState(() {
-        _parkingLots = parkingLots;
-        _isLoading = false;
+        _parkingLots = loadedParkingLots;
       });
 
+      // 3. (QUAN TRỌNG) Tham gia room mặc định để nhận cập nhật real-time
+      if (_isSocketConnected) {
+        print('🚀 Tham gia room mặc định để nhận cập nhật real-time...');
+        // Server sử dụng room mặc định room_123456
+        _socketService.joinParkingLotRoom('123456');
+      } else {
+        print('⚠️ Socket chưa kết nối, không thể tham gia room');
+      }
+
+      // 4. Cập nhật các marker trên bản đồ
       _updateMarkers();
     } catch (e) {
       setState(() {
@@ -285,6 +373,10 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         } else {
           _errorMessage = 'Lỗi tải bãi đỗ xe: $e';
         }
+      });
+    } finally {
+      // Tắt trạng thái loading
+      setState(() {
         _isLoading = false;
       });
     }
@@ -545,6 +637,23 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
                 // Debug indicator
                 MapDebugIndicator(mapLoaded: _mapLoaded),
+
+                // Socket status indicator
+                Positioned(
+                  top: 140,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _isSocketConnected ? Colors.green : Colors.red,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _isSocketConnected ? 'Socket OK' : 'Socket Off',
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ),
+                ),
 
                 // Fallback: Show parking lots list when map doesn't load
                 if (_showMapFallback)
