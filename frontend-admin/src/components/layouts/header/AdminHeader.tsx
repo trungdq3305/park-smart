@@ -3,6 +3,7 @@ import { Layout, Button, Dropdown, Avatar, Space } from 'antd'
 import { SettingOutlined, UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
 import './AdminHeader.css'
 import Cookies from 'js-cookie'
+import { useLogout } from '../../../hooks/useLogout'
 const { Header } = Layout
 
 interface AdminHeaderProps {
@@ -13,6 +14,8 @@ interface AdminHeaderProps {
 const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
   const userData = Cookies.get('userData') ? JSON.parse(Cookies.get('userData')!) : null
   const fullName = userData?.fullName || 'Admin User'
+  const logout = useLogout()
+  
   const userMenuItems = [
     {
       key: '1',
@@ -32,6 +35,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
       label: 'Logout',
       icon: <LogoutOutlined />,
       danger: true,
+      onClick: () => {
+        logout()
+      },
     },
   ]
 

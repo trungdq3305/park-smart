@@ -3,6 +3,7 @@ import { Layout, Button, Dropdown, Avatar, Space } from 'antd'
 import { SettingOutlined, UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
 import './OperatorHeader.css'
 import Cookies from 'js-cookie'
+import { useLogout } from '../../../hooks/useLogout'
 const { Header } = Layout
 
 interface OperatorHeaderProps {
@@ -13,6 +14,7 @@ interface OperatorHeaderProps {
 const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
   const userData = Cookies.get('userData') ? JSON.parse(Cookies.get('userData')!) : null
   const fullName = userData?.fullName || 'Operator User'
+  const logout = useLogout()
   const userMenuItems = [
     {
       key: '1',
@@ -32,6 +34,9 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
       label: 'Logout',
       icon: <LogoutOutlined />,
       danger: true,
+      onClick: () => {
+        logout()
+      },
     },
   ]
 
