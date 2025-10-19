@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Layout } from 'antd'
-import AdminHeader from '../header/AdminHeader'
-import AdminSidebar from '../sideBar/AdminSidebar'
+import OperatorHeader from '../header/OperatorHeader'
+import OperatorSidebar from '../sideBar/OperatorSidebar'
 import { useMobileMenu } from '../../../hooks/useMobileMenu'
 
 const { Content } = Layout
 
-function AdminLayout() {
+function OperatorLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const { isMobile, mobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useMobileMenu()
 
@@ -23,7 +23,7 @@ function AdminLayout() {
         background: '#f5f5f5',
       }}
     >
-      <AdminSidebar 
+      <OperatorSidebar 
         collapsed={collapsed} 
         onCollapse={handleCollapse}
         isMobile={isMobile}
@@ -46,7 +46,7 @@ function AdminLayout() {
           background: '#f5f5f5',
         }}
       >
-        <AdminHeader 
+        <OperatorHeader 
           onMobileMenuToggle={toggleMobileMenu}
           isMobile={isMobile}
         />
@@ -68,4 +68,4 @@ function AdminLayout() {
   )
 }
 
-export default AdminLayout
+export default OperatorLayout

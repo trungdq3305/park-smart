@@ -20,7 +20,7 @@ import './AdminSidebar.css'
 
 const { Sider } = Layout
 
-interface AdminSidebarProps {
+interface OperatorSidebarProps {
   collapsed: boolean
   onCollapse: (collapsed: boolean) => void
   isMobile?: boolean
@@ -28,7 +28,7 @@ interface AdminSidebarProps {
   onMobileToggle?: () => void
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
+const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ 
   collapsed, 
   onCollapse, 
   isMobile = false, 
@@ -38,7 +38,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Menu items cho ứng dụng Park Smart
+  // Menu items aligned to Admin sidebar
   const menuItems = [
     {
       key: '/admin/manage-account',
@@ -169,4 +169,4 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
   )
 }
 
-export default AdminSidebar
+export default OperatorSidebar

@@ -1,83 +1,55 @@
-.admin-header {
+/* OperatorHeader.css */
+.operator-header {
   background: #ffffff;
   padding: 0 2.4vh;
-  border-bottom: 1px solid #f0f0f0;
+  height: 8vh;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 6.4vh;
-  margin: 1.6vh 1.6vh 0 1.6vh;
-  border-radius: 10px;
+  border-bottom: 1px solid #f0f0f0;
   box-shadow: 0 0.1vh 0.3vh rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.header-left {
-  display: flex;
-  align-items: center;
+.header-left h3 {
+  margin: 0;
+  font-size: 2.4vh;
+  font-weight: 600;
+  color: #1a1a1a;
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-}
-
-.header-action-btn {
-  color: #8c8c8c;
-  border: none;
-  background: transparent;
-  width: 4vh;
-  height: 4vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.8vh;
-  transition: all 0.2s ease;
-}
-
-.header-action-btn:hover {
-  color: #1890ff;
-  background: #f0f8ff;
+  gap: 1.6vh;
 }
 
 .user-menu-btn {
   display: flex;
   align-items: center;
-  padding: 0.8vh 1.2vh;
+  padding: 0.8vh 1.6vh;
   border-radius: 0.8vh;
-  border: 1px solid #f0f0f0;
-  background: #ffffff;
-  color: #1a1a1a;
   transition: all 0.2s ease;
-  height: 4.8vh;
-}
-
-.user-menu-btn:hover {
-  border-color: #d9d9d9;
-  box-shadow: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.06);
-}
-
-.ant-breadcrumb {
-  font-size: 1.4vh;
-}
-
-.ant-breadcrumb a {
-  color: #8c8c8c;
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-
-.ant-breadcrumb a:hover {
-  color: #1890ff;
-}
-
-.ant-breadcrumb .ant-breadcrumb-link {
+  border: none;
+  box-shadow: none;
+  background: transparent;
   color: #1a1a1a;
   font-weight: 500;
 }
 
-.ant-breadcrumb .ant-breadcrumb-separator {
-  color: #d9d9d9;
-  margin: 0 0.8vh;
+.user-menu-btn:hover {
+  background-color: #f5f5f5;
+  color: #52c41a;
+}
+
+.user-menu-btn .ant-avatar {
+  margin-right: 0.8vh;
 }
 
 /* Mobile Menu Toggle Button */
@@ -95,33 +67,30 @@
 
 .mobile-menu-toggle:hover {
   background-color: #f5f5f5;
-  color: #667eea;
+  color: #52c41a;
 }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
-  .admin-header {
+  .operator-header {
     padding: 0 2vh;
-    height: 5.5vh;
-    margin: 1.2vh 1.2vh 0 1.2vh;
+    height: 7vh;
   }
 
   .header-left h3 {
-    font-size: 1.8vh;
+    font-size: 2vh;
   }
 
   .user-menu-btn {
-    padding: 0.6vh 1vh;
+    padding: 0.6vh 1.2vh;
     font-size: 1.3vh;
-    height: 4.2vh;
   }
 }
 
 @media (max-width: 768px) {
-  .admin-header {
+  .operator-header {
     padding: 0 1.6vh;
-    height: 5vh;
-    margin: 0.8vh 0.8vh 0 0.8vh;
+    height: 6vh;
     position: relative;
   }
 
@@ -132,14 +101,13 @@
   }
 
   .header-left h3 {
-    font-size: 1.6vh;
+    font-size: 1.8vh;
     flex: 1;
   }
 
   .user-menu-btn {
     padding: 0.4vh 0.8vh;
     font-size: 1.2vh;
-    height: 3.8vh;
   }
 
   .user-menu-btn .ant-avatar {
@@ -150,20 +118,18 @@
 }
 
 @media (max-width: 480px) {
-  .admin-header {
+  .operator-header {
     padding: 0 1.2vh;
-    height: 4.5vh;
-    margin: 0.6vh 0.6vh 0 0.6vh;
+    height: 5.5vh;
   }
 
   .header-left h3 {
-    font-size: 1.4vh;
+    font-size: 1.6vh;
   }
 
   .user-menu-btn {
     padding: 0.3vh 0.6vh;
     font-size: 1.1vh;
-    height: 3.4vh;
   }
 
   .user-menu-btn span {

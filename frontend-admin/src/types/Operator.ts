@@ -1,7 +1,7 @@
 export interface Operator {
   _id: string
   accountId: string
-  addressId : string
+  addressId: string
   fullName: string
   taxCode: string
   companyName: string
