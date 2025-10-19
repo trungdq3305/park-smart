@@ -4,13 +4,9 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
-// import '../../services/parking_lot_service.dart'; // ⬅️ Keep if needed for other parts
-//  // ⬅️ REMOVED: No longer using custom service
+import 'package:url_launcher/url_launcher.dart';
 import '../../services/parking_lot_service.dart';
-import '../../services/navigation_service.dart';
 import '../../widgets/app_scaffold.dart';
-import '../../widgets/navigation/navigation_controls.dart';
-// import '../../widgets/navigation/navigation_overlay.dart'; // ⬅️ REMOVED: No longer needed for in-app nav
 
 class ParkingLotScreen extends StatefulWidget {
   const ParkingLotScreen({super.key});
@@ -35,29 +31,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       false; // Show map by default, fallback to list if needed
   bool _mapLoaded = false; // Track if map has loaded successfully
 
-  // Navigation state for in-app navigation
-  bool _isNavigating = false;
-  bool _hasRoute = false;
-  List<Polyline> _routePolylines = [];
-  List<LatLng> _routePoints = [];
-  List<Map<String, dynamic>> _routeInstructions = [];
-  String? _estimatedTime;
-  String? _estimatedDistance;
-  String? _currentInstruction;
-  String? _nextInstruction;
-  bool _isMuted = false;
-
-  // GPS tracking
-  StreamSubscription<Position>? _positionStream;
-  Timer? _navigationTimer;
-
-  // Navigation UI state
-  bool _showNavigationUI = false;
-  bool _isNavigationActive = false;
-
-  // NEW: Destination details for route overview (since we removed route instructions)
-  LatLng? _destination;
-  String? _destinationName;
+  // Removed navigation state variables as we're using external Google Maps
 
   @override
   void initState() {
@@ -77,8 +51,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
   @override
   void dispose() {
-    _positionStream?.cancel();
-    _navigationTimer?.cancel();
     super.dispose();
   }
 
@@ -586,430 +558,66 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     );
   }
 
-  // ⬅️ MODIFIED: Function to start in-app navigation
+  // Function to open Google Maps for navigation
   Future<void> _navigateToParkingLot(Map<String, dynamic> parkingLot) async {
-    print('🧭 Starting navigation to parking lot...');
+    print('🧭 Opening Google Maps for navigation...');
 
     // Extract coordinates from parking lot
     final addressId = parkingLot['addressId'];
     final lat = addressId?['latitude']?.toDouble();
     final lng = addressId?['longitude']?.toDouble();
-    final address = addressId?['fullAddress'] ?? 'Không có địa chỉ';
+    // Address is not used in external Google Maps navigation
 
     print('🧭 Parking lot coordinates: lat=$lat, lng=$lng');
     print(
       '🧭 Current position: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}',
     );
 
-    if (lat != null && lng != null && _currentPosition != null) {
-      print('🧭 Loading route...');
-      print('🧭 Map controller: $_mapController');
-      print('🧭 Map loaded: $_mapLoaded');
-      print('🧭 Widget mounted: $mounted');
+    if (lat != null && lng != null) {
+      try {
+        // Create Google Maps URL for navigation
+        String googleMapsUrl;
 
-      // Load route using NavigationService
-      await _loadRouteToDestination(lat, lng, address);
-      print('🧭 Route loaded successfully');
-    } else {
-      print('❌ Missing coordinates or current position');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không thể lấy tọa độ hoặc vị trí hiện tại'),
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _loadRouteToDestination(
-    double lat,
-    double lng,
-    String address,
-  ) async {
-    if (_currentPosition == null) {
-      print('❌ No current position available');
-      return;
-    }
-
-    print('🧭 Loading route to destination: $lat, $lng');
-    print(
-      '🧭 From current position: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}',
-    );
-
-    if (mounted) {
-      print('🧭 Setting loading state...');
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-        _destination = LatLng(lat, lng);
-        _destinationName = address;
-      });
-    }
-
-    try {
-      final start = LatLng(
-        _currentPosition!.latitude,
-        _currentPosition!.longitude,
-      );
-      final end = LatLng(lat, lng);
-
-      print('🧭 Calling NavigationService.getRouteInfo...');
-      final route = await NavigationService.getRouteInfo(start, end);
-      print('🧭 Route generated: ${route['summary']}');
-
-      print('🧭 Processing route...');
-      print('🧭 Route keys: ${route.keys}');
-      print('🧭 Route points type: ${route['points'].runtimeType}');
-      print('🧭 Route instructions type: ${route['instructions'].runtimeType}');
-      _processRoute(route);
-
-      if (mounted) {
-        print('🧭 Setting route state...');
-        print('🧭 Current route points: ${_routePoints.length}');
-        print('🧭 Current route polylines: ${_routePolylines.length}');
-        print('🧭 Current hasRoute: $_hasRoute');
-
-        setState(() {
-          _hasRoute = true;
-          _isLoading = false;
-        });
-
-        print('🧭 After setState - hasRoute: $_hasRoute');
-        print('🧭 After setState - routePoints: ${_routePoints.length}');
-        print('🧭 After setState - routePolylines: ${_routePolylines.length}');
-
-        // Ensure we have a valid route
-        if (_routePoints.isEmpty) {
-          print('❌ No route points after processing, showing error');
-          setState(() {
-            _errorMessage = 'Không thể tạo tuyến đường. Vui lòng thử lại.';
-            _hasRoute = false;
-          });
+        if (_currentPosition != null) {
+          // Navigation from current location to destination
+          googleMapsUrl =
+              'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving';
+        } else {
+          // Just show destination on map
+          googleMapsUrl =
+              'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
         }
-      }
-      print('🧭 Route processed successfully');
-    } catch (e) {
-      print('❌ Error loading route: $e');
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Lỗi tải tuyến đường: $e';
-          _isLoading = false;
-        });
-      }
-    }
-  }
 
-  // ⬅️ REMOVED/SIMPLIFIED: No longer needed for in-app route calculation
-  /*
-  Future<void> _loadRouteToDestination(
-    double lat,
-    double lng,
-    String address,
-  ) async { ... }
-  */
+        print('🧭 Opening Google Maps URL: $googleMapsUrl');
 
-  // Trong file parking_lot_screen.dart
+        // Try to open Google Maps app first
+        Uri googleMapsUri = Uri.parse(googleMapsUrl);
 
-  // ... (Các biến trạng thái và phương thức khác)
-
-  void _processRoute(Map<String, dynamic> route) {
-    print('🧭 Processing route...');
-    print('🧭 Route keys: ${route.keys.toList()}');
-
-    // Lấy dữ liệu points và instructions dưới dạng dynamic
-    final points = route['points'];
-    final instructions = route['instructions'];
-
-    print(
-      '🧭 Route data: points=${(points as List?)?.length ?? 0}, instructions=${(instructions as List?)?.length ?? 0}',
-    );
-
-    try {
-      if (mounted) {
-        setState(() {
-          // 1. Xử lý Points:
-          if (points is List && points.isNotEmpty) {
-            print('🧭 Processing ${points.length} points...');
-            print(
-              '🧭 First point: ${points[0]} (type: ${points[0].runtimeType})',
-            );
-
-            _routePoints = points
-                .map((p) {
-                  print('🧭 Processing point: $p (type: ${p.runtimeType})');
-                  if (p is LatLng) {
-                    print('🧭 Direct LatLng: ${p.latitude}, ${p.longitude}');
-                    return p;
-                  } else if (p is Map &&
-                      p.containsKey('latitude') &&
-                      p.containsKey('longitude')) {
-                    print('🧭 Map LatLng: ${p['latitude']}, ${p['longitude']}');
-                    return LatLng(p['latitude'], p['longitude']);
-                  } else {
-                    print(
-                      '❌ Unknown point format: $p (type: ${p.runtimeType})',
-                    );
-                    return null;
-                  }
-                })
-                .where((p) => p != null)
-                .cast<LatLng>()
-                .toList();
-            print('🧭 Parsed ${_routePoints.length} points successfully');
-          } else {
-            print('❌ No points to process');
-            _routePoints = <LatLng>[];
-          }
-
-          // 2. Xử lý Instructions:
-          if (instructions is List && instructions.isNotEmpty) {
-            print('🧭 Processing ${instructions.length} instructions...');
-            print(
-              '🧭 First instruction: ${instructions[0]} (type: ${instructions[0].runtimeType})',
-            );
-
-            _routeInstructions = instructions
-                .map((i) {
-                  print(
-                    '🧭 Processing instruction: $i (type: ${i.runtimeType})',
-                  );
-                  if (i is Map<String, dynamic>) {
-                    print('🧭 Direct Map: ${i.keys}');
-                    return i;
-                  } else {
-                    print(
-                      '❌ Unknown instruction format: $i (type: ${i.runtimeType})',
-                    );
-                    return null;
-                  }
-                })
-                .where((i) => i != null)
-                .cast<Map<String, dynamic>>()
-                .toList();
-            print(
-              '🧭 Parsed ${_routeInstructions.length} instructions successfully',
-            );
-          } else {
-            print('❌ No instructions to process');
-            _routeInstructions = <Map<String, dynamic>>[];
-          }
-
-          _estimatedTime = route['estimatedTime'];
-          _estimatedDistance = route['estimatedDistance'];
-
-          // 3. Tạo Polyline
-          print('🧭 Creating polyline with ${_routePoints.length} points...');
-          if (_routePoints.isNotEmpty) {
-            print('🧭 First point: ${_routePoints[0]}');
-            print('🧭 Last point: ${_routePoints[_routePoints.length - 1]}');
-
-            _routePolylines = [
-              Polyline(
-                polylineId: const PolylineId('route'),
-                points: _routePoints,
-                color: Colors.blue,
-                width: 6,
-                // Tạo hiệu ứng nét đứt cho tuyến đường
-                patterns: [PatternItem.dash(30), PatternItem.gap(10)],
-              ),
-            ];
-            print('🧭 Polyline created with ${_routePoints.length} points');
-
-            // Cập nhật bounds camera để vừa với tuyến đường
-            if (_mapController != null && route['bounds'] is LatLngBounds) {
-              final bounds = route['bounds'] as LatLngBounds;
-              print('🧭 Animating camera to bounds: $bounds');
-
-              // Đặt một độ trễ nhỏ để Map ổn định
-              Future.delayed(const Duration(milliseconds: 100), () {
-                if (mounted && _mapController != null) {
-                  _mapController!.animateCamera(
-                    CameraUpdate.newLatLngBounds(bounds, 100.0),
-                  );
-                  print('🧭 Camera animated to bounds');
-                }
-              });
-            }
-          } else {
-            // Trường hợp route không có points (rất hiếm, nhưng để an toàn)
-            print('❌ No points to create polyline');
-            _routePolylines = [];
-          }
-
-          // Đánh dấu đã có tuyến đường
-          _hasRoute = _routePoints.isNotEmpty;
-        });
-
-        print(
-          '🧭 Route processed successfully: ${_routePoints.length} points, ${_routeInstructions.length} instructions',
-        );
-      }
-    } catch (e) {
-      print('❌ Error processing route: $e');
-      // Đảm bảo trạng thái sạch nếu có lỗi
-      if (mounted) {
-        setState(() {
-          _routePoints = <LatLng>[];
-          _routeInstructions = <Map<String, dynamic>>[];
-          _routePolylines = [];
-          _hasRoute = false;
-        });
-      }
-    }
-  }
-
-  // ⬅️ MODIFIED: Start in-app navigation with GPS tracking
-  void _startNavigation() {
-    try {
-      if (!_hasRoute || _destination == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Vui lòng chọn bãi đỗ xe để bắt đầu chỉ đường'),
-          ),
-        );
-        return;
-      }
-
-      print('🧭 Starting navigation...');
-
-      setState(() {
-        _isNavigating = true;
-        _isNavigationActive = true;
-        _showNavigationUI = true;
-      });
-
-      // Start navigation with first instruction
-      if (_routeInstructions.isNotEmpty) {
-        _currentInstruction = _routeInstructions[0]['instruction'];
-        if (_routeInstructions.length > 1) {
-          _nextInstruction = _routeInstructions[1]['instruction'];
+        if (await canLaunchUrl(googleMapsUri)) {
+          await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
+          print('🧭 Google Maps opened successfully');
+        } else {
+          // Fallback to web browser
+          print('🧭 Google Maps app not available, opening in browser...');
+          await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
         }
-      }
-
-      // Start GPS tracking
-      _startGPSTracking();
-
-      print('🧭 In-app navigation started with GPS tracking');
-    } catch (e) {
-      print('❌ Error starting navigation: $e');
-      if (mounted) {
-        setState(() {
-          _isNavigating = false;
-          _isNavigationActive = false;
-          _showNavigationUI = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi bắt đầu chỉ đường: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  // ⬅️ MODIFIED: Stop navigation and GPS tracking
-  void _stopNavigation() {
-    setState(() {
-      _isNavigating = false;
-      _isNavigationActive = false;
-      _showNavigationUI = false;
-      _currentInstruction = null;
-      _nextInstruction = null;
-    });
-
-    // Stop GPS tracking
-    _stopGPSTracking();
-
-    print('🧭 In-app navigation stopped');
-  }
-
-  // ⬅️ MODIFIED: Simplified to clear only the basic route state
-  void _clearRoute() {
-    setState(() {
-      _hasRoute = false;
-      _isNavigating = false;
-      _isNavigationActive = false;
-      _showNavigationUI = false;
-      _routePolylines = [];
-      _routePoints = [];
-      _routeInstructions = [];
-      _estimatedTime = null;
-      _estimatedDistance = null;
-      _currentInstruction = null;
-      _nextInstruction = null;
-      _destination = null;
-      _destinationName = null;
-    });
-    print('🧭 Route cleared');
-  }
-
-  /// Start continuous GPS tracking during navigation
-  void _startGPSTracking() {
-    print('📍 Starting GPS tracking for navigation');
-
-    try {
-      const LocationSettings locationSettings = LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Update every 10 meters
-      );
-
-      _positionStream =
-          Geolocator.getPositionStream(
-            locationSettings: locationSettings,
-          ).listen(
-            (Position position) {
-              print(
-                '📍 GPS update: ${position.latitude}, ${position.longitude}',
-              );
-
-              if (mounted) {
-                setState(() {
-                  _currentPosition = position;
-                });
-
-                // Update map camera to follow user
-                if (_mapController != null) {
-                  _mapController!.animateCamera(
-                    CameraUpdate.newLatLng(
-                      LatLng(position.latitude, position.longitude),
-                    ),
-                  );
-                }
-
-                // Check if user has reached destination
-                if (_destination != null) {
-                  final distance = NavigationService.calculateDistance(
-                    LatLng(position.latitude, position.longitude),
-                    _destination!,
-                  );
-
-                  if (distance < 50) {
-                    // Within 50 meters of destination
-                    _onReachDestination();
-                  }
-                }
-              }
-            },
-            onError: (error) {
-              print('❌ GPS tracking error: $error');
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Lỗi GPS: $error'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
+      } catch (e) {
+        print('❌ Error opening Google Maps: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Không thể mở Google Maps: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
-    } catch (e) {
-      print('❌ Error starting GPS tracking: $e');
+        }
+      }
+    } else {
+      print('❌ Missing coordinates');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Không thể bắt đầu GPS: $e'),
+          const SnackBar(
+            content: Text('Không thể lấy tọa độ bãi đỗ xe'),
             backgroundColor: Colors.red,
           ),
         );
@@ -1017,30 +625,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     }
   }
 
-  /// Stop GPS tracking
-  void _stopGPSTracking() {
-    print('📍 Stopping GPS tracking');
-    _positionStream?.cancel();
-    _positionStream = null;
-  }
-
-  /// Handle reaching destination
-  void _onReachDestination() {
-    print('🎯 Reached destination!');
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 Đã đến đích!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
-
-      // Stop navigation
-      _stopNavigation();
-    }
-  }
+  // Removed all navigation-related functions as we're using external Google Maps
 
   void _bookParkingLot(Map<String, dynamic> parkingLot) {
     // TODO: Implement booking functionality
@@ -1343,14 +928,12 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                     zoom: 15,
                   ),
                   markers: _markers,
-                  polylines: _routePolylines.toSet(),
                   onMapCreated: (GoogleMapController controller) {
                     print('🗺️ Google Map created successfully');
                     print('🗺️ Map controller: $controller');
                     print('🗺️ Previous controller: $_mapController');
                     print('🗺️ Widget mounted: $mounted');
-                    print('🗺️ Has route: $_hasRoute');
-                    print('🗺️ Route polylines: ${_routePolylines.length}');
+                    print('🗺️ Map loaded successfully');
                     _mapController = controller;
                     print('🗺️ Map controller set: $_mapController');
 
@@ -1383,7 +966,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                   },
                   onCameraIdle: () {
                     // Load parking lots in current view when camera stops moving
-                    if (mounted && !_isNavigating) {
+                    if (mounted) {
                       _loadParkingLotsInBounds();
                     }
                   },
@@ -1399,25 +982,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                   buildingsEnabled: true,
                   trafficEnabled: false,
                 ),
-
-                // ⬅️ Navigation overlay (REMOVED or COMMENTED OUT)
-                // A simpler, temporary overlay to show navigation is external
-                if (_isNavigating)
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade600,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'Chỉ đường đang chạy trên ứng dụng bản đồ bên ngoài...',
-                        style: TextStyle(color: Colors.white, fontSize: 12),
-                      ),
-                    ),
-                  ),
 
                 // Debug indicator
                 Positioned(
@@ -1435,50 +999,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                     ),
                   ),
                 ),
-
-                // Navigation debug indicator
-                if (_hasRoute)
-                  Positioned(
-                    top: 140,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _isNavigating ? Colors.blue : Colors.orange,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        _isNavigating ? 'Navigating' : 'Route Ready',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Route debug indicator
-                if (_hasRoute)
-                  Positioned(
-                    top: 180,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _routePoints.isNotEmpty
-                            ? Colors.green
-                            : Colors.red,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Route: ${_routePoints.length} pts',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
 
                 // Fallback: Show parking lots list when map doesn't load
                 if (_showMapFallback)
@@ -1614,86 +1134,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
             ),
           ),
 
-          // Navigation controls - Always show when there's a route
-          if (_hasRoute)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                color: Colors.transparent,
-                child: NavigationControls(
-                  onStartNavigation: _startNavigation,
-                  onStopNavigation: _stopNavigation,
-                  onShowAlternatives: null, // Disable for now
-                  isNavigating: _isNavigating,
-                  hasRoute: _hasRoute,
-                  estimatedTime: _estimatedTime,
-                  estimatedDistance: _estimatedDistance,
-                  destination: _destination,
-                  destinationName: _destinationName,
-                ),
-              ),
-            ),
-
-          // Navigation UI overlay
-          if (_showNavigationUI && _isNavigationActive)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 16,
-              left: 16,
-              right: 16,
-              child: _buildNavigationOverlay(),
-            ),
-
-          // Navigation error overlay
-          if (_hasRoute &&
-              _errorMessage != null &&
-              _errorMessage!.contains('navigation'))
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 16,
-              left: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.error_outline, color: Colors.red.shade600),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        _errorMessage!,
-                        style: TextStyle(color: Colors.red.shade700),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _errorMessage = null;
-                        });
-                      },
-                      icon: Icon(Icons.close, color: Colors.red.shade600),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // Clear route button
-          if (_hasRoute)
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 80,
-              right: 16,
-              child: FloatingActionButton.small(
-                onPressed: _clearRoute,
-                backgroundColor: Colors.red,
-                child: const Icon(Icons.close, color: Colors.white),
-              ),
-            ),
+          // Removed navigation controls as we're using external Google Maps
 
           // Loading indicator
           if (_isLoading)
@@ -1744,10 +1185,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                       ],
                     ),
                     // Show help button for API errors
-                    // ⬅️ Since we removed the custom Directions API logic, this help is less relevant for the new error,
-                    // but keeping it for other potential API errors (e.g., ParkingLotService)
-                    if (_errorMessage!.contains('Directions API') ||
-                        _errorMessage!.contains('API key'))
+                    if (_errorMessage!.contains('API key'))
                       Padding(
                         padding: const EdgeInsets.only(top: 12),
                         child: Row(
@@ -1821,14 +1259,14 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hướng dẫn bật Google Directions API'),
+        title: const Text('Hướng dẫn xử lý lỗi API'),
         content: const SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Tính năng chỉ đường đã được chuyển sang sử dụng ứng dụng bản đồ bên ngoài. Nếu bạn thấy lỗi liên quan đến API bãi đỗ xe:',
+                'Tính năng chỉ đường sử dụng Google Maps bên ngoài. Nếu bạn thấy lỗi liên quan đến API bãi đỗ xe:',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 12),
@@ -1838,10 +1276,10 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
               ),
               SizedBox(height: 12),
               Text(
-                'Nếu lỗi liên quan đến Google Directions API (cũ), có thể đã bị thay thế trong hệ thống.',
+                'Chỉ đường sẽ mở ứng dụng Google Maps trên thiết bị của bạn.',
                 style: TextStyle(
                   fontStyle: FontStyle.italic,
-                  color: Colors.orange,
+                  color: Colors.blue,
                 ),
               ),
             ],
@@ -1857,172 +1295,5 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     );
   }
 
-  /// Build navigation overlay UI
-  Widget _buildNavigationOverlay() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Current instruction
-          if (_currentInstruction != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.withOpacity(0.3)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.navigation, color: Colors.blue, size: 20),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _currentInstruction!,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.blue,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_estimatedTime != null && _estimatedDistance != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.access_time,
-                            color: Colors.grey[600],
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _estimatedTime!,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Icon(
-                            Icons.straighten,
-                            color: Colors.grey[600],
-                            size: 16,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _estimatedDistance!,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 12),
-
-          // Next instruction
-          if (_nextInstruction != null)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.arrow_forward, color: Colors.grey[600], size: 16),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _nextInstruction!,
-                      style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-          const SizedBox(height: 12),
-
-          // Navigation controls
-          Row(
-            children: [
-              // Stop navigation button
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _stopNavigation,
-                  icon: const Icon(Icons.stop, color: Colors.white),
-                  label: const Text(
-                    'Dừng chỉ đường',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              // Mute button
-              Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: _isMuted ? Colors.red : Colors.grey,
-                  ),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: IconButton(
-                  onPressed: () {
-                    setState(() {
-                      _isMuted = !_isMuted;
-                    });
-                  },
-                  icon: Icon(
-                    _isMuted ? Icons.volume_off : Icons.volume_up,
-                    color: _isMuted ? Colors.red : Colors.grey[600],
-                  ),
-                  tooltip: _isMuted ? 'Bật âm thanh' : 'Tắt âm thanh',
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
+  // Removed _buildNavigationOverlay as we're using external Google Maps
 }
