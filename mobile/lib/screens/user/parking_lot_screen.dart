@@ -104,21 +104,29 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     if (parkingLotId != null && availableSpots != null) {
       // Find and update the parking lot in the list
       bool found = false;
+      int foundIndex = -1;
+
       setState(() {
         for (int i = 0; i < _parkingLots.length; i++) {
           final lot = _parkingLots[i];
           final lotId = lot['id'] ?? lot['_id'];
 
           if (lotId == parkingLotId) {
-            print('✅ DEBUG: Found and updating parking lot: $lotId');
+            print('✅ DEBUG: Found parking lot at index $i: $lotId');
+            print('✅ DEBUG: Old availableSpots: ${lot['availableSpots']}');
+            print('✅ DEBUG: New availableSpots: $availableSpots');
+
             _parkingLots[i] = {...lot, 'availableSpots': availableSpots};
             found = true;
+            foundIndex = i;
             break;
           }
         }
       });
 
       if (found) {
+        print('✅ DEBUG: Successfully updated parking lot at index $foundIndex');
+
         // Update markers to reflect new data
         _updateMarkers();
 
@@ -128,12 +136,18 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
             SnackBar(
               content: Text('Cập nhật bãi đỗ xe: $availableSpots chỗ trống'),
               backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
+              duration: const Duration(seconds: 1),
             ),
           );
         }
       } else {
         print('⚠️ DEBUG: Parking lot not found in current list: $parkingLotId');
+        print('⚠️ DEBUG: Current parking lots count: ${_parkingLots.length}');
+        for (int i = 0; i < _parkingLots.length; i++) {
+          final lot = _parkingLots[i];
+          final lotId = lot['id'] ?? lot['_id'];
+          print('⚠️ DEBUG: Parking lot $i: $lotId');
+        }
       }
     } else {
       print('⚠️ DEBUG: Missing parking lot ID or available spots');
@@ -435,10 +449,16 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
           (parkingLot['totalLevel'] ?? 1);
 
       // Use actual parking lot ID for marker ID
-      final parkingLotId = parkingLot['id'] ?? parkingLot['_id'] ?? 'unknown_$i';
+      final parkingLotId =
+          parkingLot['id'] ?? parkingLot['_id'] ?? 'unknown_$i';
 
       if (lat != null && lng != null) {
-        print('📍 DEBUG: Creating marker for parking lot $parkingLotId: $availableSpots/$totalCapacity chỗ trống');
+        print(
+          '📍 DEBUG: Creating marker for parking lot $parkingLotId: $availableSpots/$totalCapacity chỗ trống',
+        );
+        print(
+          '📍 DEBUG: Marker data - availableSpots: $availableSpots, totalCapacity: $totalCapacity',
+        );
         markers.add(
           Marker(
             markerId: MarkerId('parking_lot_$parkingLotId'),
@@ -458,17 +478,45 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
     setState(() {
       _markers = markers;
+      print('🔄 DEBUG: Markers updated, count: ${markers.length}');
     });
   }
 
   void _showParkingLotDetails(Map<String, dynamic> parkingLot) {
+    // Get the latest data from _parkingLots to ensure real-time updates
+    final parkingLotId = parkingLot['id'] ?? parkingLot['_id'];
+    Map<String, dynamic> latestParkingLot = parkingLot;
+    bool foundLatest = false;
+
+    // Find the latest data in _parkingLots
+    for (final lot in _parkingLots) {
+      final lotId = lot['id'] ?? lot['_id'];
+      if (lotId == parkingLotId) {
+        latestParkingLot = lot;
+        foundLatest = true;
+        print(
+          '📱 DEBUG: Found latest data for bottom sheet - availableSpots: ${lot['availableSpots']}',
+        );
+        break;
+      }
+    }
+
+    if (!foundLatest) {
+      print(
+        '⚠️ DEBUG: Could not find latest data for parking lot: $parkingLotId',
+      );
+      print(
+        '⚠️ DEBUG: Using original data - availableSpots: ${parkingLot['availableSpots']}',
+      );
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) => ParkingLotBottomSheet(
-        parkingLot: parkingLot,
-        onNavigate: () => _navigateToParkingLot(parkingLot),
-        onBook: () => _bookParkingLot(parkingLot),
+        parkingLot: latestParkingLot,
+        onNavigate: () => _navigateToParkingLot(latestParkingLot),
+        onBook: () => _bookParkingLot(latestParkingLot),
       ),
     );
   }
