@@ -4,7 +4,6 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
-
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/parking_lot_service.dart';
 import '../../services/socket_service.dart';
@@ -17,7 +16,6 @@ import 'package:mobile/widgets/parking_lot_map/permission_dialog.dart';
 import 'package:mobile/widgets/parking_lot_map/parking_lot_list.dart';
 import 'package:mobile/widgets/parking_lot_map/map_debug_indicator.dart';
 import 'package:mobile/widgets/parking_lot_map/api_help_dialog.dart';
-
 
 class ParkingLotScreen extends StatefulWidget {
   const ParkingLotScreen({super.key});
@@ -42,13 +40,9 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       false; // Show map by default, fallback to list if needed
   bool _mapLoaded = false; // Track if map has loaded successfully
 
-
   // Socket service for real-time updates
   final SocketService _socketService = SocketService();
   bool _isSocketConnected = false;
-
-  // Removed navigation state variables as we're using external Google Maps
-
 
   @override
   void initState() {
@@ -68,7 +62,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
   @override
   void dispose() {
-
     _socketService.dispose();
     super.dispose();
   }
@@ -150,11 +143,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     }
   }
 
-
-  // ... (rest of _getCurrentLocation, _getAddressFromPosition, _loadNearbyParkingLots, _loadParkingLotsInBounds remains the same) ...
-
   Future<void> _getCurrentLocation() async {
-    // ... (Your existing _getCurrentLocation implementation remains the same) ...
     try {
       // Check current permission status first
       PermissionStatus currentStatus = await Permission.location.status;
@@ -318,12 +307,10 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         } else {
           _errorMessage = 'Lỗi tải bãi đỗ xe: $e';
         }
-
       });
     } finally {
       // Luôn đảm bảo tắt trạng thái loading dù thành công hay thất bại
       setState(() {
-
         _isLoading = false;
       });
     }
@@ -401,12 +388,10 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         } else {
           _errorMessage = 'Lỗi tải bãi đỗ xe: $e';
         }
-
       });
     } finally {
       // Tắt trạng thái loading
       setState(() {
-v
         _isLoading = false;
       });
     }
@@ -531,7 +516,6 @@ v
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-
       builder: (context) => ParkingLotBottomSheet(
         parkingLot: latestParkingLot,
         onNavigate: () => _navigateToParkingLot(latestParkingLot),
@@ -542,12 +526,10 @@ v
 
   // Function to open Google Maps for navigation
   Future<void> _navigateToParkingLot(Map<String, dynamic> parkingLot) async {
-
     // Extract coordinates from parking lot
     final addressId = parkingLot['addressId'];
     final lat = addressId?['latitude']?.toDouble();
     final lng = addressId?['longitude']?.toDouble();
-
 
     if (lat != null && lng != null) {
       try {
@@ -589,37 +571,17 @@ v
           const SnackBar(
             content: Text('Không thể lấy tọa độ bãi đỗ xe'),
             backgroundColor: Colors.red,
-
           ),
         );
         return;
       }
-
-      print('🧭 Starting navigation...');
-
-      setState(() {
-        _isNavigating = true;
-        _isNavigationActive = true;
-        _showNavigationUI = true;
-      });
-
-      // Start navigation with first instruction
-      if (_routeInstructions.isNotEmpty) {
-        _currentInstruction = _routeInstructions[0]['instruction'];
-        if (_routeInstructions.length > 1) {
-          _nextInstruction = _routeInstructions[1]['instruction'];
-        }
-      }
-
     }
   }
 
   // Removed all navigation-related functions as we're using external Google Maps
 
-
   Future<void> _bookParkingLot(Map<String, dynamic> parkingLot) async {
     try {
-
       // Get parking lot ID
       final parkingLotId = parkingLot['id'] ?? parkingLot['_id'];
 
@@ -633,7 +595,6 @@ v
         );
         return;
       }
-
 
       // Show loading
       showDialog(
@@ -656,7 +617,6 @@ v
         MaterialPageRoute(
           builder: (context) => BookingScreen(
             parkingLot: detailedParkingLot['data'] ?? detailedParkingLot,
-
           ),
         ),
       );
@@ -676,7 +636,6 @@ v
   }
 
   Future<bool?> _showPermissionDialog() async {
-    // ... (Your existing _showPermissionDialog implementation remains the same) ...
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -704,19 +663,14 @@ v
                     zoom: 15,
                   ),
                   markers: _markers,
-                  polylines: _routePolylines.toSet(),
                   onMapCreated: (GoogleMapController controller) {
-
-
                     _mapController = controller;
                     print('🗺️ Map controller set: $_mapController');
 
                     // Force update markers after map is ready
                     Future.delayed(const Duration(milliseconds: 500), () {
                       if (mounted) {
-
                         _updateMarkers();
-
                       }
                     });
 
@@ -724,8 +678,6 @@ v
                     if (mounted) {
                       _mapLoaded = true;
                       _showMapFallback = false;
-
-
                     }
                   },
                   onCameraMove: (CameraPosition position) {
@@ -742,7 +694,6 @@ v
                     // Load parking lots in current view when camera stops moving
 
                     if (mounted) {
-
                       _loadParkingLotsInBounds();
                     }
                   },
@@ -758,25 +709,6 @@ v
                   buildingsEnabled: true,
                   trafficEnabled: false,
                 ),
-
-                // ⬅️ Navigation overlay (REMOVED or COMMENTED OUT)
-                // A simpler, temporary overlay to show navigation is external
-                if (_isNavigating)
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade600,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'Chỉ đường đang chạy trên ứng dụng bản đồ bên ngoài...',
-                        style: TextStyle(color: Colors.white, fontSize: 12),
-                      ),
-                    ),
-                  ),
 
                 // Debug indicator
                 MapDebugIndicator(mapLoaded: _mapLoaded),
@@ -797,50 +729,6 @@ v
                     ),
                   ),
                 ),
-
-                // Navigation debug indicator
-                if (_hasRoute)
-                  Positioned(
-                    top: 140,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _isNavigating ? Colors.blue : Colors.orange,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        _isNavigating ? 'Navigating' : 'Route Ready',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                // Route debug indicator
-                if (_hasRoute)
-                  Positioned(
-                    top: 180,
-                    right: 16,
-                    child: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: _routePoints.isNotEmpty
-                            ? Colors.green
-                            : Colors.red,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'Route: ${_routePoints.length} pts',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
 
                 // Fallback: Show parking lots list when map doesn't load
                 if (_showMapFallback)
@@ -872,10 +760,6 @@ v
             ),
           ),
 
-
-          // Removed navigation controls as we're using external Google Maps
-
-
           // Loading indicator
           if (_isLoading)
             const Positioned(
@@ -903,7 +787,6 @@ v
                   });
                 },
                 onShowHelp: _showApiHelpDialog,
-
               ),
             ),
         ],
@@ -912,10 +795,8 @@ v
   }
 
   void _showApiHelpDialog() {
-
     showDialog(context: context, builder: (context) => const ApiHelpDialog());
   }
 
   // Removed _buildNavigationOverlay as we're using external Google Maps
-
 }
