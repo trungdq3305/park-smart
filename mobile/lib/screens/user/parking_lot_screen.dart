@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/parking_lot_service.dart';
 import '../../widgets/app_scaffold.dart';
+import 'booking_reservation/booking_screen.dart';
 
 class ParkingLotScreen extends StatefulWidget {
   const ParkingLotScreen({super.key});
@@ -41,7 +42,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     // Auto-fallback to list view if map doesn't load within 15 seconds
     Future.delayed(const Duration(seconds: 15), () {
       if (mounted && _parkingLots.isNotEmpty && !_mapLoaded) {
-        print('⚠️ Map failed to load, showing fallback list');
         setState(() {
           _showMapFallback = true;
         });
@@ -61,13 +61,9 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     try {
       // Check current permission status first
       PermissionStatus currentStatus = await Permission.location.status;
-      print('🔍 Current permission status: $currentStatus');
-
       // If permission is denied or permanently denied, show dialog to request
       if (currentStatus == PermissionStatus.denied ||
           currentStatus == PermissionStatus.permanentlyDenied) {
-        print('📱 Permission denied, showing dialog...');
-
         // Show permission dialog
         bool? shouldRequest = await _showPermissionDialog();
         if (shouldRequest != true) {
@@ -80,13 +76,9 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       }
 
       // Request location permission
-      print('🔐 Requesting location permission...');
       PermissionStatus permission = await Permission.location.request();
-      print('📱 Permission result: $permission');
 
       if (permission != PermissionStatus.granted) {
-        print('❌ Permission not granted: $permission');
-
         // Check if it's permanently denied
         if (permission == PermissionStatus.permanentlyDenied) {
           setState(() {
@@ -102,12 +94,8 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         return;
       }
 
-      print('✅ Permission granted, proceeding with location...');
-
       // Check if location services are enabled
-      print('🔍 Checking location services...');
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      print('📍 Location services enabled: $serviceEnabled');
 
       if (!serviceEnabled) {
         setState(() {
@@ -118,23 +106,19 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       }
 
       // Get current position
-      print('📍 Getting current position...');
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       );
-      print('✅ Position obtained: ${position.latitude}, ${position.longitude}');
 
       setState(() {
         _currentPosition = position;
       });
 
       // Get address from coordinates
-      print('🏠 Getting address from coordinates...');
       await _getAddressFromPosition(position);
 
       // Load nearby parking lots
-      print('🚗 Loading nearby parking lots...');
       await _loadNearbyParkingLots();
     } catch (e) {
       setState(() {
@@ -203,8 +187,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         _isLoading = false;
       });
 
-      print('🚗 Parsed ${_parkingLots.length} parking lots');
-
       _updateMarkers();
     } catch (e) {
       setState(() {
@@ -272,8 +254,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         _isLoading = false;
       });
 
-      print('🗺️ Parsed ${_parkingLots.length} parking lots in bounds');
-
       _updateMarkers();
     } catch (e) {
       setState(() {
@@ -305,13 +285,9 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
   void _updateMarkers() {
     Set<Marker> markers = {};
-    print('📍 Updating markers...');
 
     // Add current location marker
     if (_currentPosition != null) {
-      print(
-        '📍 Adding current location marker: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}',
-      );
       markers.add(
         Marker(
           markerId: const MarkerId('current_location'),
@@ -344,9 +320,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
           (parkingLot['totalLevel'] ?? 1);
 
       if (lat != null && lng != null) {
-        print(
-          '🚗 Adding parking lot marker $i: $lat, $lng - $availableSpots/$totalCapacity spots',
-        );
         markers.add(
           Marker(
             markerId: MarkerId('parking_lot_$i'),
@@ -361,16 +334,12 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
             onTap: () => _showParkingLotDetails(parkingLot),
           ),
         );
-      } else {
-        print('❌ Invalid coordinates for parking lot $i: lat=$lat, lng=$lng');
       }
     }
 
     setState(() {
       _markers = markers;
     });
-
-    print('📍 Total markers: ${_markers.length}');
   }
 
   void _showParkingLotDetails(Map<String, dynamic> parkingLot) {
@@ -560,18 +529,10 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
   // Function to open Google Maps for navigation
   Future<void> _navigateToParkingLot(Map<String, dynamic> parkingLot) async {
-    print('🧭 Opening Google Maps for navigation...');
-
     // Extract coordinates from parking lot
     final addressId = parkingLot['addressId'];
     final lat = addressId?['latitude']?.toDouble();
     final lng = addressId?['longitude']?.toDouble();
-    // Address is not used in external Google Maps navigation
-
-    print('🧭 Parking lot coordinates: lat=$lat, lng=$lng');
-    print(
-      '🧭 Current position: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}',
-    );
 
     if (lat != null && lng != null) {
       try {
@@ -588,21 +549,16 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
               'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
         }
 
-        print('🧭 Opening Google Maps URL: $googleMapsUrl');
-
         // Try to open Google Maps app first
         Uri googleMapsUri = Uri.parse(googleMapsUrl);
 
         if (await canLaunchUrl(googleMapsUri)) {
           await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
-          print('🧭 Google Maps opened successfully');
         } else {
           // Fallback to web browser
-          print('🧭 Google Maps app not available, opening in browser...');
           await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
         }
       } catch (e) {
-        print('❌ Error opening Google Maps: $e');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -613,7 +569,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         }
       }
     } else {
-      print('❌ Missing coordinates');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -627,11 +582,58 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
 
   // Removed all navigation-related functions as we're using external Google Maps
 
-  void _bookParkingLot(Map<String, dynamic> parkingLot) {
-    // TODO: Implement booking functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tính năng đặt chỗ sẽ được phát triển')),
-    );
+  Future<void> _bookParkingLot(Map<String, dynamic> parkingLot) async {
+    try {
+      // Get parking lot ID
+      final parkingLotId = parkingLot['id'] ?? parkingLot['_id'];
+
+      if (parkingLotId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể lấy thông tin bãi đỗ xe'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      // Get detailed parking lot information
+      final detailedParkingLot = await ParkingLotService.getParkingLotById(
+        parkingLotId,
+      );
+
+      // Close loading dialog
+      Navigator.of(context).pop();
+
+      // Navigate to booking screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BookingScreen(
+            parkingLot: detailedParkingLot['data'] ?? detailedParkingLot,
+          ),
+        ),
+      );
+    } catch (e) {
+      // Close loading dialog if it's open
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi tải thông tin bãi đỗ xe: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Widget _buildParkingLotCard(Map<String, dynamic> parkingLot, int index) {
@@ -929,21 +931,12 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                   ),
                   markers: _markers,
                   onMapCreated: (GoogleMapController controller) {
-                    print('🗺️ Google Map created successfully');
-                    print('🗺️ Map controller: $controller');
-                    print('🗺️ Previous controller: $_mapController');
-                    print('🗺️ Widget mounted: $mounted');
-                    print('🗺️ Map loaded successfully');
                     _mapController = controller;
-                    print('🗺️ Map controller set: $_mapController');
 
                     // Force update markers after map is ready
                     Future.delayed(const Duration(milliseconds: 500), () {
                       if (mounted) {
-                        print('🔄 Force updating markers after map ready...');
                         _updateMarkers();
-                      } else {
-                        print('❌ Widget not mounted, skipping marker update');
                       }
                     });
 
@@ -951,7 +944,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                     if (mounted) {
                       _mapLoaded = true;
                       _showMapFallback = false;
-                      print('🗺️ Map loaded state updated without setState');
                     }
                   },
                   onCameraMove: (CameraPosition position) {

@@ -356,6 +356,13 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                         );
                       },
                     ),
+                    _buildTile(
+                      icon: Icons.confirmation_number_outlined,
+                      title: 'Mã giảm giá',
+                      onTap: () {
+                        // TODO: Navigate to tickets screen
+                      },
+                    ),
                     const SizedBox(height: 20),
                     // Logout button
                     Container(
