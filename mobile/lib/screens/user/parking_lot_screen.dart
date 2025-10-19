@@ -130,16 +130,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         // Update markers to reflect new data
         _updateMarkers();
 
-        // Show notification
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Cập nhật bãi đỗ xe: $availableSpots chỗ trống'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 1),
-            ),
-          );
-        }
+        // Real-time update completed - no notification needed
       } else {
         print('⚠️ DEBUG: Parking lot not found in current list: $parkingLotId');
         print('⚠️ DEBUG: Current parking lots count: ${_parkingLots.length}');
@@ -453,12 +444,31 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
           parkingLot['id'] ?? parkingLot['_id'] ?? 'unknown_$i';
 
       if (lat != null && lng != null) {
+        // Determine marker color based on percentage of capacity
+        double markerHue;
+        String colorStatus;
+        double occupancyPercentage = totalCapacity > 0
+            ? (availableSpots / totalCapacity) * 100
+            : 0;
+
+        if (occupancyPercentage < 5) {
+          markerHue = BitmapDescriptor.hueRed;
+          colorStatus = 'RED';
+        } else if (occupancyPercentage < 50) {
+          markerHue = BitmapDescriptor.hueYellow;
+          colorStatus = 'YELLOW';
+        } else {
+          markerHue = BitmapDescriptor.hueGreen;
+          colorStatus = 'GREEN';
+        }
+
         print(
-          '📍 DEBUG: Creating marker for parking lot $parkingLotId: $availableSpots/$totalCapacity chỗ trống',
+          '📍 DEBUG: Creating marker for parking lot $parkingLotId: $availableSpots/$totalCapacity chỗ trống (${occupancyPercentage.toStringAsFixed(1)}% - $colorStatus)',
         );
         print(
-          '📍 DEBUG: Marker data - availableSpots: $availableSpots, totalCapacity: $totalCapacity',
+          '📍 DEBUG: Marker data - availableSpots: $availableSpots, totalCapacity: $totalCapacity, percentage: ${occupancyPercentage.toStringAsFixed(1)}%, color: $colorStatus',
         );
+
         markers.add(
           Marker(
             markerId: MarkerId('parking_lot_$parkingLotId'),
@@ -467,9 +477,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
               title: 'Bãi đỗ xe',
               snippet: '$availableSpots/$totalCapacity chỗ trống',
             ),
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueGreen,
-            ),
+            icon: BitmapDescriptor.defaultMarkerWithHue(markerHue),
             onTap: () => _showParkingLotDetails(parkingLot),
           ),
         );
