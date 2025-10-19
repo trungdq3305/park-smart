@@ -16,7 +16,7 @@ import {
   useGetAccountQuery,
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
-} from '../../features/accountAPI'
+} from '../../features/admin/accountAPI'
 import type { Account } from '../../types/Account'
 import './ManageAccountPage.css'
 
