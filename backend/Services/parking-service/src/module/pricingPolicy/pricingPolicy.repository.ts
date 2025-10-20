@@ -1,15 +1,33 @@
+import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
+import { ClientSession, Model } from 'mongoose'
 
 import { CreatePricingPolicyDto } from './dto/pricingPolicy.dto'
 import { IPricingPolicyRepository } from './interfaces/ipricingPolicy.repository'
 import { PricingPolicy } from './schemas/pricingPolicy.schema'
 
+@Injectable()
 export class PricingPolicyRepository implements IPricingPolicyRepository {
   constructor(
     @InjectModel(PricingPolicy.name)
     private readonly pricingPolicyModel: Model<PricingPolicy>,
   ) {}
+
+  countOtherPoliciesUsingPackageRate(
+    packageRateId: string,
+    policyIdToExclude: string,
+    session?: ClientSession,
+  ): Promise<number> {
+    return this.pricingPolicyModel
+      .countDocuments(
+        {
+          packageRateId: packageRateId,
+          _id: { $ne: policyIdToExclude },
+        },
+        { session },
+      )
+      .exec()
+  }
 
   async createPolicy(
     policy: CreatePricingPolicyDto,

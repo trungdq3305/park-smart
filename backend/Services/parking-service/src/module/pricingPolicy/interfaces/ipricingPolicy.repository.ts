@@ -1,3 +1,5 @@
+import type { ClientSession } from 'mongoose'
+
 import type { CreatePricingPolicyDto } from '../dto/pricingPolicy.dto'
 import type { PricingPolicy } from '../schemas/pricingPolicy.schema'
 
@@ -43,6 +45,12 @@ export interface IPricingPolicyRepository {
    * @param id ID của chính sách giá cần xóa.
    */
   softDeletePolicy(id: string, userId: string): Promise<boolean>
+
+  countOtherPoliciesUsingPackageRate(
+    packageRateId: string,
+    policyIdToExclude: string,
+    session?: ClientSession,
+  ): Promise<number>
 }
 
 export const IPricingPolicyRepository = Symbol('IPricingPolicyRepository')

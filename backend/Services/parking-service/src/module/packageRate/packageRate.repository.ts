@@ -54,11 +54,12 @@ export class PackageRateRepository implements IPackageRateRepository {
 
   async softDeletePackageRate(
     id: string,
+    userId: string,
     session: ClientSession,
   ): Promise<boolean> {
     const result = await this.packageRateModel.updateOne(
-      { _id: id },
-      { $set: { deletedAt: new Date() } },
+      { _id: id, createdBy: userId, deletedAt: null },
+      { $set: { deletedAt: new Date(), updatedBy: userId } },
       { session },
     )
     return result.modifiedCount > 0
@@ -72,7 +73,7 @@ export class PackageRateRepository implements IPackageRateRepository {
       { _id: id },
       { session },
     )
-    return result.deletedCount > 0.00000000
+    return result.deletedCount > 0
   }
 
   async setPackageRateInUsed(
