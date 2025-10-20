@@ -1,9 +1,9 @@
-import { apiSlice } from "../apis/apiSlice"
+import { apiSlice } from '../apis/apiSlice'
 
 export const accountAPI = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAccount: builder.query({
-      query: ({page, pageSize}) => ({
+      query: ({ page, pageSize }) => ({
         url: '/core/accounts',
         method: 'GET',
         params: { page, pageSize },
@@ -57,11 +57,11 @@ export const accountAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const { 
+export const {
   useGetAccountQuery,
   useGetAccountByIdQuery,
   useUpdateAccountMutation,
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
-  useCreateAccountMutation
+  useCreateAccountMutation,
 } = accountAPI
