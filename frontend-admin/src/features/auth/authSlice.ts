@@ -1,12 +1,11 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import { jwtDecode } from 'jwt-decode'
 import Cookies from 'js-cookie'
+import { getUserData } from '../../utils/userData'
 import type { AuthState, UserData } from '../../types/Auth'
 
-// Lấy userData từ Cookies
-const userData: UserData | null = Cookies.get('userData')
-  ? JSON.parse(Cookies.get('userData') as string)
-  : null
+// Lấy userData từ Cookies (qua utility an toàn)
+const userData: UserData | null = getUserData<UserData>()
 
 const userToken = Cookies.get('userToken')
 

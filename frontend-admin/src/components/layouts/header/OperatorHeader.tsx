@@ -6,15 +6,14 @@ import { getUserFullName } from '../../../utils/userData'
 import { useLogout } from '../../../hooks/useLogout'
 const { Header } = Layout
 
-interface AdminHeaderProps {
+interface OperatorHeaderProps {
   onMobileMenuToggle?: () => void
   isMobile?: boolean
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
+const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
   const fullName = getUserFullName('Admin User')
   const logout = useLogout()
-  
   const userMenuItems = [
     {
       key: '1',
@@ -82,4 +81,4 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
   )
 }
 
-export default AdminHeader
+export default OperatorHeader

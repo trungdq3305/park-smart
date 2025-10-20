@@ -5,7 +5,7 @@
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.06);
   position: fixed;
   height: 80vh;
-  top:10%;
+  top: 10%;
   left: 0.5%;
   z-index: 1000;
   transition: all 0.2s ease;
@@ -306,14 +306,134 @@
   background: #bfbfbf;
 }
 
+/* Mobile Overlay */
+.mobile-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  transition: all 0.3s ease;
+}
+
+.mobile-overlay.show {
+  display: block;
+}
+
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    width: 30vh !important;
+    min-width: 30vh !important;
+    max-width: 30vh !important;
+  }
+}
+
 @media (max-width: 768px) {
   .admin-sidebar {
     position: fixed;
-    z-index: 1001;
+    height: 100vh;
+    top: 0;
+    left: -100%;
+    width: 28vh !important;
+    min-width: 28vh !important;
+    max-width: 28vh !important;
+    border-radius: 0;
+    z-index: 1000;
+    transition: left 0.3s ease;
   }
-  
-  .admin-sidebar.ant-layout-sider-collapsed {
-    transform: translateX(-100%);
+
+  .admin-sidebar.mobile-open {
+    left: 0;
+  }
+
+  .mobile-overlay {
+    display: block;
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .mobile-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .sidebar-header {
+    padding: 1.6vh 1.2vh 1.2vh;
+  }
+
+  .logo-text {
+    font-size: 1.8vh;
+  }
+
+  .logo-icon {
+    width: 2.8vh;
+    height: 2.8vh;
+    font-size: 1.4vh;
+  }
+
+  .navigation-menu .ant-menu-item {
+    margin: 0.3vh 1vh;
+    height: 4.2vh;
+    line-height: 4.2vh;
+  }
+
+  .navigation-menu .ant-menu-item-icon {
+    font-size: 1.4vh;
+    margin-right: 1vh;
+  }
+
+  .menu-label {
+    font-size: 1.3vh;
+  }
+
+  .menu-badge {
+    font-size: 1.1vh;
+    padding: 0.1vh 0.6vh;
+  }
+}
+
+@media (max-width: 480px) {
+  .admin-sidebar {
+    width: 26vh !important;
+    min-width: 26vh !important;
+    max-width: 26vh !important;
+  }
+
+  .sidebar-header {
+    padding: 1.4vh 1vh 1vh;
+  }
+
+  .logo-text {
+    font-size: 1.6vh;
+  }
+
+  .logo-icon {
+    width: 2.4vh;
+    height: 2.4vh;
+    font-size: 1.2vh;
+  }
+
+  .navigation-menu .ant-menu-item {
+    margin: 0.2vh 0.8vh;
+    height: 3.8vh;
+    line-height: 3.8vh;
+  }
+
+  .navigation-menu .ant-menu-item-icon {
+    font-size: 1.2vh;
+    margin-right: 0.8vh;
+  }
+
+  .menu-label {
+    font-size: 1.2vh;
+  }
+
+  .menu-badge {
+    font-size: 1vh;
+    padding: 0.1vh 0.4vh;
   }
 }

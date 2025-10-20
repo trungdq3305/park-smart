@@ -13,7 +13,7 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   open,
   onClose,
   onConfirm,
-  account
+  account,
 }) => {
   const getRoleBadgeColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {
@@ -38,14 +38,9 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
         <Button key="cancel" onClick={onClose}>
           Hủy
         </Button>,
-        <Button 
-          key="delete" 
-          type="primary" 
-          danger
-          onClick={onConfirm}
-        >
+        <Button key="delete" type="primary" danger onClick={onConfirm}>
           Xóa tài khoản
-        </Button>
+        </Button>,
       ]}
     >
       {account && (
@@ -55,21 +50,18 @@ const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             <div className="warning-text">
               <h3>Bạn có chắc chắn muốn xóa tài khoản này?</h3>
               <p>
-                Tài khoản <strong>{account.email}</strong> sẽ bị xóa vĩnh viễn và không thể khôi phục.
+                Tài khoản <strong>{account.email}</strong> sẽ bị xóa vĩnh viễn và không thể khôi
+                phục.
               </p>
             </div>
           </div>
-          
+
           <div className="account-preview">
-            <div className="account-avatar">
-              {account.email.charAt(0).toUpperCase()}
-            </div>
+            <div className="account-avatar">{account.email.charAt(0).toUpperCase()}</div>
             <div className="account-info">
               <h4>{account.email}</h4>
               <p>{account.phoneNumber}</p>
-              <Tag color={getRoleBadgeColor(account.roleName)}>
-                {account.roleName}
-              </Tag>
+              <Tag color={getRoleBadgeColor(account.roleName)}>{account.roleName}</Tag>
             </div>
           </div>
         </div>
