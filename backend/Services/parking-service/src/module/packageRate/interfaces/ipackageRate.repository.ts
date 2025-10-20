@@ -40,11 +40,7 @@ export interface IPackageRateRepository {
    * @param id ID của gói giá cần xóa mềm.
    * @returns Trả về true nếu xóa mềm thành công, ngược lại false.
    */
-  softDeletePackageRate(
-    id: string,
-    userId: string,
-    session: ClientSession,
-  ): Promise<boolean>
+  softDeletePackageRate(id: string, userId: string): Promise<boolean>
 
   /**
    * Xóa vĩnh viễn một gói giá khỏi cơ sở dữ liệu.
@@ -68,6 +64,50 @@ export interface IPackageRateRepository {
     id: string,
     isUsed: boolean,
     session: ClientSession,
+  ): Promise<boolean>
+
+  /**
+   * Đánh dấu một gói giá là đang được sử dụng hoặc không.
+   * (Hữu ích để ngăn chặn việc xóa/sửa một gói giá đang được gắn vào một chính sách).
+   * @param id ID của gói giá.
+   * @param updateData Dữ liệu cập nhật cho gói giá.
+   * @param userId id của người dùng.
+   * @returns Gói giá đã được cập nhật.
+   */
+  updatePackageRate(
+    id: string,
+    updateData: Partial<PackageRate>,
+    userId: string,
+  ): Promise<PackageRate | null>
+
+  /**
+   * Đánh dấu một gói giá là đang được sử dụng hoặc không.
+   * (Hữu ích để ngăn chặn việc xóa/sửa một gói giá đang được gắn vào một chính sách).
+   * @param id ID của gói giá.
+   * @param userId id của người dùng.
+   * @returns Gói giá đã được cập nhật.
+   */
+  findPackageRateByIdAndCreator(
+    id: string,
+    userId: string,
+  ): Promise<PackageRate | null>
+
+  /**
+   * Lấy danh sách tất cả các gói giá.
+   * @returns Danh sách các gói giá.
+   */
+  findAllPackageRates(
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: PackageRate[]; total: number }>
+
+  /**
+   * Lấy danh sách tất cả các gói giá dưới dạng enum (không phân trang).
+   * @returns Danh sách các gói giá.
+   */
+  findPackageRateByNameAndCreator(
+    name: string,
+    userId: string,
   ): Promise<boolean>
 }
 

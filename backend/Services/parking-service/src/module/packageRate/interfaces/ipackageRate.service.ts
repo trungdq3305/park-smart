@@ -12,11 +12,11 @@ export interface IPackageRateService {
   /**
    * Tạo một gói giá (package rate) mới.
    * @param createDto Dữ liệu để tạo gói giá.
-   * @param operatorId ID của Parking Lot Operator đang thực hiện.
+   * @param operatorId ID của người dùng đang thực hiện.
    */
   createPackageRate(
     createDto: CreatePackageRateDto,
-    operatorId: string,
+    userId: string,
   ): Promise<PackageRateResponseDto>
 
   /**
@@ -24,27 +24,27 @@ export interface IPackageRateService {
    * (Lưu ý: Service sẽ kiểm tra quyền sở hữu và logic 'isUsed' ở đây).
    * @param id ID của gói giá cần cập nhật.
    * @param updateDto Dữ liệu cập nhật.
-   * @param operatorId ID của Parking Lot Operator đang thực hiện.
+   * @param userId ID của người dùng đang thực hiện.
    */
   updatePackageRate(
     id: IdDto,
     updateDto: UpdatePackageRateDto,
-    operatorId: string,
+    userId: string,
   ): Promise<PackageRateResponseDto>
 
   /**
    * Lấy thông tin chi tiết một gói giá bằng ID.
    * @param id ID của gói giá.
    */
-  getPackageRateById(id: IdDto): Promise<PackageRateResponseDto>
+  findPackageRateById(id: IdDto): Promise<PackageRateResponseDto>
 
   /**
-   * Lấy danh sách tất cả các gói giá do một operator tạo ra (có phân trang).
-   * @param operatorId ID của Parking Lot Operator.
+   * Lấy danh sách tất cả các gói giá do một người dùng tạo ra (có phân trang).
+   * @param userId ID của người dùng.
    * @param paginationQuery Tùy chọn phân trang (page, pageSize).
    */
-  getAllPackageRatesByOperator(
-    operatorId: string,
+  findAllPackageRatesByCreator(
+    userId: string,
     paginationQuery: PaginationQueryDto,
   ): Promise<{ data: PackageRateResponseDto[]; pagination: PaginationDto }>
 
@@ -52,9 +52,23 @@ export interface IPackageRateService {
    * Xóa mềm một gói giá.
    * (Service sẽ kiểm tra xem gói này có đang được sử dụng hay không trước khi xóa).
    * @param id ID của gói giá cần xóa.
-   * @param operatorId ID của Parking Lot Operator đang thực hiện.
+   * @param userId ID của người dùng đang thực hiện.
    */
-  softDeletePackageRate(id: IdDto, operatorId: string): Promise<boolean>
+  softDeletePackageRate(id: IdDto, userId: string): Promise<boolean>
+
+  /**
+   * Lấy danh sách tất cả các gói giá.
+   * @returns Danh sách các gói giá.
+   */
+  findAllPackageRates(
+    paginationQuery: PaginationQueryDto,
+  ): Promise<{ data: PackageRateResponseDto[]; pagination: PaginationDto }>
+
+  /**
+   * Lấy danh sách tất cả các gói giá dưới dạng enum (không phân trang).
+   * @returns Danh sách các gói giá.
+   */
+  findAllEnumPackageRates(): Promise<any[]>
 }
 
 export const IPackageRateService = Symbol('IPackageRateService')

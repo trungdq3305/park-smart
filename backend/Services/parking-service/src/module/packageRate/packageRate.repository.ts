@@ -10,6 +10,60 @@ export class PackageRateRepository implements IPackageRateRepository {
     private readonly packageRateModel: Model<PackageRate>,
   ) {}
 
+  async findPackageRateByNameAndCreator(
+    name: string,
+    userId: string,
+  ): Promise<boolean> {
+    const data = await this.packageRateModel.countDocuments({
+      name,
+      createdBy: userId,
+      deletedAt: null,
+    })
+    return data > 0 ? true : false
+  }
+
+  async findAllPackageRates(
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: PackageRate[]; total: number }> {
+    const [data, total] = await Promise.all([
+      this.packageRateModel
+        .find({ deletedAt: null })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .lean()
+        .exec(),
+      this.packageRateModel.countDocuments({ deletedAt: null }),
+    ])
+    return { data, total }
+  }
+
+  async findPackageRateByIdAndCreator(
+    id: string,
+    userId: string,
+  ): Promise<PackageRate | null> {
+    return await this.packageRateModel
+      .findOne({ _id: id, createdBy: userId, deletedAt: null })
+      .lean()
+      .exec()
+  }
+
+  async updatePackageRate(
+    id: string,
+    updateData: Partial<PackageRate>,
+    userId: string,
+  ): Promise<PackageRate | null> {
+    const updatedPackageRate = await this.packageRateModel
+      .findOneAndUpdate(
+        { _id: id, deletedAt: null },
+        { ...updateData, updatedBy: userId },
+        { new: true },
+      )
+      .lean()
+      .exec()
+    return updatedPackageRate
+  }
+
   async createPackageRate(
     packageRate: Partial<PackageRate>,
     userId: string,
@@ -21,7 +75,7 @@ export class PackageRateRepository implements IPackageRateRepository {
     })
 
     const savedDocument = await createdPackageRate.save({ session })
-    return savedDocument.toObject()
+    return savedDocument
   }
 
   async findPackageRateById(id: string): Promise<PackageRate | null> {
@@ -52,15 +106,10 @@ export class PackageRateRepository implements IPackageRateRepository {
     return { data, total }
   }
 
-  async softDeletePackageRate(
-    id: string,
-    userId: string,
-    session: ClientSession,
-  ): Promise<boolean> {
+  async softDeletePackageRate(id: string, userId: string): Promise<boolean> {
     const result = await this.packageRateModel.updateOne(
       { _id: id, createdBy: userId, deletedAt: null },
       { $set: { deletedAt: new Date(), updatedBy: userId } },
-      { session },
     )
     return result.modifiedCount > 0
   }

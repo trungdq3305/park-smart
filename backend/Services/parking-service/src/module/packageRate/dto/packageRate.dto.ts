@@ -3,47 +3,73 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger'
 import { Exclude, Expose, Transform } from 'class-transformer'
-import {
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Min,
-} from 'class-validator'
+import { IsEnum, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator'
+
+import { Unit } from '../enums/packageRate.enum'
 
 // --- DTO for Request Bodies ---
 export class CreatePackageRateDto {
   @ApiProperty({ example: 'Gói vé tháng xe máy', description: 'Tên gói giá' })
-  @IsNotEmpty()
   @IsString()
-  timePackage: string
+  @IsNotEmpty({ message: 'Tên gói cước không được để trống' }) // <-- Lỗi tiếng Việt
+  name: string // <-- Sửa từ timePackage
 
   @ApiProperty({ example: 1200000, description: 'Giá tiền của gói' })
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
+  @IsNumber({}, { message: 'Giá cước phải là một con số' }) // <-- Lỗi tiếng Việt
+  @Min(0, { message: 'Giá cước không được âm' })
+  @IsNotEmpty({ message: 'Giá cước không được để trống' })
   price: number
+
+  @ApiProperty({
+    example: 1,
+    description: 'Thời hạn của gói (ví dụ: 1 tháng, 3 giờ)',
+  })
+  @IsNumber({}, { message: 'Thời hạn phải là một con số' })
+  @IsNotEmpty({ message: 'Thời hạn không được để trống' }) // <-- Lỗi tiếng Việt
+  durationAmount: number
+
+  @ApiProperty({
+    example: 'month',
+    enum: Unit,
+    description: 'Đơn vị thời hạn',
+  })
+  @IsEnum(Unit, {
+    message: 'Đơn vị thời hạn phải là "hour", "day", hoặc "month"', // <-- Lỗi tiếng Việt
+  })
+  @IsNotEmpty({ message: 'Đơn vị thời hạn không được để trống' })
+  unit: string
 }
 
 export class UpdatePackageRateDto {
-  @ApiProperty({
-    example: 'Gói vé tháng VIP',
-    description: 'Tên gói giá',
-    required: false,
-  })
-  @IsOptional()
+  @ApiProperty({ example: 'Gói vé tháng xe máy', description: 'Tên gói giá' })
   @IsString()
-  timePackage: string
+  @IsNotEmpty({ message: 'Tên gói cước không được để trống' }) // <-- Lỗi tiếng Việt
+  name: string // <-- Sửa từ timePackage
+
+  @ApiProperty({ example: 1200000, description: 'Giá tiền của gói' })
+  @IsNumber({}, { message: 'Giá cước phải là một con số' }) // <-- Lỗi tiếng Việt
+  @Min(0, { message: 'Giá cước không được âm' })
+  @IsNotEmpty({ message: 'Giá cước không được để trống' })
+  price: number
 
   @ApiProperty({
-    example: 1500000,
-    description: 'Giá tiền của gói',
-    required: false,
+    example: 1,
+    description: 'Thời hạn của gói (ví dụ: 1 tháng, 3 giờ)',
   })
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  price: number
+  @IsNumber({}, { message: 'Thời hạn phải là một con số' })
+  @IsNotEmpty({ message: 'Thời hạn không được để trống' }) // <-- Lỗi tiếng Việt
+  durationAmount: number
+
+  @ApiProperty({
+    example: 'month',
+    enum: Unit,
+    description: 'Đơn vị thời hạn',
+  })
+  @IsEnum(Unit, {
+    message: 'Đơn vị thời hạn phải là "hour", "day", hoặc "month"', // <-- Lỗi tiếng Việt
+  })
+  @IsNotEmpty({ message: 'Đơn vị thời hạn không được để trống' })
+  durationUnit: Unit
 }
 
 // --- DTO for Response (sử dụng với ClassSerializerInterceptor) ---
@@ -55,10 +81,16 @@ export class PackageRateResponseDto {
   _id: string
 
   @Expose()
-  timePackage: string
+  name: string // <-- Thay thế cho timePackage
 
   @Expose()
   price: number
+
+  @Expose()
+  durationAmount: number // <-- Bổ sung
+
+  @Expose()
+  unit: string // <-- Bổ sung (Hoặc là DurationUnitEnum nếu bạn dùng)
 
   @Expose()
   isUsed: boolean
