@@ -72,10 +72,24 @@ export interface ITieredRateSetRepository {
    * @param userId ID của người vận hành.
    * @param session Tùy chọn, phiên làm việc của transaction.
    */
-  findSetByName(
-    name: string,
-    userId: string,
-  ): Promise<TieredRateSet | null>
+  findSetByName(name: string, userId: string): Promise<TieredRateSet | null>
+
+  /**
+   * Đánh dấu một bộ giá là đang được sử dụng hoặc không.
+   * @param id ID của bộ giá.
+   * @param isUsed Trạng thái sử dụng mới.
+   */
+  markSetAsUsed(id: string, isUsed: boolean): Promise<boolean>
+
+  /**
+   * Lấy danh sách tất cả bộ giá thuộc về một người vận hành (hỗ trợ phân trang).
+   * @param page Số trang.
+   * @param pageSize Kích thước trang.
+   */
+  findAllSetsForAdmin(
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: TieredRateSet[]; total: number }>
 }
 
 // Export Symbol để DI (Dependency Injection)

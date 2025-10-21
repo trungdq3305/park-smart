@@ -16,6 +16,30 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     private readonly tieredRateSetModel: Model<TieredRateSet>,
   ) {}
 
+  async findAllSetsForAdmin(
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: TieredRateSet[]; total: number }> {
+    const skip = (page - 1) * pageSize
+    const [data, total] = await Promise.all([
+      this.tieredRateSetModel
+        .find({ deletedAt: false })
+        .skip(skip)
+        .limit(pageSize)
+        .exec(),
+      this.tieredRateSetModel.countDocuments({ deletedAt: false }),
+    ])
+    return { data, total }
+  }
+
+  async markSetAsUsed(id: string, isUsed: boolean): Promise<boolean> {
+    const data = await this.tieredRateSetModel.updateOne(
+      { _id: id },
+      { $set: { isUsed } },
+    )
+    return data.modifiedCount > 0
+  }
+
   async createSet(
     dto: CreateTieredRateSetDto,
     userId: string,
