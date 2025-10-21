@@ -6,14 +6,14 @@ import { BaseEntity } from 'src/common/schema/baseEntity.schema'
   _id: false, // Tắt _id cho sub-document, vì thường không cần
 })
 export class Tier {
-  @Prop({ required: true, min: 0 })
-  min: number // Mức bắt đầu (ví dụ: 0 kWh, 51 m3)
+  @Prop({ required: true })
+  fromHour: string // Mức bắt đầu (ví dụ: 0 kWh, 51 m3)
 
   @Prop({ required: false, default: null })
-  max: number | null // Mức kết thúc. 'null' có nghĩa là "trở lên" (bậc cuối cùng)
+  toHour: string | null // Mức kết thúc. 'null' có nghĩa là "trở lên" (bậc cuối cùng)
 
-  @Prop({ required: true, min: 0 })
-  rate: number // Giá/phí cho bậc này
+  @Prop({ required: true })
+  price: number // Giá/phí cho bậc này
 }
 
 export type TieredRateSetDocument = HydratedDocument<TieredRateSet>

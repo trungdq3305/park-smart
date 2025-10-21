@@ -41,7 +41,7 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     const result = await this.pricingPolicyModel
       .findById(createdPolicy._id)
       .populate({ path: 'basisId' })
-      .populate({ path: 'tieredRateSetId', populate: { path: 'tieredRateId' } })
+      .populate({ path: 'tieredRateSetId' })
       .populate({ path: 'packageRateSetId' })
       .exec()
     return result
@@ -77,7 +77,7 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     const data = await this.pricingPolicyModel
       .findOne({ _id: id, deletedAt: false })
       .populate({ path: 'basisId' })
-      .populate({ path: 'tieredRateSetId', populate: { path: 'tieredRateId' } })
+      .populate({ path: 'tieredRateSetId' })
       .populate({ path: 'packageRateSetId' })
       .exec()
     return data
@@ -87,7 +87,7 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     const data = await this.pricingPolicyModel
       .findOne({ _id: policyId, deletedAt: false })
       .populate({ path: 'basisId' })
-      .populate({ path: 'tieredRateSetId', populate: { path: 'tieredRateId' } })
+      .populate({ path: 'tieredRateSetId' })
       .populate({ path: 'packageRateSetId' })
       .exec()
     return data
