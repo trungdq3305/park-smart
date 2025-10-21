@@ -17,6 +17,7 @@ import { PackageRateModule } from './module/packageRate/packageRate.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
 import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
 import { ParkingSpaceStatusModule } from './module/parkingSpaceStatus/parkingSpaceStatus.module'
+import { TieredRateSetModule } from './module/tieredRateSet/tieredRateSet.module'
 import { VehicleModule } from './module/vehicle/vehicle.module'
 import { WardModule } from './module/ward/ward.module'
 import { JwtStrategy } from './strategy/jwt.strategy'
@@ -52,6 +53,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     ParkingSpaceStatusModule,
     BasisModule,
     PackageRateModule,
+    TieredRateSetModule,
   ],
   controllers: [AppController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],

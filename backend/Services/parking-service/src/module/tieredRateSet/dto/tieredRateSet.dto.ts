@@ -5,6 +5,7 @@ import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import {
   IsArray,
+  IsMilitaryTime,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -23,6 +24,9 @@ export class CreateTierDto {
   @ApiProperty({ example: '08:00', description: 'Giờ bắt đầu của bậc giá' })
   @IsNotEmpty()
   @IsString()
+  @IsMilitaryTime({
+    message: 'Giờ bắt đầu phải có định dạng HH:mm (ví dụ: 08:00 hoặc 23:59)',
+  })
   fromHour: string
 
   @ApiPropertyOptional({
@@ -32,6 +36,9 @@ export class CreateTierDto {
   })
   @IsOptional()
   @IsString() // @IsOptional sẽ bỏ qua validator này nếu giá trị là null/undefined
+  @IsMilitaryTime({
+    message: 'Giờ bắt đầu phải có định dạng HH:mm (ví dụ: 08:00 hoặc 23:59)',
+  })
   toHour: string | null
 
   @ApiProperty({ example: 15000, description: 'Giá cho bậc này' })

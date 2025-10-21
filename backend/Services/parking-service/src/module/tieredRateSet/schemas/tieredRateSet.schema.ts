@@ -6,13 +6,13 @@ import { BaseEntity } from 'src/common/schema/baseEntity.schema'
   _id: false, // Tắt _id cho sub-document, vì thường không cần
 })
 export class Tier {
-  @Prop({ required: true })
+  @Prop({ required: true, type: String })
   fromHour: string // Mức bắt đầu (ví dụ: 0 kWh, 51 m3)
 
-  @Prop({ required: false, default: null })
-  toHour: string | null // Mức kết thúc. 'null' có nghĩa là "trở lên" (bậc cuối cùng)
+  @Prop({ required: false, default: null, type: String })
+  toHour: string
 
-  @Prop({ required: true })
+  @Prop({ required: true, type: Number })
   price: number // Giá/phí cho bậc này
 }
 
@@ -26,7 +26,7 @@ export class TieredRateSet extends BaseEntity {
   })
   _id: string
 
-  @Prop({ required: true })
+  @Prop({ required: true, type: String })
   name: string
 
   @Prop({
@@ -36,7 +36,7 @@ export class TieredRateSet extends BaseEntity {
   })
   tiers: Tier[] // Mảng chứa các bậc thang giá
 
-  @Prop({ required: true, default: false })
+  @Prop({ required: true, default: false, type: Boolean })
   isUsed: boolean
 }
 
