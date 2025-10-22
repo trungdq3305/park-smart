@@ -43,6 +43,7 @@ async function bootstrap() {
 
   // --- Kết thúc cấu hình Swagger ---
 
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
   const port = configService.get<number>('PORT') || 5000
   await app.listen(port, () => {
     console.log(`Example app listening on port ${String(port)}`)
