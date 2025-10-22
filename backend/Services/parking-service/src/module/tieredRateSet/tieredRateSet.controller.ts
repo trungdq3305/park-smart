@@ -23,9 +23,7 @@ import {
 import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
 import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
-import {
-  PaginatedResponseDto,
-} from 'src/common/dto/paginatedResponse.dto'
+import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
 import { RoleEnum } from 'src/common/enum/role.enum'
