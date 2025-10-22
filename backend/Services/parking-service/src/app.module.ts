@@ -1,14 +1,17 @@
+import { HttpModule } from '@nestjs/axios'
 import { CacheModule } from '@nestjs/cache-manager'
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { ScheduleModule } from '@nestjs/schedule'
+import { TerminusModule } from '@nestjs/terminus'
 
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { DatabaseConfig } from './config/database.config'
 import { JwtAuthGuard } from './guard/jwtAuth.guard'
+import { HealthController } from './health.controller'
 import { AddressModule } from './module/address/address.module'
 import { BasisModule } from './module/basis/basis.module'
 import { BrandModule } from './module/brand/brand.module'
@@ -32,6 +35,8 @@ import { JwtStrategy } from './strategy/jwt.strategy'
       ttl: 300 * 1000, // 5 phút
       max: 100,
     }),
+    TerminusModule, // <-- Thêm vào
+    HttpModule,
     DatabaseConfig,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     ConfigModule, // Dùng ConfigModule để quản lý biến môi trường
@@ -55,7 +60,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     PackageRateModule,
     TieredRateSetModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
 })
 export class AppModule {}
