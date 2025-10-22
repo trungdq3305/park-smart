@@ -113,7 +113,6 @@ export class ParkingLotRequestRepository
       .exec()
   }
 
-   
   async findAllRequests(): Promise<any[]> {
     const requests = await this.parkingLotRequestModel.aggregate([
       // STAGE 0: Chuyển đổi addressId từ String sang ObjectId
