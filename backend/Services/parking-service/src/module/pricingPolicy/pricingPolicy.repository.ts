@@ -13,7 +13,43 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     private readonly pricingPolicyModel: Model<PricingPolicy>,
   ) {}
 
-  countOtherPoliciesUsingPackageRate(
+  async countOtherPoliciesUsingTieredRate(
+    tieredRateId: string,
+    policyIdToExclude: string,
+    session?: ClientSession,
+  ): Promise<number> {
+    return this.pricingPolicyModel
+      .countDocuments(
+        {
+          tieredRateSetId: tieredRateId,
+          _id: { $ne: policyIdToExclude },
+          deletedAt: null,
+        },
+        { session },
+      )
+      .exec()
+  }
+
+  async findAllPoliciesForAdmin(
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: PricingPolicy[]; total: number }> {
+    const skip = (page - 1) * pageSize
+    const [data, total] = await Promise.all([
+      this.pricingPolicyModel
+        .find({ deletedAt: false })
+        .populate({ path: 'basisId' })
+        .populate({ path: 'tieredRateSetId' })
+        .populate({ path: 'packageRateSetId' })
+        .skip(skip)
+        .limit(pageSize)
+        .exec(),
+      this.pricingPolicyModel.countDocuments({ deletedAt: false }),
+    ])
+    return { data, total }
+  }
+
+  async countOtherPoliciesUsingPackageRate(
     packageRateId: string,
     policyIdToExclude: string,
     session?: ClientSession,
@@ -23,6 +59,7 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
         {
           packageRateId: packageRateId,
           _id: { $ne: policyIdToExclude },
+          deletedAt: null,
         },
         { session },
       )
@@ -32,12 +69,13 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
   async createPolicy(
     policy: CreatePricingPolicyDto,
     userId: string,
+    session: ClientSession,
   ): Promise<PricingPolicy | null> {
     const createdPolicy = new this.pricingPolicyModel({
       ...policy,
       createdBy: userId,
     })
-    await createdPolicy.save()
+    await createdPolicy.save({ session })
     const result = await this.pricingPolicyModel
       .findById(createdPolicy._id)
       .populate({ path: 'basisId' })
@@ -57,10 +95,7 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
       this.pricingPolicyModel
         .find({ createdBy: userId, deletedAt: false })
         .populate({ path: 'basisId' })
-        .populate({
-          path: 'tieredRateSetId',
-          populate: { path: 'tieredRateId' },
-        })
+        .populate({ path: 'tieredRateSetId' })
         .populate({ path: 'packageRateSetId' })
         .skip(skip)
         .limit(pageSize)

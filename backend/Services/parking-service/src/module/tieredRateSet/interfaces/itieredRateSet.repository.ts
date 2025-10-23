@@ -1,4 +1,6 @@
 // Import DTOs và Schema liên quan đến TieredRateSet
+import type { ClientSession } from 'mongoose'
+
 import type {
   CreateTieredRateSetDto,
   UpdateTieredRateSetDto,
@@ -78,8 +80,13 @@ export interface ITieredRateSetRepository {
    * Đánh dấu một bộ giá là đang được sử dụng hoặc không.
    * @param id ID của bộ giá.
    * @param isUsed Trạng thái sử dụng mới.
+   * @param session Phiên làm việc của transaction.
    */
-  markSetAsUsed(id: string, isUsed: boolean): Promise<boolean>
+  setTieredRateSetAsUsed(
+    id: string,
+    isUsed: boolean,
+    session: ClientSession,
+  ): Promise<boolean>
 
   /**
    * Lấy danh sách tất cả bộ giá thuộc về một người vận hành (hỗ trợ phân trang).

@@ -51,17 +51,9 @@ export interface IPricingPolicyService {
    * Lấy danh sách tất cả các chính sách giá (cho admin hoặc mục đích quản lý chung).
    * @param paginationQuery Tùy chọn phân trang (page, pageSize).
    */
-  findAllPolicies(
+  findAllPoliciesForAdmin(
     paginationQuery: PaginationQueryDto,
   ): Promise<{ data: PricingPolicyResponseDto[]; pagination: PaginationDto }>
-
-  /**
-   * Lấy danh sách tất cả các chính sách giá của một người dùng
-   * dưới dạng enum (không phân trang, dùng cho dropdown).
-   * @param userId ID của người dùng.
-   * @returns Danh sách các chính sách giá (ví dụ: { _id, name }).
-   */
-  findAllEnumPolicies(userId: string): Promise<any[]>
 }
 
 export const IPricingPolicyService = Symbol('IPricingPolicyService')
