@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
- 
+
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Inject, Injectable } from '@nestjs/common'
 import { NotFoundException } from '@nestjs/common/exceptions'
@@ -85,7 +85,7 @@ export class ParkingSpaceService implements IParkingSpaceService {
         status: updatedSpace.parkingSpaceStatusId.status,
       },
     })
-    
+
     return this.returnToParkingSpaceResponseDto(updatedSpace)
   }
 }

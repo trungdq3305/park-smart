@@ -74,10 +74,8 @@ export class ParkingLotRepository implements IParkingLotRepository {
         path: 'addressId',
         populate: {
           path: 'wardId',
+          select: 'wardName -_id',
         },
-      })
-      .populate({
-        path: 'parkingLotStatusId',
       })
       .lean()
       .exec()

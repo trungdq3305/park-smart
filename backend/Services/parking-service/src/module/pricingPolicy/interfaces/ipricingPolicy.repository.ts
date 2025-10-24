@@ -12,6 +12,7 @@ export interface IPricingPolicyRepository {
   createPolicy(
     policy: CreatePricingPolicyDto,
     userId: string,
+    session: ClientSession,
   ): Promise<PricingPolicy | null>
 
   /**
@@ -45,12 +46,53 @@ export interface IPricingPolicyRepository {
    * @param id ID của chính sách giá cần xóa.
    */
   softDeletePolicy(id: string, userId: string): Promise<boolean>
-
+  /**
+   * Đếm số lượng chính sách giá (policies) KHÁC đang sử dụng một gói giá (package rate) cụ thể.
+   *
+   * Mục đích: Dùng để kiểm tra trước khi xóa/cập nhật một PackageRate,
+   * hoặc khi cập nhật một PricingPolicy (thay đổi/xóa packageRateId).
+   *
+   * @param packageRateId ID của gói giá (PackageRate) cần kiểm tra.
+   * @param policyIdToExclude ID của chính sách giá (PricingPolicy) hiện tại cần *loại trừ* khỏi việc đếm.
+   * @param session (Tùy chọn) Phiên làm việc (session) của transaction.
+   * @returns Promise<number> - Tổng số lượng chính sách *khác* đang sử dụng gói giá này.
+   */
   countOtherPoliciesUsingPackageRate(
     packageRateId: string,
     policyIdToExclude: string,
     session?: ClientSession,
   ): Promise<number>
+
+  /**
+   * Đếm số lượng chính sách giá (policies) KHÁC đang sử dụng một bộ giá bậc thang (tiered rate set) cụ thể.
+   *
+   * Mục đích: Dùng để kiểm tra trước khi xóa/cập nhật một TieredRateSet,
+   * hoặc khi cập nhật một PricingPolicy (thay đổi/xóa tieredRateSetId).
+   *
+   * @param tieredRateId ID của bộ giá bậc thang (TieredRateSet) cần kiểm tra.
+   * @param policyIdToExclude ID của chính sách giá (PricingPolicy) hiện tại cần *loại trừ* khỏi việc đếm.
+   * @param session (Tùy chọn) Phiên làm việc (session) của transaction.
+   * @returns Promise<number> - Tổng số lượng chính sách *khác* đang sử dụng bộ giá này.
+   */
+  countOtherPoliciesUsingTieredRate(
+    tieredRateId: string,
+    policyIdToExclude: string,
+    session?: ClientSession,
+  ): Promise<number>
+
+  /**
+   * Lấy tất cả các chính sách giá trong hệ thống (dành cho vai trò Admin).
+   *
+   * Hàm này không lọc theo người tạo (userId) mà trả về toàn bộ dữ liệu (có phân trang).
+   *
+   * @param page Số trang hiện tại (dùng cho phân trang).
+   * @param pageSize Số lượng mục trên mỗi trang.
+   * @returns Promise<{ data: PricingPolicy[]; total: number }> - Danh sách các chính sách giá và tổng số lượng.
+   */
+  findAllPoliciesForAdmin(
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: PricingPolicy[]; total: number }>
 }
 
 export const IPricingPolicyRepository = Symbol('IPricingPolicyRepository')

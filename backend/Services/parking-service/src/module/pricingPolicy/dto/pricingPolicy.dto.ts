@@ -20,12 +20,12 @@ export class CreatePricingPolicyDto {
   basisId: string
 
   @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
-  @IsNotEmpty()
+  @IsOptional()
   @IsMongoId()
   tieredRateSetId: string
 
   @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
-  @IsNotEmpty()
+  @IsOptional()
   @IsMongoId()
   packageRateSetId: string
 
@@ -77,16 +77,15 @@ export class PackageRateDto {
 
 // --- DTO lồng nhau cho TieredRate (một bậc giá) ---
 @Exclude()
-export class TieredRateDto {
-  @Expose()
-  @Transform(({ obj }) => obj._id.toString())
-  _id: string
+export class TierDto {
+  // Schema của bạn có { _id: false } cho Tier,
+  // nên chúng ta không expose _id ở đây.
 
   @Expose()
-  fromHour: number
+  fromHour: string
 
   @Expose()
-  toHour: number
+  toHour: string | null
 
   @Expose()
   price: number
@@ -103,12 +102,12 @@ export class TieredRateSetDto {
   name: string
 
   /**
-   * Mảng này là kết quả của việc populate/lookup từ bảng tiered_rate
+   * Mảng này chứa các bậc giá được nhúng
    */
   @Expose()
-  @Type(() => TieredRateDto)
+  @Type(() => TierDto) // Lồng TierDto
   @ValidateNested({ each: true })
-  tieredRates: TieredRateDto[]
+  tiers: TierDto[]
 }
 
 // --- DTO Phản hồi Chính ---
@@ -132,7 +131,6 @@ export class PricingPolicyResponseDto {
    */
   @Expose()
   @Type(() => BasisDto)
-  @ValidateNested()
   basisId: BasisDto
 
   /**
@@ -141,15 +139,13 @@ export class PricingPolicyResponseDto {
    */
   @Expose()
   @Type(() => TieredRateSetDto)
-  @ValidateNested()
-  tieredRateSetId: TieredRateSetDto
+  tieredRateSetId?: TieredRateSetDto | null
 
   /**
-   * Trường packageRateId đã được populate thành đốiD:\HỌC TẬP\DATN\database\ERD\13_10\bãi đỗ xe - ERD.drawio
+   * Trường packageRateId đã được populate thành đối tượng PackageRateDto
    * (có thể là null nếu đây không phải là chính sách giá gói)
    */
   @Expose()
   @Type(() => PackageRateDto)
-  @ValidateNested()
-  packageRateId: PackageRateDto
+  packageRateId?: PackageRateDto | null
 }
