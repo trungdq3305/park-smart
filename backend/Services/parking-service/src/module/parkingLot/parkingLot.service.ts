@@ -516,7 +516,7 @@ export class ParkingLotService implements IParkingLotService {
   async getParkingLotDetails(id: IdDto): Promise<ParkingLotResponseDto> {
     const parkingLot = await this.parkingLotRepository.findParkingLotById(id.id)
     if (!parkingLot) {
-      throw new Error('Không tìm thấy bãi đỗ xe')
+      throw new NotFoundException('Không tìm thấy bãi đỗ xe')
     }
     return this.returnParkingLotResponseDto(parkingLot)
   }

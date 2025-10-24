@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { Model } from 'mongoose'
+import { ClientSession, Model } from 'mongoose'
 
 import {
   CreateTieredRateSetDto,
@@ -32,10 +32,15 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     return { data, total }
   }
 
-  async markSetAsUsed(id: string, isUsed: boolean): Promise<boolean> {
+  async setTieredRateSetAsUsed(
+    id: string,
+    isUsed: boolean,
+    session: ClientSession,
+  ): Promise<boolean> {
     const data = await this.tieredRateSetModel.updateOne(
       { _id: id },
       { $set: { isUsed } },
+      { session },
     )
     return data.modifiedCount > 0
   }

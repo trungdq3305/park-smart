@@ -58,6 +58,7 @@ export interface IPackageRateRepository {
    * (Hữu ích để ngăn chặn việc xóa/sửa một gói giá đang được gắn vào một chính sách).
    * @param id ID của gói giá.
    * @param isUsed Trạng thái sử dụng (true hoặc false).
+   * @param session Phiên làm việc (MongoDB session).
    * @returns Gói giá đã được cập nhật.
    */
   setPackageRateInUsed(

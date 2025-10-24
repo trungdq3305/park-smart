@@ -19,10 +19,18 @@ export class PricingPolicy extends BaseEntity {
   @Prop({ required: true, type: mongoose.Schema.Types.ObjectId, ref: 'Basis' })
   basisId: string
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'TieredRateSet' })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TieredRateSet',
+    required: false,
+  })
   tieredRateSetId: string
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'PackageRate' })
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PackageRate',
+    required: false,
+  })
   packageRateId: string
 
   @Prop({ type: Number })
