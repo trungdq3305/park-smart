@@ -6,7 +6,6 @@ import {
   FileTextOutlined,
   AppstoreOutlined,
   BankOutlined,
-  TeamOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CarOutlined,
@@ -41,10 +40,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
   // Menu items aligned to Admin sidebar
   const menuItems = [
     {
-      key: '/admin/manage-account',
-      icon: <TeamOutlined />,
-      label: 'Users',
-      badge: '164',
+      key: '/operator/create-parking-lot-request',
+      icon: <CarOutlined />,
+      label: 'Create Parking Lot Request',
       active: true,
     },
     {

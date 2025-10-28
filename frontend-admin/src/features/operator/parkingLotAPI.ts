@@ -14,6 +14,4 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const {
-  useCreateParkingLotMutation,
-} = parkingLotAPI
+export const { useCreateParkingLotMutation } = parkingLotAPI

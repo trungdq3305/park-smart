@@ -8,7 +8,7 @@ const OperatorLayout = lazy(() => import('../components/layouts/layout/OperatorL
 // --- Các Trang (tải lười - lazy loading) ---
 const LoginPage = lazy(() => import('../pages/LoginPage'))
 const ManageAccountPage = lazy(() => import('../pages/admin/ManageAccountPage'))
-
+const CreateParkingLot = lazy(() => import('../pages/operator/CreateParkingLot'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -40,6 +40,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator',
         component: ManageAccountPage, // You can create a specific operator dashboard component later
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/create-parking-lot-request',
+        component: CreateParkingLot,
         role: ['Operator'],
       },
     ],
