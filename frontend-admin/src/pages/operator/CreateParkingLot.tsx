@@ -44,7 +44,7 @@ const CreateParkingLot: React.FC = () => {
   const [createParkingLot, { isLoading }] = useCreateParkingLotMutation()
   const { data: wards, isLoading: isLoadingWards } = useGetWardQuery<WardResponse>({})
   const wardData = wards?.data?.[0] || []
-  const [createAddress] = useCreateAddressMutation()
+  const [createAddress, { isLoading: isLoadingAddress }] = useCreateAddressMutation()
 
   const onFinish = async (values: any) => {
     const is24Hours = Boolean(values.is24Hours)
@@ -320,7 +320,12 @@ const CreateParkingLot: React.FC = () => {
             <Button icon={<ReloadOutlined />} onClick={() => form.resetFields()}>
               Làm mới
             </Button>
-            <Button type="primary" icon={<SendOutlined />} htmlType="submit" loading={isLoading}>
+            <Button
+              type="primary"
+              icon={<SendOutlined />}
+              htmlType="submit"
+              loading={isLoading || isLoadingAddress}
+            >
               Gửi yêu cầu
             </Button>
           </Space>
