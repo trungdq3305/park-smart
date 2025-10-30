@@ -167,18 +167,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
                 const SizedBox(height: 24),
 
-                // Booking form card
-                BookingFormCard(
-                  durationController: _durationController,
-                  selectedSpaceInfo: _selectedSpaceId != null
-                      ? _getSelectedSpaceInfo()
-                      : null,
-                  isSelectedSpaceElectric: _isSelectedSpaceElectric,
-                  calculateEstimatedCost: _calculateEstimatedCost,
-                ),
-
-                const SizedBox(height: 24),
-
                 // Parking space selector
                 ParkingSpaceSelector(
                   parkingSpaces: _parkingSpaces,
@@ -211,6 +199,18 @@ class _BookingScreenState extends State<BookingScreen> {
                 ElectricCarMessage(
                   isVisible:
                       _selectedSpaceId != null && _isSelectedSpaceElectric,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Booking form card
+                BookingFormCard(
+                  durationController: _durationController,
+                  selectedSpaceInfo: _selectedSpaceId != null
+                      ? _getSelectedSpaceInfo()
+                      : null,
+                  isSelectedSpaceElectric: _isSelectedSpaceElectric,
+                  calculateEstimatedCost: _calculateEstimatedCost,
                 ),
 
                 const SizedBox(height: 24),
