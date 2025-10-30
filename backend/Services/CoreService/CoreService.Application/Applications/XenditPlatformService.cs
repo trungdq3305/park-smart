@@ -25,18 +25,21 @@ namespace CoreService.Application.Applications
         { _client = client; _repo = repo; }
 
         public async Task<OperatorPaymentAccount> CreateSubAccountAsync(
-    string operatorId, string email, string businessName)
+            string operatorId, string email, string businessName)
         {
-            // payload TỐI THIỂU hợp lệ cho OWNED
+            // *** Đã thay đổi payload TỐI THIỂU thành loại "MANAGED" ***
             var body = new
             {
-                type = "OWNED",
+                // Thay đổi từ "OWNED"/'PLATFORM' sang "MANAGED"
+                type = "MANAGED",
                 email = email,
                 country = "VN",
+                // Public profile là bắt buộc
                 public_profile = new
                 {
                     business_name = businessName
                 },
+                // Business profile cũng thường là bắt buộc
                 business_profile = new
                 {
                     business_name = businessName
@@ -96,7 +99,7 @@ namespace CoreService.Application.Applications
             var e = new OperatorPaymentAccount
             {
                 OperatorId = operatorId,
-                XenditUserId = accountId,     // dùng "id" làm for-user-id cho các call sau
+                XenditUserId = accountId,      // dùng "id" làm for-user-id cho các call sau
                 Status = status,
                 CreatedAt = DateTime.UtcNow
             };
@@ -104,8 +107,6 @@ namespace CoreService.Application.Applications
             await _repo.AddAsync(e);
             return e;
         }
-
-
     }
 
 }
