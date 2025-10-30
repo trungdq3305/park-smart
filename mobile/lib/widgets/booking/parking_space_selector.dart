@@ -47,18 +47,11 @@ class _ParkingSpaceSelectorState extends State<ParkingSpaceSelector> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.grid_view,
-                color: Colors.green.shade600,
-                size: 24,
-              ),
+              Icon(Icons.grid_view, color: Colors.green.shade600, size: 24),
               const SizedBox(width: 8),
               const Text(
                 'Chọn vị trí đỗ xe',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -70,10 +63,7 @@ class _ParkingSpaceSelectorState extends State<ParkingSpaceSelector> {
             children: [
               const Text(
                 'Tầng:',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               SizedBox(
@@ -123,10 +113,7 @@ class _ParkingSpaceSelectorState extends State<ParkingSpaceSelector> {
               child: const Center(
                 child: Text(
                   'Không có vị trí đỗ xe nào',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
               ),
             )
@@ -198,7 +185,6 @@ class _ParkingSpaceSelectorState extends State<ParkingSpaceSelector> {
                     .map((space) => _buildSpaceButton(space))
                     .toList(),
               ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
