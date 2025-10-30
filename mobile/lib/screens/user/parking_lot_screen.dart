@@ -612,12 +612,31 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       Navigator.of(context).pop();
 
       // Navigate to booking screen
+      // API returns data as array, so we need to get the first element
+      Map<String, dynamic> parkingLotData;
+      if (detailedParkingLot['data'] is List &&
+          (detailedParkingLot['data'] as List).isNotEmpty) {
+        // Get the first parking lot from the array
+        parkingLotData = Map<String, dynamic>.from(
+          (detailedParkingLot['data'] as List)[0],
+        );
+        print('📱 DEBUG: Using detailed parking lot data from API array');
+      } else {
+        // Fallback to original parking lot data if API response is unexpected
+        parkingLotData = parkingLot;
+        print('📱 DEBUG: Using original parking lot data as fallback');
+      }
+
+      print('📱 DEBUG: Parking lot data type: ${parkingLotData.runtimeType}');
+      print('📱 DEBUG: Available spots: ${parkingLotData['availableSpots']}');
+      print(
+        '📱 DEBUG: Total capacity: ${(parkingLotData['totalCapacityEachLevel'] ?? 0) * (parkingLotData['totalLevel'] ?? 1)}',
+      );
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => BookingScreen(
-            parkingLot: detailedParkingLot['data'] ?? detailedParkingLot,
-          ),
+          builder: (context) => BookingScreen(parkingLot: parkingLotData),
         ),
       );
     } catch (e) {
@@ -714,21 +733,6 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                 MapDebugIndicator(mapLoaded: _mapLoaded),
 
                 // Socket status indicator
-                Positioned(
-                  top: 140,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: _isSocketConnected ? Colors.green : Colors.red,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      _isSocketConnected ? 'Socket OK' : 'Socket Off',
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
-                    ),
-                  ),
-                ),
 
                 // Fallback: Show parking lots list when map doesn't load
                 if (_showMapFallback)

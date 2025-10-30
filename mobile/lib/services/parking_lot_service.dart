@@ -405,4 +405,124 @@ class ParkingLotService {
       rethrow;
     }
   }
+
+  /// Lấy danh sách các vị trí đỗ xe của một bãi đỗ xe theo tầng
+  /// GET /parking/parking-spaces?parkingLotId=68e51c5f4745c81c82b61833&level=1
+  static Future<Map<String, dynamic>> getParkingSpaces({
+    required String parkingLotId,
+    int? level,
+    int page = 1,
+    int pageSize = 100,
+  }) async {
+    try {
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      Map<String, String> queryParams = {
+        'parkingLotId': parkingLotId,
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+      };
+
+      if (level != null) {
+        queryParams['level'] = level.toString();
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/parking-spaces',
+      ).replace(queryParameters: queryParams);
+
+      print('🅿️ Getting parking spaces:');
+      print('  URL: $uri');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully fetched parking spaces');
+        return responseData;
+      } else {
+        final errorBody = response.body;
+        print('❌ Error fetching parking spaces: $errorBody');
+        throw Exception(
+          'Failed to fetch parking spaces: ${response.statusCode} - $errorBody',
+        );
+      }
+    } catch (e) {
+      print('❌ Exception in getParkingSpaces: $e');
+      rethrow;
+    }
+  }
+
+  /// Lấy tất cả các vị trí đỗ xe của một bãi đỗ xe (tất cả các tầng)
+  /// GET /parking/parking-spaces?parkingLotId=68e51c5f4745c81c82b61833
+  static Future<Map<String, dynamic>> getAllParkingSpaces({
+    required String parkingLotId,
+    int page = 1,
+    int pageSize = 1000,
+  }) async {
+    return getParkingSpaces(
+      parkingLotId: parkingLotId,
+      level: null,
+      page: page,
+      pageSize: pageSize,
+    );
+  }
+
+  /// Lấy vị trí đỗ xe theo ID cụ thể
+  /// GET /parking/parking-spaces/:id
+  static Future<Map<String, dynamic>> getParkingSpaceById(
+    String parkingSpaceId,
+  ) async {
+    try {
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse('$baseUrl/parking/parking-spaces/$parkingSpaceId');
+
+      print('🅿️ Getting parking space by ID:');
+      print('  URL: $uri');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully fetched parking space details');
+        return responseData;
+      } else {
+        final errorBody = response.body;
+        print('❌ Error fetching parking space details: $errorBody');
+        throw Exception(
+          'Failed to fetch parking space details: ${response.statusCode} - $errorBody',
+        );
+      }
+    } catch (e) {
+      print('❌ Exception in getParkingSpaceById: $e');
+      rethrow;
+    }
+  }
 }
