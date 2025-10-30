@@ -21,11 +21,20 @@ class _BookingScreenState extends State<BookingScreen> {
   String? _selectedSpaceId;
   int _selectedLevel = 1;
   List<int> _availableLevels = [];
+  bool _isSelectedSpaceElectric = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeLevels();
     _loadParkingSpaces();
+  }
+
+  /// Initialize available levels from parking lot data
+  void _initializeLevels() {
+    final totalLevel = widget.parkingLot['totalLevel'] ?? 1;
+    _availableLevels = List.generate(totalLevel, (index) => index + 1);
+    print('🏢 Available levels from parking lot: $_availableLevels');
   }
 
   @override
@@ -61,14 +70,8 @@ class _BookingScreenState extends State<BookingScreen> {
         spaces = List<Map<String, dynamic>>.from(spacesData);
       }
 
-      // Get available levels from the spaces
-      Set<int> levels = spaces
-          .map((space) => (space['level'] ?? 1) as int)
-          .toSet();
-
       setState(() {
         _parkingSpaces = spaces;
-        _availableLevels = levels.toList()..sort();
         _isLoadingSpaces = false;
       });
 
@@ -107,6 +110,7 @@ class _BookingScreenState extends State<BookingScreen> {
       setState(() {
         _selectedLevel = level;
         _selectedSpaceId = null; // Reset selection
+        _isSelectedSpaceElectric = false; // Reset electric car status
       });
       _loadParkingSpaces();
     }
@@ -129,6 +133,9 @@ class _BookingScreenState extends State<BookingScreen> {
         selectedSpace['number'] ??
         '?';
     final row = selectedSpace['row'] ?? '?';
+
+    // Update electric car status
+    _isSelectedSpaceElectric = selectedSpace['isElectricCar'] ?? false;
 
     return 'Tầng $_selectedLevel - Hàng $row - Vị trí $spaceCode';
   }
@@ -353,6 +360,26 @@ class _BookingScreenState extends State<BookingScreen> {
                         const SizedBox(height: 12),
                       ],
 
+                      // Total levels info
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.layers,
+                            color: Colors.grey.shade600,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Tổng số tầng: $totalLevel',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
                       // Parking lot status
                       Row(
                         children: [
@@ -451,6 +478,8 @@ class _BookingScreenState extends State<BookingScreen> {
                         ),
                         const SizedBox(height: 16),
                       ],
+
+                      // Electric car message
 
                       // Duration field
                       TextFormField(
@@ -594,43 +623,50 @@ class _BookingScreenState extends State<BookingScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Level selector
-                      if (_availableLevels.isNotEmpty) ...[
-                        Row(
-                          children: [
-                            const Text(
-                              'Tầng: ',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
+                      // Level selector with horizontal scroll
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Tầng:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
                             ),
-                            const SizedBox(width: 8),
-                            ..._availableLevels.map(
-                              (level) => Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: ChoiceChip(
-                                  label: Text('Tầng $level'),
-                                  selected: _selectedLevel == level,
-                                  onSelected: (selected) {
-                                    if (selected) _changeLevel(level);
-                                  },
-                                  selectedColor: Colors.green.shade100,
-                                  labelStyle: TextStyle(
-                                    color: _selectedLevel == level
-                                        ? Colors.green.shade700
-                                        : Colors.grey.shade700,
-                                    fontWeight: _selectedLevel == level
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 40,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _availableLevels.length,
+                              itemBuilder: (context, index) {
+                                final level = _availableLevels[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8),
+                                  child: ChoiceChip(
+                                    label: Text('Tầng $level'),
+                                    selected: _selectedLevel == level,
+                                    onSelected: (selected) {
+                                      if (selected) _changeLevel(level);
+                                    },
+                                    selectedColor: Colors.green.shade100,
+                                    labelStyle: TextStyle(
+                                      color: _selectedLevel == level
+                                          ? Colors.green.shade700
+                                          : Colors.grey.shade700,
+                                      fontWeight: _selectedLevel == level
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
                                   ),
-                                ),
-                              ),
+                                );
+                              },
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                      ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
 
                       // Parking spaces grid
                       if (_isLoadingSpaces)
@@ -658,6 +694,37 @@ class _BookingScreenState extends State<BookingScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 12),
+                if (_selectedSpaceId != null && _isSelectedSpaceElectric) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.electric_car,
+                          color: Colors.orange.shade600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Đây là vị trí dành cho xe điện',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.orange.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
 
                 const SizedBox(height: 24),
 
@@ -836,6 +903,12 @@ class _BookingScreenState extends State<BookingScreen> {
         if (isAvailable && !isOccupied) {
           setState(() {
             _selectedSpaceId = isSelected ? null : spaceId;
+            // Update electric car status when selecting/deselecting
+            if (!isSelected) {
+              _isSelectedSpaceElectric = space['isElectricCar'] ?? false;
+            } else {
+              _isSelectedSpaceElectric = false;
+            }
           });
         }
       },
