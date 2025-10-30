@@ -346,7 +346,6 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
                     _buildTile(
-
                       icon: Icons.confirmation_number_outlined,
                       title: 'Mã giảm giá',
                       onTap: () {
@@ -354,9 +353,8 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
                     _buildTile(
-
                       icon: Icons.note_alt_outlined,
-                      title: 'Điều khoản & Dịch vụ',
+                      title: 'Điều khoản & Chính sách',
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -366,11 +364,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
 
-
                     // Debug menu item
-                    
-
-
                     const SizedBox(height: 20),
                     // Logout button
                     Container(
