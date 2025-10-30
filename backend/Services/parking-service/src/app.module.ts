@@ -16,6 +16,7 @@ import { AddressModule } from './module/address/address.module'
 import { BasisModule } from './module/basis/basis.module'
 import { BrandModule } from './module/brand/brand.module'
 import { ColorModule } from './module/color/color.module'
+import { NotificationModule } from './module/notification/notification.module'; 
 import { PackageRateModule } from './module/packageRate/packageRate.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
 import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
@@ -25,6 +26,7 @@ import { TieredRateSetModule } from './module/tieredRateSet/tieredRateSet.module
 import { VehicleModule } from './module/vehicle/vehicle.module'
 import { WardModule } from './module/ward/ward.module'
 import { JwtStrategy } from './strategy/jwt.strategy'
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -61,6 +63,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     PackageRateModule,
     TieredRateSetModule,
     PricingPolicyModule,
+    NotificationModule
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
