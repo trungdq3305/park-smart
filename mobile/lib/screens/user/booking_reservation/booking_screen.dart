@@ -132,7 +132,7 @@ class _BookingScreenState extends State<BookingScreen> {
         selectedSpace['spaceNumber'] ??
         selectedSpace['number'] ??
         '?';
-    final row = selectedSpace['row'] ?? '?';
+    final row = selectedSpace['row'] ?? 'A';
 
     // Update electric car status
     _isSelectedSpaceElectric = selectedSpace['isElectricCar'] ?? false;
