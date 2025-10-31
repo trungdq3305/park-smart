@@ -4,6 +4,7 @@ import { SettingOutlined, UserOutlined, LogoutOutlined, MenuOutlined } from '@an
 import './AdminHeader.css'
 import { getUserFullName } from '../../../utils/userData'
 import { useLogout } from '../../../hooks/useLogout'
+import { NotificationDropdown } from '../../common'
 const { Header } = Layout
 
 interface AdminHeaderProps {
@@ -62,6 +63,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
 
       <div className="header-right">
         <Space size="middle">
+          <NotificationDropdown isMobile={!!isMobile} />
+
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
             <Button type="text" className="user-menu-btn">
               <Avatar
