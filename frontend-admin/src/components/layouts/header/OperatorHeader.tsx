@@ -4,6 +4,7 @@ import { SettingOutlined, UserOutlined, LogoutOutlined, MenuOutlined } from '@an
 import './AdminHeader.css'
 import { getUserFullName } from '../../../utils/userData'
 import { useLogout } from '../../../hooks/useLogout'
+import { NotificationDropdown } from '../../common'
 const { Header } = Layout
 
 interface OperatorHeaderProps {
@@ -42,7 +43,7 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
   return (
     <Header className="admin-header">
       {isMobile && (
-        <button 
+        <button
           className="mobile-menu-toggle"
           onClick={onMobileMenuToggle}
           aria-label="Toggle mobile menu"
@@ -50,18 +51,18 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
           <MenuOutlined />
         </button>
       )}
-      
+
       <div className="header-left">
         <h3>
-          {isMobile 
-            ? `Welcome, ${fullName.split(' ')[0]}!` 
-            : `Welcome back, ${fullName}, let's manage your parking lots !`
-          }
+          {isMobile
+            ? `Welcome, ${fullName.split(' ')[0]}!`
+            : `Welcome back, ${fullName}, let's manage your parking lots !`}
         </h3>
       </div>
 
       <div className="header-right">
         <Space size="middle">
+          <NotificationDropdown isMobile={!!isMobile} />
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
             <Button type="text" className="user-menu-btn">
               <Avatar

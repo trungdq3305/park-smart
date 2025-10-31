@@ -12,7 +12,7 @@ const PaginationLoading: React.FC<PaginationLoadingProps> = ({
   isLoading,
   children,
   loadingText = 'Đang tải trang...',
-  className = ''
+  className = '',
 }) => {
   return (
     <div className={`pagination-loading-wrapper ${className}`}>

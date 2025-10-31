@@ -1,0 +1,41 @@
+.create-lot-wrapper {
+  display: flex;
+}
+
+.create-lot-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+}
+
+.hero-icon {
+  width: 6vh;
+  height: 6vh;
+  border-radius: 1.2vh;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-title {
+  color: #fff !important;
+  margin: 0;
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.hero-badge {
+  padding: 0.6vh 1vh;
+}
+
+.section-card {
+  border-radius: 1.2vh;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+}

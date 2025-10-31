@@ -170,9 +170,9 @@
 /* Responsive Design */
 @media (max-width: 1024px) {
   .operator-sidebar {
-    width: 30vh !important;
-    min-width: 30vh !important;
-    max-width: 30vh !important;
+    width: 30vh;
+    min-width: 30vh;
+    max-width: 30vh;
   }
 }
 
@@ -182,9 +182,9 @@
     height: 100vh;
     top: 0;
     left: -100%;
-    width: 28vh !important;
-    min-width: 28vh !important;
-    max-width: 28vh !important;
+    width: 28vh;
+    min-width: 28vh;
+    max-width: 28vh;
     border-radius: 0;
     z-index: 1000;
     transition: left 0.3s ease;
@@ -242,9 +242,9 @@
 
 @media (max-width: 480px) {
   .operator-sidebar {
-    width: 26vh !important;
-    min-width: 26vh !important;
-    max-width: 26vh !important;
+    width: 26vh;
+    min-width: 26vh;
+    max-width: 26vh;
   }
 
   .sidebar-header {
