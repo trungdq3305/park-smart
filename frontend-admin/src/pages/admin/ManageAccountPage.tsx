@@ -16,7 +16,7 @@ import {
   useGetAccountQuery,
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
-} from '../../features/accountAPI'
+} from '../../features/admin/accountAPI'
 import type { Account } from '../../types/Account'
 import './ManageAccountPage.css'
 
@@ -84,7 +84,7 @@ const ManageAccountPage: React.FC = () => {
   const handlePageChange = (page: number) => {
     setIsPageLoading(true)
     updateSearchParams({ page })
-    
+
     // Reset loading state after a short delay to show the loading effect
     setTimeout(() => {
       setIsPageLoading(false)
@@ -244,64 +244,64 @@ const ManageAccountPage: React.FC = () => {
           <div className="table-wrapper">
             <PaginationLoading isLoading={isPageLoading} loadingText="Đang tải trang...">
               <table className="accounts-table">
-              <thead>
-                <tr>
-                  <th>Thông tin tài khoản</th>
-                  <th>Vai trò</th>
-                  <th>Trạng thái</th>
-                  <th>Lần đăng nhập cuối</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accounts.map((account: Account) => (
-                  <tr key={account._id}>
-                    <td>
-                      <div className="account-info">
-                        <div className="account-avatar">
-                          {account.email.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="account-details">
-                          <h4>{account.email}</h4>
-                          <p>{account.phoneNumber}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
-                        {account.roleName}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${getStatusBadge(account.isActive)}`}>
-                        {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                      </span>
-                    </td>
-                    <td>
-                      {account.lastLoginAt
-                        ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
-                        : 'Chưa đăng nhập'}
-                    </td>
-                    <td>
-                      <div className="action-cell">
-                        <Dropdown
-                          menu={{ items: getMenuItems(account) }}
-                          trigger={['click']}
-                          placement="bottomRight"
-                        >
-                          <Button
-                            type="text"
-                            icon={<MoreOutlined />}
-                            className="action-dropdown-trigger"
-                            title="Thao tác"
-                          />
-                        </Dropdown>
-                      </div>
-                    </td>
+                <thead>
+                  <tr>
+                    <th>Thông tin tài khoản</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Lần đăng nhập cuối</th>
+                    <th>Thao tác</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {accounts.map((account: Account) => (
+                    <tr key={account._id}>
+                      <td>
+                        <div className="account-info">
+                          <div className="account-avatar">
+                            {account.email.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="account-details">
+                            <h4>{account.email}</h4>
+                            <p>{account.phoneNumber}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
+                          {account.roleName}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${getStatusBadge(account.isActive)}`}>
+                          {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                        </span>
+                      </td>
+                      <td>
+                        {account.lastLoginAt
+                          ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
+                          : 'Chưa đăng nhập'}
+                      </td>
+                      <td>
+                        <div className="action-cell">
+                          <Dropdown
+                            menu={{ items: getMenuItems(account) }}
+                            trigger={['click']}
+                            placement="bottomRight"
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined />}
+                              className="action-dropdown-trigger"
+                              title="Thao tác"
+                            />
+                          </Dropdown>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </PaginationLoading>
           </div>
 

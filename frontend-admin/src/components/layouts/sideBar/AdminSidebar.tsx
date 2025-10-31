@@ -28,12 +28,12 @@ interface AdminSidebarProps {
   onMobileToggle?: () => void
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
-  collapsed, 
-  onCollapse, 
-  isMobile = false, 
+const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  collapsed,
+  onCollapse,
+  isMobile = false,
   mobileOpen = false,
-  onMobileToggle 
+  onMobileToggle,
 }) => {
   const navigate = useNavigate()
   const location = useLocation()

@@ -18,7 +18,7 @@ export const useMobileMenu = (): {
     }
     return 1024 // Default desktop width
   })
-  
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Use useMemo để tính toán isMobile từ windowWidth
@@ -34,7 +34,7 @@ export const useMobileMenu = (): {
 
     // Add resize listener
     window.addEventListener('resize', handleResize)
-    
+
     // Cleanup listener khi unmount
     return () => window.removeEventListener('resize', handleResize)
   }, [])
@@ -48,7 +48,7 @@ export const useMobileMenu = (): {
 
   // Memoized handlers để prevent unnecessary re-renders
   const toggleMobileMenu = useCallback(() => {
-    setMobileMenuOpen(prev => !prev)
+    setMobileMenuOpen((prev) => !prev)
   }, [])
 
   const closeMobileMenu = useCallback(() => {
@@ -65,6 +65,6 @@ export const useMobileMenu = (): {
     windowWidth, // Expose windowWidth nếu cần
     toggleMobileMenu,
     closeMobileMenu,
-    openMobileMenu
+    openMobileMenu,
   }
 }

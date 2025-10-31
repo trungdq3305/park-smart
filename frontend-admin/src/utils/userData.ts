@@ -20,5 +20,3 @@ export function getUserFullName(defaultName = 'User'): string {
   const data = getUserData()
   return data?.fullName || defaultName
 }
-
-
