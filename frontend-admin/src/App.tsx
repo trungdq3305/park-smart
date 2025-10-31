@@ -24,31 +24,24 @@ function App() {
       }
     >
       <Routes>
-        {routes.map((route, i) => {
+        {routes.flatMap((route) => {
           const Layout = route.layout
-          return (
-            <Route
-              key={i}
-              // Bọc Layout trong PermissionCheck và truyền vào role của cả nhóm layout
-              element={
-                <PermissionCheck protectedRole={route.role}>
-                  <Layout />
-                </PermissionCheck>
-              }
-            >
-              {route.data.map((item) => {
-                const Component = item.component
-                return (
-                  <Route
-                    key={item.path}
-                    path={item.path}
-                    // Ở trong này không cần PermissionCheck nữa vì cả layout đã được bảo vệ
-                    element={<Component />}
-                  />
-                )
-              })}
-            </Route>
-          )
+          return route.data.map((item) => {
+            const Component = item.component
+            return (
+              <Route
+                key={item.path}
+                path={item.path}
+                element={
+                  <PermissionCheck protectedRole={item.role}>
+                    <Layout />
+                  </PermissionCheck>
+                }
+              >
+                <Route index element={<Component />} />
+              </Route>
+            )
+          })
         })}
 
         {/* Trang fallback */}
