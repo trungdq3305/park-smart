@@ -519,18 +519,7 @@
       "UpstreamPathTemplate": "/parking/parking-spaces/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST" ]
     },
-    {
-      "DownstreamPathTemplate": "/notifications/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "parkingservice",
-          "Port": 5000
-        }
-      ],
-      "UpstreamPathTemplate": "/parking/notifications/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH" ]
-    },
+    
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
