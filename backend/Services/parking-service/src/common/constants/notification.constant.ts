@@ -4,7 +4,7 @@
 export enum NotificationRole {
   DRIVER = 'DRIVER',
   OPERATOR = 'OPERATOR',
-  CITY_ADMIN = 'CITY_ADMIN',
+  ADMIN = 'ADMIN',
 }
 
 /**
