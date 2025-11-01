@@ -492,20 +492,16 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
-      "UpstreamPathTemplate": "/parking/notifications/{everything}",
-      "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamScheme": "wss",
-      "DownstreamScheme": "ws",
+      "DownstreamPathTemplate": "/notifications/{everything}",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
           "Port": 5000
         }
       ],
-      "DownstreamPathTemplate": "/{everything}",
-      "QoSOptions": {
-        "TimeoutValue": 3600000
-      }
+      "UpstreamPathTemplate": "/parking/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH" ]
     },
     {
       "DownstreamPathTemplate": "/parking-spaces/{everything}",
