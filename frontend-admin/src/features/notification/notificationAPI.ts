@@ -7,7 +7,7 @@ export const notificationAPI = apiSlice.injectEndpoints({
         // 1. Lấy danh sách thông báo
         getNotifications: builder.query<any, string>({ // Thay 'any' bằng interface Notification[] nếu có
             query: (userId) => ({
-                url: `/notifications`,
+                url: `/parking/notifications`,
                 method: 'GET',
             }),
             providesTags: ['Notification'], 
@@ -17,7 +17,7 @@ export const notificationAPI = apiSlice.injectEndpoints({
         // 2. Lấy số lượng thông báo chưa đọc
         getUnreadCount: builder.query<number, string>({
             query: (userId) => ({
-                url: `/notifications/unread-count`,
+                url: `/parking/notifications/unread-count`,
                 method: 'GET',
             }),
             providesTags: ['NotificationCount'],
@@ -27,7 +27,7 @@ export const notificationAPI = apiSlice.injectEndpoints({
         // 3. Đánh dấu tất cả là đã đọc
         markAllAsRead: builder.mutation<number, string>({
             query: (userId) => ({
-                url: `/notifications/read-all`,
+                url: `/parking/notifications/read-all`,
                 method: 'PATCH',
                 body: { userId },
             }),
@@ -38,7 +38,7 @@ export const notificationAPI = apiSlice.injectEndpoints({
         // 4. API Mẫu: Gửi thông báo (dùng cho nút Test)
         sendTestNotification: builder.mutation<any, any>({
             query: (payload) => ({
-                url: '/notifications', 
+                url: '/parking/notifications', 
                 method: 'POST',
                 body: payload,
             }),
@@ -47,7 +47,7 @@ export const notificationAPI = apiSlice.injectEndpoints({
         }),
         markAsReadSingle: builder.mutation<any, string>({
             query: (notificationId) => ({
-                url: `/notifications/${notificationId}/read`,
+                url: `/parking/notifications/${notificationId}/read`,
                 method: 'PATCH',
                 // invalidatesTags sẽ chạy sau khi thành công
             }),
