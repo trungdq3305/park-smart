@@ -219,3 +219,69 @@
     margin-right: 0;
   }
 }
+/* ======================================= */
+/* === NOTIFICATION DROP-DOWN HIGHLIGHT === */
+/* ======================================= */
+
+/* 1. Kiểu cho List Item chưa đọc */
+/* Áp dụng cho List.Item (className={item.className}) */
+.ant-list-item.notification-item-unread {
+    /* Nền màu xanh nhạt để highlight */
+    background-color: #f0f8ff !important; 
+    /* Thanh dọc bên trái */
+    border-left: 4px solid #1890ff; 
+    /* Đẩy nội dung vào để nhường chỗ cho thanh dọc */
+    padding-left: 8px !important; 
+    transition: background-color 0.3s ease, border-left 0.3s ease;
+}
+
+/* 2. Cấu trúc nội dung Notification */
+.notification-item {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: flex-start; /* Căn chỉnh lên trên */
+}
+
+/* Wrapper cho Tiêu đề và Chấm Đỏ */
+.notification-item-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px; 
+    flex-grow: 1; /* Cho phép nó mở rộng */
+}
+
+/* 3. Tinh chỉnh Tiêu đề cho mục chưa đọc */
+.notification-item-unread .notification-item-title {
+    color: #1890ff; /* Tiêu đề màu xanh nổi bật */
+    font-weight: 700; /* Làm đậm hơn */
+}
+
+/* 4. Chấm Đỏ (Unread dot) */
+.unread-dot {
+    width: 6px; /* Kích thước chấm nhỏ hơn */
+    height: 6px;
+    background-color: #ff4d4f; 
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* 5. Tinh chỉnh thời gian */
+.notification-item-time {
+    color: #8c8c8c;
+    font-size: 1.2vh; 
+    margin-top: 0.3vh;
+    flex-shrink: 0; /* Đảm bảo thời gian luôn hiển thị */
+}
+
+/* Overrides cho List.Item của Ant Design (Nếu cần thiết) */
+.ant-list-item {
+    /* Đảm bảo border-bottom luôn rõ ràng giữa các item */
+    border-bottom: 1px solid #f0f0f0 !important;
+}
+
+/* Tinh chỉnh cho phần footer chứa nút "Đọc tất cả" */
+.ant-list-footer {
+    padding: 0;
+}
