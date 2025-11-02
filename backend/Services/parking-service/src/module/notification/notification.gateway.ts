@@ -15,7 +15,7 @@ import { NotificationResponseDto } from './dto/notification.dto'
 
 @WebSocketGateway({
   cors: {
-    origin: 'http://localhost:5173',
+    origin: '*',
     credentials: true,
   },
 })
