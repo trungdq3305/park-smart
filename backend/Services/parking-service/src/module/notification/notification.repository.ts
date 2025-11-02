@@ -4,7 +4,10 @@ import { Model, Types } from 'mongoose'
 
 import { CreateNotificationInternalDto } from './dto/notification.dto'
 import { INotificationRepository } from './interfaces/inotification.repository'
-import { Notification, NotificationDocument } from './schemas/notification.schema'
+import {
+  Notification,
+  NotificationDocument,
+} from './schemas/notification.schema'
 
 @Injectable()
 export class NotificationRepository implements INotificationRepository {

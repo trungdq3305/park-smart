@@ -12,10 +12,12 @@ export interface INotificationService {
   createAndSendNotification(
     createNotificationDto: CreateNotificationInternalDto, // Cập nhật tên tham số nếu cần
   ): Promise<NotificationResponseDto>
-  
+
   getUnreadCount(userId: string): Promise<number>
-  markAsRead(notificationId: string, userId: string): Promise<NotificationResponseDto>
-  
+  markAsRead(
+    notificationId: string,
+    userId: string,
+  ): Promise<NotificationResponseDto>
 }
 
 export const INotificationService = Symbol('INotificationService')
