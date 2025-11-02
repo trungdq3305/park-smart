@@ -10,7 +10,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/__whoami",
-      "UpstreamHttpMethod": ["GET"],
+      "UpstreamHttpMethod": [ "GET" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -49,7 +49,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/accounts/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -65,7 +65,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/drivers/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -81,7 +81,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/operators/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -97,7 +97,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/admins/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -113,7 +113,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/termpolicies/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -129,7 +129,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/faqs/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -145,7 +145,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/comments/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -161,7 +161,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/pointmilestones/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -177,7 +177,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/operators/{operatorId}/payments/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -193,7 +193,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/operators/{operatorId}/reservations/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -209,7 +209,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/images/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -225,7 +225,7 @@
         }
       ],
       "UpstreamPathTemplate": "/uploads/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -241,7 +241,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/events/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -257,7 +257,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/promotions/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -273,7 +273,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/blacklists/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -289,7 +289,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/favourites/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -305,7 +305,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/reports/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -321,7 +321,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/reportcategories/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -337,7 +337,7 @@
         }
       ],
       "UpstreamPathTemplate": "/core/swagger/{everything}",
-      "UpstreamHttpMethod": ["GET"],
+      "UpstreamHttpMethod": [ "GET" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -369,7 +369,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/addresses/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
     },
     {
       "DownstreamPathTemplate": "/wards",
@@ -381,7 +381,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/wards",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     },
     {
       "DownstreamPathTemplate": "/health/{everything}",
@@ -393,7 +393,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/health/{everything}",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     },
     {
       "DownstreamPathTemplate": "/basis/{everything}",
@@ -405,7 +405,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/basis/{everything}",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     },
     {
       "DownstreamPathTemplate": "/package-rates/{everything}",
@@ -417,7 +417,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/package-rates/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
       "DownstreamPathTemplate": "/tiered-rate-sets/{everything}",
@@ -429,7 +429,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/tiered-rate-sets/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
       "DownstreamPathTemplate": "/parking-lots/{everything}",
@@ -441,23 +441,19 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/parking-lots/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
-      "UpstreamPathTemplate": "/parking/notifications/{everything}",
-      "UpstreamHttpMethod": ["GET"],
-      "UpstreamScheme": "wss",
-      "DownstreamScheme": "ws",
+      "DownstreamPathTemplate": "/notifications/{everything}",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
           "Port": 5000
         }
       ],
-      "DownstreamPathTemplate": "/{everything}",
-      "QoSOptions": {
-        "TimeoutValue": 3600000
-      }
+      "UpstreamPathTemplate": "/parking/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH" ]
     },
     {
       "DownstreamPathTemplate": "/parking-spaces/{everything}",
@@ -469,8 +465,9 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/parking-spaces/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST"]
+      "UpstreamHttpMethod": [ "GET", "POST" ]
     },
+    
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
@@ -481,7 +478,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/swagger/{everything}",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     },
     {
       "DownstreamPathTemplate": "/",
@@ -493,7 +490,7 @@
         }
       ],
       "UpstreamPathTemplate": "/",
-      "UpstreamHttpMethod": ["GET"]
+      "UpstreamHttpMethod": [ "GET" ]
     }
   ],
   "GlobalConfiguration": {
