@@ -87,8 +87,8 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 label: 'Địa chỉ',
               ),
               BottomNavigationBarItem(
-                icon: _buildIcon(Icons.history_rounded, 3),
-                label: 'Gần đây',
+                icon: _buildIcon(Icons.message_outlined, 3),
+                label: 'Tin nhắn',
               ),
               BottomNavigationBarItem(
                 icon: _buildIcon(Icons.person_rounded, 4),
