@@ -31,9 +31,6 @@ export class ParkingSpace extends BaseEntity {
 
   @Prop({ required: true, type: Number })
   level: number
-
-  @Prop({ required: true, type: Boolean, default: false })
-  isElectricCar: boolean
 }
 
 export const ParkingSpaceSchema = SchemaFactory.createForClass(ParkingSpace)

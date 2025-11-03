@@ -14,6 +14,7 @@ import { JwtAuthGuard } from './guard/jwtAuth.guard'
 import { HealthController } from './health.controller'
 import { AddressModule } from './module/address/address.module'
 import { BasisModule } from './module/basis/basis.module'
+import { BookingInventoryModule } from './module/bookingInventory/bookingInventory.module'
 import { NotificationModule } from './module/notification/notification.module'
 import { PackageRateModule } from './module/packageRate/packageRate.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
@@ -58,6 +59,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     TieredRateSetModule,
     PricingPolicyModule,
     NotificationModule,
+    BookingInventoryModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
