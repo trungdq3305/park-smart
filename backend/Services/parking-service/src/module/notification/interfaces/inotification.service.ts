@@ -7,6 +7,7 @@ import type {
 } from '../dto/notification.dto'
 
 export interface INotificationService {
+  processScheduledAnnouncements(): Promise<void>
   getNotifications(userId: string): unknown
   markAllAsRead(userId: string): unknown
   createAndSendNotification(

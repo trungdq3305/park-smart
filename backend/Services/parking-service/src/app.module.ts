@@ -13,6 +13,7 @@ import { DatabaseConfig } from './config/database.config'
 import { JwtAuthGuard } from './guard/jwtAuth.guard'
 import { HealthController } from './health.controller'
 import { AddressModule } from './module/address/address.module'
+import { AnnouncementModule } from './module/announcement/announcement.module'
 import { BasisModule } from './module/basis/basis.module'
 import { BookingInventoryModule } from './module/bookingInventory/bookingInventory.module'
 import { NotificationModule } from './module/notification/notification.module'
@@ -60,6 +61,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     PricingPolicyModule,
     NotificationModule,
     BookingInventoryModule,
+    AnnouncementModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
