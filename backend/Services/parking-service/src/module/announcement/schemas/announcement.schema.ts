@@ -1,7 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import { Document, Types } from 'mongoose'
 
-export type AnnouncementDocument = Announcement & Document
+import { ANNOUNCEMENT_STATUSES } from '../enum/announcement.constant'; // 🔥 Import hằng số trạng thái
+
+export type AnnouncementDocument = Announcement & Document;
 
 @Schema({ timestamps: true })
 export class Announcement {
@@ -11,9 +13,9 @@ export class Announcement {
   @Prop({ required: true })
   content: string // Nội dung chi tiết thông báo
 
-  @Prop({
-    type: String,
-    enum: ['DRAFT', 'SCHEDULED', 'PUBLISHED', 'EXPIRED', 'SENT'],
+  @Prop({ 
+    type: String, 
+    enum: ANNOUNCEMENT_STATUSES,
     default: 'DRAFT',
   })
   status: string // Trạng thái (DRAFT, SCHEDULED, PUBLISHED, SENT...)
