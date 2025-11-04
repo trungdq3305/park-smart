@@ -12,6 +12,23 @@ export class ParkingLotRepository implements IParkingLotRepository {
     private parkingLotModel: Model<ParkingLot>,
   ) {}
 
+  async updateBookingSlotDurationHours(
+    id: string,
+    durationHours: number,
+    session?: ClientSession,
+  ): Promise<boolean> {
+    const data = await this.parkingLotModel.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          bookingSlotDurationHours: durationHours,
+        },
+      },
+      { new: true, session },
+    )
+    return data ? true : false
+  }
+
   updateParkingLot(
     id: string,
     updateData: Partial<ParkingLot>,
