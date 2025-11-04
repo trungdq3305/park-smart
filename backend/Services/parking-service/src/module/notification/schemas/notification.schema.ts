@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
-import { HydratedDocument, Types } from 'mongoose'
+import { HydratedDocument } from 'mongoose'
 import {
   NotificationRole,
   NotificationType,
@@ -10,26 +10,26 @@ export type NotificationDocument = HydratedDocument<Notification>
 
 @Schema({ timestamps: true, collection: 'notifications' })
 export class Notification extends BaseEntity {
-  @Prop({ type: Types.ObjectId, required: true, index: true })
-  recipientId: Types.ObjectId 
+  @Prop({ type: String, required: true, index: true })
+  recipientId: string
 
   @Prop({ type: String, enum: NotificationRole, required: true })
-  recipientRole: NotificationRole 
+  recipientRole: NotificationRole
 
   @Prop({ type: String, enum: NotificationType, required: true })
-  type: NotificationType 
+  type: NotificationType
 
   @Prop({ type: String, required: true })
-  title: string 
+  title: string
 
   @Prop({ type: String, required: true })
-  body: string 
+  body: string
 
   @Prop({ type: Object, default: {} })
-  data: Record<string, any> 
+  data: Record<string, any>
 
   @Prop({ type: Boolean, default: false })
-  isRead: boolean 
+  isRead: boolean
 }
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification)

@@ -96,20 +96,14 @@ export class ParkingLotService implements IParkingLotService {
     }
 
     for (let level = 1; level <= parkingLot.totalLevel; level++) {
-      const numberOfElectricSpaces = Math.round(
-        (parkingLot.totalCapacityEachLevel * parkingLot.electricCarPercentage) /
-          100,
-      )
       const codePrefix = level === 1 ? 'G' : `L${(level - 1).toString()}`
 
       for (let i = 1; i <= parkingLot.totalCapacityEachLevel; i++) {
-        const isElectric = i <= numberOfElectricSpaces
         spacesToCreate.push({
           parkingLotId: parkingLot._id,
           parkingSpaceStatusId: defaultStatus,
           code: `${codePrefix}-${i.toString()}`,
           level: level,
-          isElectricCar: isElectric,
         })
       }
     }
@@ -130,6 +124,17 @@ export class ParkingLotService implements IParkingLotService {
     )
     if (!addressExist) {
       throw new NotFoundException('Địa chỉ không tồn tại.')
+    }
+
+    if (
+      createDto.bookableCapacity +
+        createDto.leasedCapacity +
+        createDto.walkInCapacity >
+      createDto.totalCapacityEachLevel * createDto.totalLevel
+    ) {
+      throw new ConflictException(
+        'Số suất trong các loại chỉ định không được vượt quá tổng sức chứa của bãi đỗ xe.',
+      )
     }
 
     // (SỬA ĐỔI) Khai báo biến để lưu kết quả ở ngoài
@@ -381,6 +386,9 @@ export class ParkingLotService implements IParkingLotService {
               request.payload.totalCapacityEachLevel *
               request.payload.totalLevel,
             parkingLotStatus: RequestStatus.APPROVED,
+            totalCapacity:
+              request.payload.totalCapacityEachLevel *
+              request.payload.totalLevel,
           }
 
           const newParkingLot =

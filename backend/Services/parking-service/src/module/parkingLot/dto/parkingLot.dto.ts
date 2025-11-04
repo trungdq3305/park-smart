@@ -16,6 +16,7 @@ import {
   IsPositive,
   IsString,
   Matches,
+  Max,
   MinDate,
 } from 'class-validator'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
@@ -138,12 +139,6 @@ export class CreateParkingLotDto {
   @IsPositive({ message: 'Tổng số tầng phải là số dương' })
   totalLevel: number
 
-  @ApiProperty({ example: 20 })
-  @Type(() => Number)
-  @IsNumber({}, { message: 'Phần trăm xe điện phải là số' })
-  @IsPositive({ message: 'Phần trăm xe điện phải là số dương' })
-  electricCarPercentage: number
-
   @ApiProperty({
     example: '2024-12-30', // << SỬA LẠI VÍ DỤ THEO ĐỊNH DẠNG CHUẨN
     description: 'Ngày có hiệu lực (bắt buộc theo định dạng YYYY-MM-DD)',
@@ -153,6 +148,31 @@ export class CreateParkingLotDto {
   @MinDate(new Date(), { message: 'Ngày có hiệu lực phải sau ngày hiện tại' }) // 3. (THAY THẾ) Kiểm tra phải là ngày trong tương lai
   @IsNotEmpty({ message: 'Ngày có hiệu lực không được để trống' })
   effectiveDate: Date // << SỬA LẠI KIỂU DỮ LIỆU TỪ string SANG Date
+
+  @ApiProperty({ example: 20 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Số chỗ có thể đặt trước phải là một số' })
+  @IsPositive({ message: 'Số chỗ có thể đặt trước phải là số dương' })
+  bookableCapacity: number
+
+  @ApiProperty({ example: 20 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Số chỗ thuê dài hạn phải là một số' })
+  @IsPositive({ message: 'Số chỗ thuê dài hạn phải là số dương' })
+  leasedCapacity: number
+
+  @ApiProperty({ example: 50 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Số chỗ vãng lai phải là một số' })
+  @IsPositive({ message: 'Số chỗ vãng lai phải là số dương' })
+  walkInCapacity: number
+
+  @ApiProperty({ example: 20 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Thời gian đặt trước phải là số' })
+  @IsPositive({ message: 'Thời gian đặt trước phải là số dương' })
+  @Max(24, { message: 'Thời gian đặt trước không được vượt quá 24 giờ' })
+  bookingSlotDurationHours: number
 }
 
 // =================================================================
@@ -242,9 +262,6 @@ export class PayloadWithAddressDto {
   totalLevel: number
 
   @Expose()
-  electricCarPercentage: number
-
-  @Expose()
   parkingLotOperatorId: string
 
   // --- TRƯỜNG ADDRESS ĐÃ ĐƯỢC POPULATE ---
@@ -295,7 +312,16 @@ export class ParkingLotResponseDto {
   parkingLotStatus: string
 
   @Expose()
-  electricCarPercentage: number
+  bookableCapacity: number
+
+  @Expose()
+  leasedCapacity: number
+
+  @Expose()
+  walkInCapacity: number
+
+  @Expose()
+  bookingSlotDurationHours: number
 }
 
 /**
@@ -325,6 +351,18 @@ export class ParkingLotRequestResponseDto {
 
   @Expose()
   rejectionReason?: string
+
+  @Expose()
+  bookableCapacity: number
+
+  @Expose()
+  leasedCapacity: number
+
+  @Expose()
+  walkInCapacity: number
+
+  @Expose()
+  bookingSlotDurationHours: number
 
   @Expose()
   createdAt: Date
@@ -372,10 +410,19 @@ export class ParkingLotHistoryLogResponseDto {
   totalLevel: number
 
   @Expose()
-  electricCarPercentage: number
+  effectiveDate: Date
 
   @Expose()
-  effectiveDate: Date
+  bookableCapacity: number
+
+  @Expose()
+  leasedCapacity: number
+
+  @Expose()
+  walkInCapacity: number
+
+  @Expose()
+  bookingSlotDurationHours: number
 
   @Expose()
   createdAt: Date // Ngày mà thay đổi được áp dụng

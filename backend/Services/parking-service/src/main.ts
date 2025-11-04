@@ -20,15 +20,15 @@ async function bootstrap() {
   )
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
   // --- Bắt đầu cấu hình Swagger ---
-  app.useWebSocketAdapter(new IoAdapter(app));
+  app.useWebSocketAdapter(new IoAdapter(app))
   app.enableCors({
     // Đảm bảo 'origin' khớp với cổng của frontend React
-    origin: 'http://localhost:5173', 
+    origin: 'http://localhost:5173',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // Nếu bạn dùng cookie hoặc cần gửi headers Auth
-  }); // Bật CORS nếu cần thiết, giúp frontend có thể gọi API từ backend
+  }) // Bật CORS nếu cần thiết, giúp frontend có thể gọi API từ backend
   // Tạo một đối tượng cấu hình cơ bản cho Swagger document
-  
+
   const config = new DocumentBuilder()
     .setTitle('Parking Service') // Tiêu đề hiển thị trên Swagger UI
     .setDescription('Parking Service API Documentation') // Mô tả chi tiết hơn về API
