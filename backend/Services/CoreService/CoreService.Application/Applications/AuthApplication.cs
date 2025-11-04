@@ -78,6 +78,8 @@ namespace CoreService.Application.Applications
             var existingphoneUser = await _accountRepo.GetByPhoneAsync(request.PhoneNumber);
             if (existingphoneUser != null)
                 throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
+            if (request.IsAgreeToP != true)
+                throw new ApiException("Vui lòng đồng ý Chính Sách & Diều Khoản", StatusCodes.Status400BadRequest);
 
             var acc = new Account
             {
@@ -86,7 +88,8 @@ namespace CoreService.Application.Applications
                 Password = HashPassword(request.Password),
                 PhoneNumber = request.PhoneNumber,
                 RoleId = "68bee20c00a9410adb97d3a1",
-                IsActive = false
+                IsActive = false,
+                IsAgreeToP = request.IsAgreeToP
             };
 
             // Tạo OTP
@@ -140,7 +143,8 @@ namespace CoreService.Application.Applications
             {
                 throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
             }
-
+            if (request.IsAgreeToP != true)
+                throw new ApiException("Vui lòng đồng ý Chính Sách & Diều Khoản", StatusCodes.Status400BadRequest);
             var acc = new Account
             {
                 Id = null,
@@ -148,7 +152,8 @@ namespace CoreService.Application.Applications
                 Password = HashPassword(request.Password),
                 PhoneNumber = request.PhoneNumber,
                 RoleId = "68bee1f500a9410adb97d3a0",
-                IsActive = false
+                IsActive = false,
+                IsAgreeToP = request.IsAgreeToP
             };
 
             await _accountRepo.AddAsync(acc);
