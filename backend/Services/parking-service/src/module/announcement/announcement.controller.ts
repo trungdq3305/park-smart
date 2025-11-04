@@ -1,13 +1,29 @@
-import { Body, Controller, Get,HttpStatus, Inject, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'; // Giả định Decorator lấy Role
-import { Roles } from 'src/common/decorators/roles.decorator';
-import { ApiResponseDto } from 'src/common/dto/apiResponse.dto';
-import { RoleEnum } from 'src/common/enum/role.enum';
-import { JwtAuthGuard } from 'src/guard/jwtAuth.guard';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpStatus,
+  Inject,
+  Post,
+  UseGuards,
+} from '@nestjs/common'
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger'
+import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator' // Giả định Decorator lấy Role
+import { Roles } from 'src/common/decorators/roles.decorator'
+import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
+import { RoleEnum } from 'src/common/enum/role.enum'
+import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 
-import { AnnouncementResponseDto,CreateAnnouncementDto } from './dto/announcement.dto';
-import { IAnnouncementService } from './interfaces/iannouncement.service';
+import {
+  AnnouncementResponseDto,
+  CreateAnnouncementDto,
+} from './dto/announcement.dto'
+import { IAnnouncementService } from './interfaces/iannouncement.service'
 
 @ApiTags('admin/announcement')
 @Controller('admin/announcements')
@@ -34,30 +50,31 @@ export class AnnouncementController {
     const announcement = await this.announcementService.create(
       createAnnouncementDto,
       adminId,
-    );
+    )
 
     return {
       data: [announcement],
       message: 'Tạo thông báo và lên lịch thành công',
       statusCode: HttpStatus.CREATED,
       success: true,
-    };
+    }
   }
 
-@Get()
+  @Get()
   @ApiOperation({ summary: 'Admin: Lấy danh sách tất cả Thông báo Công bố' })
   @ApiResponse({
     status: HttpStatus.OK,
     type: ApiResponseDto<AnnouncementResponseDto[]>,
   })
   async findAll(): Promise<ApiResponseDto<AnnouncementResponseDto[]>> {
-    const announcements = await this.announcementService.findAll()as AnnouncementResponseDto[];
+    const announcements =
+      (await this.announcementService.findAll()) as AnnouncementResponseDto[]
     return {
       data: announcements,
       message: 'Lấy danh sách thông báo thành công',
       statusCode: HttpStatus.OK,
       success: true,
-    };
+    }
   }
   // NOTE: Thêm các API khác như Get list, Get by ID, Update, Delete ở đây...
 }

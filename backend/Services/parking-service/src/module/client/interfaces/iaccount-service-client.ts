@@ -6,7 +6,14 @@ export interface IAccountServiceClient {
    * @param roleName Tên vai trò (ví dụ: 'driver', 'operator', 'admin').
    * @returns Mảng các chuỗi ID của người dùng.
    */
-  getUserIdsByRole(roleName: string): Promise<string[]>;
+  getUserIdsByRole(roleName: string): Promise<string[]>
+
+  /**
+   * @description Gọi API của Core Service để lấy trạng thái thanh toán theo External ID.
+   * @param ExternalId ID bên ngoài của giao dịch thanh toán.
+   * @returns Trạng thái thanh toán (ví dụ: 'pending', 'completed', 'failed').
+   */
+  getPaymentStatusByExternalId(ExternalId: string): Promise<string>
 }
 
-export const IAccountServiceClient = Symbol('IAccountServiceClient');
+export const IAccountServiceClient = Symbol('IAccountServiceClient')
