@@ -32,7 +32,7 @@ export class ParkingLot extends BaseEntity {
 
   @Prop({ required: false, type: Boolean })
   is24Hours: boolean
-  
+
   @Prop({ required: true, type: Number })
   totalCapacityEachLevel: number
 
@@ -66,6 +66,9 @@ export class ParkingLot extends BaseEntity {
   // --- Xô 3 (Vãng lai) ---
   @Prop({ required: true, type: Number, min: 0, default: 0 })
   walkInCapacity: number // ⭐️ Admin đặt: 50
+
+  @Prop({ required: true, type: Number, min: 0, default: 0 })
+  totalCapacity: number // ⭐️ Hệ thống quản lý: 10
 
   @Prop({
     required: true,

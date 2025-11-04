@@ -116,10 +116,6 @@ export class SubscriptionDetailResponseDto {
   @Transform(({ obj }) => obj.parkingLotId.toString()) // Giả sử không populate
   parkingLotId: string
 
-  @Expose()
-  @Transform(({ obj }) => obj.userId.toString()) // Giả sử không populate
-  userId: string
-
   /**
    * Trường pricingPolicyId đã được populate (lồng nhau)
    */
@@ -144,13 +140,4 @@ export class SubscriptionDetailResponseDto {
 
   @Expose()
   updatedAt: Date
-}
-
-/**
- * DTO Phản hồi subscriptionIdentifier dùng cho QR Code
- */
-@Exclude()
-export class SubscriptionQRCodeResponseDto {
-  @Expose()
-  subscriptionIdentifier: string
 }

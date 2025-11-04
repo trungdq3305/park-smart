@@ -386,6 +386,9 @@ export class ParkingLotService implements IParkingLotService {
               request.payload.totalCapacityEachLevel *
               request.payload.totalLevel,
             parkingLotStatus: RequestStatus.APPROVED,
+            totalCapacity:
+              request.payload.totalCapacityEachLevel *
+              request.payload.totalLevel,
           }
 
           const newParkingLot =

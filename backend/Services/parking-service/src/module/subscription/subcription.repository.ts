@@ -87,16 +87,20 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     return { data, total }
   }
 
-  updateSubscription(
+  async updateSubscription(
     id: string,
     updateData: UpdateSubscriptionDto,
     session: ClientSession,
   ): Promise<Subscription | null> {
-    return this.subscriptionModel
-      .findByIdAndUpdate({ _id: id }, updateData, {
-        new: true,
-        session,
-      })
+    return await this.subscriptionModel
+      .findByIdAndUpdate(
+        { _id: id },
+        { $set: updateData },
+        {
+          new: true,
+          session,
+        },
+      )
       .lean()
       .exec()
   }

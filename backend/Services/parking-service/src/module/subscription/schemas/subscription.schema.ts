@@ -11,7 +11,7 @@ export type SubscriptionDocument = HydratedDocument<Subscription>
  * Quản lý các gói thuê bao dài hạn đã bán cho người dùng (Xô 1).
  * Ghi lại các "hợp đồng" hoặc "vé tháng/tuần" đang có hiệu lực.
  */
-@Schema({ timestamps: true })
+@Schema()
 export class Subscription extends BaseEntity {
   // Kế thừa _id, createdAt, updatedAt từ BaseEntity
 

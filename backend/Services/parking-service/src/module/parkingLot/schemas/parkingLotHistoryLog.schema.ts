@@ -87,6 +87,9 @@ export class ParkingLotHistoryLog extends BaseEntity {
   @Prop({ required: true, type: Number, min: 0, default: 0 })
   walkInCapacity: number // ⭐️ Admin đặt: 50
 
+  @Prop({ required: true, type: Number, min: 0, default: 0 })
+  totalCapacity: number // ⭐️ Số chỗ vãng lai đang sử dụng
+
   @Prop({
     required: true,
     type: Number,
