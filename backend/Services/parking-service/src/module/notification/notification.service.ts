@@ -5,6 +5,10 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
+import {
+  NotificationRole,
+  NotificationType,
+} from 'src/common/constants/notification.constant'
 import { IAnnouncementService } from 'src/module/announcement/interfaces/iannouncement.service'
 import { IAccountServiceClient } from 'src/module/client/interfaces/iaccount-service-client'
 import { Notification } from 'src/module/notification/schemas/notification.schema' // Import Notification Schema
@@ -17,10 +21,6 @@ import { INotificationRepository } from './interfaces/inotification.repository'
 import { INotificationService } from './interfaces/inotification.service'
 import { NotificationGateway } from './notification.gateway'
 import { NotificationDocument } from './schemas/notification.schema' // Đã sửa tên import nếu cần
-import {
-  NotificationRole,
-  NotificationType,
-} from 'src/common/constants/notification.constant'
 @Injectable()
 export class NotificationService implements INotificationService {
   constructor(

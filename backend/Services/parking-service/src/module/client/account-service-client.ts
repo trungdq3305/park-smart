@@ -69,7 +69,7 @@ private getInternalToken(): string {
       console.log(`[DEBUG S2S] Gọi URL: ${url}?role=${roleName}`);
 
       const response = await firstValueFrom(
-        this.httpService.get<any>(
+        this.httpService.get(
           url, 
           { 
             params: { role: roleName },
