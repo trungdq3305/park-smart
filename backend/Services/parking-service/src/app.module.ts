@@ -13,6 +13,7 @@ import { DatabaseConfig } from './config/database.config'
 import { JwtAuthGuard } from './guard/jwtAuth.guard'
 import { HealthController } from './health.controller'
 import { AddressModule } from './module/address/address.module'
+import { AnnouncementModule } from './module/announcement/announcement.module'
 import { BasisModule } from './module/basis/basis.module'
 import { NotificationModule } from './module/notification/notification.module'; 
 import { PackageRateModule } from './module/packageRate/packageRate.module'
@@ -57,7 +58,8 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     PackageRateModule,
     TieredRateSetModule,
     PricingPolicyModule,
-    NotificationModule
+    NotificationModule,
+    AnnouncementModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
