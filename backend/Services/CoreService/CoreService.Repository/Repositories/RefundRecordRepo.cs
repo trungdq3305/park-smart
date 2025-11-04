@@ -44,5 +44,10 @@ namespace CoreService.Repository.Repositories
             await _col.Find(x => x.PaymentId == paymentRecordId)
                       .SortByDescending(x => x.CreatedAt)
                       .ToListAsync();
+        public async Task<IEnumerable<RefundRecord>> GetByCreatedByAsync(string accountId, int take = 50) =>
+    await _col.Find(x => x.CreatedBy == accountId)
+              .SortByDescending(x => x.CreatedAt)
+              .Limit(take)
+              .ToListAsync();
     }
 }

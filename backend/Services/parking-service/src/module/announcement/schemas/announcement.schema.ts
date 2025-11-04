@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
 
+import { ANNOUNCEMENT_STATUSES } from '../enum/announcement.constant'; // 🔥 Import hằng số trạng thái
+
 export type AnnouncementDocument = Announcement & Document;
 
 @Schema({ timestamps: true })
@@ -13,7 +15,7 @@ export class Announcement {
 
   @Prop({ 
     type: String, 
-    enum: ['DRAFT', 'SCHEDULED', 'PUBLISHED', 'EXPIRED', 'SENT'],
+    enum: ANNOUNCEMENT_STATUSES,
     default: 'DRAFT',
   })
   status: string; // Trạng thái (DRAFT, SCHEDULED, PUBLISHED, SENT...)
