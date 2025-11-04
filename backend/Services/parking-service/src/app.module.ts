@@ -14,8 +14,6 @@ import { JwtAuthGuard } from './guard/jwtAuth.guard'
 import { HealthController } from './health.controller'
 import { AddressModule } from './module/address/address.module'
 import { BasisModule } from './module/basis/basis.module'
-import { BrandModule } from './module/brand/brand.module'
-import { ColorModule } from './module/color/color.module'
 import { NotificationModule } from './module/notification/notification.module'; 
 import { PackageRateModule } from './module/packageRate/packageRate.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
@@ -23,7 +21,6 @@ import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
 import { ParkingSpaceStatusModule } from './module/parkingSpaceStatus/parkingSpaceStatus.module'
 import { PricingPolicyModule } from './module/pricingPolicy/pricingPolicy.module'
 import { TieredRateSetModule } from './module/tieredRateSet/tieredRateSet.module'
-import { VehicleModule } from './module/vehicle/vehicle.module'
 import { WardModule } from './module/ward/ward.module'
 import { JwtStrategy } from './strategy/jwt.strategy'
 
@@ -53,9 +50,6 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     }),
     WardModule,
     AddressModule,
-    BrandModule,
-    ColorModule,
-    VehicleModule,
     ParkingLotModule,
     ParkingSpaceModule,
     ParkingSpaceStatusModule,

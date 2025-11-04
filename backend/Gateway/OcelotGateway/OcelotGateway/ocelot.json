@@ -384,54 +384,6 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
     {
-      "DownstreamPathTemplate": "/brands/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "parkingservice",
-          "Port": 5000
-        }
-      ],
-      "UpstreamPathTemplate": "/parking/brands/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/vehicle-types/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "parkingservice",
-          "Port": 5000
-        }
-      ],
-      "UpstreamPathTemplate": "/parking/vehicle-types/{everything}",
-      "UpstreamHttpMethod": [ "GET" ]
-    },
-    {
-      "DownstreamPathTemplate": "/colors/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "parkingservice",
-          "Port": 5000
-        }
-      ],
-      "UpstreamPathTemplate": "/parking/colors/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/vehicles/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "parkingservice",
-          "Port": 5000
-        }
-      ],
-      "UpstreamPathTemplate": "/parking/vehicles/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
-    },
-    {
       "DownstreamPathTemplate": "/health/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
