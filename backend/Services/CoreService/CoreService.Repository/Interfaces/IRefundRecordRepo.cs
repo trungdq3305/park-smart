@@ -14,5 +14,6 @@ namespace CoreService.Repository.Interfaces
 
         Task<RefundRecord?> GetByRefundIdAsync(string xenditRefundId);
         Task<IEnumerable<RefundRecord>> GetByPaymentAsync(string paymentRecordId);
+        Task<IEnumerable<RefundRecord>> GetByCreatedByAsync(string accountId, int take = 50);
     }
 }

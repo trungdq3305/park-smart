@@ -7,7 +7,6 @@ export interface ParkingSpaceCreationAttributes {
   parkingSpaceStatusId: string
   code: string
   level: number
-  isElectricCar: boolean
 }
 
 export interface IParkingSpaceRepository {

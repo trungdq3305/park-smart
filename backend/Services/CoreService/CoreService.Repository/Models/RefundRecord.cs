@@ -17,10 +17,15 @@ namespace CoreService.Repository.Models
         public string PaymentId { get; set; }
         [BsonRepresentation(BsonType.ObjectId)]
         public string ReservationId { get; set; }
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string ParkingLotSessionId { get; set; }
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string SubscriptionId { get; set; }
         public string XenditRefundId { get; set; }
         public long Amount { get; set; }
         public string Status { get; set; }
         public string? Reason { get; set; }
+        public string CreatedBy { get; set; }
         public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
     }
 }

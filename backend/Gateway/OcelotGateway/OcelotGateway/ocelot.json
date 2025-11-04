@@ -184,6 +184,22 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/payments/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/payments/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/operators/{operatorId}/reservations/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -467,7 +483,7 @@
       "UpstreamPathTemplate": "/parking/parking-spaces/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST" ]
     },
-    
+
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",

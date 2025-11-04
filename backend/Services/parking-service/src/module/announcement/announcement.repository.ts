@@ -1,9 +1,12 @@
-import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Injectable } from '@nestjs/common'
+import { InjectModel } from '@nestjs/mongoose'
+import { Model } from 'mongoose'
 
-import { IAnnouncementRepository } from './interfaces/iannouncement.repository';
-import { Announcement, AnnouncementDocument } from './schemas/announcement.schema';
+import { IAnnouncementRepository } from './interfaces/iannouncement.repository'
+import {
+  Announcement,
+  AnnouncementDocument,
+} from './schemas/announcement.schema'
 
 @Injectable()
 export class AnnouncementRepository implements IAnnouncementRepository {
@@ -13,11 +16,13 @@ export class AnnouncementRepository implements IAnnouncementRepository {
   ) {}
 
   async create(data: any): Promise<AnnouncementDocument> {
-    const newAnnouncement = new this.announcementModel(data);
-    return newAnnouncement.save();
+    const newAnnouncement = new this.announcementModel(data)
+    return newAnnouncement.save()
   }
 
-  async findPendingScheduled(currentTime: Date): Promise<AnnouncementDocument[]> {
+  async findPendingScheduled(
+    currentTime: Date,
+  ): Promise<AnnouncementDocument[]> {
     // Tìm những thông báo có:
     // 1. scheduleAt <= currentTime (đã đến giờ)
     // 2. status là 'SCHEDULED' (chưa được gửi)
@@ -26,7 +31,7 @@ export class AnnouncementRepository implements IAnnouncementRepository {
         scheduleAt: { $lte: currentTime },
         status: 'SCHEDULED',
       })
-      .exec();
+      .exec()
   }
 
   async markAsSent(announcementId: string): Promise<void> {
@@ -38,10 +43,10 @@ export class AnnouncementRepository implements IAnnouncementRepository {
         },
         { new: true },
       )
-      .exec();
+      .exec()
   }
-  
+
   async findAll(): Promise<AnnouncementDocument[]> {
-    return this.announcementModel.find().exec();
+    return this.announcementModel.find().exec()
   }
 }

@@ -4,7 +4,10 @@ import { Model, Types } from 'mongoose'
 
 import { CreateNotificationInternalDto } from './dto/notification.dto'
 import { INotificationRepository } from './interfaces/inotification.repository'
-import { Notification, NotificationDocument } from './schemas/notification.schema'
+import {
+  Notification,
+  NotificationDocument,
+} from './schemas/notification.schema'
 
 @Injectable()
 export class NotificationRepository implements INotificationRepository {
@@ -18,7 +21,6 @@ export class NotificationRepository implements INotificationRepository {
   ): Promise<NotificationDocument> {
     const createdNotification = new this.notificationModel({
       ...dto,
-      recipientId: new Types.ObjectId(dto.recipientId),
     })
     return createdNotification.save()
   }
@@ -33,7 +35,7 @@ export class NotificationRepository implements INotificationRepository {
 
   async findUnreadCountByRecipientId(userId: string): Promise<number> {
     return this.notificationModel.countDocuments({
-      recipientId: new Types.ObjectId(userId),
+      recipientId: userId,
       isRead: false,
     })
   }
@@ -42,7 +44,7 @@ export class NotificationRepository implements INotificationRepository {
     const result = await this.notificationModel.updateOne(
       {
         _id: new Types.ObjectId(notificationId),
-        recipientId: new Types.ObjectId(userId),
+        recipientId: userId,
         isRead: false,
       },
       {
@@ -55,7 +57,7 @@ export class NotificationRepository implements INotificationRepository {
   async markAllAsRead(userId: string): Promise<number> {
     const result = await this.notificationModel.updateMany(
       {
-        recipientId: new Types.ObjectId(userId),
+        recipientId: userId,
         isRead: false,
       },
       {
