@@ -62,7 +62,7 @@ namespace CoreService.API.Controllers
         }
         // Trong Controller
         [HttpGet("external/{externalId}")]
-        [Authorize(Roles = "Driver,Operator,Admin")]
+        //[Authorize(Roles = "Driver,Operator,Admin")]
         public async Task<IActionResult> GetByExternalId(string externalId)
         {
             var pr = await _payment.GetByExternalIdAsync(externalId);
