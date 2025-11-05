@@ -18,9 +18,14 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
   createSubscription(
     subscriptionData: CreateSubscriptionDto,
+    userId: string,
     session: ClientSession,
   ): Promise<Subscription | null> {
-    const createdSubscription = new this.subscriptionModel(subscriptionData)
+    const createdSubscription = new this.subscriptionModel({
+      ...subscriptionData,
+      createdBy: userId,
+      createdAt: new Date(),
+    })
     return createdSubscription.save({ session })
   }
 

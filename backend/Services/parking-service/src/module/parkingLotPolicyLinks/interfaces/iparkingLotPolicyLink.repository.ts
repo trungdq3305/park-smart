@@ -1,3 +1,5 @@
+import type { ClientSession } from 'mongoose' // <-- Thêm session
+
 import type {
   CreateParkingLotPolicyLinkDto,
   UpdateParkingLotPolicyLinkDto,
@@ -6,24 +8,20 @@ import type { ParkingLotPolicyLink } from '../schemas/parkingLotPolicyLink.schem
 
 export interface IParkingLotPolicyLinkRepository {
   /**
-   * Tạo một liên kết mới giữa bãi xe và chính sách giá.
-   * @param linkDto Dữ liệu để tạo liên kết.
+   * Tạo một liên kết mới.
    */
   createLink(
     linkDto: CreateParkingLotPolicyLinkDto,
+    session?: ClientSession, // <-- Nên có session
   ): Promise<ParkingLotPolicyLink>
 
   /**
    * Tìm một liên kết bằng ID.
-   * @param id ID của liên kết.
    */
   findLinkById(id: string): Promise<ParkingLotPolicyLink | null>
 
   /**
-   * Tìm tất cả các liên kết (đã, đang và sẽ áp dụng) cho một bãi xe cụ thể.
-   * @param parkingLotId ID của bãi xe.
-   * @param page Số trang.
-   * @param pageSize Kích thước trang.
+   * Tìm tất cả các liên kết (kể cả cũ) cho một bãi xe (cho Admin).
    */
   findAllLinksByParkingLot(
     parkingLotId: string,
@@ -32,32 +30,33 @@ export interface IParkingLotPolicyLinkRepository {
   ): Promise<{ data: ParkingLotPolicyLink[]; total: number }>
 
   /**
-   * Tìm liên kết chính sách đang có hiệu lực cho một bãi xe tại một thời điểm.
-   * Đây là hàm cốt lõi để xác định giá áp dụng khi xe vào bãi.
+   * ⭐️ SỬA ĐỔI QUAN TRỌNG ⭐️
+   * Tìm TẤT CẢ các liên kết chính sách đang CÓ HIỆU LỰC tại một thời điểm.
+   * (Service sẽ dùng 'priority' để lọc từ mảng này).
    * @param parkingLotId ID của bãi xe.
-   * @param date Thời điểm cần kiểm tra (thường là thời gian xe vào).
+   * @param date Thời điểm cần kiểm tra (thường là 'now').
    */
-  findActivePolicyLink(
+  findActivePolicyLinks( // <-- Sửa: Số nhiều (Links)
     parkingLotId: string,
     date: Date,
-  ): Promise<ParkingLotPolicyLink | null>
+  ): Promise<ParkingLotPolicyLink[]> // <-- Sửa: Trả về mảng []
 
   /**
    * Cập nhật một liên kết.
-   * Dùng chủ yếu để cập nhật 'endDate' nhằm vô hiệu hóa một chính sách giá cũ.
-   * @param id ID của liên kết cần cập nhật.
-   * @param linkDto Dữ liệu cập nhật.
    */
   updateLink(
     id: string,
     linkDto: UpdateParkingLotPolicyLinkDto,
+    session?: ClientSession, // <-- Nên có session
   ): Promise<boolean>
 
   /**
    * Xóa mềm một liên kết.
-   * @param id ID của liên kết cần xóa.
    */
-  softDeleteLink(id: string): Promise<boolean>
+  softDeleteLink(
+    id: string,
+    session?: ClientSession, // <-- Nên có session
+  ): Promise<boolean>
 }
 
 export const IParkingLotPolicyLinkRepository = Symbol(
