@@ -12,8 +12,9 @@ export interface IParkingLotPolicyLinkRepository {
    */
   createLink(
     linkDto: CreateParkingLotPolicyLinkDto,
+    userId: string,
     session?: ClientSession, // <-- Nên có session
-  ): Promise<ParkingLotPolicyLink>
+  ): Promise<ParkingLotPolicyLink | null>
 
   /**
    * Tìm một liên kết bằng ID.
@@ -47,6 +48,7 @@ export interface IParkingLotPolicyLinkRepository {
   updateLink(
     id: string,
     linkDto: UpdateParkingLotPolicyLinkDto,
+    userId: string,
     session?: ClientSession, // <-- Nên có session
   ): Promise<boolean>
 
@@ -55,6 +57,7 @@ export interface IParkingLotPolicyLinkRepository {
    */
   softDeleteLink(
     id: string,
+    userId: string,
     session?: ClientSession, // <-- Nên có session
   ): Promise<boolean>
 }

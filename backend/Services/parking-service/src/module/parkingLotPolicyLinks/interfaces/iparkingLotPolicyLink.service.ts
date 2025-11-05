@@ -31,17 +31,13 @@ export interface IParkingLotPolicyLinkService {
     id: IdDto,
     updateDto: UpdateParkingLotPolicyLinkDto,
     userId: string,
-  ): Promise<ParkingLotPolicyLinkResponseDto>
+  ): Promise<boolean>
 
   /**
    * Lấy thông tin chi tiết một liên kết bằng ID.
    * @param id ID của liên kết.
-   * @param userId ID của người vận hành (để kiểm tra quyền).
    */
-  findLinkById(
-    id: IdDto,
-    userId: string,
-  ): Promise<ParkingLotPolicyLinkResponseDto>
+  findLinkById(id: IdDto): Promise<ParkingLotPolicyLinkResponseDto>
 
   /**
    * (Cho Admin) Lấy tất cả các liên kết (kể cả cũ/hết hạn) của 1 bãi xe.
