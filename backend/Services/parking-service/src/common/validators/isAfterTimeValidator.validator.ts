@@ -30,6 +30,7 @@ export class IsAfterTimeConstraint implements ValidatorConstraintInterface {
   // Hàm để trả về thông báo lỗi mặc định
   defaultMessage(arguments_: ValidationArguments) {
     const [relatedPropertyName] = arguments_.constraints
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     return `${arguments_.property} phải sau ${relatedPropertyName}`
   }
 }

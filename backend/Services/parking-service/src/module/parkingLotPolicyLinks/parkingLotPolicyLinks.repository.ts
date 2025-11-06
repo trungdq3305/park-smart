@@ -20,9 +20,14 @@ export class ParkingLotPolicyLinksRepository
 
   createLink(
     linkDto: CreateParkingLotPolicyLinkDto,
+    userId: string,
     session?: ClientSession,
-  ): Promise<ParkingLotPolicyLink> {
-    const createdLink = new this.parkingLotPolicyLinkModel(linkDto)
+  ): Promise<ParkingLotPolicyLink | null> {
+    const createdLink = new this.parkingLotPolicyLinkModel({
+      ...linkDto,
+      createdBy: userId,
+      createdAt: new Date(),
+    })
     if (session) {
       return createdLink.save({ session })
     }
@@ -83,19 +88,33 @@ export class ParkingLotPolicyLinksRepository
       .exec()
   }
 
-  updateLink(
+  async updateLink(
     id: string,
     linkDto: UpdateParkingLotPolicyLinkDto,
+    userId: string,
     session?: ClientSession,
   ): Promise<boolean> {
-    throw new Error('Method not implemented.')
+    const data = await this.parkingLotPolicyLinkModel.findByIdAndUpdate(
+      id,
+      {
+        $set: { ...linkDto, updatedBy: userId, updatedAt: new Date() },
+      },
+      session ? { session } : {},
+    )
+    return data ? true : false
   }
 
-  async softDeleteLink(id: string, session?: ClientSession): Promise<boolean> {
+  async softDeleteLink(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean> {
     const data = await this.parkingLotPolicyLinkModel
       .findByIdAndUpdate(
         id,
-        { deletedAt: new Date() },
+        {
+          $set: { deletedAt: new Date(), deletedBy: userId },
+        },
         session ? { session } : {},
       )
       .exec()

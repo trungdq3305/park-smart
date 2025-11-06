@@ -80,7 +80,7 @@ export class PackageRateRepository implements IPackageRateRepository {
 
   async findPackageRateById(id: string): Promise<PackageRate | null> {
     const packageRate = await this.packageRateModel
-      .findOne({ _id: id, deletedAt: false })
+      .findOne({ _id: id, deletedAt: null })
       .lean()
       .exec()
     return packageRate
@@ -94,13 +94,13 @@ export class PackageRateRepository implements IPackageRateRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.packageRateModel
-        .find({ createdBy: userId, deletedAt: false })
+        .find({ createdBy: userId, deletedAt: null })
         .skip(skip)
         .limit(pageSize)
         .lean()
         .exec(),
       this.packageRateModel
-        .countDocuments({ createdBy: userId, deletedAt: false })
+        .countDocuments({ createdBy: userId, deletedAt: null })
         .exec(),
     ])
     return { data, total }
