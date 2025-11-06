@@ -11,6 +11,8 @@ import {
   IsOptional,
   Min,
 } from 'class-validator'
+import { IsAfterNow } from 'src/common/decorators/isAfterNow.decorator'
+import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
 
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies ---
@@ -52,13 +54,17 @@ export class CreateParkingLotPolicyLinkDto {
     {},
     { message: 'startDate phải là định dạng ngày tháng hợp lệ' },
   )
+  @IsAfterTime('endDate', {
+    message: 'Ngày kết thúc phải lớn hơn ngày bắt đầu.',
+  })
+  @IsAfterNow({ message: 'Ngày bắt đầu phải là tương lai.' })
   startDate: string
 
   @ApiProperty({
     description: 'Ngày kết thúc hiệu lực (ISO 8601)',
     example: '2026-11-20T00:00:00.000Z',
   })
-  @IsNotEmpty({ message: 'endDate không được để trống' })
+  @IsOptional()
   @IsDateString({}, { message: 'endDate phải là định dạng ngày tháng hợp lệ' })
   endDate: string
 }

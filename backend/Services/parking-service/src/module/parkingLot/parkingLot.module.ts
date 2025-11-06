@@ -55,5 +55,6 @@ import {
     },
     ParkingLotGateway,
   ],
+  exports: [IParkingLotService, IParkingLotRepository],
 })
 export class ParkingLotModule {}

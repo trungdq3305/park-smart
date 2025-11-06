@@ -23,11 +23,11 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.tieredRateSetModel
-        .find({ deletedAt: false })
+        .find({ deletedAt: null })
         .skip(skip)
         .limit(pageSize)
         .exec(),
-      this.tieredRateSetModel.countDocuments({ deletedAt: false }),
+      this.tieredRateSetModel.countDocuments({ deletedAt: null }),
     ])
     return { data, total }
   }
@@ -66,13 +66,13 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.tieredRateSetModel
-        .find({ createdBy: userId, deletedAt: false })
+        .find({ createdBy: userId, deletedAt: null })
         .skip(skip)
         .limit(pageSize)
         .exec(),
       this.tieredRateSetModel.countDocuments({
         createdBy: userId,
-        deletedAt: false,
+        deletedAt: null,
       }),
     ])
     return { data, total }
@@ -87,7 +87,7 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     userId: string,
   ): Promise<TieredRateSet | null> {
     return await this.tieredRateSetModel
-      .findOne({ _id: id, createdBy: userId, deletedAt: false })
+      .findOne({ _id: id, createdBy: userId, deletedAt: null })
       .lean()
       .exec()
   }
@@ -99,7 +99,7 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
   ): Promise<TieredRateSet | null> {
     return await this.tieredRateSetModel
       .findOneAndUpdate(
-        { _id: id, createdBy: userId, deletedAt: false },
+        { _id: id, createdBy: userId, deletedAt: null },
         { $set: { ...dto } },
         {
           new: true,
@@ -122,7 +122,7 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     userId: string,
   ): Promise<TieredRateSet | null> {
     return await this.tieredRateSetModel
-      .findOne({ name, createdBy: userId, deletedAt: false })
+      .findOne({ name, createdBy: userId, deletedAt: null })
       .lean()
       .exec()
   }

@@ -93,6 +93,16 @@ export interface IPricingPolicyRepository {
     page: number,
     pageSize: number,
   ): Promise<{ data: PricingPolicy[]; total: number }>
+
+  /**
+   * Tìm một chính sách giá theo tên và người tạo.
+   * @param name Tên của chính sách giá.
+   * @param userId ID của người vận hành (ParkingLotOperator) đã tạo chính sách này.
+   */
+  findByNameAndCreator(
+    name: string,
+    userId: string,
+  ): Promise<PricingPolicy | null>
 }
 
 export const IPricingPolicyRepository = Symbol('IPricingPolicyRepository')

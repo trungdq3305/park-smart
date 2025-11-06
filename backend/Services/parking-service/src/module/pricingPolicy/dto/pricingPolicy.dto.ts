@@ -27,7 +27,7 @@ export class CreatePricingPolicyDto {
   @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
   @IsOptional()
   @IsMongoId()
-  packageRateSetId: string
+  packageRateId: string
 
   @ApiProperty({ example: 'Gói theo tháng', description: 'Tên chính sách giá' })
   @IsNotEmpty()
