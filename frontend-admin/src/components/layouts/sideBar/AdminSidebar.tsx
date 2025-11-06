@@ -65,24 +65,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Analytics',
     },
     {
-      key: '/reports',
+      key: '/admin/reports',
       icon: <FileTextOutlined />,
       label: 'Reports',
     },
     {
-      key: '/integrations',
+      key: '/admin/terms-policies',
       icon: <AppstoreOutlined />,
-      label: 'Integrations',
-    },
-    {
-      key: '/companies',
-      icon: <BankOutlined />,
-      label: 'Companies',
-    },
-    {
-      key: '/vehicles',
-      icon: <CarOutlined />,
-      label: 'Vehicles',
+      label: 'Terms & Policies',
     },
     {
       key: '/payments',

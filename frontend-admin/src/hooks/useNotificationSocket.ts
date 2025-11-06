@@ -1,6 +1,6 @@
 // src/hooks/useNotificationSocket.ts
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import io, { Socket } from 'socket.io-client';
 import Cookies from 'js-cookie';
 import { message } from 'antd';

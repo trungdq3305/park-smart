@@ -9,6 +9,7 @@ const OperatorLayout = lazy(() => import('../components/layouts/layout/OperatorL
 const LoginPage = lazy(() => import('../pages/LoginPage'))
 const ManageAccountPage = lazy(() => import('../pages/admin/ManageAccountPage'))
 const CreateParkingLot = lazy(() => import('../pages/operator/CreateParkingLot'))
+const ManageTermsPolicies = lazy(() => import('../pages/admin/terms-policies/ManageTermsPolicies'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -30,6 +31,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/admin/manage-account',
         component: ManageAccountPage,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/terms-policies',
+        component: ManageTermsPolicies,
         role: ['Admin'],
       },
     ],
