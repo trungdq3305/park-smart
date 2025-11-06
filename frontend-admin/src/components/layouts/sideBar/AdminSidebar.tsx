@@ -5,7 +5,6 @@ import {
   BarChartOutlined,
   FileTextOutlined,
   AppstoreOutlined,
-  BankOutlined,
   TeamOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
