@@ -1,17 +1,17 @@
 .tp-page {
-  padding: 24px;
+  padding: 2.4vh;
 }
 
 .tp-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 2vh;
 }
 
 .tp-title {
   display: flex;
-  gap: 12px;
+  gap: 1.2vh;
   align-items: center;
 }
 
@@ -21,7 +21,7 @@
 }
 
 .tp-title p {
-  margin: 2px 0 0 0;
+  margin: 0.2vh 0 0 0;
   color: #6b7280;
   font-size: 13px;
 }
@@ -30,25 +30,25 @@
   background: #fff;
   border: 1px solid #eef0f3;
   border-radius: 10px;
-  padding: 16px;
+  padding: 1.6vh;
 }
 
 .tp-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 40px 0;
+  padding: 4vh 0;
   color: #6b7280;
 }
 
 .spinner {
-  width: 28px;
-  height: 28px;
+  width: 2.8vh;
+  height: 2.8vh;
   border-radius: 50%;
   border: 3px solid #e5e7eb;
   border-top-color: #1677ff;
   animation: spin 0.8s linear infinite;
-  margin-bottom: 10px;
+  margin-bottom: 1vh;
 }
 
 @keyframes spin {
@@ -56,7 +56,7 @@
 }
 
 .tp-empty {
-  padding: 40px 0;
+  padding: 4vh 0;
   text-align: center;
 }
 
@@ -67,14 +67,14 @@
 .tp-table {
   width: 100%;
   border-collapse: separate;
-  border-spacing: 0 10px;
+  border-spacing: 0 1vh;
 }
 
 .tp-table thead th {
   text-align: left;
   font-weight: 600;
   color: #6b7280;
-  padding: 12px 14px;
+  padding: 1.2vh 14px;
 }
 
 .tp-table tbody tr {
@@ -83,19 +83,19 @@
 }
 
 .tp-table tbody td {
-  padding: 14px;
+  padding: 1.4vh;
   vertical-align: top;
 }
 
 .tp-title-cell .tp-title-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 1.2vh;
 }
 
 .tp-avatar {
-  width: 36px;
-  height: 36px;
+  width: 3.6vh;
+  height: 3.6vh;
   border-radius: 8px;
   background: #e6f4ff;
   color: #1677ff;
@@ -125,7 +125,7 @@
 
 .tp-actions {
   display: flex;
-  gap: 8px;
+  gap: 0.8vh;
 }
 
 
