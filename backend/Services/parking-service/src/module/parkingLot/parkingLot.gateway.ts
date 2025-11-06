@@ -61,7 +61,7 @@ export class ParkingLotGateway
    * Gửi cập nhật số chỗ trống đến một khu vực cụ thể.
    */
   sendSpotsUpdate(roomName: string, payload: ParkingLotSpotsUpdateDto) {
-    console.log(roomName)
+    console.log(payload)
     this.server.to(roomName).emit('parking-lot-spots-updated', payload)
   }
 

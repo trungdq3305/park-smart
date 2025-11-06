@@ -37,52 +37,72 @@ namespace CoreService.Application.Applications
             _mapper = mapper;
         }
 
-        public async Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetAllAsync(int? page, int? pageSize)
+        public async Task<ApiResponse<AccountListResponseDto>> GetAllAsync(int? page, int? pageSize)
         {
-            var accounts = await _accountRepo.GetAllAsync();
+            // 1. Lấy tất cả dữ liệu cần thiết từ database một cách đồng thời
+            var accountsTask = _accountRepo.GetAllAsync();
+            var driversTask = _driverRepo.GetAllAsync(); // Giả sử bạn có phương thức GetAllAsync
+            var operatorsTask = _operatorRepo.GetAllAsync(); // Giả sử bạn có phương thức GetAllAsync
+            var adminsTask = _adminRepo.GetAllAsync(); // Giả sử bạn có phương thức GetAllAsync
+
+            await Task.WhenAll(accountsTask, driversTask, operatorsTask, adminsTask);
+
+            var accounts = await accountsTask;
+            var drivers = await driversTask;
+            var operators = await operatorsTask;
+            var admins = await adminsTask;
+
+            // 2. Tạo các Dictionary để tra cứu nhanh thông tin role theo AccountId
+            var driversByAccountId = drivers.ToDictionary(d => d.AccountId);
+            var operatorsByAccountId = operators.ToDictionary(o => o.AccountId);
+            var adminsByAccountId = admins.ToDictionary(a => a.AccountId);
+
             var result = new List<AccountDetailDto>();
 
+            // 3. Map dữ liệu mà không cần gọi database trong vòng lặp
             foreach (var account in accounts)
             {
                 var dto = _mapper.Map<AccountDetailDto>(account);
 
                 // Ưu tiên check Driver trước
-                var driver = await _driverRepo.GetByAccountIdAsync(account.Id);
-                if (driver != null)
+                if (driversByAccountId.TryGetValue(account.Id, out var driver))
                 {
                     dto.RoleName = "Driver";
                     dto.DriverDetail = _mapper.Map<DriverDto>(driver);
                 }
+                else if (operatorsByAccountId.TryGetValue(account.Id, out var op))
+                {
+                    dto.RoleName = "Operator";
+                    dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
+                }
+                else if (adminsByAccountId.TryGetValue(account.Id, out var admin))
+                {
+                    dto.RoleName = "Admin";
+                    dto.AdminDetail = _mapper.Map<AdminDto>(admin);
+                }
                 else
                 {
-                    var op = await _operatorRepo.GetByAccountIdAsync(account.Id);
-                    if (op != null)
-                    {
-                        dto.RoleName = "Operator";
-                        dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
-                    }
-                    else
-                    {
-                        var admin = await _adminRepo.GetByAccountIdAsync(account.Id);
-                        if (admin != null)
-                        {
-                            dto.RoleName = "Admin";
-                            dto.AdminDetail = _mapper.Map<AdminDto>(admin);
-                        }
-                        else
-                        {
-                            dto.RoleName = "Unknown"; // Không tìm thấy trong bảng nào
-                        }
-                    }
+                    dto.RoleName = "Unknown"; // Không tìm thấy trong bảng nào
                 }
 
                 result.Add(dto);
             }
 
+            // 4. Phân trang kết quả cuối cùng
             var pagedResult = PaginationDto<AccountDetailDto>.Create(result, page, pageSize);
 
-            return new ApiResponse<PaginationDto<AccountDetailDto>>(
-                pagedResult,
+            // 5. Tạo đối tượng response cuối cùng với các số liệu thống kê
+            var responseData = new AccountListResponseDto
+            {
+                PagedAccounts = pagedResult,
+                TotalUsers = accounts.Count(),
+                TotalDrivers = drivers.Count(),
+                TotalOperators = operators.Count(),
+                TotalAdmins = admins.Count()
+            };
+
+            return new ApiResponse<AccountListResponseDto>(
+                responseData,
                 true,
                 "Lấy danh sách account thành công",
                 StatusCodes.Status200OK

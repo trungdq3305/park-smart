@@ -56,6 +56,12 @@ export interface IParkingLotRepository {
     id: string,
     session?: ClientSession,
   ): Promise<ParkingLot | null>
+
+  updateBookingSlotDurationHours(
+    id: string,
+    durationHours: number,
+    session?: ClientSession,
+  ): Promise<boolean>
 }
 
 export const IParkingLotRepository = Symbol('IParkingLotRepository')

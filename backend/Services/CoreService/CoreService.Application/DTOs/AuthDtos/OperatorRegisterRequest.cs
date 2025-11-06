@@ -22,5 +22,6 @@ namespace CoreService.Application.DTOs.AuthDtos
         public string PhoneNumber { get; set; }
 
         public string FullName { get; set; }
+        public bool IsAgreeToP { get; set; }
     }
 }

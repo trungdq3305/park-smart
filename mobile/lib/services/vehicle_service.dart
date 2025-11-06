@@ -30,7 +30,7 @@ class VehicleService {
   static Future<Map<String, dynamic>> createVehicle({
     required String plateNumber,
     required String colorId,
-    required String vehicleTypeId,
+    required bool isElectricCar,
     required String brandId,
   }) async {
     final token = await _getToken();
@@ -43,7 +43,7 @@ class VehicleService {
     final body = {
       'plateNumber': plateNumber,
       'colorId': colorId,
-      'vehicleTypeId': vehicleTypeId,
+      'isElectricCar': isElectricCar,
       'brandId': brandId,
     };
 
@@ -103,7 +103,7 @@ class VehicleService {
   static Future<Map<String, dynamic>> updateVehicle({
     required String vehicleId,
     String? colorId,
-    String? vehicleTypeId,
+    bool? isElectricCar,
     String? brandId,
   }) async {
     final token = await _getToken();
@@ -112,13 +112,10 @@ class VehicleService {
     }
 
     final url = Uri.parse('$_baseUrl/parking/vehicles/$vehicleId');
-    print('Update vehicle URL: $url');
-    print('Vehicle ID: $vehicleId');
-    print('Token: ${token.substring(0, 20)}...');
 
     final Map<String, dynamic> body = {};
     if (colorId != null) body['colorId'] = colorId;
-    if (vehicleTypeId != null) body['vehicleTypeId'] = vehicleTypeId;
+    if (isElectricCar != null) body['isElectricCar'] = isElectricCar;
     if (brandId != null) body['brandId'] = brandId;
 
     print('Update request body: $body');
@@ -248,32 +245,6 @@ class VehicleService {
     }
   }
 
-  // Lấy danh sách loại xe (types)
-  static Future<Map<String, dynamic>> getVehicleTypes() async {
-    final token = await _getToken();
-    if (token == null) {
-      throw Exception('No authentication token found');
-    }
-
-    final url = Uri.parse('$_baseUrl/parking/vehicle-types');
-
-    final response = await http.get(
-      url,
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception(
-        'Failed to get vehicle types: ${response.statusCode} - ${response.body}',
-      );
-    }
-  }
-
   // Lấy thông tin chi tiết một xe
   static Future<Map<String, dynamic>> getVehicleById(String vehicleId) async {
     final token = await _getToken();
@@ -318,14 +289,31 @@ class VehicleService {
     );
 
     print('Get all deleted vehicles response status: ${response.statusCode}');
-    print('Get all deleted vehicles response body: ${response.body}');
+    if (response.statusCode == 404) {
+      try {
+        final Map<String, dynamic> bodyJson = jsonDecode(response.body);
+        final String? message = bodyJson['message'] as String?;
+        if (message != null && message.isNotEmpty) {
+          print(message);
+        }
+      } catch (_) {
+        // If body isn't JSON or doesn't contain message, skip printing body
+      }
+    }
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
+    } else if (response.statusCode == 404) {
+      try {
+        final Map<String, dynamic> bodyJson = jsonDecode(response.body);
+        final String message =
+            (bodyJson['message'] as String?) ?? 'Không tìm thấy xe đã xóa nào';
+        throw Exception(message);
+      } catch (_) {
+        throw Exception('Không tìm thấy xe đã xóa nào');
+      }
     } else {
-      throw Exception(
-        'Failed to get deleted vehicles: ${response.statusCode} - ${response.body}',
-      );
+      throw Exception('Failed to get deleted vehicles: ${response.statusCode}');
     }
   }
 }

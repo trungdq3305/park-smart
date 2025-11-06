@@ -26,7 +26,14 @@
         }
       ],
       "UpstreamPathTemplate": "/core/auths/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "UpstreamHttpMethod": [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS"
+      ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
@@ -177,6 +184,22 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/payments/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/payments/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/operators/{operatorId}/reservations/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
@@ -218,6 +241,102 @@
         }
       ],
       "UpstreamPathTemplate": "/uploads/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/events/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/events/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/promotions/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/promotions/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/blacklists/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/blacklists/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/favourites/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/favourites/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/reports/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/reports/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/reportcategories/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/reportcategories/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
@@ -281,7 +400,7 @@
       "UpstreamHttpMethod": [ "GET" ]
     },
     {
-      "DownstreamPathTemplate": "/brands/{everything}",
+      "DownstreamPathTemplate": "/health/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -289,23 +408,11 @@
           "Port": 5000
         }
       ],
-      "UpstreamPathTemplate": "/parking/brands/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
-    },
-    {
-      "DownstreamPathTemplate": "/vehicle-types/{everything}",
-      "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "parkingservice",
-          "Port": 5000
-        }
-      ],
-      "UpstreamPathTemplate": "/parking/vehicle-types/{everything}",
+      "UpstreamPathTemplate": "/parking/health/{everything}",
       "UpstreamHttpMethod": [ "GET" ]
     },
     {
-      "DownstreamPathTemplate": "/colors/{everything}",
+      "DownstreamPathTemplate": "/basis/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -313,11 +420,11 @@
           "Port": 5000
         }
       ],
-      "UpstreamPathTemplate": "/parking/colors/{everything}",
-      "UpstreamHttpMethod": [ "GET", "POST", "PUT", "PATCH", "DELETE" ]
+      "UpstreamPathTemplate": "/parking/basis/{everything}",
+      "UpstreamHttpMethod": [ "GET" ]
     },
     {
-      "DownstreamPathTemplate": "/vehicles/{everything}",
+      "DownstreamPathTemplate": "/package-rates/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -325,7 +432,19 @@
           "Port": 5000
         }
       ],
-      "UpstreamPathTemplate": "/parking/vehicles/{everything}",
+      "UpstreamPathTemplate": "/parking/package-rates/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/tiered-rate-sets/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/tiered-rate-sets/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
@@ -341,27 +460,36 @@
       "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
-      "UpstreamPathTemplate": "/parking/notifications/{everything}",
-      "UpstreamHttpMethod": [ "GET" ],
-      "UpstreamScheme": "wss",
-      "DownstreamScheme": "ws",
+      "DownstreamPathTemplate": "/notifications/{everything}",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
           "Host": "parkingservice",
           "Port": 5000
         }
       ],
-      "DownstreamPathTemplate": "/{everything}",
-      "QoSOptions": {
-        "TimeoutValue": 3600000 // Tăng timeout lên 1 giờ (3,600,000 mili giây)
-      }
+      "UpstreamPathTemplate": "/parking/notifications/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH" ]
     },
+    {
+      "DownstreamPathTemplate": "/parking-spaces/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/parking-spaces/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST" ]
+    },
+
     {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
-          "Host": "parkingservice", // Sửa từ localhost thành parkingservice
+          "Host": "parkingservice",
           "Port": 5000
         }
       ],

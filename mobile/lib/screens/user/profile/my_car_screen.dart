@@ -21,13 +21,11 @@ class _MyCarScreenState extends State<MyCarScreen>
   // Data for dropdowns
   List<Map<String, dynamic>> brands = [];
   List<Map<String, dynamic>> colors = [];
-  List<Map<String, dynamic>> vehicleTypes = [];
-
   // Form controllers
   final TextEditingController _plateNumberController = TextEditingController();
   String? _selectedBrandId;
   String? _selectedColorId;
-  String? _selectedVehicleTypeId;
+  bool _isElectricCar = false;
 
   // Loading states for dropdowns
   bool _isLoadingDropdowns = false;
@@ -125,7 +123,6 @@ class _MyCarScreenState extends State<MyCarScreen>
       final results = await Future.wait([
         VehicleService.getBrands(),
         VehicleService.getColors(),
-        VehicleService.getVehicleTypes(),
       ]);
 
       setState(() {
@@ -142,17 +139,13 @@ class _MyCarScreenState extends State<MyCarScreen>
           brands = [];
         }
 
-        // Colors và VehicleTypes có structure bình thường: data chứa array
+        // Colors có structure bình thường: data chứa array
         final allColors = List<Map<String, dynamic>>.from(
           results[1]['data'] ?? [],
         );
         colors = allColors
             .where((color) => color['deletedAt'] == null)
             .toList();
-
-        vehicleTypes = List<Map<String, dynamic>>.from(
-          results[2]['data'] ?? [],
-        );
         _isLoadingDropdowns = false;
       });
     } catch (e) {
@@ -183,10 +176,9 @@ class _MyCarScreenState extends State<MyCarScreen>
               plateNumberController: _plateNumberController,
               selectedBrandId: _selectedBrandId,
               selectedColorId: _selectedColorId,
-              selectedVehicleTypeId: _selectedVehicleTypeId,
+              isElectricCar: _isElectricCar,
               brands: brands,
               colors: colors,
-              vehicleTypes: vehicleTypes,
               onBrandChanged: (value) {
                 setDialogState(() {
                   _selectedBrandId = value;
@@ -197,9 +189,9 @@ class _MyCarScreenState extends State<MyCarScreen>
                   _selectedColorId = value;
                 });
               },
-              onVehicleTypeChanged: (value) {
+              onElectricCarChanged: (value) {
                 setDialogState(() {
-                  _selectedVehicleTypeId = value;
+                  _isElectricCar = value;
                 });
               },
               errorMessage: _errorMessage,
@@ -222,7 +214,7 @@ class _MyCarScreenState extends State<MyCarScreen>
     _plateNumberController.text = vehicle['plateNumber'] ?? '';
     _selectedBrandId = vehicle['brandId']?['_id'];
     _selectedColorId = vehicle['colorId']?['_id'];
-    _selectedVehicleTypeId = vehicle['vehicleTypeId']?['_id'];
+    _isElectricCar = vehicle['isElectricCar'] ?? false;
 
     showDialog(
       context: context,
@@ -235,10 +227,9 @@ class _MyCarScreenState extends State<MyCarScreen>
               plateNumberController: _plateNumberController,
               selectedBrandId: _selectedBrandId,
               selectedColorId: _selectedColorId,
-              selectedVehicleTypeId: _selectedVehicleTypeId,
+              isElectricCar: _isElectricCar,
               brands: brands,
               colors: colors,
-              vehicleTypes: vehicleTypes,
               onBrandChanged: (value) {
                 setDialogState(() {
                   _selectedBrandId = value;
@@ -249,9 +240,9 @@ class _MyCarScreenState extends State<MyCarScreen>
                   _selectedColorId = value;
                 });
               },
-              onVehicleTypeChanged: (value) {
+              onElectricCarChanged: (value) {
                 setDialogState(() {
-                  _selectedVehicleTypeId = value;
+                  _isElectricCar = value;
                 });
               },
               errorMessage: _errorMessage,
@@ -270,7 +261,7 @@ class _MyCarScreenState extends State<MyCarScreen>
     _plateNumberController.clear();
     _selectedBrandId = null;
     _selectedColorId = null;
-    _selectedVehicleTypeId = null;
+    _isElectricCar = false;
     _errorMessage = null;
   }
 
@@ -278,7 +269,7 @@ class _MyCarScreenState extends State<MyCarScreen>
     if (_plateNumberController.text.isEmpty ||
         _selectedBrandId == null ||
         _selectedColorId == null ||
-        _selectedVehicleTypeId == null) {
+        false) {
       setState(() {
         _errorMessage = 'Vui lòng điền đầy đủ thông tin';
       });
@@ -295,7 +286,7 @@ class _MyCarScreenState extends State<MyCarScreen>
         plateNumber: _plateNumberController.text.trim(),
         brandId: _selectedBrandId!,
         colorId: _selectedColorId!,
-        vehicleTypeId: _selectedVehicleTypeId!,
+        isElectricCar: _isElectricCar,
       );
 
       Navigator.of(context).pop();
@@ -316,7 +307,7 @@ class _MyCarScreenState extends State<MyCarScreen>
     if (_plateNumberController.text.isEmpty ||
         _selectedBrandId == null ||
         _selectedColorId == null ||
-        _selectedVehicleTypeId == null) {
+        false) {
       setState(() {
         _errorMessage = 'Vui lòng điền đầy đủ thông tin';
       });
@@ -333,7 +324,7 @@ class _MyCarScreenState extends State<MyCarScreen>
         vehicleId: vehicleId,
         brandId: _selectedBrandId!,
         colorId: _selectedColorId!,
-        vehicleTypeId: _selectedVehicleTypeId!,
+        isElectricCar: _isElectricCar,
       );
 
       Navigator.of(context).pop();

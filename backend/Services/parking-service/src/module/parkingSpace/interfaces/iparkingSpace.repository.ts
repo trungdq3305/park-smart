@@ -7,7 +7,6 @@ export interface ParkingSpaceCreationAttributes {
   parkingSpaceStatusId: string
   code: string
   level: number
-  isElectricCar: boolean
 }
 
 export interface IParkingSpaceRepository {
@@ -15,17 +14,21 @@ export interface IParkingSpaceRepository {
     spaces: ParkingSpaceCreationAttributes[], // Định nghĩa kiểu dữ liệu chính xác hơn ở đây
     session?: ClientSession, // Thêm tham số session tùy chọn
   ): Promise<boolean>
-  findByParkingLotId(parkingLotId: string): Promise<ParkingSpace[]>
+  findByParkingLotId(
+    parkingLotId: string,
+    level: number,
+  ): Promise<ParkingSpace[]>
   findById(id: string): Promise<ParkingSpace | null>
   updateStatus(
     id: string,
     parkingSpaceStatusId: string,
     session?: ClientSession, // Thêm tham số session tùy chọn
-  ): Promise<ParkingSpace | null>
+  ): Promise<any>
   deleteByParkingLotId(
     parkingLotId: string,
     session?: ClientSession, // Thêm tham số session tùy chọn
   ): Promise<void>
+  findParkingLotOperatorIdBySpaceId(id: string): Promise<string | null>
 }
 
 export const IParkingSpaceRepository = Symbol('IParkingSpaceRepository')

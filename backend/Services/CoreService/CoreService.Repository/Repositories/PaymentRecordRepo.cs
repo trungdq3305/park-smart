@@ -72,5 +72,10 @@ namespace CoreService.Repository.Repositories
             await _col.Find(x => x.OperatorId == operatorId && x.ReservationId == reservationId)
                       .SortByDescending(x => x.CreatedAt)
                       .FirstOrDefaultAsync();
+        public async Task<IEnumerable<PaymentRecord>> GetByCreatedByAsync(string accountId, int take = 50) =>
+    await _col.Find(x => x.CreatedBy == accountId)
+              .SortByDescending(x => x.CreatedAt)
+              .Limit(take)
+              .ToListAsync();
     }
 }

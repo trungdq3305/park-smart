@@ -52,11 +52,12 @@ builder.Services.AddHttpClient<IXenditClient, XenditClient>((sp, http) =>
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.WithOrigins("http://localhost:5173") // Ch? cho phép URL này
               .AllowAnyHeader()
-              .AllowAnyMethod();
+              .AllowAnyMethod()
+              .AllowCredentials(); // <-- R?T QUAN TR?NG KHI CÓ XÁC TH?C
     });
 });
 builder.Services.AddScoped<JwtTokenHelper>();
@@ -201,7 +202,8 @@ if (app.Environment.IsDevelopment() || true)
     app.UseSwaggerUI();
 }
 //app.UseHttpsRedirection();
-app.UseCors("AllowAll");
+
+app.UseCors("AllowSpecificOrigin");
 app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseAuthentication();   // ? parse token tr??c

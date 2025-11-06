@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   ConflictException,
   Inject,
@@ -10,13 +11,11 @@ import { InjectConnection } from '@nestjs/mongoose' // Import InjectConnection
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import { ClientSession, Connection } from 'mongoose' // Import Connection
-import * as geohash from 'ngeohash'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto, ParkingLotIdDto } from 'src/common/dto/params.dto'
 
 import { IAddressRepository } from '../address/interfaces/iaddress.repository'
-import { Address } from '../address/schemas/address.schema'
 import {
   IParkingSpaceRepository,
   ParkingSpaceCreationAttributes,
@@ -77,15 +76,8 @@ export class ParkingLotService implements IParkingLotService {
     })
   }
 
-  private determineRoomForParkingLot(address: Address): string {
-    // Lấy kinh độ và vĩ độ từ document Address
-    const longitude = address.longitude
-    const latitude = address.latitude
-
-    // Mã hóa tọa độ thành chuỗi geohash với độ chính xác là 7
-    const roomName = geohash.encode(latitude, longitude, 7)
-
-    return `room_${roomName}`
+  private determineRoomForParkingLot(): string {
+    return `room_${String(123456)}`
   }
 
   private async _createParkingSpaces(
@@ -104,20 +96,14 @@ export class ParkingLotService implements IParkingLotService {
     }
 
     for (let level = 1; level <= parkingLot.totalLevel; level++) {
-      const numberOfElectricSpaces = Math.round(
-        (parkingLot.totalCapacityEachLevel * parkingLot.electricCarPercentage) /
-          100,
-      )
       const codePrefix = level === 1 ? 'G' : `L${(level - 1).toString()}`
 
       for (let i = 1; i <= parkingLot.totalCapacityEachLevel; i++) {
-        const isElectric = i <= numberOfElectricSpaces
         spacesToCreate.push({
           parkingLotId: parkingLot._id,
           parkingSpaceStatusId: defaultStatus,
           code: `${codePrefix}-${i.toString()}`,
           level: level,
-          isElectricCar: isElectric,
         })
       }
     }
@@ -138,6 +124,17 @@ export class ParkingLotService implements IParkingLotService {
     )
     if (!addressExist) {
       throw new NotFoundException('Địa chỉ không tồn tại.')
+    }
+
+    if (
+      createDto.bookableCapacity +
+        createDto.leasedCapacity +
+        createDto.walkInCapacity >
+      createDto.totalCapacityEachLevel * createDto.totalLevel
+    ) {
+      throw new ConflictException(
+        'Số suất trong các loại chỉ định không được vượt quá tổng sức chứa của bãi đỗ xe.',
+      )
     }
 
     // (SỬA ĐỔI) Khai báo biến để lưu kết quả ở ngoài
@@ -389,6 +386,9 @@ export class ParkingLotService implements IParkingLotService {
               request.payload.totalCapacityEachLevel *
               request.payload.totalLevel,
             parkingLotStatus: RequestStatus.APPROVED,
+            totalCapacity:
+              request.payload.totalCapacityEachLevel *
+              request.payload.totalLevel,
           }
 
           const newParkingLot =
@@ -524,7 +524,7 @@ export class ParkingLotService implements IParkingLotService {
   async getParkingLotDetails(id: IdDto): Promise<ParkingLotResponseDto> {
     const parkingLot = await this.parkingLotRepository.findParkingLotById(id.id)
     if (!parkingLot) {
-      throw new Error('Không tìm thấy bãi đỗ xe')
+      throw new NotFoundException('Không tìm thấy bãi đỗ xe')
     }
     return this.returnParkingLotResponseDto(parkingLot)
   }
@@ -646,7 +646,7 @@ export class ParkingLotService implements IParkingLotService {
     }
 
     // 3. Xác định roomName từ tọa độ của Address
-    const roomName = this.determineRoomForParkingLot(address)
+    const roomName = this.determineRoomForParkingLot()
 
     // 4. Chuẩn bị payload nhỏ gọn để gửi đi
     const payload: ParkingLotSpotsUpdateDto = {

@@ -12,13 +12,12 @@ class VehicleDialogs {
     required TextEditingController plateNumberController,
     required String? selectedBrandId,
     required String? selectedColorId,
-    required String? selectedVehicleTypeId,
+    required bool isElectricCar,
     required List<Map<String, dynamic>> brands,
     required List<Map<String, dynamic>> colors,
-    required List<Map<String, dynamic>> vehicleTypes,
     required ValueChanged<String?> onBrandChanged,
     required ValueChanged<String?> onColorChanged,
-    required ValueChanged<String?> onVehicleTypeChanged,
+    required ValueChanged<bool> onElectricCarChanged,
     required String? errorMessage,
     required bool isLoadingDropdowns,
     required bool isSubmitting,
@@ -26,9 +25,7 @@ class VehicleDialogs {
     required VoidCallback onSubmit,
   }) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
@@ -47,10 +44,7 @@ class VehicleDialogs {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
-            _buildHeader(
-              icon: Icons.add_rounded,
-              title: 'Thêm xe mới',
-            ),
+            _buildHeader(icon: Icons.add_rounded, title: 'Thêm xe mới'),
             // Content
             Padding(
               padding: const EdgeInsets.all(20),
@@ -64,13 +58,12 @@ class VehicleDialogs {
                     plateNumberController: plateNumberController,
                     selectedBrandId: selectedBrandId,
                     selectedColorId: selectedColorId,
-                    selectedVehicleTypeId: selectedVehicleTypeId,
+                    isElectricCar: isElectricCar,
                     brands: brands,
                     colors: colors,
-                    vehicleTypes: vehicleTypes,
                     onBrandChanged: onBrandChanged,
                     onColorChanged: onColorChanged,
-                    onVehicleTypeChanged: onVehicleTypeChanged,
+                    onElectricCarChanged: onElectricCarChanged,
                     isEdit: false,
                   ),
                 ],
@@ -95,13 +88,12 @@ class VehicleDialogs {
     required TextEditingController plateNumberController,
     required String? selectedBrandId,
     required String? selectedColorId,
-    required String? selectedVehicleTypeId,
+    required bool isElectricCar,
     required List<Map<String, dynamic>> brands,
     required List<Map<String, dynamic>> colors,
-    required List<Map<String, dynamic>> vehicleTypes,
     required ValueChanged<String?> onBrandChanged,
     required ValueChanged<String?> onColorChanged,
-    required ValueChanged<String?> onVehicleTypeChanged,
+    required ValueChanged<bool> onElectricCarChanged,
     required String? errorMessage,
     required bool isLoadingDropdowns,
     required bool isSubmitting,
@@ -109,9 +101,7 @@ class VehicleDialogs {
     required VoidCallback onSubmit,
   }) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
@@ -130,10 +120,7 @@ class VehicleDialogs {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
-            _buildHeader(
-              icon: Icons.edit_rounded,
-              title: 'Chỉnh sửa xe',
-            ),
+            _buildHeader(icon: Icons.edit_rounded, title: 'Chỉnh sửa xe'),
             // Content
             Padding(
               padding: const EdgeInsets.all(20),
@@ -147,13 +134,12 @@ class VehicleDialogs {
                     plateNumberController: plateNumberController,
                     selectedBrandId: selectedBrandId,
                     selectedColorId: selectedColorId,
-                    selectedVehicleTypeId: selectedVehicleTypeId,
+                    isElectricCar: isElectricCar,
                     brands: brands,
                     colors: colors,
-                    vehicleTypes: vehicleTypes,
                     onBrandChanged: onBrandChanged,
                     onColorChanged: onColorChanged,
-                    onVehicleTypeChanged: onVehicleTypeChanged,
+                    onElectricCarChanged: onElectricCarChanged,
                     isEdit: true,
                   ),
                 ],
@@ -180,9 +166,7 @@ class VehicleDialogs {
     required VoidCallback onDelete,
   }) {
     return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
@@ -243,10 +227,7 @@ class VehicleDialogs {
                 children: [
                   Text(
                     'Bạn có chắc chắn muốn xóa xe',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
                   ),
                   const SizedBox(height: 8),
                   Container(
@@ -257,9 +238,7 @@ class VehicleDialogs {
                     decoration: BoxDecoration(
                       color: primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: primaryColor.withOpacity(0.3),
-                      ),
+                      border: Border.all(color: primaryColor.withOpacity(0.3)),
                     ),
                     child: Text(
                       plateNumber,
@@ -273,10 +252,7 @@ class VehicleDialogs {
                   const SizedBox(height: 8),
                   Text(
                     '?',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
                   ),
                 ],
               ),
@@ -325,10 +301,7 @@ class VehicleDialogs {
     );
   }
 
-  static Widget _buildHeader({
-    required IconData icon,
-    required String title,
-  }) {
+  static Widget _buildHeader({required IconData icon, required String title}) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -350,11 +323,7 @@ class VehicleDialogs {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(
-              icon,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: Icon(icon, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           Text(
@@ -419,9 +388,7 @@ class VehicleDialogs {
               style: OutlinedButton.styleFrom(
                 foregroundColor: Colors.grey.shade600,
                 side: BorderSide(color: Colors.grey.shade300),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -436,9 +403,7 @@ class VehicleDialogs {
               style: ElevatedButton.styleFrom(
                 backgroundColor: primaryColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 12,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -454,9 +419,7 @@ class VehicleDialogs {
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white,
-                        ),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : Text(submitText),

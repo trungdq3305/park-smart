@@ -1,11 +1,12 @@
 ﻿using CoreService.Application.Interfaces;
+using CoreService.Repository.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CoreService.API.Controllers
 {
-    [Route("api/operators/{operatorId}/reservations")]
+    [Route("api/payments")]
     [ApiController]
     public class ReservationPaymentsController : ControllerBase
     {
@@ -19,15 +20,92 @@ namespace CoreService.API.Controllers
 
         public ReservationPaymentsController(IPaymentApp payment) => _payment = payment;
 
-        [HttpPost("{reservationId}/pay")]
+        [HttpPost("pay")]
         [Authorize(Roles = "Driver,Operator,Admin")]
-        public async Task<IActionResult> Pay(string operatorId, string reservationId, [FromBody] PayDto dto)
+        public async Task<IActionResult> PayEntity(string operatorId, [FromBody] PayRequestDto dto)
         {
-            var pr = await _payment.CreateReservationInvoiceAsync(
-                operatorId, reservationId, dto.Amount);
-            return Ok(new { pr.XenditInvoiceId, pr.Status, pr.CheckoutUrl });
+            // 1. Xác thực và lấy Account ID của người tạo Invoice
+            var accountId = User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return Unauthorized(new { message = "Không tìm thấy Account ID trong token xác thực." });
+            }
+
+            // 2. Gọi Service chung duy nhất
+            // Service sẽ tự động xác định PaymentType và gán ID tương ứng
+            var pr = await _payment.CreatePaymentInvoiceAsync(
+                operatorId,
+                dto.EntityId,
+                accountId,
+                dto.Amount,
+                dto.Type); // Truyền Enum Type
+
+            // 3. Trả về kết quả cho Frontend
+            return Ok(new
+            {
+                pr.XenditInvoiceId,
+                pr.Status,
+                pr.CheckoutUrl
+            });
+        }
+        public class PayRequestDto
+        {
+            // ID của đối tượng (ReservationId, SubscriptionId, hoặc SessionId)
+            public string EntityId { get; set; }
+
+            // Loại thanh toán, sẽ được tự động map từ string JSON sang Enum
+            public PaymentType Type { get; set; }
+
+            // Số tiền cần thanh toán
+            public long Amount { get; set; }
+        }
+        // Trong Controller
+        [HttpGet("external/{externalId}")]
+        //[Authorize(Roles = "Driver,Operator,Admin")]
+        public async Task<IActionResult> GetByExternalId(string externalId)
+        {
+            var pr = await _payment.GetByExternalIdAsync(externalId);
+            return Ok(pr);
         }
 
+        [HttpGet("createdBy/me")]
+        [Authorize(Roles = "Driver,Operator,Admin")] // Các vai trò có thể tạo invoice
+        public async Task<IActionResult> GetByCreatedByMe()
+        {
+            // Lấy accountId của người dùng hiện tại từ token (thông tin đã đăng nhập)
+            var accountId = User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return Unauthorized(new { message = "Không tìm thấy Account ID trong token." });
+            }
+
+            var records = await _payment.GetByCreatedByAsync(accountId);
+
+            // Sử dụng Ok(records) để trả về danh sách
+            return Ok(records);
+        }
+        // Trong PaymentController
+        // ...
+
+        [HttpGet("refunds/createdBy/me")] // Endpoint mới
+        [Authorize(Roles = "Operator,Admin")]
+        public async Task<IActionResult> GetRefundsByCreatedByMe()
+        {
+            // Lấy accountId của người dùng hiện tại từ token
+            var accountId = User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return Unauthorized(new { message = "Không tìm thấy Account ID." });
+            }
+
+            // Gọi Service để lấy danh sách RefundRecord do người dùng này tạo
+            var records = await _payment.GetRefundsByCreatedByAsync(accountId);
+
+            return Ok(records);
+        }
         public class RefundDto
         {
             public long Amount { get; set; }               // null => full refund
@@ -35,12 +113,21 @@ namespace CoreService.API.Controllers
         }
 
 
-        [HttpPost("{reservationId}/refund")]
+        [HttpPost("{paymentId}/refund-by-id")] // Endpoint mới: refund theo PaymentRecord ID
         [Authorize(Roles = "Operator,Admin")]
-        public async Task<IActionResult> RefundByReservation(
-            string operatorId, string reservationId, [FromBody] RefundDto dto)
+        public async Task<IActionResult> RefundByPaymentId(
+    string operatorId, string paymentId, [FromBody] RefundDto dto)
         {
-            var rf = await _payment.RefundAsync(operatorId, reservationId, dto.Amount, dto.Reason);
+            var accountId = User.FindFirst("id")?.Value;
+
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return Unauthorized(new { message = "Không tìm thấy Account ID trong token xác thực." });
+            }
+            // Gọi phương thức RefundAsync đã được tái cấu trúc
+            var rf = await _payment.RefundByPaymentIdAsync(operatorId, paymentId, accountId, dto.Amount, dto.Reason);
+
+            // Trả về thông tin Refund
             return Ok(new
             {
                 rf.Data.XenditRefundId,
@@ -68,9 +155,9 @@ namespace CoreService.API.Controllers
         [AllowAnonymous] // redirect từ Xendit không có auth
         public async Task<IActionResult> Confirm(
             [FromQuery] string operatorId,
-            [FromQuery] string reservationId,
-            [FromQuery] string externalId,
-            [FromQuery] string result // "success" | "failure"
+            [FromQuery] string reservationId
+            //[FromQuery] string externalId,
+            //[FromQuery] string result // "success" | "failure"
         )
         {
             // 1) Lấy payment record mới nhất theo reservation

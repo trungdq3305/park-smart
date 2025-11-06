@@ -1,12 +1,23 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:permission_handler/permission_handler.dart';
+
 import 'package:url_launcher/url_launcher.dart';
-import 'package:flutter/services.dart';
 import '../../services/parking_lot_service.dart';
+import '../../services/socket_service.dart';
 import '../../widgets/app_scaffold.dart';
+import 'booking_reservation/booking_screen.dart';
+import 'package:mobile/widgets/parking_lot_map/parking_lot_bottom_sheet.dart';
+import 'package:mobile/widgets/parking_lot_map/location_search_bar.dart';
+import 'package:mobile/widgets/parking_lot_map/error_message.dart';
+import 'package:mobile/widgets/parking_lot_map/permission_dialog.dart';
+import 'package:mobile/widgets/parking_lot_map/parking_lot_list.dart';
+import 'package:mobile/widgets/parking_lot_map/map_debug_indicator.dart';
+import 'package:mobile/widgets/parking_lot_map/api_help_dialog.dart';
+
 
 class ParkingLotScreen extends StatefulWidget {
   const ParkingLotScreen({super.key});
@@ -31,15 +42,23 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       false; // Show map by default, fallback to list if needed
   bool _mapLoaded = false; // Track if map has loaded successfully
 
+
+  // Socket service for real-time updates
+  final SocketService _socketService = SocketService();
+  bool _isSocketConnected = false;
+
+  // Removed navigation state variables as we're using external Google Maps
+
+
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _initializeSocket();
 
     // Auto-fallback to list view if map doesn't load within 15 seconds
     Future.delayed(const Duration(seconds: 15), () {
       if (mounted && _parkingLots.isNotEmpty && !_mapLoaded) {
-        print('⚠️ Map failed to load, showing fallback list');
         setState(() {
           _showMapFallback = true;
         });
@@ -47,17 +66,101 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     });
   }
 
+  @override
+  void dispose() {
+
+    _socketService.dispose();
+    super.dispose();
+  }
+
+  /// Initialize socket connection for real-time updates
+  void _initializeSocket() {
+    _socketService.initialize();
+
+    // Listen to connection status
+    _socketService.connectionStatusStream.listen((isConnected) {
+      if (mounted) {
+        setState(() {
+          _isSocketConnected = isConnected;
+        });
+      }
+    });
+
+    // Listen to parking lot updates
+    _socketService.parkingLotUpdateStream.listen((data) {
+      if (mounted) {
+        _handleParkingLotUpdate(data);
+      }
+    });
+  }
+
+  /// Handle real-time parking lot updates
+  void _handleParkingLotUpdate(Map<String, dynamic> data) {
+    print('🔍 DEBUG: Processing parking lot update: $data');
+
+    // Update parking lot data in real-time
+    final parkingLotId = data['parkingLotId'] ?? data['id'] ?? data['_id'];
+    final availableSpots = data['availableSpots'];
+
+    print(
+      '🔍 DEBUG: Parking lot ID: $parkingLotId, Available spots: $availableSpots',
+    );
+
+    if (parkingLotId != null && availableSpots != null) {
+      // Find and update the parking lot in the list
+      bool found = false;
+      int foundIndex = -1;
+
+      setState(() {
+        for (int i = 0; i < _parkingLots.length; i++) {
+          final lot = _parkingLots[i];
+          final lotId = lot['id'] ?? lot['_id'];
+
+          if (lotId == parkingLotId) {
+            print('✅ DEBUG: Found parking lot at index $i: $lotId');
+            print('✅ DEBUG: Old availableSpots: ${lot['availableSpots']}');
+            print('✅ DEBUG: New availableSpots: $availableSpots');
+
+            _parkingLots[i] = {...lot, 'availableSpots': availableSpots};
+            found = true;
+            foundIndex = i;
+            break;
+          }
+        }
+      });
+
+      if (found) {
+        print('✅ DEBUG: Successfully updated parking lot at index $foundIndex');
+
+        // Update markers to reflect new data
+        _updateMarkers();
+
+        // Real-time update completed - no notification needed
+      } else {
+        print('⚠️ DEBUG: Parking lot not found in current list: $parkingLotId');
+        print('⚠️ DEBUG: Current parking lots count: ${_parkingLots.length}');
+        for (int i = 0; i < _parkingLots.length; i++) {
+          final lot = _parkingLots[i];
+          final lotId = lot['id'] ?? lot['_id'];
+          print('⚠️ DEBUG: Parking lot $i: $lotId');
+        }
+      }
+    } else {
+      print('⚠️ DEBUG: Missing parking lot ID or available spots');
+    }
+  }
+
+
+  // ... (rest of _getCurrentLocation, _getAddressFromPosition, _loadNearbyParkingLots, _loadParkingLotsInBounds remains the same) ...
+
   Future<void> _getCurrentLocation() async {
+    // ... (Your existing _getCurrentLocation implementation remains the same) ...
     try {
       // Check current permission status first
       PermissionStatus currentStatus = await Permission.location.status;
-      print('🔍 Current permission status: $currentStatus');
-
       // If permission is denied or permanently denied, show dialog to request
       if (currentStatus == PermissionStatus.denied ||
           currentStatus == PermissionStatus.permanentlyDenied) {
-        print('📱 Permission denied, showing dialog...');
-
         // Show permission dialog
         bool? shouldRequest = await _showPermissionDialog();
         if (shouldRequest != true) {
@@ -70,13 +173,9 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       }
 
       // Request location permission
-      print('🔐 Requesting location permission...');
       PermissionStatus permission = await Permission.location.request();
-      print('📱 Permission result: $permission');
 
       if (permission != PermissionStatus.granted) {
-        print('❌ Permission not granted: $permission');
-
         // Check if it's permanently denied
         if (permission == PermissionStatus.permanentlyDenied) {
           setState(() {
@@ -92,12 +191,8 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         return;
       }
 
-      print('✅ Permission granted, proceeding with location...');
-
       // Check if location services are enabled
-      print('🔍 Checking location services...');
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      print('📍 Location services enabled: $serviceEnabled');
 
       if (!serviceEnabled) {
         setState(() {
@@ -108,23 +203,19 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       }
 
       // Get current position
-      print('📍 Getting current position...');
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
         timeLimit: const Duration(seconds: 10),
       );
-      print('✅ Position obtained: ${position.latitude}, ${position.longitude}');
 
       setState(() {
         _currentPosition = position;
       });
 
       // Get address from coordinates
-      print('🏠 Getting address from coordinates...');
       await _getAddressFromPosition(position);
 
       // Load nearby parking lots
-      print('🚗 Loading nearby parking lots...');
       await _loadNearbyParkingLots();
     } catch (e) {
       setState(() {
@@ -165,6 +256,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     });
 
     try {
+      // 1. Gọi API để lấy danh sách các bãi đỗ xe gần đó
       final response = await ParkingLotService.getNearbyParkingLots(
         longitude: _currentPosition!.longitude,
         latitude: _currentPosition!.latitude,
@@ -172,33 +264,66 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         pageSize: 20,
       );
 
-      // Handle nested array structure: data[0] contains the actual array
+      // Xử lý dữ liệu trả về từ API
       final responseData = response['data'];
-      List<Map<String, dynamic>> parkingLots = [];
-
+      List<Map<String, dynamic>> loadedParkingLots = [];
       if (responseData != null &&
           responseData is List &&
           responseData.isNotEmpty) {
-        // Check if it's nested array structure
         if (responseData[0] is List) {
-          parkingLots = List<Map<String, dynamic>>.from(responseData[0] ?? []);
+          loadedParkingLots = List<Map<String, dynamic>>.from(
+            responseData[0] ?? [],
+          );
         } else {
-          // Direct array structure
-          parkingLots = List<Map<String, dynamic>>.from(responseData);
+          loadedParkingLots = List<Map<String, dynamic>>.from(responseData);
         }
       }
 
+      // 2. Cập nhật state với dữ liệu mới từ API
       setState(() {
-        _parkingLots = parkingLots;
-        _isLoading = false;
+        _parkingLots = loadedParkingLots;
       });
 
-      print('🚗 Parsed ${_parkingLots.length} parking lots');
+      // 3. (QUAN TRỌNG) Tham gia room mặc định để nhận cập nhật real-time
+      if (_isSocketConnected) {
+        print('🚀 Tham gia room mặc định để nhận cập nhật real-time...');
+        // Server sử dụng room mặc định room_123456
+        _socketService.joinParkingLotRoom('123456');
+      } else {
+        print('⚠️ Socket chưa kết nối, không thể tham gia room');
+      }
 
+      // 4. Cập nhật các marker trên bản đồ
       _updateMarkers();
     } catch (e) {
       setState(() {
-        _errorMessage = 'Lỗi tải bãi đỗ xe: $e';
+        // Check if it's a 404 error (no parking lots found)
+        if (e.toString().contains('404') ||
+            e.toString().contains('Không tìm thấy bãi đỗ xe nào')) {
+          // Extract message from exception
+          String errorMessage =
+              'Không tìm thấy bãi gửi xe nào gần vị trí của bạn';
+          try {
+            // Try to parse JSON message from exception
+            final match = RegExp(
+              r'"message":"([^"]+)"',
+            ).firstMatch(e.toString());
+            if (match != null) {
+              errorMessage = match.group(1) ?? errorMessage;
+            }
+          } catch (_) {
+            // Keep default message if parsing fails
+          }
+          _errorMessage = errorMessage;
+        } else {
+          _errorMessage = 'Lỗi tải bãi đỗ xe: $e';
+        }
+
+      });
+    } finally {
+      // Luôn đảm bảo tắt trạng thái loading dù thành công hay thất bại
+      setState(() {
+
         _isLoading = false;
       });
     }
@@ -213,6 +338,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
     });
 
     try {
+      // 1. Gọi API để lấy danh sách các bãi đỗ xe trong tầm nhìn bản đồ
       final response = await ParkingLotService.getParkingLotsInBounds(
         bottomLeftLng: _currentBounds!.southwest.longitude,
         bottomLeftLat: _currentBounds!.southwest.latitude,
@@ -221,47 +347,77 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
         pageSize: 50,
       );
 
-      // Handle nested array structure: data[0] contains the actual array
+      // Xử lý dữ liệu trả về từ API
       final responseData = response['data'];
-      List<Map<String, dynamic>> parkingLots = [];
-
+      List<Map<String, dynamic>> loadedParkingLots = [];
       if (responseData != null &&
           responseData is List &&
           responseData.isNotEmpty) {
-        // Check if it's nested array structure
         if (responseData[0] is List) {
-          parkingLots = List<Map<String, dynamic>>.from(responseData[0] ?? []);
+          loadedParkingLots = List<Map<String, dynamic>>.from(
+            responseData[0] ?? [],
+          );
         } else {
-          // Direct array structure
-          parkingLots = List<Map<String, dynamic>>.from(responseData);
+          loadedParkingLots = List<Map<String, dynamic>>.from(responseData);
         }
       }
 
+      // 2. Cập nhật state với dữ liệu mới
       setState(() {
-        _parkingLots = parkingLots;
-        _isLoading = false;
+        _parkingLots = loadedParkingLots;
       });
 
-      print('🗺️ Parsed ${_parkingLots.length} parking lots in bounds');
+      // 3. (QUAN TRỌNG) Tham gia room mặc định để nhận cập nhật real-time
+      if (_isSocketConnected) {
+        print('🚀 Tham gia room mặc định để nhận cập nhật real-time...');
+        // Server sử dụng room mặc định room_123456
+        _socketService.joinParkingLotRoom('123456');
+      } else {
+        print('⚠️ Socket chưa kết nối, không thể tham gia room');
+      }
 
+      // 4. Cập nhật các marker trên bản đồ
       _updateMarkers();
     } catch (e) {
       setState(() {
-        _errorMessage = 'Lỗi tải bãi đỗ xe: $e';
+        // Check if it's a 404 error (no parking lots found)
+        if (e.toString().contains('404') ||
+            e.toString().contains('Không tìm thấy bãi đỗ xe nào')) {
+          // Extract message from exception
+          String errorMessage =
+              'Không tìm thấy bãi gửi xe nào gần vị trí của bạn';
+          try {
+            // Try to parse JSON message from exception
+            final match = RegExp(
+              r'"message":"([^"]+)"',
+            ).firstMatch(e.toString());
+            if (match != null) {
+              errorMessage = match.group(1) ?? errorMessage;
+            }
+          } catch (_) {
+            // Keep default message if parsing fails
+          }
+          _errorMessage = errorMessage;
+        } else {
+          _errorMessage = 'Lỗi tải bãi đỗ xe: $e';
+        }
+
+      });
+    } finally {
+      // Tắt trạng thái loading
+      setState(() {
+v
         _isLoading = false;
       });
     }
   }
 
   void _updateMarkers() {
+    print('🔄 DEBUG: Updating markers...');
     Set<Marker> markers = {};
-    print('📍 Updating markers...');
 
     // Add current location marker
     if (_currentPosition != null) {
-      print(
-        '📍 Adding current location marker: ${_currentPosition!.latitude}, ${_currentPosition!.longitude}',
-      );
       markers.add(
         Marker(
           markerId: const MarkerId('current_location'),
@@ -293,670 +449,238 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
           (parkingLot['totalCapacityEachLevel'] ?? 0) *
           (parkingLot['totalLevel'] ?? 1);
 
+      // Use actual parking lot ID for marker ID
+      final parkingLotId =
+          parkingLot['id'] ?? parkingLot['_id'] ?? 'unknown_$i';
+
       if (lat != null && lng != null) {
+        // Determine marker color based on percentage of capacity
+        double markerHue;
+        String colorStatus;
+        double occupancyPercentage = totalCapacity > 0
+            ? (availableSpots / totalCapacity) * 100
+            : 0;
+
+        if (occupancyPercentage < 5) {
+          markerHue = BitmapDescriptor.hueRed;
+          colorStatus = 'RED';
+        } else if (occupancyPercentage < 50) {
+          markerHue = BitmapDescriptor.hueYellow;
+          colorStatus = 'YELLOW';
+        } else {
+          markerHue = BitmapDescriptor.hueGreen;
+          colorStatus = 'GREEN';
+        }
+
         print(
-          '🚗 Adding parking lot marker $i: $lat, $lng - $availableSpots/$totalCapacity spots',
+          '📍 DEBUG: Creating marker for parking lot $parkingLotId: $availableSpots/$totalCapacity chỗ trống (${occupancyPercentage.toStringAsFixed(1)}% - $colorStatus)',
         );
+        print(
+          '📍 DEBUG: Marker data - availableSpots: $availableSpots, totalCapacity: $totalCapacity, percentage: ${occupancyPercentage.toStringAsFixed(1)}%, color: $colorStatus',
+        );
+
         markers.add(
           Marker(
-            markerId: MarkerId('parking_lot_$i'),
+            markerId: MarkerId('parking_lot_$parkingLotId'),
             position: LatLng(lat, lng),
             infoWindow: InfoWindow(
               title: 'Bãi đỗ xe',
               snippet: '$availableSpots/$totalCapacity chỗ trống',
             ),
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueGreen,
-            ),
+            icon: BitmapDescriptor.defaultMarkerWithHue(markerHue),
             onTap: () => _showParkingLotDetails(parkingLot),
           ),
         );
-      } else {
-        print('❌ Invalid coordinates for parking lot $i: lat=$lat, lng=$lng');
       }
     }
 
     setState(() {
       _markers = markers;
+      print('🔄 DEBUG: Markers updated, count: ${markers.length}');
     });
-
-    print('📍 Total markers: ${_markers.length}');
   }
 
   void _showParkingLotDetails(Map<String, dynamic> parkingLot) {
+    // Get the latest data from _parkingLots to ensure real-time updates
+    final parkingLotId = parkingLot['id'] ?? parkingLot['_id'];
+    Map<String, dynamic> latestParkingLot = parkingLot;
+    bool foundLatest = false;
+
+    // Find the latest data in _parkingLots
+    for (final lot in _parkingLots) {
+      final lotId = lot['id'] ?? lot['_id'];
+      if (lotId == parkingLotId) {
+        latestParkingLot = lot;
+        foundLatest = true;
+        print(
+          '📱 DEBUG: Found latest data for bottom sheet - availableSpots: ${lot['availableSpots']}',
+        );
+        break;
+      }
+    }
+
+    if (!foundLatest) {
+      print(
+        '⚠️ DEBUG: Could not find latest data for parking lot: $parkingLotId',
+      );
+      print(
+        '⚠️ DEBUG: Using original data - availableSpots: ${parkingLot['availableSpots']}',
+      );
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _buildParkingLotBottomSheet(parkingLot),
-    );
-  }
 
-  Widget _buildParkingLotBottomSheet(Map<String, dynamic> parkingLot) {
-    // Extract data from nested structure
-    final addressId = parkingLot['addressId'];
-    final availableSpots = parkingLot['availableSpots'] ?? 0;
-    final totalCapacityEachLevel = parkingLot['totalCapacityEachLevel'] ?? 0;
-    final totalLevel = parkingLot['totalLevel'] ?? 1;
-    final totalSlots = totalCapacityEachLevel * totalLevel;
-    final occupancyRate = totalSlots > 0 ? (availableSpots / totalSlots) : 0.0;
-    final address = addressId?['fullAddress'] ?? 'Không có địa chỉ';
-    final openTime = parkingLot['openTime'] ?? 'N/A';
-    final closeTime = parkingLot['closeTime'] ?? 'N/A';
-    final is24Hours = parkingLot['is24Hours'] ?? false;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle bar
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Parking lot name
-          Text(
-            'Bãi đỗ xe',
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-
-          // Address
-          Row(
-            children: [
-              Icon(Icons.location_on, color: Colors.grey.shade600, size: 20),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  address,
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Operating hours
-          Row(
-            children: [
-              Icon(Icons.access_time, color: Colors.grey.shade600, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                is24Hours
-                    ? 'Mở cửa 24/7'
-                    : 'Giờ mở cửa: $openTime - $closeTime',
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Availability status
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: occupancyRate > 0.3
-                  ? Colors.green.shade50
-                  : Colors.red.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: occupancyRate > 0.3
-                    ? Colors.green.shade200
-                    : Colors.red.shade200,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  occupancyRate > 0.3 ? Icons.check_circle : Icons.warning,
-                  color: occupancyRate > 0.3 ? Colors.green : Colors.red,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        occupancyRate > 0.3 ? 'Còn chỗ trống' : 'Gần hết chỗ',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: occupancyRate > 0.3
-                              ? Colors.green.shade700
-                              : Colors.red.shade700,
-                        ),
-                      ),
-                      Text(
-                        '$availableSpots/$totalSlots chỗ trống',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          // Price info
-          if (parkingLot['pricePerHour'] != null) ...[
-            Row(
-              children: [
-                Icon(Icons.attach_money, color: Colors.grey.shade600, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '${parkingLot['pricePerHour']} VND/giờ',
-                  style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-          ],
-
-          // Action buttons
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _navigateToParkingLot(parkingLot);
-                  },
-                  icon: const Icon(Icons.directions),
-                  label: const Text('Chỉ đường'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.green,
-                    side: const BorderSide(color: Colors.green),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    _bookParkingLot(parkingLot);
-                  },
-                  icon: const Icon(Icons.book_online),
-                  label: const Text('Đặt chỗ'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+      builder: (context) => ParkingLotBottomSheet(
+        parkingLot: latestParkingLot,
+        onNavigate: () => _navigateToParkingLot(latestParkingLot),
+        onBook: () => _bookParkingLot(latestParkingLot),
       ),
     );
   }
 
-  void _navigateToParkingLot(Map<String, dynamic> parkingLot) {
+  // Function to open Google Maps for navigation
+  Future<void> _navigateToParkingLot(Map<String, dynamic> parkingLot) async {
+
     // Extract coordinates from parking lot
     final addressId = parkingLot['addressId'];
     final lat = addressId?['latitude']?.toDouble();
     final lng = addressId?['longitude']?.toDouble();
-    final address = addressId?['fullAddress'] ?? 'Không có địa chỉ';
+
 
     if (lat != null && lng != null) {
-      Navigator.pop(context);
+      try {
+        // Create Google Maps URL for navigation
+        String googleMapsUrl;
 
-      // Show navigation options
-      showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (context) => _buildNavigationBottomSheet(lat, lng, address),
-      );
+        if (_currentPosition != null) {
+          // Navigation from current location to destination
+          googleMapsUrl =
+              'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng&travelmode=driving';
+        } else {
+          // Just show destination on map
+          googleMapsUrl =
+              'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+        }
+
+        // Try to open Google Maps app first
+        Uri googleMapsUri = Uri.parse(googleMapsUrl);
+
+        if (await canLaunchUrl(googleMapsUri)) {
+          await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
+        } else {
+          // Fallback to web browser
+          await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Không thể mở Google Maps: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không thể lấy tọa độ của bãi đỗ xe')),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể lấy tọa độ bãi đỗ xe'),
+            backgroundColor: Colors.red,
+
+          ),
+        );
+        return;
+      }
+
+      print('🧭 Starting navigation...');
+
+      setState(() {
+        _isNavigating = true;
+        _isNavigationActive = true;
+        _showNavigationUI = true;
+      });
+
+      // Start navigation with first instruction
+      if (_routeInstructions.isNotEmpty) {
+        _currentInstruction = _routeInstructions[0]['instruction'];
+        if (_routeInstructions.length > 1) {
+          _nextInstruction = _routeInstructions[1]['instruction'];
+        }
+      }
+
+    }
+  }
+
+  // Removed all navigation-related functions as we're using external Google Maps
+
+
+  Future<void> _bookParkingLot(Map<String, dynamic> parkingLot) async {
+    try {
+
+      // Get parking lot ID
+      final parkingLotId = parkingLot['id'] ?? parkingLot['_id'];
+
+      if (parkingLotId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể lấy thông tin bãi đỗ xe'),
+
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
-    }
-  }
 
-  void _bookParkingLot(Map<String, dynamic> parkingLot) {
-    // TODO: Implement booking functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Tính năng đặt chỗ sẽ được phát triển')),
-    );
-  }
+      // Get detailed parking lot information
+      final detailedParkingLot = await ParkingLotService.getParkingLotById(
+        parkingLotId,
+      );
 
-  Widget _buildNavigationBottomSheet(double lat, double lng, String address) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 20),
+      // Close loading dialog
+      Navigator.of(context).pop();
 
-          // Title
-          Text(
-            'Chỉ đường đến bãi đỗ xe',
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-
-          // Address
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.location_on, color: Colors.green.shade600),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    address,
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Navigation options
-          Row(
-            children: [
-              // Google Maps
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _openGoogleMaps(lat, lng),
-                  icon: const Icon(Icons.navigation),
-                  label: const Text('Google Maps'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Apple Maps (iOS only)
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _openAppleMaps(lat, lng),
-                  icon: const Icon(Icons.map),
-                  label: const Text('Apple Maps'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Copy coordinates
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () => _copyCoordinates(lat, lng),
-              icon: const Icon(Icons.copy),
-              label: const Text('Sao chép tọa độ'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _openGoogleMaps(double lat, double lng) async {
-    final url = 'https://www.google.com/maps/dir/?api=1&destination=$lat,$lng';
-    final uri = Uri.parse(url);
-
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể mở Google Maps')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
+      // Navigate to booking screen
+      Navigator.push(
         context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi mở Google Maps: $e')));
-    }
-  }
+        MaterialPageRoute(
+          builder: (context) => BookingScreen(
+            parkingLot: detailedParkingLot['data'] ?? detailedParkingLot,
 
-  void _openAppleMaps(double lat, double lng) async {
-    final url = 'https://maps.apple.com/?daddr=$lat,$lng';
-    final uri = Uri.parse(url);
-
-    try {
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Không thể mở Apple Maps')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi mở Apple Maps: $e')));
-    }
-  }
-
-  void _copyCoordinates(double lat, double lng) {
-    final coordinates = '$lat, $lng';
-    Clipboard.setData(ClipboardData(text: coordinates));
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('Đã sao chép tọa độ: $coordinates')));
-  }
-
-  Widget _buildParkingLotCard(Map<String, dynamic> parkingLot, int index) {
-    // Extract data from nested structure
-    final addressId = parkingLot['addressId'];
-    final availableSpots = parkingLot['availableSpots'] ?? 0;
-    final totalCapacityEachLevel = parkingLot['totalCapacityEachLevel'] ?? 0;
-    final totalLevel = parkingLot['totalLevel'] ?? 1;
-    final totalSlots = totalCapacityEachLevel * totalLevel;
-    final occupancyRate = totalSlots > 0 ? (availableSpots / totalSlots) : 0.0;
-    final address = addressId?['fullAddress'] ?? 'Không có địa chỉ';
-    final openTime = parkingLot['openTime'] ?? 'N/A';
-    final closeTime = parkingLot['closeTime'] ?? 'N/A';
-    final is24Hours = parkingLot['is24Hours'] ?? false;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: InkWell(
-        onTap: () => _showParkingLotDetails(parkingLot),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with name and status
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      'Bãi đỗ xe ${index + 1}',
-                      style: TextStyle(
-                        color: Colors.green.shade700,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: occupancyRate > 0.3
-                          ? Colors.green.shade100
-                          : Colors.red.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      occupancyRate > 0.3 ? 'Còn chỗ' : 'Gần hết chỗ',
-                      style: TextStyle(
-                        color: occupancyRate > 0.3
-                            ? Colors.green.shade700
-                            : Colors.red.shade700,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Address
-              Row(
-                children: [
-                  Icon(
-                    Icons.location_on,
-                    color: Colors.grey.shade600,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      address,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              // Operating hours
-              Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color: Colors.grey.shade600,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    is24Hours
-                        ? 'Mở cửa 24/7'
-                        : 'Giờ mở cửa: $openTime - $closeTime',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Availability info
-              Row(
-                children: [
-                  Icon(
-                    Icons.local_parking,
-                    color: Colors.green.shade600,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '$availableSpots/$totalSlots chỗ trống',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.green.shade700,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${(occupancyRate * 100).toInt()}% còn trống',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                  ),
-                ],
-              ),
-            ],
           ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      // Close loading dialog if it's open
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Lỗi tải thông tin bãi đỗ xe: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<bool?> _showPermissionDialog() async {
+    // ... (Your existing _showPermissionDialog implementation remains the same) ...
     return showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.location_on, color: Colors.green.shade600, size: 28),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'Cấp quyền định vị',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Ứng dụng cần quyền truy cập vị trí để:',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 12),
-              _buildPermissionItem(Icons.search, 'Tìm kiếm bãi đỗ xe gần bạn'),
-              const SizedBox(height: 8),
-              _buildPermissionItem(Icons.map, 'Hiển thị bãi đỗ trên bản đồ'),
-              const SizedBox(height: 8),
-              _buildPermissionItem(Icons.navigation, 'Chỉ đường đến bãi đỗ'),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.blue.shade600,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    const Expanded(
-                      child: Text(
-                        'Dữ liệu vị trí chỉ được sử dụng để tìm kiếm bãi đỗ xe và không được chia sẻ với bên thứ ba.',
-                        style: TextStyle(fontSize: 13, color: Colors.black87),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false);
-              },
-              child: Text(
-                'Không',
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(true);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
-              child: const Text(
-                'Cho phép',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildPermissionItem(IconData icon, String text) {
-    return Row(
-      children: [
-        Icon(icon, color: Colors.green.shade600, size: 20),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
-          ),
-        ),
-      ],
+      builder: (context) => const PermissionDialog(),
     );
   }
 
@@ -980,124 +704,150 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                     zoom: 15,
                   ),
                   markers: _markers,
+                  polylines: _routePolylines.toSet(),
                   onMapCreated: (GoogleMapController controller) {
-                    print('🗺️ Google Map created successfully');
+
+
                     _mapController = controller;
+                    print('🗺️ Map controller set: $_mapController');
 
                     // Force update markers after map is ready
                     Future.delayed(const Duration(milliseconds: 500), () {
-                      print('🔄 Force updating markers after map ready...');
-                      _updateMarkers();
+                      if (mounted) {
+
+                        _updateMarkers();
+
+                      }
                     });
 
                     // Mark map as loaded and cancel auto-fallback
-                    setState(() {
+                    if (mounted) {
                       _mapLoaded = true;
                       _showMapFallback = false;
-                    });
+
+
+                    }
                   },
                   onCameraMove: (CameraPosition position) {
                     // Update bounds for in-bounds search
-                    _mapController?.getVisibleRegion().then((bounds) {
-                      _currentBounds = bounds;
-                    });
+                    if (mounted) {
+                      _mapController?.getVisibleRegion().then((bounds) {
+                        if (mounted) {
+                          _currentBounds = bounds;
+                        }
+                      });
+                    }
                   },
                   onCameraIdle: () {
                     // Load parking lots in current view when camera stops moving
-                    _loadParkingLotsInBounds();
+
+                    if (mounted) {
+
+                      _loadParkingLotsInBounds();
+                    }
                   },
                   myLocationEnabled: true,
                   myLocationButtonEnabled: true,
                   mapType: MapType.normal,
                   mapToolbarEnabled: false,
                   zoomControlsEnabled: true,
+                  // Add key to prevent widget recreation
+                  key: const ValueKey('google_map'),
                   compassEnabled: true,
                   liteModeEnabled: false,
                   buildingsEnabled: true,
                   trafficEnabled: false,
                 ),
 
+                // ⬅️ Navigation overlay (REMOVED or COMMENTED OUT)
+                // A simpler, temporary overlay to show navigation is external
+                if (_isNavigating)
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.shade600,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Chỉ đường đang chạy trên ứng dụng bản đồ bên ngoài...',
+                        style: TextStyle(color: Colors.white, fontSize: 12),
+                      ),
+                    ),
+                  ),
+
                 // Debug indicator
+                MapDebugIndicator(mapLoaded: _mapLoaded),
+
+                // Socket status indicator
                 Positioned(
-                  top: 100,
+                  top: 140,
                   right: 16,
                   child: Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: _mapLoaded ? Colors.green : Colors.red,
+                      color: _isSocketConnected ? Colors.green : Colors.red,
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      _mapLoaded ? 'Map OK' : 'Map Loading...',
+                      _isSocketConnected ? 'Socket OK' : 'Socket Off',
                       style: const TextStyle(color: Colors.white, fontSize: 12),
                     ),
                   ),
                 ),
 
-                // Fallback: Show parking lots list when map doesn't load
-                if (false) // Temporarily disable fallback to show map
-                  Positioned.fill(
+                // Navigation debug indicator
+                if (_hasRoute)
+                  Positioned(
+                    top: 140,
+                    right: 16,
                     child: Container(
-                      color: Colors.white,
-                      child: Column(
-                        children: [
-                          // Header
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade50,
-                              borderRadius: const BorderRadius.only(
-                                bottomLeft: Radius.circular(16),
-                                bottomRight: Radius.circular(16),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.location_on,
-                                  color: Colors.green.shade600,
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Tìm thấy ${_parkingLots.length} bãi đỗ xe gần bạn',
-                                    style: TextStyle(
-                                      color: Colors.green.shade700,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                IconButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _showMapFallback = !_showMapFallback;
-                                    });
-                                  },
-                                  icon: Icon(
-                                    _showMapFallback ? Icons.map : Icons.list,
-                                    color: Colors.green.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // Parking lots list
-                          Expanded(
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _parkingLots.length,
-                              itemBuilder: (context, index) {
-                                return _buildParkingLotCard(
-                                  _parkingLots[index],
-                                  index,
-                                );
-                              },
-                            ),
-                          ),
-                        ],
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _isNavigating ? Colors.blue : Colors.orange,
+                        borderRadius: BorderRadius.circular(4),
                       ),
+                      child: Text(
+                        _isNavigating ? 'Navigating' : 'Route Ready',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Route debug indicator
+                if (_hasRoute)
+                  Positioned(
+                    top: 180,
+                    right: 16,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: _routePoints.isNotEmpty
+                            ? Colors.green
+                            : Colors.red,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        'Route: ${_routePoints.length} pts',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                // Fallback: Show parking lots list when map doesn't load
+                if (_showMapFallback)
+                  Positioned.fill(
+                    child: ParkingLotList(
+                      parkingLots: _parkingLots,
+                      onParkingLotTap: _showParkingLotDetails,
                     ),
                   ),
               ],
@@ -1110,121 +860,21 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
             top: MediaQuery.of(context).padding.top + 10,
             left: 16,
             right: 16,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(25),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.location_on, color: Colors.green.shade600),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Vị trí hiện tại',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                        Text(
-                          _currentAddress,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _showMapFallback = !_showMapFallback;
-                      });
-                    },
-                    icon: Icon(_showMapFallback ? Icons.map : Icons.list),
-                  ),
-                  IconButton(
-                    onPressed: _getCurrentLocation,
-                    icon: const Icon(Icons.refresh),
-                  ),
-                ],
-              ),
+            child: LocationSearchBar(
+              currentAddress: _currentAddress,
+              showMapFallback: _showMapFallback,
+              onToggleView: () {
+                setState(() {
+                  _showMapFallback = !_showMapFallback;
+                });
+              },
+              onRefresh: _getCurrentLocation,
             ),
           ),
 
-          // Search radius slider
-          Positioned(
-            bottom: 100,
-            left: 16,
-            right: 16,
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.radio_button_unchecked,
-                        color: Colors.green.shade600,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Bán kính tìm kiếm: ${_searchRadius.toStringAsFixed(1)} km',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Slider(
-                    value: _searchRadius,
-                    min: 1.0,
-                    max: 20.0,
-                    divisions: 19,
-                    activeColor: Colors.green,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchRadius = value;
-                      });
-                    },
-                    onChangeEnd: (value) {
-                      _loadNearbyParkingLots();
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
+
+          // Removed navigation controls as we're using external Google Maps
+
 
           // Loading indicator
           if (_isLoading)
@@ -1244,65 +894,28 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
               top: MediaQuery.of(context).padding.top + 80,
               left: 16,
               right: 16,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.shade200),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.error_outline, color: Colors.red.shade600),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: TextStyle(color: Colors.red.shade700),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () {
-                            setState(() {
-                              _errorMessage = null;
-                            });
-                          },
-                          icon: Icon(Icons.close, color: Colors.red.shade600),
-                        ),
-                      ],
-                    ),
-                    // Show Settings button if permission is permanently denied
-                    if (_errorMessage!.contains('vĩnh viễn') ||
-                        _errorMessage!.contains('Cài đặt'))
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: () async {
-                              await openAppSettings();
-                            },
-                            icon: const Icon(Icons.settings),
-                            label: const Text('Mở Cài đặt'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red.shade600,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+
+              child: ErrorMessage(
+                errorMessage: _errorMessage!,
+                onDismiss: () {
+                  setState(() {
+                    _errorMessage = null;
+                  });
+                },
+                onShowHelp: _showApiHelpDialog,
+
               ),
             ),
         ],
       ),
     );
   }
+
+  void _showApiHelpDialog() {
+
+    showDialog(context: context, builder: (context) => const ApiHelpDialog());
+  }
+
+  // Removed _buildNavigationOverlay as we're using external Google Maps
+
 }

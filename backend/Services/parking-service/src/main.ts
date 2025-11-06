@@ -2,6 +2,7 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common' // N
 import { ConfigService } from '@nestjs/config'
 import { NestFactory, Reflector } from '@nestjs/core'
 import type { NestExpressApplication } from '@nestjs/platform-express'
+import { IoAdapter } from '@nestjs/platform-socket.io'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 
 import { AppModule } from './app.module'
@@ -19,8 +20,15 @@ async function bootstrap() {
   )
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
   // --- Bắt đầu cấu hình Swagger ---
-  app.enableCors() // Bật CORS nếu cần thiết, giúp frontend có thể gọi API từ backend
+  app.useWebSocketAdapter(new IoAdapter(app))
+  app.enableCors({
+    // Đảm bảo 'origin' khớp với cổng của frontend React
+    origin: 'http://localhost:5173',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // Nếu bạn dùng cookie hoặc cần gửi headers Auth
+  }) // Bật CORS nếu cần thiết, giúp frontend có thể gọi API từ backend
   // Tạo một đối tượng cấu hình cơ bản cho Swagger document
+
   const config = new DocumentBuilder()
     .setTitle('Parking Service') // Tiêu đề hiển thị trên Swagger UI
     .setDescription('Parking Service API Documentation') // Mô tả chi tiết hơn về API
@@ -43,7 +51,8 @@ async function bootstrap() {
 
   // --- Kết thúc cấu hình Swagger ---
 
-  const port = configService.get<number>('PORT') ?? 5000
+  // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
+  const port = configService.get<number>('PORT') || 5000
   await app.listen(port, () => {
     console.log(`Example app listening on port ${String(port)}`)
   })

@@ -4,13 +4,12 @@ class VehicleForm extends StatelessWidget {
   final TextEditingController plateNumberController;
   final String? selectedBrandId;
   final String? selectedColorId;
-  final String? selectedVehicleTypeId;
+  final bool isElectricCar;
   final List<Map<String, dynamic>> brands;
   final List<Map<String, dynamic>> colors;
-  final List<Map<String, dynamic>> vehicleTypes;
   final ValueChanged<String?> onBrandChanged;
   final ValueChanged<String?> onColorChanged;
-  final ValueChanged<String?> onVehicleTypeChanged;
+  final ValueChanged<bool> onElectricCarChanged;
   final bool isEdit;
 
   // App theme colors
@@ -21,13 +20,12 @@ class VehicleForm extends StatelessWidget {
     required this.plateNumberController,
     required this.selectedBrandId,
     required this.selectedColorId,
-    required this.selectedVehicleTypeId,
+    required this.isElectricCar,
     required this.brands,
     required this.colors,
-    required this.vehicleTypes,
     required this.onBrandChanged,
     required this.onColorChanged,
-    required this.onVehicleTypeChanged,
+    required this.onElectricCarChanged,
     this.isEdit = false,
   });
 
@@ -83,22 +81,8 @@ class VehicleForm extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // Vehicle Type Dropdown
-          _buildDropdown(
-            value: selectedVehicleTypeId,
-            labelText: 'Loại xe',
-            icon: Icons.category_rounded,
-            items: vehicleTypes.map((type) {
-              return DropdownMenuItem<String>(
-                value: type['_id'],
-                child: Text(
-                  type['typeName'] ?? 'N/A',
-                  style: const TextStyle(fontSize: 16),
-                ),
-              );
-            }).toList(),
-            onChanged: onVehicleTypeChanged,
-          ),
+          // Electric Car Checkbox
+          _buildElectricCarCheckbox(),
         ],
       ),
     );
@@ -194,6 +178,40 @@ class VehicleForm extends StatelessWidget {
         ),
         items: items,
         onChanged: onChanged,
+      ),
+    );
+  }
+
+  Widget _buildElectricCarCheckbox() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: CheckboxListTile(
+        title: const Text(
+          'Xe điện',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        subtitle: const Text(
+          'Đánh dấu nếu đây là xe điện',
+          style: TextStyle(fontSize: 14, color: Colors.grey),
+        ),
+        value: isElectricCar,
+        onChanged: (bool? value) {
+          onElectricCarChanged(value ?? false);
+        },
+        activeColor: primaryColor,
+        checkColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        tileColor: Colors.grey.shade50,
       ),
     );
   }
