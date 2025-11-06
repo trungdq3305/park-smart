@@ -13,6 +13,16 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     private readonly pricingPolicyModel: Model<PricingPolicy>,
   ) {}
 
+  findByNameAndCreator(
+    name: string,
+    userId: string,
+  ): Promise<PricingPolicy | null> {
+    return this.pricingPolicyModel
+      .findOne({ name: name, createdBy: userId, deletedAt: null })
+      .lean()
+      .exec()
+  }
+
   async countOtherPoliciesUsingTieredRate(
     tieredRateId: string,
     policyIdToExclude: string,
@@ -37,14 +47,14 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.pricingPolicyModel
-        .find({ deletedAt: false })
+        .find({ deletedAt: null })
         .populate({ path: 'basisId' })
         .populate({ path: 'tieredRateSetId' })
-        .populate({ path: 'packageRateSetId' })
+        .populate({ path: 'packageRateId' })
         .skip(skip)
         .limit(pageSize)
         .exec(),
-      this.pricingPolicyModel.countDocuments({ deletedAt: false }),
+      this.pricingPolicyModel.countDocuments({ deletedAt: null }),
     ])
     return { data, total }
   }
@@ -75,14 +85,14 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
       ...policy,
       createdBy: userId,
     })
-    await createdPolicy.save({ session })
-    const result = await this.pricingPolicyModel
-      .findById(createdPolicy._id)
-      .populate({ path: 'basisId' })
-      .populate({ path: 'tieredRateSetId' })
-      .populate({ path: 'packageRateSetId' })
-      .exec()
-    return result
+    const savedPolicy = await createdPolicy.save({ session })
+
+    // 2. Populate ngay trên kết quả đó
+    return savedPolicy.populate([
+      { path: 'basisId' },
+      { path: 'tieredRateSetId' },
+      { path: 'packageRateId' },
+    ])
   }
 
   async findAllPoliciesByPoliciesByCreator(
@@ -93,16 +103,16 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.pricingPolicyModel
-        .find({ createdBy: userId, deletedAt: false })
+        .find({ createdBy: userId, deletedAt: null })
         .populate({ path: 'basisId' })
         .populate({ path: 'tieredRateSetId' })
-        .populate({ path: 'packageRateSetId' })
+        .populate({ path: 'packageRateId' })
         .skip(skip)
         .limit(pageSize)
         .exec(),
       this.pricingPolicyModel.countDocuments({
         createdBy: userId,
-        deletedAt: false,
+        deletedAt: null,
       }),
     ])
     return { data, total }
@@ -110,20 +120,20 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
 
   async findPolicyById(id: string): Promise<PricingPolicy | null> {
     const data = await this.pricingPolicyModel
-      .findOne({ _id: id, deletedAt: false })
+      .findOne({ _id: id, deletedAt: null })
       .populate({ path: 'basisId' })
       .populate({ path: 'tieredRateSetId' })
-      .populate({ path: 'packageRateSetId' })
+      .populate({ path: 'packageRateId' })
       .exec()
     return data
   }
 
   async getPolicyDetailsById(policyId: string): Promise<PricingPolicy | null> {
     const data = await this.pricingPolicyModel
-      .findOne({ _id: policyId, deletedAt: false })
+      .findOne({ _id: policyId, deletedAt: null })
       .populate({ path: 'basisId' })
       .populate({ path: 'tieredRateSetId' })
-      .populate({ path: 'packageRateSetId' })
+      .populate({ path: 'packageRateId' })
       .exec()
     return data
   }

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
+import { BasisModule } from '../basis/basis.module'
 import { PackageRateModule } from '../packageRate/packageRate.module'
 import { TieredRateSetModule } from '../tieredRateSet/tieredRateSet.module'
 import { IPricingPolicyRepository } from './interfaces/ipricingPolicy.repository'
@@ -20,6 +21,7 @@ import {
     ]),
     TieredRateSetModule,
     PackageRateModule,
+    BasisModule,
   ],
   controllers: [PricingPolicyController],
   providers: [

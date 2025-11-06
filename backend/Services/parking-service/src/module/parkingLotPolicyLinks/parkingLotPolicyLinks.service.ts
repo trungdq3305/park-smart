@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
@@ -11,6 +12,8 @@ import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
 
+import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
+import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 import {
   CreateParkingLotPolicyLinkDto,
   ParkingLotPolicyLinkResponseDto,
@@ -27,6 +30,10 @@ export class ParkingLotPolicyLinksService
   constructor(
     @Inject(IParkingLotPolicyLinkRepository)
     private readonly parkingLotPolicyLinksRepository: IParkingLotPolicyLinkRepository,
+    @Inject(IPricingPolicyRepository)
+    private readonly pricingPolicyRepository: IPricingPolicyRepository,
+    @Inject(IParkingLotRepository)
+    private readonly parkingLotRepository: IParkingLotRepository,
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
@@ -42,10 +49,39 @@ export class ParkingLotPolicyLinksService
     )
   }
 
+  private checkTime(startTime: Date, endTime?: Date): void {
+    if (!endTime) {
+      return
+    }
+    if (startTime >= endTime) {
+      throw new ConflictException(
+        'Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc',
+      )
+    }
+  }
+
+  private async checkExist(
+    parkingLotId: string,
+    policyId: string,
+  ): Promise<void> {
+    const existParkingLot =
+      await this.parkingLotRepository.findParkingLotById(parkingLotId)
+    if (!existParkingLot) {
+      throw new NotFoundException('Bãi xe không tồn tại')
+    }
+    const existPolicy =
+      await this.pricingPolicyRepository.findPolicyById(policyId)
+    if (!existPolicy) {
+      throw new NotFoundException('Chính sách không tồn tại')
+    }
+  }
+
   async createLink(
     createDto: CreateParkingLotPolicyLinkDto,
     userId: string,
   ): Promise<ParkingLotPolicyLinkResponseDto> {
+    await this.checkExist(createDto.parkingLotId, createDto.pricingPolicyId)
+    this.checkTime(new Date(createDto.startDate), new Date(createDto.endDate))
     const session = await this.connection.startSession()
     session.startTransaction()
     try {

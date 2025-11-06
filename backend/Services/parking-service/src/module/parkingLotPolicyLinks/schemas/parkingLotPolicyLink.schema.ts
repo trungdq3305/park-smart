@@ -34,7 +34,7 @@ export class ParkingLotPolicyLink extends BaseEntity {
   @Prop({ required: true, type: Date })
   startDate: Date
 
-  @Prop({ required: true, type: Date })
+  @Prop({ required: false, type: Date })
   endDate: Date
 }
 

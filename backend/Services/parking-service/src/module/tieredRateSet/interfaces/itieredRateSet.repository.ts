@@ -72,7 +72,6 @@ export interface ITieredRateSetRepository {
    * Có thể được sử dụng trong một transaction (session).
    * @param name Tên của bộ giá.
    * @param userId ID của người vận hành.
-   * @param session Tùy chọn, phiên làm việc của transaction.
    */
   findSetByName(name: string, userId: string): Promise<TieredRateSet | null>
 
