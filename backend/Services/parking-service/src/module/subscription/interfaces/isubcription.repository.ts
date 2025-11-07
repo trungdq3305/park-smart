@@ -17,7 +17,7 @@ export interface ISubscriptionRepository {
   createSubscription(
     subscriptionData: CreateSubscriptionDto,
     userId: string,
-    session: ClientSession,
+    session?: ClientSession,
   ): Promise<Subscription | null>
 
   /**

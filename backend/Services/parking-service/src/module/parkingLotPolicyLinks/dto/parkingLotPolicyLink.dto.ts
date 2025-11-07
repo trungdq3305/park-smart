@@ -95,13 +95,109 @@ class LinkedParkingLotDto {
  * DTO lồng nhau cho PricingPolicy (để hiển thị thông tin khi populate)
  */
 @Exclude()
-class LinkedPricingPolicyDto {
+class TierDto {
+  @Expose()
+  fromHour: string
+
+  @Expose()
+  toHour: string | null
+
+  @Expose()
+  price: number
+}
+
+// --- DTOs for Populated Fields ---
+
+/**
+ * DTO cho 'Basis' (Cơ sở)
+ */
+@Exclude()
+class LinkedBasisDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  basisName: string
+
+  @Expose()
+  description: string
+}
+
+/**
+ * DTO cho 'PackageRate' (Gói giá)
+ */
+@Exclude()
+class LinkedPackageRateDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  price: number
+
+  @Expose()
+  durationAmount: number
+
+  @Expose()
+  unit: string
+}
+
+/**
+ * DTO cho 'TieredRateSet' (Bộ giá bậc thang)
+ */
+@Exclude()
+class LinkedTieredRateSetDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  @Type(() => TierDto) // ⭐️ Lồng mảng DTO 'Tier' vào đây
+  tiers: TierDto[]
+}
+
+// --- DTO CHÍNH (Đã hoàn thiện) ---
+
+/**
+ * DTO cho 'PricingPolicy' (Chính sách giá)
+ * Dùng lồng bên trong 'ParkingLotPolicyLinkResponseDto'
+ */
+@Exclude()
+export class LinkedPricingPolicyDto {
   @Expose()
   @Transform(({ obj }) => obj?._id?.toString())
   _id: string
 
   @Expose()
   name: string // Giả sử PricingPolicy có trường 'name'
+
+  // --- Các trường giá trị trực tiếp ---
+  @Expose()
+  pricePerHour: number
+
+  @Expose()
+  fixedPrice: number
+
+  // --- Các trường populate (lồng nhau) ---
+
+  @Expose()
+  @Type(() => LinkedBasisDto) // ⭐️ Bổ sung
+  basisId: LinkedBasisDto
+
+  @Expose()
+  @Type(() => LinkedPackageRateDto) // ⭐️ Bổ sung
+  packageRateId: LinkedPackageRateDto | null // Có thể null
+
+  @Expose()
+  @Type(() => LinkedTieredRateSetDto) // ⭐️ Bổ sung
+  tieredRateSetId: LinkedTieredRateSetDto | null // Có thể null
 }
 
 /**
