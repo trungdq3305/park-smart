@@ -103,7 +103,8 @@ export class ParkingLotRequestRepository
     }
 
     // 4. Thực thi truy vấn và trả về kết quả
-    return this.parkingLotRequestModel.find(filter).exec()
+    const data = await this.parkingLotRequestModel.find(filter).exec()
+    return data
   }
 
   async findByParkingLotId(parkingLotId: string): Promise<ParkingLotRequest[]> {

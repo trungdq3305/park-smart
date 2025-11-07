@@ -12,6 +12,19 @@ export class ParkingLotRepository implements IParkingLotRepository {
     private parkingLotModel: Model<ParkingLot>,
   ) {}
 
+  async getLeasedCapacityRule(
+    id: string,
+    session?: ClientSession,
+  ): Promise<number> {
+    const data = await this.parkingLotModel
+      .findById(id)
+      .select('leasedCapacity')
+      .lean()
+      .session(session ?? null)
+      .exec()
+    return data?.leasedCapacity ?? 0
+  }
+
   async updateBookingSlotDurationHours(
     id: string,
     durationHours: number,
@@ -243,11 +256,6 @@ export class ParkingLotRepository implements IParkingLotRepository {
             {
               $project: {
                 _id: 1,
-                openTime: 1,
-                closeTime: 1,
-                is24Hours: 1,
-                maxVehicleHeight: 1,
-                maxVehicleWidth: 1,
                 totalCapacityEachLevel: 1,
                 totalLevel: 1,
                 availableSpots: 1,
@@ -344,11 +352,6 @@ export class ParkingLotRepository implements IParkingLotRepository {
             {
               $project: {
                 _id: 1, // Giữ lại _id của ParkingLot
-                openTime: 1,
-                closeTime: 1,
-                is24Hours: 1,
-                maxVehicleHeight: 1,
-                maxVehicleWidth: 1,
                 totalCapacityEachLevel: 1,
                 totalLevel: 1,
                 availableSpots: 1,

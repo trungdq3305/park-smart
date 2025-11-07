@@ -23,7 +23,7 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(app))
   app.enableCors({
     // Đảm bảo 'origin' khớp với cổng của frontend React
-    origin: 'http://localhost:5173',
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // Nếu bạn dùng cookie hoặc cần gửi headers Auth
   }) // Bật CORS nếu cần thiết, giúp frontend có thể gọi API từ backend

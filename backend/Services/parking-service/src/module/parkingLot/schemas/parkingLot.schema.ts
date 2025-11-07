@@ -24,15 +24,6 @@ export class ParkingLot extends BaseEntity {
   @Prop({ required: true, type: String })
   parkingLotOperatorId: string
 
-  @Prop({ required: false, type: String })
-  openTime: string
-
-  @Prop({ required: false, type: String })
-  closeTime: string
-
-  @Prop({ required: false, type: Boolean })
-  is24Hours: boolean
-
   @Prop({ required: true, type: Number })
   totalCapacityEachLevel: number
 
