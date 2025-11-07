@@ -123,8 +123,8 @@ export class AccountServiceClient implements IAccountServiceClient {
     }
   }
 
-  async getPaymentStatusByExternalId(externalId: string): Promise<boolean> {
-    const url = `${this.CORE_SERVICE_BASE_URL}/payments/external/${externalId}`
+  async getPaymentStatusByPaymentId(paymentId: string): Promise<boolean> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/payments/${paymentId}`
 
     try {
       // 1. Chỉ định kiểu trả về là 'any' vì nó không nhất quán
@@ -173,7 +173,7 @@ export class AccountServiceClient implements IAccountServiceClient {
 
       // Nếu là lỗi server/mạng...
       throw new InternalServerErrorException(
-        `Lỗi khi gọi Core Service để lấy trạng thái thanh toán cho externalId: ${externalId}`,
+        `Lỗi khi gọi Core Service để lấy trạng thái thanh toán cho paymentId: ${paymentId}`,
       )
       // Trả về 'false' (chưa thanh toán) là mặc định an toàn nhất
       return false

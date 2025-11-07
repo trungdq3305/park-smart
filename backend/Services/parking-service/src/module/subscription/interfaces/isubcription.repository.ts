@@ -17,14 +17,15 @@ export interface ISubscriptionRepository {
   createSubscription(
     subscriptionData: CreateSubscriptionDto,
     userId: string,
-    session?: ClientSession,
+    session: ClientSession,
   ): Promise<Subscription | null>
 
   /**
    * Tìm một gói thuê bao bằng ID.
    * @param id ID của gói thuê bao.
+   * @param userId ID của người dùng (để kiểm tra quyền truy cập nếu cần).
    */
-  findSubscriptionById(id: string): Promise<Subscription | null>
+  findSubscriptionById(id: string, userId: string): Promise<Subscription | null>
 
   /**
    * Tìm một gói thuê bao đang ACTIVE bằng mã định danh (subscriptionIdentifier).
@@ -52,10 +53,12 @@ export interface ISubscriptionRepository {
    * Đếm tổng số gói thuê bao đang 'ACTIVE' (chưa hết hạn) của một bãi xe.
    * Dùng để kiểm tra với `leasedCapacity` (Xô 1) trước khi bán gói mới.
    * @param parkingLotId ID của bãi đỗ xe.
+   * @param requestedDate Ngày được yêu cầu (để kiểm tra tính hợp lệ của gói).
    * @param session (Tùy chọn) Phiên làm việc của transaction (để đọc nhất quán).
    */
-  countActiveByParkingLot(
+  countActiveOnDateByParkingLot(
     parkingLotId: string,
+    requestedDate: Date,
     session?: ClientSession,
   ): Promise<number>
 
@@ -93,6 +96,18 @@ export interface ISubscriptionRepository {
     userId: string,
     session: ClientSession,
   ): Promise<boolean> // Trả về true nếu thành công
+  /**
+   * Lấy TẤT CẢ các gói thuê bao (subscription) đang hoạt động
+   * hoặc sẽ hoạt động trong tương lai của một bãi xe.
+   * (Chỉ lấy các trường cần thiết để tính toán chồng lấn).
+   *
+   * @param parkingLotId ID của bãi đỗ xe.
+   * @param fromDate Chỉ lấy các gói có 'endDate' >= ngày này (thường là hôm nay).
+   */
+  findActiveAndFutureSubscriptions(
+    parkingLotId: string,
+    fromDate: Date,
+  ): Promise<Pick<Subscription, 'startDate' | 'endDate'>[]> // ⭐️ Chỉ lấy 2 trường
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')
