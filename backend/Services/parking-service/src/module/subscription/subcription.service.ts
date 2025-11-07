@@ -1,5 +1,12 @@
-import { ConflictException, Inject, Injectable } from '@nestjs/common'
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common'
+import { InjectConnection } from '@nestjs/mongoose'
 import { plainToInstance } from 'class-transformer'
+import { Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
@@ -11,8 +18,10 @@ import {
   SubscriptionDetailResponseDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto'
+import { SubscriptionTransactionType } from './enums/subscription.enum'
 import { ISubscriptionRepository } from './interfaces/isubcription.repository'
 import { ISubscriptionService } from './interfaces/isubcription.service'
+import { ISubscriptionLogRepository } from './interfaces/isubcriptionLog.repository'
 import { Subscription } from './schemas/subscription.schema'
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
@@ -21,6 +30,10 @@ export class SubscriptionService implements ISubscriptionService {
     private readonly subscriptionRepository: ISubscriptionRepository,
     @Inject(IAccountServiceClient)
     private readonly accountServiceClient: IAccountServiceClient,
+    @InjectConnection()
+    private readonly connection: Connection,
+    @Inject(ISubscriptionLogRepository)
+    private readonly subscriptionLogRepository: ISubscriptionLogRepository,
   ) {}
 
   private returnToDto(
@@ -35,42 +48,109 @@ export class SubscriptionService implements ISubscriptionService {
     createDto: CreateSubscriptionDto,
     userId: string,
   ): Promise<SubscriptionDetailResponseDto> {
-    const checkPaymentStatus =
-      await this.accountServiceClient.getPaymentStatusByExternalId(
-        createDto.externalId,
-      )
-    if (!checkPaymentStatus) {
-      throw new ConflictException('Đơn hàng chưa được thanh toán')
+    const session = await this.connection.startSession()
+    session.startTransaction()
+    try {
+      const checkPaymentStatus =
+        await this.accountServiceClient.getPaymentStatusByPaymentId(
+          createDto.paymentId,
+        )
+      if (!checkPaymentStatus) {
+        throw new ConflictException('Vé chưa được thanh toán')
+      }
+      const newSubscription =
+        await this.subscriptionRepository.createSubscription(
+          createDto,
+          userId,
+          session,
+        )
+
+      if (!newSubscription) {
+        throw new InternalServerErrorException('Không thể tạo gói thuê bao.')
+      }
+
+      const dataForLog = {
+        paymentId: createDto.paymentId,
+        subscriptionId: newSubscription._id,
+        extendedUntil: newSubscription.endDate,
+        transactionType: SubscriptionTransactionType.INITIAL_PURCHASE,
+      }
+
+      await this.subscriptionLogRepository.createLog(dataForLog, session)
+
+      await session.commitTransaction()
+
+      return this.returnToDto(newSubscription)
+    } catch (error) {
+      await session.abortTransaction()
+      if (error.code === 11000) {
+        // Dịch lỗi CSDL thành lỗi 409 (Conflict) thân thiện
+        throw new ConflictException(
+          'Thanh toán này đã được sử dụng cho một gói thuê bao khác.',
+        )
+      }
+      throw error
+    } finally {
+      await session.endSession()
     }
-    const newSubscription =
-      await this.subscriptionRepository.createSubscription(createDto, userId)
-    if (!newSubscription) {
-      throw new ConflictException('Tạo gói đăng ký thất bại')
-    }
-    return this.returnToDto(newSubscription)
   }
 
-  findAllByUserId(
+  async findAllByUserId(
     userId: string,
     paginationQuery: PaginationQueryDto,
   ): Promise<{
     data: SubscriptionDetailResponseDto[]
     pagination: PaginationDto
   }> {
-    throw new Error('Method not implemented.')
+    const { page, pageSize } = paginationQuery
+    const data = await this.subscriptionRepository.findAllByUserId(
+      userId,
+      page,
+      pageSize,
+    )
+
+    if (data.data.length === 0) {
+      throw new ConflictException('Người dùng chưa có gói đăng ký nào')
+    }
+
+    return {
+      data: data.data.map((s) => this.returnToDto(s)),
+      pagination: {
+        totalItems: data.total,
+        currentPage: paginationQuery.page,
+        pageSize: paginationQuery.pageSize,
+        totalPages: Math.ceil(data.total / paginationQuery.pageSize),
+      },
+    }
   }
 
-  findSubscriptionById(
+  async findSubscriptionById(
     id: IdDto,
     userId: string,
   ): Promise<SubscriptionDetailResponseDto> {
-    throw new Error('Method not implemented.')
+    const subscription = await this.subscriptionRepository.findSubscriptionById(
+      id.id,
+      userId,
+    )
+    if (!subscription) {
+      throw new ConflictException('Gói đăng ký không tồn tại')
+    }
+    return this.returnToDto(subscription)
   }
 
-  findActiveSubscriptionByIdentifier(
+  async findActiveSubscriptionByIdentifier(
     subscriptionIdentifier: string,
   ): Promise<SubscriptionDetailResponseDto> {
-    throw new Error('Method not implemented.')
+    const subscription =
+      await this.subscriptionRepository.findActiveSubscriptionByIdentifier(
+        subscriptionIdentifier,
+      )
+    if (!subscription) {
+      throw new ConflictException(
+        'Gói đăng ký không tồn tại hoặc không còn hiệu lực',
+      )
+    }
+    return this.returnToDto(subscription)
   }
 
   cancelSubscription(id: IdDto, userId: string): Promise<boolean> {
@@ -79,6 +159,7 @@ export class SubscriptionService implements ISubscriptionService {
 
   renewSubscription(
     id: IdDto,
+    paymentId: string,
     userId: string,
   ): Promise<SubscriptionDetailResponseDto> {
     throw new Error('Method not implemented.')

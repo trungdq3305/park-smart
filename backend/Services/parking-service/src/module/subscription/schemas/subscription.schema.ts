@@ -13,7 +13,11 @@ export type SubscriptionDocument = HydratedDocument<Subscription>
  */
 @Schema()
 export class Subscription extends BaseEntity {
-  // Kế thừa _id, createdAt, updatedAt từ BaseEntity
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    default: () => new mongoose.Types.ObjectId(),
+  })
+  _id: string
 
   @Prop({
     required: true,
@@ -66,8 +70,14 @@ export class Subscription extends BaseEntity {
   })
   isUsed: boolean
 
-  // --- Các trường tùy chọn bạn có thể thêm sau ---
+  @Prop({
+    required: true,
+    type: String,
+    unique: true,
+  })
+  paymentId: string // Mã định danh thanh toán từ hệ thống thanh toán bên thứ ba
 
+  // --- Các trường tùy chọn bạn có thể thêm sau ---
   @Prop({
     type: String,
     unique: true, // Bắt buộc phải là duy nhất

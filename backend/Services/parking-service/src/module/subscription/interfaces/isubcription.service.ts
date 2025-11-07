@@ -69,10 +69,12 @@ export interface ISubscriptionService {
    * Gia hạn một gói thuê bao (do người dùng chủ động).
    * (Service sẽ kích hoạt luồng thanh toán (cashless) cho chu kỳ tiếp theo).
    * @param id ID của gói thuê bao cần gia hạn.
+   * @param paymentId ID của thanh toán cho việc gia hạn.
    * @param userId ID của người dùng đang thực hiện.
    */
   renewSubscription(
     id: IdDto,
+    paymentId: string,
     userId: string,
   ): Promise<SubscriptionDetailResponseDto>
 

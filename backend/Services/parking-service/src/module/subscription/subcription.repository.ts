@@ -19,18 +19,24 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   createSubscription(
     subscriptionData: CreateSubscriptionDto,
     userId: string,
-    session?: ClientSession,
+    session: ClientSession,
   ): Promise<Subscription | null> {
     const createdSubscription = new this.subscriptionModel({
       ...subscriptionData,
       createdBy: userId,
       createdAt: new Date(),
     })
-    return createdSubscription.save(session ? { session } : undefined)
+    return createdSubscription.save({ session })
   }
 
-  findSubscriptionById(id: string): Promise<Subscription | null> {
-    return this.subscriptionModel.findById({ _id: id }).lean().exec()
+  findSubscriptionById(
+    id: string,
+    userId: string,
+  ): Promise<Subscription | null> {
+    return this.subscriptionModel
+      .findOne({ _id: id, createdBy: userId })
+      .lean()
+      .exec()
   }
 
   async findActiveSubscriptionByIdentifier(

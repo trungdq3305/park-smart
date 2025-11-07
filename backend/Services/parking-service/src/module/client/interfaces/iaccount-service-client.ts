@@ -9,11 +9,11 @@ export interface IAccountServiceClient {
   getUserIdsByRole(roleName: string): Promise<string[]>
 
   /**
-   * @description Gọi API của Core Service để lấy trạng thái thanh toán theo External ID.
-   * @param ExternalId ID bên ngoài của giao dịch thanh toán.
+   * @description Gọi API của Core Service để lấy trạng thái thanh toán theo ID thanh toán.
+   * @param paymentId ID thanh toán của giao dịch.
    * @returns Trạng thái thanh toán (ví dụ: 'pending', 'completed', 'failed').
    */
-  getPaymentStatusByExternalId(ExternalId: string): Promise<boolean>
+  getPaymentStatusByPaymentId(paymentId: string): Promise<boolean>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')

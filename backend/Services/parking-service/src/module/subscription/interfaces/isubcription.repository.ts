@@ -17,14 +17,15 @@ export interface ISubscriptionRepository {
   createSubscription(
     subscriptionData: CreateSubscriptionDto,
     userId: string,
-    session?: ClientSession,
+    session: ClientSession,
   ): Promise<Subscription | null>
 
   /**
    * Tìm một gói thuê bao bằng ID.
    * @param id ID của gói thuê bao.
+   * @param userId ID của người dùng (để kiểm tra quyền truy cập nếu cần).
    */
-  findSubscriptionById(id: string): Promise<Subscription | null>
+  findSubscriptionById(id: string, userId: string): Promise<Subscription | null>
 
   /**
    * Tìm một gói thuê bao đang ACTIVE bằng mã định danh (subscriptionIdentifier).

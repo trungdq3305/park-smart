@@ -57,10 +57,10 @@ export class CreateSubscriptionDto {
   @ApiProperty({
     example: 'ext-1234567890',
     description:
-      'Mã định danh thanh toán từ hệ thống thanh toán bên thứ ba (externalId)',
+      'Mã định danh thanh toán từ hệ thống thanh toán bên thứ ba (paymentId)',
   })
-  @IsNotEmpty({ message: 'externalId không được để trống' })
-  externalId: string
+  @IsNotEmpty({ message: 'paymentId không được để trống' })
+  paymentId: string
 
   // Lưu ý: userId sẽ được lấy từ @GetCurrentUserId() trong controller.
   // endDate, status, isUsed, subscriptionIdentifier sẽ được set bởi server.
