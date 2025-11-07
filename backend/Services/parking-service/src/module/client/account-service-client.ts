@@ -5,9 +5,14 @@
 // src/module/client/account-service-client.ts
 
 import { HttpService } from '@nestjs/axios'
-import { Injectable } from '@nestjs/common'
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config' // 🔥 THÊM: Import ConfigService
 import { JwtService } from '@nestjs/jwt'
+import { AxiosResponse } from 'axios' // Import để gán kiểu
 import { firstValueFrom } from 'rxjs'
 
 import { IAccountServiceClient } from './interfaces/iaccount-service-client'
@@ -118,7 +123,60 @@ export class AccountServiceClient implements IAccountServiceClient {
     }
   }
 
-  getPaymentStatusByExternalId(externalId: string): Promise<string> {
-    throw new Error('Method not implemented.')
+  async getPaymentStatusByExternalId(externalId: string): Promise<boolean> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/payments/external/${externalId}`
+
+    try {
+      // 1. Chỉ định kiểu trả về là 'any' vì nó không nhất quán
+      const data$ = this.httpService.get(url, {
+        // <-- ⭐️ SỬA 1
+        headers: {
+          Authorization: `Bearer ${this.getInternalToken()}`,
+        },
+      })
+
+      // 2. Lấy response
+      const response: AxiosResponse = await firstValueFrom(data$)
+
+      // 3. ⭐️ SỬA LỖI Ở ĐÂY:
+      // Lấy dữ liệu thô (raw data) từ response
+      const responseData = response.data
+
+      // 4. KIỂM TRA KIỂU DỮ LIỆU CỦA PHẢN HỒI
+
+      // Trường hợp 1: Nếu là object (đây là trường hợp lỗi 404/400)
+      if (
+        typeof responseData === 'object' &&
+        responseData !== null &&
+        responseData.success === false
+      ) {
+        // Ném lỗi này ra để Service (NestJS) của bạn bắt được ở khối catch
+        throw new NotFoundException(
+          responseData.error || 'Không tìm thấy thanh toán bên ngoài',
+        )
+      }
+
+      // Trường hợp 2: Nếu là boolean (đây là trường hợp thành công 'true')
+      if (typeof responseData === 'boolean') {
+        return responseData // Sẽ trả về 'true'
+      }
+
+      // Trường hợp 3: API trả về cái gì đó không mong đợi
+      return false // Mặc định an toàn là false
+    } catch (error) {
+      // 5. Xử lý lỗi (Lỗi mạng 500, hoặc lỗi NotFoundException chúng ta vừa ném ở trên)
+
+      // Nếu đây là lỗi NotFound chúng ta chủ động ném, hãy ném lại
+      if (error instanceof NotFoundException) {
+        throw error
+      }
+
+      // Nếu là lỗi server/mạng...
+      throw new InternalServerErrorException(
+        `Lỗi khi gọi Core Service để lấy trạng thái thanh toán cho externalId: ${externalId}`,
+      )
+      // Trả về 'false' (chưa thanh toán) là mặc định an toàn nhất
+      return false
+    }
   }
 }

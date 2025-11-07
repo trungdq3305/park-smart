@@ -20,7 +20,6 @@ export class NotificationScheduler {
     )
     try {
       await this.notificationService.processScheduledAnnouncements()
-      console.log('[Cron Job] Hoàn tất việc kiểm tra Announcement.')
     } catch (error) {
       console.error(
         '[Cron Job Error] Lỗi khi xử lý Announcement:',
