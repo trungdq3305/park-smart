@@ -12,6 +12,8 @@ namespace CoreService.Application.DTOs.ReportDtos
         public string Id { get; set; }
         public string DriverId { get; set; }
         public string OperatorId { get; set; }
+        public ReportAccountResponseDto DriverInfo { get; set; }
+        public ReportAccountResponseDto OperatorInfo { get; set; }
         public string ParkingLotId { get; set; }
         public CategoryResponseDto Category { get; set; }
         public bool IsProcessed { get; set; } // Đổi sang boolean

@@ -32,7 +32,7 @@ namespace CoreService.Application.Interfaces
         Task<PaymentRecord?> GetLatestPaymentByReservationAsync(string reservationId);
         Task<string> GetInvoiceStatusAsync(string operatorId, string invoiceId);
         Task UpdatePaymentStatusAsync(string invoiceId, string newStatus);
-        Task<bool> GetByExternalIdAsync(string externalId);
+        Task<bool> GetByIdAsync(string Id);
         Task<IEnumerable<RefundRecord>> GetRefundsByCreatedByAsync(string accountId, int take = 50);
     }
 }
