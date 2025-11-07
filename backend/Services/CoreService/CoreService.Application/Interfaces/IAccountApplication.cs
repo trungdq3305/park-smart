@@ -14,6 +14,7 @@ namespace CoreService.Application.Interfaces
     {
         Task<ApiResponse<AccountListResponseDto>> GetAllAsync(int? page, int? pageSize);
         Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetByRoleAsync(string role, int? page, int? pageSize);
+        Task<ApiResponse<AccountPhoneResponse>> GetByPhoneAsync(string phone);
         Task<ApiResponse<AccountDetailDto>> GetByIdAsync(string id);
         //Task<ApiResponse<Account>> CreateAsync(Account account);
         //Task<ApiResponse<Account>> UpdateAsync(string id, Account update);

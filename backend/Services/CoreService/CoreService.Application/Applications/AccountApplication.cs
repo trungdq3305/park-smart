@@ -166,7 +166,39 @@ namespace CoreService.Application.Applications
                 StatusCodes.Status200OK
             );
         }
+        public async Task<ApiResponse<AccountPhoneResponse>> GetByPhoneAsync(string phone)
+        {
+           
+            await _accountRepo.GetByPhoneAsync(phone);
 
+            var account = await _accountRepo.GetByPhoneAsync(phone);
+
+            // 2. Kiểm tra nếu không tìm thấy tài khoản
+            if (account == null)
+            {
+                // Trả về lỗi "Không tìm thấy" (404 Not Found)
+                return new ApiResponse<AccountPhoneResponse>(
+                    null,
+                    false,
+                    $"Không tìm thấy tài khoản với số điện thoại: {phone}.",
+                    StatusCodes.Status404NotFound
+                );
+            }
+
+            // 3. Chuyển đổi sang DTO và trả về thành công
+            var dto = new AccountPhoneResponse
+            {
+                Id = account.Id,
+                PhoneNumber = account.PhoneNumber
+            };
+
+            return new ApiResponse<AccountPhoneResponse>(
+                dto,
+                true,
+                $"Tìm thấy tài khoản với số điện thoại: {phone} thành công.",
+                StatusCodes.Status200OK
+            );
+        }
         public async Task<ApiResponse<AccountDetailDto>> GetByIdAsync(string id)
         {
             var account = await _accountRepo.GetByIdAsync(id);

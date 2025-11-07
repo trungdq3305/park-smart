@@ -33,6 +33,13 @@ namespace CoreService.API.Controllers
             var response = await _accountApplication.GetByRoleAsync(role, page, pageSize);
             return StatusCode(response.StatusCode, response);
         }
+        [HttpGet("by-phone")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetByPhone( string phone)
+        {
+            var response = await _accountApplication.GetByPhoneAsync(phone);
+            return StatusCode(response.StatusCode, response);
+        }
 
         [Authorize]
         [HttpGet("me")]
