@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace CoreService.Application.DTOs.EventDtos
 {
     public class EventResponseDto
     {
+        [JsonPropertyName("_id")]
         public string Id { get; set; }
         public string OperatorId { get; set; }
         public string ParkingLotId { get; set; }
