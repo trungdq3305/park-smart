@@ -12,4 +12,9 @@ namespace CoreService.Application.DTOs.CategoryDtos
         public string Name { get; set; }
         public string Description { get; set; }
     }
+    public class ReportAccountResponseDto
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+    }
 }

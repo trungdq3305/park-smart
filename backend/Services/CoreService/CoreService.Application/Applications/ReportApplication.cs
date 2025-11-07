@@ -18,10 +18,12 @@ namespace CoreService.Application.Applications
     {
         private readonly IReportRepository _reportRepo;
         private readonly IReportCategoryRepository _categoryRepo;
-        public ReportApplication(IReportRepository reportRepo, IReportCategoryRepository categoryRepo)
+        private readonly IAccountApplication _accApp;
+        public ReportApplication(IReportRepository reportRepo, IReportCategoryRepository categoryRepo, IAccountApplication accApp)
         {
             _reportRepo = reportRepo;
             _categoryRepo = categoryRepo;
+            _accApp = accApp;
         }
 
         public async Task<ApiResponse<ReportResponseDto>> CreateAsync(ReportCreateDto dto, string actorAccountId, string actorRole)
@@ -82,11 +84,28 @@ namespace CoreService.Application.Applications
         private async Task<ReportResponseDto> MapToResponseDto(Report x)
         {
             var category = await _categoryRepo.GetByIdAsync(x.CategoryId);
+            var acc = await _accApp.GetByIdAsync(x.CreatedBy);
             return new ReportResponseDto
             {
                 Id = x.Id,
                 DriverId = x.DriverId,
                 OperatorId = x.OperatorId,
+                DriverInfo = x.CreatedBy != null && acc?.Data != null && acc.Data.DriverDetail != null
+        ? new ReportAccountResponseDto
+        {
+            Id = acc.Data.Id,
+            Name = acc.Data.DriverDetail.FullName ?? null
+        }
+        : null,
+
+                // SỬA OperatorInfo: Thêm kiểm tra acc.Data?.OperatorDetail?.
+                OperatorInfo = x.CreatedBy != null && acc?.Data != null && acc.Data.OperatorDetail != null
+        ? new ReportAccountResponseDto
+        {
+            Id = acc.Data.Id,
+            Name = acc.Data.OperatorDetail.FullName ?? null
+        }
+        : null,
                 ParkingLotId = x.ParkingLotId,
                 Category = category != null ? new CategoryResponseDto { Id = category.Id, Name = category.Name, Description = category.Description } : null,
                 IsProcessed = x.IsProcessed,

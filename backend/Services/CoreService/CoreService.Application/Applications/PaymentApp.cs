@@ -515,15 +515,15 @@ namespace CoreService.Application.Applications
             await _payRepo.UpdateAsync(pr);
         }
 
-        public async Task<bool> GetByExternalIdAsync(string externalId)
+        public async Task<bool> GetByIdAsync(string Id)
         {
             // Giả định _payRepo có phương thức tìm kiếm theo ExternalId
-            var pr = await _payRepo.GetByExternalIdAsync(externalId);
+            var pr = await _payRepo.GetByIdAsync(Id);
 
             // Bạn có thể thêm logic kiểm tra null và ném ApiException nếu cần
             if (pr == null)
             {
-                throw new ApiException($"Không tìm thấy PaymentRecord với External ID: {externalId}");
+                throw new ApiException($"Không tìm thấy PaymentRecord với  ID: {Id}");
             }
             if (pr.Status != "PAID")
             {
