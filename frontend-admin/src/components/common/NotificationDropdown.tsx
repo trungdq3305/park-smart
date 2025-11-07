@@ -125,13 +125,10 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
         onClick={() => handleMarkAsReadSingle(n._id, n.isRead)}
         style={{ cursor: n.isRead ? 'default' : 'pointer' }} // Thay đổi con trỏ
       >
-                       {' '}
         <div className="notification-item-title-wrapper">
                               <div className="notification-item-title">{n.title}</div>             
-                {!n.isRead && <span className="unread-dot" />}               {' '}
-        </div>
+                {!n.isRead && <span className="unread-dot" />}                       </div>
                         <div className="notification-item-time">{timeAgo(n.createdAt)}</div>       
-           {' '}
       </div>
     ),
   }))
@@ -143,7 +140,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
       placement="bottomRight"
       onOpenChange={handleOpenChange}
       open={open}
-      popupRender={(menu) => (
+      popupRender={() => (
         <div
           style={{
             width: 350,
@@ -153,12 +150,9 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
           }}
         >
-                         {' '}
           <div style={{ padding: '0 8px 8px', fontWeight: 'bold' }}>
                                 Thông báo ({isFetchingCount ? '...' : unreadCount} chưa đọc)        
-                   {' '}
           </div>
-                         {' '}
           {isFetchingList ? (
             <div style={{ padding: '10px', textAlign: 'center' }}>
               <Spin /> Đang tải...
@@ -169,18 +163,14 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
               renderItem={(item) => (
                 <List.Item style={{ padding: '0 8px' }} className={item.className}>
                                                       {item.label}                             
-                   {' '}
                 </List.Item>
               )}
             />
           ) : (
             <div style={{ padding: '10px', textAlign: 'center' }}>Không có thông báo nào.</div>
           )}
-                                         {' '}
           <div style={{ borderTop: '1px solid #eee', padding: '8px 0 0' }}>
-                               {' '}
             <Space style={{ justifyContent: 'space-between', width: '100%', padding: '0 8px' }}>
-                                     {' '}
               <Button
                 type="link"
                 icon={<CheckCircleOutlined />}
@@ -188,29 +178,19 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
                 disabled={unreadCount === 0 || isMarkingRead}
                 loading={isMarkingRead}
               >
-                                            Đọc tất cả                        {' '}
-              </Button>
-                                     {' '}
+                                            Đọc tất cả                                      </Button>
               <Button type="link" onClick={() => console.log('Go to notification page')}>
                 Xem tất cả
               </Button>
-                                 {' '}
             </Space>
-                           {' '}
           </div>
-                     {' '}
         </div>
       )}
     >
-             {' '}
       <Button type="text" className="header-action-btn notification-btn" aria-label="Notifications">
-                 {' '}
         <Badge count={unreadCount} size="small" offset={[isMobile ? -2 : 0, 2]}>
-                      <BellOutlined style={{ fontSize: isMobile ? 16 : 18 }} />         {' '}
-        </Badge>
-               {' '}
+                      <BellOutlined style={{ fontSize: isMobile ? 16 : 18 }} />                 </Badge>
       </Button>
-           {' '}
     </Dropdown>
   )
 }

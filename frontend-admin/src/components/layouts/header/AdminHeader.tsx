@@ -82,31 +82,23 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
 
   return (
     <Header className="admin-header">
-           {' '}
       {isMobile && (
         <button
           className="mobile-menu-toggle"
           onClick={onMobileMenuToggle}
           aria-label="Toggle mobile menu"
         >
-                    <MenuOutlined />       {' '}
+          <MenuOutlined />
         </button>
       )}
-           {' '}
       <div className="header-left">
-               {' '}
         <h3>
-                   {' '}
           {isMobile
             ? `Welcome, ${fullName.split(' ')[0]}!`
             : `Welcome back, ${fullName}, let's manage your parking lots !`}
-                 {' '}
         </h3>
-             {' '}
       </div>
-           {' '}
       <div className="header-right">
-               {' '}
         <Space size="middle">
           Noti Test
           <Button
@@ -118,11 +110,9 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
             loading={isSending}
           />
           {/* NotificationDropdown */}
-                    <NotificationDropdown isMobile={!!isMobile} />         {' '}
+          <NotificationDropdown isMobile={!!isMobile} />
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
-                       {' '}
             <Button type="text" className="user-menu-btn">
-                           {' '}
               <Avatar
                 size={isMobile ? 24 : 32}
                 icon={<UserOutlined />}
@@ -131,15 +121,11 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
                   marginRight: isMobile ? '6px' : '8px',
                 }}
               />
-                            {!isMobile && fullName}           {' '}
+              {!isMobile && fullName}
             </Button>
-                     {' '}
           </Dropdown>
-                 {' '}
         </Space>
-             {' '}
       </div>
-         {' '}
     </Header>
   )
 }
