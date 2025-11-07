@@ -4,7 +4,6 @@
 import { ApiProperty, PartialType } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import {
-  IsBoolean,
   IsDate,
   IsEnum,
   IsLatitude,
@@ -15,11 +14,9 @@ import {
   IsOptional,
   IsPositive,
   IsString,
-  Matches,
   Max,
   MinDate,
 } from 'class-validator'
-import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
 
 import { RequestStatus } from '../enums/parkingLot.enum'
 
@@ -89,43 +86,6 @@ export class CreateParkingLotDto {
   @IsMongoId({ message: 'Mã địa chỉ không hợp lệ' })
   @IsNotEmpty({ message: 'Mã địa chỉ không được để trống' })
   addressId: string
-
-  @ApiProperty({ example: '08:00' })
-  @IsString({ message: 'openTime phải có định dạng HH:MM' })
-  @Matches(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
-    message: 'openTime phải có định dạng HH:MM',
-  })
-  openTime: string
-
-  @ApiProperty({ example: '17:00' })
-  @IsString({ message: 'closeTime phải có định dạng HH:MM' })
-  @Matches(/^([0-1]\d|2[0-3]):([0-5]\d)$/, {
-    message: 'closeTime phải có định dạng HH:MM',
-  })
-  @IsAfterTime('openTime', { message: 'Giờ đóng cửa phải sau giờ mở cửa' })
-  closeTime: string
-
-  @ApiProperty({ example: true })
-  @IsBoolean({ message: 'is24Hours phải là boolean' })
-  is24Hours: boolean
-
-  @ApiProperty({ example: 2.5 })
-  @Type(() => Number)
-  @IsNumber(
-    { maxDecimalPlaces: 2 },
-    { message: 'Chiều cao xe tối đa phải là số' },
-  )
-  @IsPositive({ message: 'Chiều cao xe tối đa phải là số dương' })
-  maxVehicleHeight: number
-
-  @ApiProperty({ example: 2.0 })
-  @Type(() => Number)
-  @IsNumber(
-    { maxDecimalPlaces: 2 },
-    { message: 'Chiều rộng xe tối đa phải là số' },
-  )
-  @IsPositive({ message: 'Chiều rộng xe tối đa phải là số dương' })
-  maxVehicleWidth: number
 
   @ApiProperty({ example: 50 })
   @Type(() => Number)
@@ -241,21 +201,6 @@ export class ReviewRequestDto {
 export class PayloadWithAddressDto {
   // --- CÁC TRƯỜNG BẠN VỪA YÊU CẦU ---
   @Expose()
-  openTime: string
-
-  @Expose()
-  closeTime: string
-
-  @Expose()
-  is24Hours: boolean
-
-  @Expose()
-  maxVehicleHeight: number
-
-  @Expose()
-  maxVehicleWidth: number
-
-  @Expose()
   totalCapacityEachLevel: number
 
   @Expose()
@@ -263,6 +208,18 @@ export class PayloadWithAddressDto {
 
   @Expose()
   parkingLotOperatorId: string
+
+  @Expose()
+  bookableCapacity: number
+
+  @Expose()
+  leasedCapacity: number
+
+  @Expose()
+  walkInCapacity: number
+
+  @Expose()
+  bookingSlotDurationHours: number
 
   // --- TRƯỜNG ADDRESS ĐÃ ĐƯỢC POPULATE ---
   @Expose()
@@ -279,21 +236,6 @@ export class ParkingLotResponseDto {
   @Expose()
   @Type(() => AddressDto)
   addressId: AddressDto
-
-  @Expose()
-  openTime: string
-
-  @Expose()
-  closeTime: string
-
-  @Expose()
-  is24Hours: boolean
-
-  @Expose()
-  maxVehicleHeight: number
-
-  @Expose()
-  maxVehicleWidth: number
 
   @Expose()
   totalCapacityEachLevel: number
@@ -387,21 +329,6 @@ export class ParkingLotHistoryLogResponseDto {
 
   @Expose()
   eventType: string // CREATED, UPDATED, DELETED
-
-  @Expose()
-  openTime: string
-
-  @Expose()
-  closeTime: string
-
-  @Expose()
-  is24Hours: boolean
-
-  @Expose()
-  maxVehicleHeight: number
-
-  @Expose()
-  maxVehicleWidth: number
 
   @Expose()
   totalCapacityEachLevel: number

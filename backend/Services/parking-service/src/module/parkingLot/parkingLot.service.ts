@@ -363,7 +363,6 @@ export class ParkingLotService implements IParkingLotService {
 
     let processed = 0
     let failed = 0
-
     for (const request of requests) {
       const session = await this.connection.startSession()
       session.startTransaction()
