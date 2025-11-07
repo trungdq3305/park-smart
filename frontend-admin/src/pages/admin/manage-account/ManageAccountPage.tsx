@@ -10,14 +10,14 @@ import {
   PauseOutlined,
   PlayCircleOutlined,
 } from '@ant-design/icons'
-import { AccountDetailsModal, DeleteConfirmModal } from '../../components/modals'
-import { PaginationLoading } from '../../components/common'
+import { AccountDetailsModal, DeleteConfirmModal } from '../../../components/modals'
+import { PaginationLoading } from '../../../components/common'
 import {
   useGetAccountQuery,
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
-} from '../../features/admin/accountAPI'
-import type { Account } from '../../types/Account'
+} from '../../../features/admin/accountAPI'
+import type { Account } from '../../../types/Account'
 import './ManageAccountPage.css'
 
 interface ListAccountResponse {
