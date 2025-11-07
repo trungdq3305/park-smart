@@ -11,14 +11,14 @@ export const termsAPI = apiSlice.injectEndpoints({
       providesTags: ['terms-policies'],
     }),
     createTermsPolicy: builder.mutation({
-        query: (termsPolicyData) => ({
-          url: '/core/termpolicies',
-          method: 'POST',
-          body: termsPolicyData,
-        }),
-        transformResponse: (res) => res,
-        invalidatesTags: ['terms-policies'],
+      query: (termsPolicyData) => ({
+        url: '/core/termpolicies',
+        method: 'POST',
+        body: termsPolicyData,
       }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['terms-policies'],
+    }),
     updateTermsPolicy: builder.mutation({
       query: (termsPolicyData) => ({
         url: '/core/termpolicies',
@@ -39,4 +39,9 @@ export const termsAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const { useGetTermsPoliciesQuery, useCreateTermsPolicyMutation, useUpdateTermsPolicyMutation, useDeleteTermsPolicyMutation } = termsAPI
+export const {
+  useGetTermsPoliciesQuery,
+  useCreateTermsPolicyMutation,
+  useUpdateTermsPolicyMutation,
+  useDeleteTermsPolicyMutation,
+} = termsAPI

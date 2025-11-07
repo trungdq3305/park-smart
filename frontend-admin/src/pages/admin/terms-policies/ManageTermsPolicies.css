@@ -52,7 +52,9 @@
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .tp-empty {
@@ -79,7 +81,9 @@
 
 .tp-table tbody tr {
   background: #fafafa;
-  box-shadow: 0 1px 0 #f0f0f0, 0 -1px 0 #f0f0f0;
+  box-shadow:
+    0 1px 0 #f0f0f0,
+    0 -1px 0 #f0f0f0;
 }
 
 .tp-table tbody td {
@@ -128,7 +132,6 @@
   gap: 0.8vh;
 }
 
-
 /* Responsive enhancements for ManageTermsPolicies */
 .taps-header {
   display: flex;
@@ -139,7 +142,7 @@
 
 @media (max-width: 576px) {
   .taps-container {
-    padding: 1.2vh ;
+    padding: 1.2vh;
   }
 
   .taps-header {
@@ -152,4 +155,3 @@
     width: 100%;
   }
 }
-

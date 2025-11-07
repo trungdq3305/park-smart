@@ -55,7 +55,7 @@ const CreateParkingLot: React.FC = () => {
         fullAddress: values.fullAddress,
       }).unwrap()
 
-      const addressId = createdAddress?.data?.[0]?._id 
+      const addressId = createdAddress?.data?.[0]?._id
       if (!addressId) {
         throw new Error('Không lấy được addressId từ API tạo địa chỉ')
       }
@@ -65,8 +65,7 @@ const CreateParkingLot: React.FC = () => {
         openTime: is24Hours ? '00:00' : values.openTime ? values.openTime.format('HH:mm') : null,
         closeTime: is24Hours ? '23:59' : values.closeTime ? values.closeTime.format('HH:mm') : null,
         is24Hours,
-        maxVehicleHeight:
-          values.maxVehicleHeight != null ? Number(values.maxVehicleHeight) : null,
+        maxVehicleHeight: values.maxVehicleHeight != null ? Number(values.maxVehicleHeight) : null,
         maxVehicleWidth: values.maxVehicleWidth != null ? Number(values.maxVehicleWidth) : null,
         totalCapacityEachLevel:
           values.totalCapacityEachLevel != null ? Number(values.totalCapacityEachLevel) : null,
