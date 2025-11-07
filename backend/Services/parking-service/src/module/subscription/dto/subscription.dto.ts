@@ -54,6 +54,14 @@ export class CreateSubscriptionDto {
   @IsNotEmpty({ message: 'Ngày bắt đầu không được để trống' })
   startDate: string
 
+  @ApiProperty({
+    example: 'ext-1234567890',
+    description:
+      'Mã định danh thanh toán từ hệ thống thanh toán bên thứ ba (externalId)',
+  })
+  @IsNotEmpty({ message: 'externalId không được để trống' })
+  externalId: string
+
   // Lưu ý: userId sẽ được lấy từ @GetCurrentUserId() trong controller.
   // endDate, status, isUsed, subscriptionIdentifier sẽ được set bởi server.
 }

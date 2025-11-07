@@ -13,7 +13,7 @@ export interface IAccountServiceClient {
    * @param ExternalId ID bên ngoài của giao dịch thanh toán.
    * @returns Trạng thái thanh toán (ví dụ: 'pending', 'completed', 'failed').
    */
-  getPaymentStatusByExternalId(ExternalId: string): Promise<string>
+  getPaymentStatusByExternalId(ExternalId: string): Promise<boolean>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')
