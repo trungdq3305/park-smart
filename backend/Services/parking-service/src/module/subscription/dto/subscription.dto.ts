@@ -149,3 +149,18 @@ export class SubscriptionDetailResponseDto {
   @Expose()
   updatedAt: Date
 }
+
+export class AvailabilitySlotDto {
+  // ⭐️ Sửa: Đảm bảo 'export'
+  @ApiProperty({
+    description: 'Số suất còn lại',
+    example: 5,
+  })
+  remaining: number
+
+  @ApiProperty({
+    description: 'Có thể đặt không (remaining > 0)',
+    example: true,
+  })
+  isAvailable: boolean
+}

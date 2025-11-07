@@ -4,6 +4,7 @@ import type { IdDto } from 'src/common/dto/params.dto'
 
 // Import các DTOs liên quan đến Subscription
 import type {
+  AvailabilitySlotDto,
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
   UpdateSubscriptionDto,
@@ -88,6 +89,15 @@ export interface ISubscriptionService {
     id: IdDto,
     updateDto: UpdateSubscriptionDto,
   ): Promise<SubscriptionDetailResponseDto>
+
+  /**
+   * (Dành cho Khách hàng) Lấy bản đồ/lịch tình trạng còn
+   * suất thuê bao (Xô 1) cho 15 ngày tới.
+   * @param parkingLotId ID của bãi xe.
+   */
+  getSubscriptionAvailability(
+    parkingLotId: string,
+  ): Promise<Record<string, AvailabilitySlotDto>>
 }
 
 export const ISubscriptionService = Symbol('ISubscriptionService')

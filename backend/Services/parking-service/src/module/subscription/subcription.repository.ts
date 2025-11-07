@@ -16,6 +16,27 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
 
+  async findActiveAndFutureSubscriptions(
+    parkingLotId: string,
+    fromDate: Date, // (Đây là 'today' được chuẩn hóa)
+  ): Promise<Pick<Subscription, 'startDate' | 'endDate'>[]> {
+    const filter = {
+      parkingLotId: parkingLotId,
+      status: SubscriptionStatusEnum.ACTIVE, // Chỉ đếm các gói đang active
+      deletedAt: null, // Bỏ qua các gói đã xóa mềm
+
+      // ⭐️ Logic quan trọng:
+      // Lấy tất cả các gói CHƯA HẾT HẠN (tính từ hôm nay)
+      endDate: { $gte: fromDate },
+    }
+
+    return this.subscriptionModel
+      .find(filter)
+      .select('startDate endDate') // ⭐️ Chỉ lấy 2 trường này để tối ưu
+      .lean() // Trả về JS object thuần túy
+      .exec()
+  }
+
   createSubscription(
     subscriptionData: CreateSubscriptionDto,
     userId: string,
@@ -65,14 +86,18 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     return result.modifiedCount > 0
   }
 
-  async countActiveByParkingLot(
+  async countActiveOnDateByParkingLot(
     parkingLotId: string,
+    requestedDate: Date,
     session?: ClientSession,
   ): Promise<number> {
     return this.subscriptionModel
       .countDocuments({
         parkingLotId,
         status: SubscriptionStatusEnum.ACTIVE,
+        deletedAt: null,
+        startDate: { $lte: requestedDate },
+        endDate: { $gte: requestedDate },
       })
       .session(session ?? null)
       .exec()

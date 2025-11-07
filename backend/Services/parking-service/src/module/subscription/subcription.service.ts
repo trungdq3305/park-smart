@@ -3,6 +3,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
 import { plainToInstance } from 'class-transformer'
@@ -12,8 +13,10 @@ import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
 
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
+import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
 // Import các DTOs liên quan đến Subscription
 import {
+  AvailabilitySlotDto,
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
   UpdateSubscriptionDto,
@@ -34,6 +37,8 @@ export class SubscriptionService implements ISubscriptionService {
     private readonly connection: Connection,
     @Inject(ISubscriptionLogRepository)
     private readonly subscriptionLogRepository: ISubscriptionLogRepository,
+    @Inject(IParkingLotRepository)
+    private readonly parkingLotRepository: IParkingLotRepository,
   ) {}
 
   private returnToDto(
@@ -44,6 +49,64 @@ export class SubscriptionService implements ISubscriptionService {
     })
   }
 
+  async getSubscriptionAvailability(
+    parkingLotId: string,
+  ): Promise<Record<string, AvailabilitySlotDto>> {
+    // ⭐️ 2. SỬA KIỂU TRẢ VỀ
+
+    // 1. Lấy Quy tắc (Rule)
+    const lot = await this.parkingLotRepository.findParkingLotById(parkingLotId)
+    if (!lot) {
+      throw new NotFoundException('Bãi đỗ xe không tồn tại.')
+    }
+    const leasedCapacityRule = lot.leasedCapacity
+
+    // 2. Lấy Dữ liệu (1 lần gọi DB)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const activeSubs =
+      await this.subscriptionRepository.findActiveAndFutureSubscriptions(
+        parkingLotId,
+        today,
+      )
+
+    // 3. Xử lý trong bộ nhớ (In-memory)
+    // ⭐️ 3. SỬA KIỂU CỦA BIẾN
+    const availabilityMap: Record<string, AvailabilitySlotDto> = {}
+    const MAX_LEAD_TIME_DAYS = 15
+
+    // (Logic chuẩn hóa 'startDate' và 'endDate' của bạn đã đúng)
+    const normalizedSubs = activeSubs.map((sub) => {
+      const subStart = new Date(sub.startDate)
+      subStart.setHours(0, 0, 0, 0)
+      const subEnd = new Date(sub.endDate)
+      subEnd.setHours(0, 0, 0, 0)
+      return { start: subStart, end: subEnd }
+    })
+
+    // (Logic lặp 15 ngày của bạn đã đúng)
+    for (let i = 0; i < MAX_LEAD_TIME_DAYS; i++) {
+      const checkingDate = new Date(today.getTime())
+      checkingDate.setDate(today.getDate() + i)
+
+      let overlappingCount = 0
+      for (const sub of normalizedSubs) {
+        if (checkingDate >= sub.start && checkingDate <= sub.end) {
+          overlappingCount++
+        }
+      }
+
+      const remaining = leasedCapacityRule - overlappingCount
+      const isAvailable = remaining > 0
+      const dateKey = checkingDate.toISOString().split('T')[0]
+
+      availabilityMap[dateKey] = { remaining, isAvailable }
+    }
+
+    return availabilityMap
+  }
+
   async createSubscription(
     createDto: CreateSubscriptionDto,
     userId: string,
@@ -51,6 +114,27 @@ export class SubscriptionService implements ISubscriptionService {
     const session = await this.connection.startSession()
     session.startTransaction()
     try {
+      const leasedCapacityRule =
+        await this.parkingLotRepository.getLeasedCapacityRule(
+          createDto.parkingLotId,
+          session,
+        )
+
+      // Bước 2: ĐẾM SỐ LƯỢNG ĐANG DÙNG
+      // (Đây là hàm 'countActiveByParkingLot' trong ISubscriptionRepository)
+      const currentActiveCount =
+        await this.subscriptionRepository.countActiveOnDateByParkingLot(
+          createDto.parkingLotId,
+          new Date(createDto.startDate),
+          session,
+        )
+
+      // Bước 3: So sánh
+      if (currentActiveCount >= leasedCapacityRule) {
+        // (Ví dụ: 15 >= 20 là SAI ➔ Cho phép tạo)
+        // (Ví dụ: 20 >= 20 là ĐÚNG ➔ Ném lỗi)
+        throw new ConflictException('Đã hết suất thuê bao dài hạn.')
+      }
       const checkPaymentStatus =
         await this.accountServiceClient.getPaymentStatusByPaymentId(
           createDto.paymentId,

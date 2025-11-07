@@ -12,6 +12,19 @@ export class ParkingLotRepository implements IParkingLotRepository {
     private parkingLotModel: Model<ParkingLot>,
   ) {}
 
+  async getLeasedCapacityRule(
+    id: string,
+    session?: ClientSession,
+  ): Promise<number> {
+    const data = await this.parkingLotModel
+      .findById(id)
+      .select('leasedCapacity')
+      .lean()
+      .session(session ?? null)
+      .exec()
+    return data?.leasedCapacity ?? 0
+  }
+
   async updateBookingSlotDurationHours(
     id: string,
     durationHours: number,
