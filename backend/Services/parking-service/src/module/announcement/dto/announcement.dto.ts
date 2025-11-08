@@ -32,7 +32,7 @@ export class CreateAnnouncementDto {
 
   @ApiProperty({
     example: '2025-11-10T10:00:00Z',
-    description: 'Thời gian dự kiến xuất bản (ISO 8601)',
+    description: 'Thời gian dự kiến xuất bản theo ngày (ISO 8601)',
   })
   @IsDateString()
   scheduleAt: string
