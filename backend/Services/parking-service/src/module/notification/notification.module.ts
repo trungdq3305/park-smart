@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt' // Bắt buộc phải có để WsJwtAuthGuard hoạt động
 import { MongooseModule } from '@nestjs/mongoose'
@@ -25,7 +25,7 @@ import { Notification, NotificationSchema } from './schemas/notification.schema'
       secret: process.env.JWT_SECRET ?? 'YOUR_SECRET_KEY',
       // Các tùy chọn khác (expiresIn, signOptions)
     }),
-    AnnouncementModule,
+    forwardRef(() => AnnouncementModule),
     ClientModule,
   ],
   controllers: [NotificationController],

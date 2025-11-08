@@ -13,7 +13,7 @@ export class NotificationScheduler {
   /**
    * @description Chạy tác vụ xử lý các Announcement đã được lên lịch mỗi phút.
    */
-  @Cron(CronExpression.EVERY_MINUTE)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleScheduledAnnouncements() {
     console.log(
       '[Cron Job] Bắt đầu kiểm tra và xử lý các Announcement đã lên lịch...',
