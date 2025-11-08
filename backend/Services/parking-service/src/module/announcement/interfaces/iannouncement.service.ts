@@ -11,7 +11,10 @@ export interface IAnnouncementService {
     dto: CreateAnnouncementDto,
     createdBy: string,
   ): Promise<AnnouncementResponseDto>
-
+createAndSendNow(
+    dto: CreateAnnouncementDto,
+    createdBy: string,
+  ): Promise<AnnouncementResponseDto>
   // Lấy danh sách Announcement đang chờ xử lý (dùng cho Cron Job)
   getPendingScheduledAnnouncements(
     currentTime: Date,
