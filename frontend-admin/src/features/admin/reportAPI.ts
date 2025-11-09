@@ -19,10 +19,20 @@ export const reportAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['reports'],
     }),
+    handleReport: builder.mutation({
+      query: (reportData) => ({
+        url: '/core/reports/process',
+        method: 'PUT',
+        body: reportData,
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['reports'],
+    }),
   }),
 })
 
 export const {
   useGetReportsQuery,
   useCreateReportMutation,
+  useHandleReportMutation,
 } = reportAPI

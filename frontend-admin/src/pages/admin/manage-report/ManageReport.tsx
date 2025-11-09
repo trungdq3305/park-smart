@@ -1,9 +1,7 @@
 import React, { useState, useMemo } from 'react'
-import { useGetReportsQuery } from '../../../features/admin/reportAPI'
-import { message, Dropdown, Button, Tag } from 'antd'
-import type { MenuProps } from 'antd'
+import { useGetReportsQuery, useHandleReportMutation } from '../../../features/admin/reportAPI'
+import { message, Button, Tag, Input } from 'antd'
 import {
-  MoreOutlined,
   EyeOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -26,6 +24,8 @@ import './ManageReport.css'
 
 dayjs.extend(relativeTime)
 
+const { TextArea } = Input
+
 interface ListReportResponse {
   data: {
     data: Report[]
@@ -43,10 +43,11 @@ const ManageReport: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [filterStatus, setFilterStatus] = useState<'all' | 'processed' | 'pending'>('all')
+  const [responseText, setResponseText] = useState<string>('')
 
   const { data, isLoading } = useGetReportsQuery<ListReportResponse>({})
   const reports = data?.data || []
-
+  const [handleReport, { isLoading: isHandlingReport }] = useHandleReportMutation()
   // Calculate statistics
   const stats = useMemo(() => {
     const total = reports.length
@@ -84,33 +85,37 @@ const ManageReport: React.FC = () => {
 
   const handleViewDetails = (report: Report) => {
     setSelectedReport(report)
+    setResponseText(report.response || '')
     setShowModal(true)
   }
 
   const handleCloseModal = () => {
     setShowModal(false)
     setSelectedReport(null)
+    setResponseText('')
   }
 
-  const handleMarkAsProcessed = async (report: Report) => {
-    // TODO: Implement API call to mark report as processed
-    message.success(`Report #${report._id} đã được đánh dấu là đã xử lý`)
-  }
+  const handleMarkAsProcessed = async () => {
+    if (!selectedReport) return
 
-  const getMenuItems = (report: Report): MenuProps['items'] => [
-    {
-      key: 'view',
-      label: 'Xem chi tiết',
-      icon: <EyeOutlined />,
-      onClick: () => handleViewDetails(report),
-    },
-    {
-      key: 'process',
-      label: report.isProcessed ? 'Đánh dấu chưa xử lý' : 'Đánh dấu đã xử lý',
-      icon: report.isProcessed ? <ClockCircleOutlined /> : <CheckCircleOutlined />,
-      onClick: () => handleMarkAsProcessed(report),
-    },
-  ]
+    try {
+      await handleReport({
+        id: selectedReport._id,
+        response: responseText,
+      }).unwrap()
+
+      message.success(
+        `Báo cáo #${selectedReport._id.slice(0, 8)} đã được đánh dấu đã xử lý thành công!`
+      )
+      handleCloseModal()
+    } catch (error :unknown) {
+      const apiMsg =
+        (error as { data?: { message: string }; error?: string })?.data?.message ||
+        (error as { error?: string })?.error ||
+        'Có lỗi xảy ra khi xử lý báo cáo!'
+      message.error(apiMsg)
+    }
+  }
 
   const getStatusBadge = (isProcessed: boolean) => {
     return isProcessed ? 'badge-processed' : 'badge-pending'
@@ -118,7 +123,7 @@ const ManageReport: React.FC = () => {
 
   const getCategoryColor = (categoryName: string) => {
     const colors: Record<string, string> = {
-      default: '#6b7280',
+      default: 'red',
       urgent: '#ef4444',
       warning: '#f59e0b',
       info: '#3b82f6',
@@ -299,7 +304,6 @@ const ManageReport: React.FC = () => {
                   <tr>
                     <th>Danh mục</th>
                     <th>Người báo cáo</th>
-                    <th>Lý do</th>
                     <th>Ngày tạo</th>
                     <th>Trạng thái</th>
                     <th>Thao tác</th>
@@ -329,13 +333,6 @@ const ManageReport: React.FC = () => {
                           </div>
                         </td>
                         <td>
-                          <div className="reason-text" title={report.reason}>
-                            {report.reason?.length > 50
-                              ? `${report.reason.substring(0, 50)}...`
-                              : report.reason || 'N/A'}
-                          </div>
-                        </td>
-                        <td>
                           <span className="date-text">
                             {dayjs(report.createdAt).format('DD/MM/YYYY HH:mm')}
                           </span>
@@ -347,18 +344,13 @@ const ManageReport: React.FC = () => {
                         </td>
                         <td>
                           <div className="action-cell">
-                            <Dropdown
-                              menu={{ items: getMenuItems(report) }}
-                              trigger={['click']}
-                              placement="bottomRight"
-                            >
-                              <Button
-                                type="text"
-                                icon={<MoreOutlined />}
-                                className="action-dropdown-trigger"
-                                title="Thao tác"
-                              />
-                            </Dropdown>
+                            <Button
+                              type="text"
+                              icon={<EyeOutlined />}
+                              className="action-btn"
+                              title="Xem chi tiết"
+                              onClick={() => handleViewDetails(report)}
+                            />
                           </div>
                         </td>
                       </tr>
@@ -411,18 +403,37 @@ const ManageReport: React.FC = () => {
                 <h4>Lý do báo cáo</h4>
                 <div className="reason-box">{selectedReport.reason || 'Không có lý do'}</div>
               </div>
-              {selectedReport.response && (
+              {selectedReport.response && selectedReport.isProcessed && (
                 <div className="detail-section">
                   <h4>Phản hồi</h4>
                   <div className="response-box">{selectedReport.response}</div>
                 </div>
               )}
+              {!selectedReport.isProcessed && (
+                <div className="detail-section">
+                  <h4>Phản hồi</h4>
+                  <TextArea
+                    rows={4}
+                    placeholder="Nhập phản hồi cho báo cáo này..."
+                    value={responseText}
+                    onChange={(e) => setResponseText(e.target.value)}
+                    className="response-input"
+                  />
+                </div>
+              )}
             </div>
             <div className="modal-footer">
               <Button onClick={handleCloseModal}>Đóng</Button>
-              <Button type="primary" onClick={() => handleMarkAsProcessed(selectedReport)}>
-                {selectedReport.isProcessed ? 'Đánh dấu chưa xử lý' : 'Đánh dấu đã xử lý'}
-              </Button>
+              {!selectedReport.isProcessed && (
+                <Button
+                  type="primary"
+                  onClick={handleMarkAsProcessed}
+                  loading={isHandlingReport}
+                  disabled={!responseText.trim()}
+                >
+                  Đánh dấu đã xử lý
+                </Button>
+              )}
             </div>
           </div>
         </div>

@@ -193,22 +193,6 @@
   margin: 0;
 }
 
-.view-all-btn {
-  background: none;
-  border: none;
-  color: #3b82f6;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.view-all-btn:hover {
-  background: #eff6ff;
-}
-
 .activity-list {
   padding: 16px;
   max-height: 500px;
@@ -379,12 +363,6 @@
 }
 
 /* Report Info */
-.report-id {
-  font-family: 'Courier New', monospace;
-  font-weight: 600;
-  color: #3b82f6;
-}
-
 .user-info {
   display: flex;
   align-items: center;
@@ -403,11 +381,6 @@
   font-weight: 600;
   font-size: 14px;
   flex-shrink: 0;
-}
-
-.parking-lot {
-  font-size: 14px;
-  color: #374151;
 }
 
 .reason-text {
@@ -445,14 +418,14 @@
   color: #92400e;
 }
 
-/* Action Dropdown */
+/* Action Button */
 .action-cell {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.action-dropdown-trigger {
+.action-btn {
   width: 32px;
   height: 32px;
   display: flex;
@@ -462,7 +435,7 @@
   transition: all 0.2s ease;
 }
 
-.action-dropdown-trigger:hover {
+.action-btn:hover {
   background-color: #f5f5f5;
   color: #1890ff;
 }
@@ -587,6 +560,22 @@
   color: #374151;
   line-height: 1.6;
   white-space: pre-wrap;
+}
+
+.response-input {
+  width: 100%;
+  font-size: 14px;
+}
+
+.response-input .ant-input {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  transition: all 0.2s ease;
+}
+
+.response-input .ant-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .modal-footer {
