@@ -204,4 +204,3 @@ const ViewReportsModal: React.FC<ViewReportsModalProps> = ({
 }
 
 export default ViewReportsModal
-
