@@ -63,9 +63,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Analytics',
     },
     {
-      key: '/reports',
+      key: '/operator/create-report',
       icon: <FileTextOutlined />,
-      label: 'Reports',
+      label: 'Create Report',
     },
     {
       key: '/integrations',

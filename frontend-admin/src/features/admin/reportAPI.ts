@@ -19,6 +19,14 @@ export const reportAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['reports'],
     }),
+    getMyReports: builder.query({
+      query: () => ({
+        url: '/core/reports/my-reports',
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['reports'],
+    }),
     handleReport: builder.mutation({
       query: (reportData) => ({
         url: '/core/reports/process',
@@ -35,4 +43,5 @@ export const {
   useGetReportsQuery,
   useCreateReportMutation,
   useHandleReportMutation,
+  useGetMyReportsQuery,
 } = reportAPI

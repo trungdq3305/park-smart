@@ -26,6 +26,7 @@ export const apiSlice = createApi({
     'NotificationCount',
     'terms-policies',
     'reports',
+    'report-categories',
   ],
 
   endpoints: () => ({}),

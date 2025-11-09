@@ -17,7 +17,7 @@ import {
   Tag,
   Select,
 } from 'antd'
-import { useCreateParkingLotMutation } from '../../features/operator/parkingLotAPI'
+import { useCreateParkingLotMutation } from '../../../features/operator/parkingLotAPI'
 import dayjs from 'dayjs'
 import {
   ClockCircleOutlined,
@@ -29,9 +29,9 @@ import {
   DashboardOutlined,
 } from '@ant-design/icons'
 import './CreateParkingLot.css'
-import { useGetWardQuery } from '../../features/operator/wardAPI'
-import type { Ward } from '../../types/Ward'
-import { useCreateAddressMutation } from '../../features/operator/addressAPI'
+import { useGetWardQuery } from '../../../features/operator/wardAPI'
+import type { Ward } from '../../../types/Ward'
+import { useCreateAddressMutation } from '../../../features/operator/addressAPI'
 
 interface WardResponse {
   data: {

@@ -8,9 +8,10 @@ const OperatorLayout = lazy(() => import('../components/layouts/layout/OperatorL
 // --- Các Trang (tải lười - lazy loading) ---
 const LoginPage = lazy(() => import('../pages/LoginPage'))
 const ManageAccountPage = lazy(() => import('../pages/admin/manage-account/ManageAccountPage'))
-const CreateParkingLot = lazy(() => import('../pages/operator/CreateParkingLot'))
+const CreateParkingLot = lazy(() => import('../pages/operator/create-parking-lot/CreateParkingLot'))
 const ManageTermsPolicies = lazy(() => import('../pages/admin/terms-policies/ManageTermsPolicies'))
 const ManageReport = lazy(() => import('../pages/admin/manage-report/ManageReport'))
+const CreateReport = lazy(() => import('../pages/operator/create-report/CreateReport'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -43,7 +44,7 @@ const routes: LayoutRoute[] = [
         path: '/admin/reports',
         component: ManageReport,
         role: ['Admin'],
-      }
+      },
     ],
   },
   {
@@ -57,6 +58,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/create-parking-lot-request',
         component: CreateParkingLot,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/create-report',
+        component: CreateReport,
         role: ['Operator'],
       },
     ],

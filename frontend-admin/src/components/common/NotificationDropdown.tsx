@@ -127,7 +127,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
       >
         <div className="notification-item-title-wrapper">
                               <div className="notification-item-title">{n.title}</div>             
-                {!n.isRead && <span className="unread-dot" />}                       </div>
+                {!n.isRead && <span className="unread-dot" />}               {' '}
+        </div>
                         <div className="notification-item-time">{timeAgo(n.createdAt)}</div>       
       </div>
     ),
@@ -178,7 +179,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
                 disabled={unreadCount === 0 || isMarkingRead}
                 loading={isMarkingRead}
               >
-                                            Đọc tất cả                                      </Button>
+                                            Đọc tất cả                        {' '}
+              </Button>
               <Button type="link" onClick={() => console.log('Go to notification page')}>
                 Xem tất cả
               </Button>
@@ -189,7 +191,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
     >
       <Button type="text" className="header-action-btn notification-btn" aria-label="Notifications">
         <Badge count={unreadCount} size="small" offset={[isMobile ? -2 : 0, 2]}>
-                      <BellOutlined style={{ fontSize: isMobile ? 16 : 18 }} />                 </Badge>
+                      <BellOutlined style={{ fontSize: isMobile ? 16 : 18 }} />         {' '}
+        </Badge>
       </Button>
     </Dropdown>
   )

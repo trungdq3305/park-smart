@@ -12,13 +12,7 @@ import { PaginationLoading } from '../../../components/common'
 import type { Report } from '../../../types/Report'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 
 import './ManageReport.css'
 
@@ -114,7 +108,7 @@ const ManageReport: React.FC = () => {
         `Báo cáo #${selectedReport._id.slice(0, 8)} đã được đánh dấu đã xử lý thành công!`
       )
       handleCloseModal()
-    } catch (error :unknown) {
+    } catch (error: unknown) {
       const apiMsg =
         (error as { data?: { message: string }; error?: string })?.data?.message ||
         (error as { error?: string })?.error ||
@@ -232,14 +226,14 @@ const ManageReport: React.FC = () => {
                   {statusChartData.map((item, index) => (
                     <div key={index} className="legend-item">
                       <span className="legend-dot" style={{ backgroundColor: item.color }}></span>
-                      <span>{item.name}: {item.value}</span>
+                      <span>
+                        {item.name}: {item.value}
+                      </span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
-
           </div>
 
           {/* Right: Activity Feed */}
@@ -261,11 +255,10 @@ const ManageReport: React.FC = () => {
                     ></div>
                     <div className="activity-content">
                       <p>
-                        <strong>Báo cáo #{report._id}</strong> - {report.category?.name || 'Không có danh mục'}
+                        <strong>Báo cáo #{report._id}</strong> -{' '}
+                        {report.category?.name || 'Không có danh mục'}
                       </p>
-                      <span className="activity-time">
-                        {dayjs(report.createdAt).fromNow()}
-                      </span>
+                      <span className="activity-time">{dayjs(report.createdAt).fromNow()}</span>
                     </div>
                   </div>
                 ))
@@ -372,7 +365,10 @@ const ManageReport: React.FC = () => {
       {/* Report Details Modal */}
       {selectedReport && showModal && (
         <div className={`modal-overlay ${isClosing ? 'closing' : ''}`} onClick={handleCloseModal}>
-          <div className={`modal-content ${isClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={`modal-content ${isClosing ? 'closing' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <h2>Chi tiết báo cáo #{selectedReport._id.slice(0, 8)}</h2>
               <button className="modal-close" onClick={handleCloseModal}>
