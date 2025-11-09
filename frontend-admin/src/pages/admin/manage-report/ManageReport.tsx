@@ -42,6 +42,7 @@ const COLORS = {
 const ManageReport: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null)
   const [showModal, setShowModal] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
   const [filterStatus, setFilterStatus] = useState<'all' | 'processed' | 'pending'>('all')
   const [responseText, setResponseText] = useState<string>('')
 
@@ -86,13 +87,18 @@ const ManageReport: React.FC = () => {
   const handleViewDetails = (report: Report) => {
     setSelectedReport(report)
     setResponseText(report.response || '')
+    setIsClosing(false)
     setShowModal(true)
   }
 
   const handleCloseModal = () => {
-    setShowModal(false)
-    setSelectedReport(null)
-    setResponseText('')
+    setIsClosing(true)
+    setTimeout(() => {
+      setShowModal(false)
+      setIsClosing(false)
+      setSelectedReport(null)
+      setResponseText('')
+    }, 300) // Match animation duration
   }
 
   const handleMarkAsProcessed = async () => {
@@ -365,8 +371,8 @@ const ManageReport: React.FC = () => {
 
       {/* Report Details Modal */}
       {selectedReport && showModal && (
-        <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className={`modal-overlay ${isClosing ? 'closing' : ''}`} onClick={handleCloseModal}>
+          <div className={`modal-content ${isClosing ? 'closing' : ''}`} onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Chi tiết báo cáo #{selectedReport._id.slice(0, 8)}</h2>
               <button className="modal-close" onClick={handleCloseModal}>
