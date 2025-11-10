@@ -4,7 +4,6 @@ import { Model } from 'mongoose'
 
 import {
   CreateSubscriptionDto,
-  UpdateSubscriptionDto,
 } from './dto/subscription.dto'
 import { SubscriptionStatusEnum } from './enums/subscription.enum'
 import { ISubscriptionRepository } from './interfaces/isubcription.repository'
