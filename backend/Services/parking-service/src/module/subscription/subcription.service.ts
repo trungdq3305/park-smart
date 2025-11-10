@@ -23,6 +23,7 @@ import {
   AvailabilitySlotDto,
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
+  SubscriptionLogDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto'
 import {
@@ -32,6 +33,7 @@ import {
 import { ISubscriptionRepository } from './interfaces/isubcription.repository'
 import { ISubscriptionService } from './interfaces/isubcription.service'
 import { ISubscriptionLogRepository } from './interfaces/isubcriptionLog.repository'
+import { SubscriptionLog } from './schemas/subcriptionLog.schema'
 import { Subscription } from './schemas/subscription.schema'
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
@@ -56,6 +58,33 @@ export class SubscriptionService implements ISubscriptionService {
     return plainToInstance(SubscriptionDetailResponseDto, subscription, {
       excludeExtraneousValues: true,
     })
+  }
+
+  private responseLogToDto(log: SubscriptionLog): SubscriptionLogDto {
+    return plainToInstance(SubscriptionLogDto, log, {
+      excludeExtraneousValues: true,
+    })
+  }
+
+  async findLogsBySubscriptionId(
+    subscriptionId: string,
+    paginationQuery: PaginationQueryDto,
+  ): Promise<{ data: SubscriptionLogDto[]; pagination: PaginationDto }> {
+    const { page, pageSize } = paginationQuery
+    const data = await this.subscriptionLogRepository.findLogsBySubscriptionId(
+      subscriptionId,
+      page,
+      pageSize,
+    )
+    return {
+      data: data.data.map((log) => this.responseLogToDto(log)),
+      pagination: {
+        totalItems: data.total,
+        currentPage: page,
+        pageSize: pageSize,
+        totalPages: Math.ceil(data.total / pageSize),
+      },
+    }
   }
 
   async getSubscriptionAvailability(
@@ -445,8 +474,8 @@ export class SubscriptionService implements ISubscriptionService {
   }
 
   updateSubscriptionByAdmin(
-    id: IdDto,
-    updateDto: UpdateSubscriptionDto,
+    _id: IdDto,
+    _updateDto: UpdateSubscriptionDto,
   ): Promise<SubscriptionDetailResponseDto> {
     throw new InternalServerErrorException('Tính năng đang phát triển.')
   }

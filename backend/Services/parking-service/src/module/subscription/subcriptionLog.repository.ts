@@ -18,18 +18,32 @@ export class SubscriptionLogRepository implements ISubscriptionLogRepository {
     return log.save({ session })
   }
 
-  findLogsBySubscriptionId(
+  async findLogsBySubscriptionId(
     subscriptionId: string,
     page: number,
     pageSize: number,
   ): Promise<{ data: SubscriptionLog[]; total: number }> {
-    throw new Error('Method not implemented.')
+    const skip = (page - 1) * pageSize
+    return Promise.all([
+      this.subscriptionLogModel
+        .find({ subscriptionId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize)
+        .lean()
+        .exec(),
+      this.subscriptionLogModel.countDocuments({ subscriptionId }).exec(),
+    ]).then(([data, total]) => ({ data, total }))
   }
 
   findLogByPaymentId(
-    paymentTransactionId: string,
+    paymentId: string,
     session?: ClientSession,
   ): Promise<SubscriptionLog | null> {
-    throw new Error('Method not implemented.')
+    return this.subscriptionLogModel
+      .findOne({ paymentId })
+      .session(session ?? null)
+      .lean()
+      .exec()
   }
 }

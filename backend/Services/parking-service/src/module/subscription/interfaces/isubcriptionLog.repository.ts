@@ -30,12 +30,12 @@ export interface ISubscriptionLogRepository {
   /**
    * (Rất quan trọng) Tìm một bản ghi log bằng mã giao dịch thanh toán.
    * Dùng để kiểm tra xem "bằng chứng thanh toán" này đã được sử dụng hay chưa
-   * (vì 'paymentTransactionId' là unique).
-   * @param paymentTransactionId ID thanh toán từ .NET service.
+   * (vì 'paymentId' là unique).
+   * @param paymentId ID thanh toán từ .NET service.
    * @param session (Tùy chọn) Phiên làm việc của transaction.
    */
   findLogByPaymentId(
-    paymentTransactionId: string,
+    paymentId: string,
     session?: ClientSession,
   ): Promise<SubscriptionLog | null>
 }
