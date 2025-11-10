@@ -38,7 +38,7 @@ export class SubscriptionLog extends BaseEntity {
     type: String,
     enum: Object.values(SubscriptionTransactionType),
   })
-  transactionType: string // Loại giao dịch (Mua mới / Gia hạn)
+  transactionType: SubscriptionTransactionType // Loại giao dịch (Mua mới / Gia hạn)
 
   @Prop({
     type: Date,

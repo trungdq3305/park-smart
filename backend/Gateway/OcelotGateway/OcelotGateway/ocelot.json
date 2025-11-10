@@ -460,6 +460,18 @@
       "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
     {
+      "DownstreamPathTemplate": "/subscriptions/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/subscriptions/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+    },
+    {
       "DownstreamPathTemplate": "/notifications/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

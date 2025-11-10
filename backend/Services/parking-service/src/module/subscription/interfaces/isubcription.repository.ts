@@ -1,10 +1,7 @@
 import type { ClientSession } from 'mongoose'
 
 // Import DTOs và Schema liên quan đến Subscription
-import type {
-  CreateSubscriptionDto,
-  UpdateSubscriptionDto,
-} from '../dto/subscription.dto' // <-- Giả định đường dẫn DTO
+import type { CreateSubscriptionDto } from '../dto/subscription.dto' // <-- Giả định đường dẫn DTO
 import type { Subscription } from '../schemas/subscription.schema' // <-- Giả định đường dẫn Schema
 
 export interface ISubscriptionRepository {
@@ -82,7 +79,11 @@ export interface ISubscriptionRepository {
    */
   updateSubscription(
     id: string,
-    updateData: UpdateSubscriptionDto,
+    updateData: {
+      startDate?: Date
+      endDate?: Date
+      status?: string
+    },
     session: ClientSession,
   ): Promise<Subscription | null>
 
