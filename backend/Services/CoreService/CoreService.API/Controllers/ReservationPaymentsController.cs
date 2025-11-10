@@ -61,11 +61,11 @@ namespace CoreService.API.Controllers
             public long Amount { get; set; }
         }
         // Trong Controller
-        [HttpGet("external/{externalId}")]
+        [HttpGet("{id}")]
         //[Authorize(Roles = "Driver,Operator,Admin")]
-        public async Task<IActionResult> GetByExternalId(string externalId)
+        public async Task<IActionResult> GetById(string id)
         {
-            var pr = await _payment.GetByExternalIdAsync(externalId);
+            var pr = await _payment.GetByIdAsync(id);
             return Ok(pr);
         }
 

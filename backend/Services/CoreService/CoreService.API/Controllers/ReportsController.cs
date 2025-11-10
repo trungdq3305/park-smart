@@ -18,7 +18,7 @@ namespace CoreService.API.Controllers
         public async Task<IActionResult> Create([FromBody] ReportCreateDto dto)
         {
             var accountId = User.FindFirst("id")?.Value;
-            var role = User.FindFirst("role")?.Value;
+            var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
             var res = await _app.CreateAsync(dto, accountId, role);
             return StatusCode(res.StatusCode, res);
         }

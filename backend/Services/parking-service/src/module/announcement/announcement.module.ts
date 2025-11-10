@@ -1,8 +1,10 @@
 // src/module/announcement/announcement.module.ts
 
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose' // Cần import nếu bạn dùng Mongoose
 
+import { ClientModule } from '../client/client.module'
+import { NotificationModule } from '../notification/notification.module'
 // --- Import các thành phần của Announcement ---
 import { AnnouncementController } from './announcement.controller'
 import { AnnouncementRepository } from './announcement.repository'
@@ -13,7 +15,9 @@ import { Announcement, AnnouncementSchema } from './schemas/announcement.schema'
 
 @Module({
   imports: [
+    forwardRef(() => NotificationModule),
     // 1. Kết nối Mongoose cho schema Announcement
+    ClientModule,
     MongooseModule.forFeature([
       { name: Announcement.name, schema: AnnouncementSchema },
     ]),

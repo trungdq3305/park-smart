@@ -5,14 +5,12 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace CoreService.Application.DTOs.FavouriteDtos
+namespace CoreService.Application.DTOs.AccountDtos
 {
-    public class FavouriteResponseDto
+    public class AccountPhoneResponse
     {
         [JsonPropertyName("_id")]
         public string Id { get; set; }
-        public string ParkingLotId { get; set; }
-        public string DriverId { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public string PhoneNumber { get; set; }
     }
 }

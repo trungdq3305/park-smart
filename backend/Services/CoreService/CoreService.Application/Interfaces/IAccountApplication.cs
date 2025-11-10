@@ -14,6 +14,7 @@ namespace CoreService.Application.Interfaces
     {
         Task<ApiResponse<AccountListResponseDto>> GetAllAsync(int? page, int? pageSize);
         Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetByRoleAsync(string role, int? page, int? pageSize);
+        Task<ApiResponse<AccountPhoneResponse>> GetByPhoneAsync(string phone);
         Task<ApiResponse<AccountDetailDto>> GetByIdAsync(string id);
         //Task<ApiResponse<Account>> CreateAsync(Account account);
         //Task<ApiResponse<Account>> UpdateAsync(string id, Account update);
@@ -22,5 +23,6 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<AccountDetailDto>> GetByDriverIdAsync(string driverId);
         Task<ApiResponse<AccountDetailDto>> GetByOperatorIdAsync(string operatorId);
         Task<ApiResponse<AccountDetailDto>> GetByAdminIdAsync(string adminId);
+        Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetInactiveOperatorsAsync(int? page, int? pageSize);
     }
 }
