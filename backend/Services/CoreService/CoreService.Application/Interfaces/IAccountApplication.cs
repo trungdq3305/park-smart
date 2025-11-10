@@ -23,5 +23,6 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<AccountDetailDto>> GetByDriverIdAsync(string driverId);
         Task<ApiResponse<AccountDetailDto>> GetByOperatorIdAsync(string operatorId);
         Task<ApiResponse<AccountDetailDto>> GetByAdminIdAsync(string adminId);
+        Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetInactiveOperatorsAsync(int? page, int? pageSize);
     }
 }

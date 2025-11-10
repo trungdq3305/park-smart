@@ -52,5 +52,7 @@ namespace CoreService.Repository.Repositories
         }
         public async Task<Account?> GetByPhoneNumberAsync(string phoneNumber) =>
     await _users.Find(a => a.PhoneNumber == phoneNumber).FirstOrDefaultAsync();
+        public async Task<IEnumerable<Account>> GetInactiveAccountsAsync() =>
+            await _users.Find(u => u.IsActive == false && u.DeletedAt == null).ToListAsync();
     }
 }
