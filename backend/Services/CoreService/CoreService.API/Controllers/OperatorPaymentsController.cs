@@ -23,23 +23,14 @@ namespace CoreService.API.Controllers
         { _platform = platform; _payment = payment; _opt = opt; }
 
         [HttpPost("xendit-account")]
-        [Authorize(Roles = "Operator,Admin")]
+        //[Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> CreateXenditAccount(
             string operatorId, [FromBody] CreateAccountDto dto)
         {
             var acc = await _platform.CreateSubAccountAsync(operatorId, dto.Email, dto.BusinessName);
-            return Ok(new { acc.XenditUserId, acc.Status });
+            return Ok(new { acc.XenditUserId });
         }
 
-        //[HttpGet("balance")]
-        //[Authorize(Roles = "Operator,Admin")]
-        //public async Task<IActionResult> GetBalance(string operatorId)
-        //    => Ok(await _payment.GetOperatorBalanceAsync(operatorId));
-
-        //[HttpGet("transactions")]
-        //[Authorize(Roles = "Operator,Admin")]
-        //public async Task<IActionResult> GetTransactions(string operatorId)
-        //    => Ok(await _payment.GetOperatorPaymentsAsync(operatorId));
         [HttpGet("balance")]
         [Authorize(Roles = "Operator,Admin")]
         public async Task<ActionResult<BalanceDto>> GetBalance(string operatorId)
@@ -102,6 +93,19 @@ namespace CoreService.API.Controllers
 
         //    return Ok(result);
         //}
+        [HttpGet("account-status")]
+        //[Authorize(Roles = "Operator,Admin")]
+        public async Task<IActionResult> GetXenditAccountStatus(string operatorId)
+        {
+            // Gọi phương thức mới để lấy trạng thái
+            var status = await _payment.GetOperatorAccountStatusAsync(operatorId);
+
+            return Ok(new
+            {
+                OperatorId = operatorId,
+                XenditAccountStatus = status
+            });
+        }
     }
 
     public class CreateAccountDto { public string Email { get; set; } public string BusinessName { get; set; } }

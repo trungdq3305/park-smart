@@ -15,8 +15,8 @@ namespace CoreService.Application.DTOs.AccountDtos
         public string AddressId { get; set; }
         public string FullName { get; set; }
         public string TaxCode { get; set; }
-        public string CompanyName { get; set; }
-        public string ContactEmail { get; set; }
+        public string BussinessName { get; set; }
+        public string PaymentEmail { get; set; }
         public bool IsVerified { get; set; }
     }
 }

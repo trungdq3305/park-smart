@@ -1,6 +1,7 @@
 ﻿using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
+using CoreService.Application.DTOs.EmailDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
@@ -26,7 +27,8 @@ namespace CoreService.Application.Applications
         private readonly IParkingLotOperatorRepository _opRepo;
         private readonly ICityAdminRepository _adminRepo;
         private readonly IOptions<AppSecurityOptions> _securityOptions;
-        public AuthApplication(IAccountRepository userRepo, Common.Helpers.JwtTokenHelper jwtHelper, IEmailApplication emailApplication, IDriverRepository driverRepo, IParkingLotOperatorRepository opRepo, ICityAdminRepository adminRepo, IOptions<AppSecurityOptions> securityOptions)
+        private readonly IOperatorPaymentAccountRepo _operatorPaymentAccountRepo;
+        public AuthApplication(IAccountRepository userRepo, Common.Helpers.JwtTokenHelper jwtHelper, IEmailApplication emailApplication, IDriverRepository driverRepo, IParkingLotOperatorRepository opRepo, ICityAdminRepository adminRepo, IOptions<AppSecurityOptions> securityOptions, IOperatorPaymentAccountRepo operatorPaymentAccountRepo)
         {
             _accountRepo = userRepo;
             _jwtHelper = jwtHelper;
@@ -35,6 +37,7 @@ namespace CoreService.Application.Applications
             _opRepo = opRepo;
             _adminRepo = adminRepo;
             _securityOptions = securityOptions;
+            _operatorPaymentAccountRepo = operatorPaymentAccountRepo;
         }
 
         public async Task<ApiResponse<string>> LoginAsync(LoginRequest request)
@@ -162,13 +165,21 @@ namespace CoreService.Application.Applications
             {
                 Id = null,
                 FullName = request.FullName,
-                CompanyName = request.CompanyName,
-                ContactEmail = request.ContactEmail,
+                PaymentEmail = request.PaymentEmail,
+                BussinessName = request.BussinessName,
                 AccountId = acc.Id,
             };
 
             await _opRepo.AddAsync(op);
 
+            var e = new OperatorPaymentAccount
+            {
+                OperatorId = op.Id,
+                XenditUserId = acc.Id,      // dùng "id" làm for-user-id cho các call sau
+                CreatedAt = DateTime.UtcNow
+            };
+
+        await _operatorPaymentAccountRepo.AddAsync(e);
 
             return new ApiResponse<string>(
                 data: null,
@@ -334,6 +345,7 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<string>> ConfirmOperatorAsync(string id)
         {
             var account = await _accountRepo.GetByIdAsync(id);
+            var operatorEntity = await _opRepo.GetByAccountIdAsync(id);
             if (account == null)
             {
                 throw new ApiException("Tài khoản không tồn tại", StatusCodes.Status400BadRequest);
@@ -345,6 +357,15 @@ namespace CoreService.Application.Applications
             }
 
             account.IsActive = true;
+            var subject = "Tài khoản ParkSmart – Tài khoản Parking Lot Operator";
+            var body = $@"
+        <h2>Chào mừng bạn đến với ParkSmart</h2>
+        <p>Tài khoản của bạn đã được tạo Admin phê duyệt.</p>
+        <p>Bạn có thể đăng nhập theo cách thông thường (email & mật khẩu), 
+        qua đường dận đến trang quản lý chính thức dánh cho Operator</p>
+        <p>Vui lòng kiểm tra Email {operatorEntity.PaymentEmail} bạn đã đăng ký tài khoản nhận tiền trước đó để xác nhận và sử dụng </p>
+        <p>Trân trọng,<br/>ParkSmart</p>";
+            await _emailApplication.SendEmailAsync(account.Email, subject, body);
             account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
             await _accountRepo.UpdateAsync(account);
