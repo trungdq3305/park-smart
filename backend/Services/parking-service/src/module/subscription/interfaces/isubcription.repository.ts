@@ -15,7 +15,7 @@ export interface ISubscriptionRepository {
    * @param session (Bắt buộc) Phiên làm việc của transaction.
    */
   createSubscription(
-    subscriptionData: CreateSubscriptionDto,
+    subscriptionData: Partial<CreateSubscriptionDto>,
     userId: string,
     session: ClientSession,
   ): Promise<Subscription | null>

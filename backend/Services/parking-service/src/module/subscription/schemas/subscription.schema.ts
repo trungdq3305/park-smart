@@ -30,14 +30,6 @@ export class Subscription extends BaseEntity {
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Người dùng sở hữu gói này
-    index: true,
-  })
-  userId: string
-
-  @Prop({
-    required: true,
-    type: mongoose.Schema.Types.ObjectId,
     ref: 'PricingPolicy', // ⭐️ Tham chiếu đến "sản phẩm" đã mua (ví dụ: "Gói 1 tháng")
     index: true,
   })
@@ -91,4 +83,4 @@ export const SubscriptionSchema = SchemaFactory.createForClass(Subscription)
 
 // Tối ưu hóa truy vấn
 SubscriptionSchema.index({ parkingLotId: 1, status: 1 })
-SubscriptionSchema.index({ userId: 1, status: 1 })
+SubscriptionSchema.index({ createdBy: 1, status: 1 })

@@ -37,7 +37,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
       .exec()
   }
 
-  createSubscription(
+  async createSubscription(
     subscriptionData: CreateSubscriptionDto,
     userId: string,
     session: ClientSession,
@@ -47,7 +47,18 @@ export class SubscriptionRepository implements ISubscriptionRepository {
       createdBy: userId,
       createdAt: new Date(),
     })
-    return createdSubscription.save({ session })
+    const data = await createdSubscription.save({ session })
+    const populated = await data.populate([
+      {
+        path: 'parkingLotId',
+        select: 'name _id',
+      },
+      {
+        path: 'pricingPolicyId',
+        select: 'name _id',
+      },
+    ])
+    return populated
   }
 
   findSubscriptionById(
@@ -112,13 +123,25 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.subscriptionModel
-        .find({ userId })
+        .find({ createdBy: userId, deletedAt: null })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
+        .populate([
+          {
+            path: 'parkingLotId',
+            select: 'name _id',
+          },
+          {
+            path: 'pricingPolicyId',
+            select: 'name _id',
+          },
+        ])
         .lean()
         .exec(),
-      this.subscriptionModel.countDocuments({ userId }).exec(),
+      this.subscriptionModel
+        .countDocuments({ createdBy: userId, deletedAt: null })
+        .exec(),
     ])
     return { data, total }
   }
