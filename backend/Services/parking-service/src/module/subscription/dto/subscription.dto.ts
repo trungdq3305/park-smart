@@ -177,3 +177,16 @@ export class AvailabilitySlotDto {
   })
   isAvailable: boolean
 }
+
+@Exclude()
+export class SubscriptionLogDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  transactionType: string
+
+  @Expose()
+  extendedUntil: number
+}

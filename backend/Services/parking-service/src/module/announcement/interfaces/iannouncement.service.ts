@@ -11,7 +11,7 @@ export interface IAnnouncementService {
     dto: CreateAnnouncementDto,
     createdBy: string,
   ): Promise<AnnouncementResponseDto>
-createAndSendNow(
+  createAndSendNow(
     dto: CreateAnnouncementDto,
     createdBy: string,
   ): Promise<AnnouncementResponseDto>

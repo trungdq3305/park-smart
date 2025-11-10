@@ -37,7 +37,7 @@ export class AnnouncementService implements IAnnouncementService {
     createdBy: string,
   ): Promise<AnnouncementResponseDto> {
     const originalDate = new Date(dto.scheduleAt)
-    
+
     // 1. Đặt giờ, phút, giây, mili giây về 0:0:0:0 (đầu ngày)
     originalDate.setHours(0, 0, 0, 0)
     const scheduleDate = new Date(originalDate.getTime() - 10)
@@ -57,7 +57,7 @@ export class AnnouncementService implements IAnnouncementService {
     return this.toResponseDto(newAnnouncement)
   }
 
-async createAndSendNow(
+  async createAndSendNow(
     dto: CreateAnnouncementDto,
     createdBy: string,
   ): Promise<AnnouncementResponseDto> {
@@ -85,7 +85,8 @@ async createAndSendNow(
 
       // Tạo và gửi Notification cho từng User
       for (const userId of userIds) {
-        const notificationDto: any = { // Sử dụng 'any' hoặc import DTO tương ứng
+        const notificationDto: any = {
+          // Sử dụng 'any' hoặc import DTO tương ứng
           recipientId: userId,
           recipientRole: roleName,
           title: newAnnouncement.title,
@@ -93,7 +94,9 @@ async createAndSendNow(
           type: NotificationType.ANNOUNCEMENT,
         }
         // Gọi NotificationService để lưu DB và gửi qua WS
-        await this.notificationService.createAndSendNotification(notificationDto)
+        await this.notificationService.createAndSendNotification(
+          notificationDto,
+        )
       }
     }
 
