@@ -115,14 +115,24 @@ export class SubscribedPolicyDto {
  * (Sử dụng với ClassSerializerInterceptor)
  */
 @Exclude()
+class ParkingLotSimpleDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  name: string
+}
+
+@Exclude()
 export class SubscriptionDetailResponseDto {
   @Expose()
   @Transform(({ obj }) => obj._id.toString())
   _id: string
 
   @Expose()
-  @Transform(({ obj }) => obj.parkingLotId.toString()) // Giả sử không populate
-  parkingLotId: string
+  @Type(() => ParkingLotSimpleDto)
+  parkingLotId: ParkingLotSimpleDto
 
   /**
    * Trường pricingPolicyId đã được populate (lồng nhau)

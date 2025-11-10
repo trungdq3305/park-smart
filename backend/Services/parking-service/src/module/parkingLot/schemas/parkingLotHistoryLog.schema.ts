@@ -16,6 +16,9 @@ export class ParkingLotHistoryLog extends BaseEntity {
   })
   _id: string
 
+  @Prop({ required: true, type: String })
+  name: string
+
   // Giữ lại parkingLotId để biết log này của bãi xe nào
   @Prop({
     required: true,

@@ -11,6 +11,7 @@ import { Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
+import { formatDateToLocalYYYYMMDD } from 'src/utils/formatDateTime.util'
 
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
@@ -99,7 +100,7 @@ export class SubscriptionService implements ISubscriptionService {
 
       const remaining = leasedCapacityRule - overlappingCount
       const isAvailable = remaining > 0
-      const dateKey = checkingDate.toISOString().split('T')[0]
+      const dateKey = formatDateToLocalYYYYMMDD(checkingDate)
 
       availabilityMap[dateKey] = { remaining, isAvailable }
     }
@@ -142,9 +143,16 @@ export class SubscriptionService implements ISubscriptionService {
       if (!checkPaymentStatus) {
         throw new ConflictException('Vé chưa được thanh toán')
       }
+
+      const subscriptionSend = {
+        ...createDto,
+        endDate: new Date(createDto.startDate).setMonth(
+          new Date(createDto.startDate).getMonth() + 1,
+        ),
+      }
       const newSubscription =
         await this.subscriptionRepository.createSubscription(
-          createDto,
+          subscriptionSend,
           userId,
           session,
         )
@@ -238,7 +246,7 @@ export class SubscriptionService implements ISubscriptionService {
   }
 
   cancelSubscription(id: IdDto, userId: string): Promise<boolean> {
-    throw new Error('Method not implemented.')
+    throw new InternalServerErrorException('Tính năng đang phát triển.')
   }
 
   renewSubscription(
@@ -246,13 +254,13 @@ export class SubscriptionService implements ISubscriptionService {
     paymentId: string,
     userId: string,
   ): Promise<SubscriptionDetailResponseDto> {
-    throw new Error('Method not implemented.')
+    throw new InternalServerErrorException('Tính năng đang phát triển.')
   }
 
   updateSubscriptionByAdmin(
     id: IdDto,
     updateDto: UpdateSubscriptionDto,
   ): Promise<SubscriptionDetailResponseDto> {
-    throw new Error('Method not implemented.')
+    throw new InternalServerErrorException('Tính năng đang phát triển.')
   }
 }
