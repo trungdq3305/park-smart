@@ -186,7 +186,11 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
   async updateSubscription(
     id: string,
-    updateData: UpdateSubscriptionDto,
+    updateData: {
+      startDate?: Date
+      endDate?: Date
+      status?: string
+    },
     session: ClientSession,
   ): Promise<Subscription | null> {
     return await this.subscriptionModel
