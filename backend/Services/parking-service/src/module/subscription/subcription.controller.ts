@@ -233,7 +233,7 @@ export class SubscriptionController {
       paginationQuery,
     )
     return {
-      data: result.data as SubscriptionLogDto[],
+      data: result.data,
       pagination: {
         currentPage: paginationQuery.page,
         pageSize: paginationQuery.pageSize,

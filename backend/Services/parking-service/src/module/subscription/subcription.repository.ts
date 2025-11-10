@@ -2,9 +2,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession } from 'mongoose'
 import { Model } from 'mongoose'
 
-import {
-  CreateSubscriptionDto,
-} from './dto/subscription.dto'
+import { CreateSubscriptionDto } from './dto/subscription.dto'
 import { SubscriptionStatusEnum } from './enums/subscription.enum'
 import { ISubscriptionRepository } from './interfaces/isubcription.repository'
 import { Subscription } from './schemas/subscription.schema'

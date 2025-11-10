@@ -33,8 +33,8 @@ import {
 import { ISubscriptionRepository } from './interfaces/isubcription.repository'
 import { ISubscriptionService } from './interfaces/isubcription.service'
 import { ISubscriptionLogRepository } from './interfaces/isubcriptionLog.repository'
-import { Subscription } from './schemas/subscription.schema'
 import { SubscriptionLog } from './schemas/subcriptionLog.schema'
+import { Subscription } from './schemas/subscription.schema'
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
   constructor(
