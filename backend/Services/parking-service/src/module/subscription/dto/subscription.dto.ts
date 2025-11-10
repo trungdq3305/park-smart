@@ -158,6 +158,9 @@ export class SubscriptionDetailResponseDto {
 
   @Expose()
   updatedAt: Date
+
+  @Expose()
+  subscriptionIdentifier: string // Mã QR hoặc mã định danh gói
 }
 
 export class AvailabilitySlotDto {

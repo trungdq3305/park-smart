@@ -139,7 +139,7 @@ export class SubscriptionController {
   @Roles(RoleEnum.DRIVER)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Lấy tất cả gói thuê bao của người dùng hiện tại (operator)', // <-- Thay đổi
+    summary: 'Lấy tất cả gói thuê bao của người dùng hiện tại', // <-- Thay đổi
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -169,7 +169,6 @@ export class SubscriptionController {
 
   @Get('identifier/:identifier')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RoleEnum.ADMIN) // Chỉ Admin hoặc Hệ thống (Barie) mới được gọi
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Lấy thông tin gói bằng mã QR (cho Barie/Scanner)', // <-- Thay đổi

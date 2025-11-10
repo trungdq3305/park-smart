@@ -16,6 +16,45 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
 
+  async cancelSubscription(
+    id: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<boolean> {
+    const result = await this.subscriptionModel
+      .findByIdAndUpdate(
+        id, // ⭐️ CHỈ CẦN TÌM THEO ID
+        {
+          $set: {
+            status: SubscriptionStatusEnum.CANCELLED,
+            updatedBy: userId,
+            updatedAt: new Date(),
+          },
+        },
+        { session, new: true },
+      )
+      .lean()
+      .exec()
+    return result ? true : false
+  }
+
+  async setExpiredSubscriptionsJob(): Promise<{
+    modifiedCount: number
+    failedCount: number
+  }> {
+    const data = await this.subscriptionModel.updateMany(
+      {
+        endDate: { $lt: new Date() },
+        status: { $eq: SubscriptionStatusEnum.ACTIVE },
+      },
+      { $set: { status: SubscriptionStatusEnum.EXPIRED } },
+    )
+    return {
+      modifiedCount: data.modifiedCount,
+      failedCount: data.matchedCount - data.modifiedCount,
+    }
+  }
+
   async findActiveAndFutureSubscriptions(
     parkingLotId: string,
     fromDate: Date, // (Đây là 'today' được chuẩn hóa)
@@ -77,7 +116,6 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     return this.subscriptionModel
       .findOne({
         subscriptionIdentifier,
-        isUsed: true,
         status: SubscriptionStatusEnum.ACTIVE,
       })
       .lean()
