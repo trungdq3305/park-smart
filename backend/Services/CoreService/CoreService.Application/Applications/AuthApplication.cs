@@ -162,6 +162,8 @@ namespace CoreService.Application.Applications
             {
                 Id = null,
                 FullName = request.FullName,
+                CompanyName = request.CompanyName,
+                ContactEmail = request.ContactEmail,
                 AccountId = acc.Id,
             };
 

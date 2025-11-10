@@ -27,8 +27,6 @@ namespace CoreService.Repository.Models
 
         public string ContactEmail { get; set; }
 
-        public bool IsVerified { get; set; } = false;
-
         public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
         public DateTime? UpdatedAt { get; set; }

@@ -59,7 +59,6 @@ namespace CoreService.Common.Helpers
                     claims.Add(new Claim("role", "Operator"));
                     claims.Add(new Claim("operatorId", op.Id ?? ""));
                     claims.Add(new Claim("fullName", op.FullName ?? ""));
-                    claims.Add(new Claim("taxCode", op.TaxCode ?? ""));
                     claims.Add(new Claim("companyName", op.CompanyName ?? ""));
                     claims.Add(new Claim("contactEmail", op.ContactEmail ?? ""));
                 }
