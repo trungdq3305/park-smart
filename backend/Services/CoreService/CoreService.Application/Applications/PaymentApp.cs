@@ -645,6 +645,37 @@ namespace CoreService.Application.Applications
 
             return records;
         }
+        public async Task<string> GetOperatorAccountStatusAsync(string operatorId)
+        {
+            // 1. Lấy Xendit User ID (XenditUserId) của Operator
+            var acc = await _accRepo.GetByOperatorAsync(operatorId)
+                                    ?? throw new ApiException("Operator chưa có tài khoản Xendit");
+
+            // 2. Gọi Xendit API để lấy chi tiết tài khoản
+            // Endpoint: GET /v2/accounts/{user_id}
+            var res = await _x.GetAsync($"/v2/accounts/{acc.XenditUserId}");
+            var checkBody = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                // Xử lý lỗi API nếu có
+                throw new ApiException($"Lỗi khi kiểm tra tài khoản Xendit {res.StatusCode}: {checkBody}");
+            }
+
+            // 3. Phân tích JSON Response để lấy trường "status"
+            using (var d = JsonDocument.Parse(checkBody))
+            {
+                if (d.RootElement.TryGetProperty("status", out var statusElement))
+                {
+                    var status = statusElement.GetString();
+                    return status ?? "UNKNOWN";
+                }
+                else
+                {
+                    return "STATUS_FIELD_NOT_FOUND";
+                }
+            }
+        }
     }
     
     }

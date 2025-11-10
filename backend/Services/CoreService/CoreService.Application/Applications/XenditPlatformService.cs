@@ -31,7 +31,7 @@ namespace CoreService.Application.Applications
             var body = new
             {
                 // Thay đổi từ "MANAGED" sang "OWNED"
-                type = "OWNED",
+                type = "MANAGED",
                 email = email,
                 country = "VN",
                 // Public profile là bắt buộc
@@ -96,15 +96,9 @@ namespace CoreService.Application.Applications
             if (string.IsNullOrWhiteSpace(accountId))
                 throw new ApiException($"Không tìm thấy account id trong response: {text}", StatusCodes.Status400BadRequest);
 
-            var e = new OperatorPaymentAccount
-            {
-                OperatorId = operatorId,
-                XenditUserId = accountId,      // dùng "id" làm for-user-id cho các call sau
-                Status = status,
-                CreatedAt = DateTime.UtcNow
-            };
+            
 
-            await _repo.AddAsync(e);
+            var e = await _repo.GetByOperatorAsync(operatorId);
             return e;
         }
     }

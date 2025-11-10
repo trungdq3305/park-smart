@@ -41,7 +41,7 @@ export class Subscription extends BaseEntity {
     enum: Object.values(SubscriptionStatusEnum), // ⭐️ 2. Dùng Object.values()
     default: SubscriptionStatusEnum.ACTIVE,
   })
-  status: string
+  status: SubscriptionStatusEnum
 
   @Prop({
     required: true,
