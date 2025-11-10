@@ -19,7 +19,7 @@ namespace CoreService.Application.DTOs.AccountDtos
 
         public string FullAddress { get; set; }
 
-        public string TaxCode { get; set; }
+        //public string TaxCode { get; set; }
 
         public string CompanyName { get; set; }
 
