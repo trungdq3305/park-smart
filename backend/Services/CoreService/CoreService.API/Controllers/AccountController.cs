@@ -97,5 +97,12 @@ namespace CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [HttpGet("inactive-operators")]
+        [Authorize(Roles = "Admin")] // Yêu cầu quyền Admin để xem danh sách này
+        public async Task<IActionResult> GetInactiveOperators([FromQuery] int? page, [FromQuery] int? pageSize)
+        {
+            var response = await _accountApplication.GetInactiveOperatorsAsync(page, pageSize);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

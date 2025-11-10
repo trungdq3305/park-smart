@@ -90,6 +90,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<PromotionResponseDto>>> GetAllAsync()
         {
             var items = await _promoRepo.GetAllAsync();
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var tasks = items.Select(MapToResponseDto);
             var list = (await Task.WhenAll(tasks)).ToList();
             return new ApiResponse<List<PromotionResponseDto>>(list, true, "OK", StatusCodes.Status200OK);

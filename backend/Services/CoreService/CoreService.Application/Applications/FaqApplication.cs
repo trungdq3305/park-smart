@@ -83,6 +83,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<PaginationDto<FaqResponseDto>>> GetPagedAsync(int? page, int? pageSize)
         {
             var all = await _repo.GetAllAsync();
+            if (all == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var list = all.ToList();
 
             var dtos = list.Select(x => _mapper.Map<FaqResponseDto>(x)).ToList();
@@ -153,6 +157,10 @@ namespace CoreService.Application.Applications
             }
 
             var items = await _repo.GetByStatusAsync(statusId!);
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var dtoList = _mapper.Map<IEnumerable<FaqResponseDto>>(items);
 
             var paged = PaginationDto<FaqResponseDto>.Create(dtoList, page, pageSize);
@@ -162,6 +170,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<PaginationDto<FaqResponseDto>>> GetMineAsync(string accountId, int? page, int? pageSize)
         {
             var items = await _repo.GetByAccountAsync(accountId);
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var dtoList = _mapper.Map<IEnumerable<FaqResponseDto>>(items);
 
             var paged = PaginationDto<FaqResponseDto>.Create(dtoList, page, pageSize);

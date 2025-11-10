@@ -89,6 +89,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<EventResponseDto>>> GetAllAsync()
         {
             var items = await _repo.GetAllAsync();
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var list = items.Select(Map).ToList();
             return new ApiResponse<List<EventResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
         }
@@ -96,6 +100,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<EventResponseDto>>> GetUpcomingAsync()
         {
             var items = await _repo.GetUpcomingEventsAsync();
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var list = items.Select(Map).ToList();
             return new ApiResponse<List<EventResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
         }

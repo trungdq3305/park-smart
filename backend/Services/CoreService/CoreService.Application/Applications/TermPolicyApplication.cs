@@ -68,6 +68,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<TermPolicyResponseDto>>> GetAllAsync()
         {
             var items = await _repo.GetAllAsync();
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var list = items.Select(Map).ToList();
             return new ApiResponse<List<TermPolicyResponseDto>>(list, true, "Lấy danh sách Term and Policy thành công", StatusCodes.Status200OK);
         }
@@ -75,6 +79,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<TermPolicyResponseDto>>> GetByAdminAsync(string cityAdminId)
         {
             var items = await _repo.GetByAdminIdAsync(cityAdminId);
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var list = items.Select(Map).ToList();
             return new ApiResponse<List<TermPolicyResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
         }

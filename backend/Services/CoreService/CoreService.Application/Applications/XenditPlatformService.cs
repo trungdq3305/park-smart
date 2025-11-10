@@ -27,11 +27,11 @@ namespace CoreService.Application.Applications
         public async Task<OperatorPaymentAccount> CreateSubAccountAsync(
             string operatorId, string email, string businessName)
         {
-            // *** Đã thay đổi payload TỐI THIỂU thành loại "MANAGED" ***
+            // *** Đã thay đổi payload thành loại "OWNED" theo yêu cầu ***
             var body = new
             {
-                // Thay đổi từ "OWNED"/'PLATFORM' sang "MANAGED"
-                type = "MANAGED",
+                // Thay đổi từ "MANAGED" sang "OWNED"
+                type = "OWNED",
                 email = email,
                 country = "VN",
                 // Public profile là bắt buộc

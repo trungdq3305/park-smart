@@ -59,6 +59,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<IEnumerable<PointMilestoneItemDto>>> GetAllAsync()
         {
             var entities = await _repo.GetAllAsync();
+            if (entities == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var dtos = _mapper.Map<IEnumerable<PointMilestoneItemDto>>(entities);
             return new ApiResponse<IEnumerable<PointMilestoneItemDto>>(dtos, true, "OK", StatusCodes.Status200OK);
         }
@@ -66,6 +70,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<IEnumerable<PointMilestoneItemDto>>> GetAllCreditAsync()
         {
             var entities = await _repo.GetAllCreditAsync();
+            if (entities == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var dtos = _mapper.Map<IEnumerable<PointMilestoneItemDto>>(entities);
             return new ApiResponse<IEnumerable<PointMilestoneItemDto>>(dtos, true, "OK", StatusCodes.Status200OK);
         }
@@ -73,6 +81,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<IEnumerable<PointMilestoneItemDto>>> GetAllAccumulatedAsync()
         {
             var entities = await _repo.GetAllAccumulatedAsync();
+            if (entities == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var dtos = _mapper.Map<IEnumerable<PointMilestoneItemDto>>(entities);
             return new ApiResponse<IEnumerable<PointMilestoneItemDto>>(dtos, true, "OK", StatusCodes.Status200OK);
         }
