@@ -55,7 +55,7 @@ namespace CoreService.Application.Applications
 
             // Update Operator
             operatorEntity.FullName = dto.FullName;
-            operatorEntity.TaxCode = dto.TaxCode;
+            //operatorEntity.TaxCode = dto.TaxCode;
             operatorEntity.CompanyName = dto.CompanyName;
             operatorEntity.ContactEmail = dto.ContactEmail;
             operatorEntity.UpdatedAt = DateTime.UtcNow;
