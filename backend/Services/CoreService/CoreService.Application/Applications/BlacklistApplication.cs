@@ -78,6 +78,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<BlacklistResponseDto>>> GetAllAsync()
         {
             var items = await _repo.GetAllAsync();
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var list = items.Select(Map).ToList();
             return new ApiResponse<List<BlacklistResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
         }

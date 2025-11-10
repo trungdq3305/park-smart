@@ -68,6 +68,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<ReportResponseDto>>> GetAllAsync()
         {
             var items = await _reportRepo.GetAllAsync();
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var tasks = items.Select(MapToResponseDto);
             var list = (await Task.WhenAll(tasks)).ToList();
             return new ApiResponse<List<ReportResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
@@ -76,6 +80,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<ReportResponseDto>>> GetMyReportsAsync(string actorAccountId)
         {
             var items = await _reportRepo.GetByCreatorIdAsync(actorAccountId);
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var tasks = items.Select(MapToResponseDto);
             var list = (await Task.WhenAll(tasks)).ToList();
             return new ApiResponse<List<ReportResponseDto>>(list, true, "OK", StatusCodes.Status200OK);

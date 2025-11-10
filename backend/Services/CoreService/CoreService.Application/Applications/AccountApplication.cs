@@ -41,10 +41,15 @@ namespace CoreService.Application.Applications
         {
             // 1. Lấy tất cả dữ liệu cần thiết từ database một cách đồng thời
             var accountsTask = _accountRepo.GetAllAsync();
+
+            if (accountsTask == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var driversTask = _driverRepo.GetAllAsync(); // Giả sử bạn có phương thức GetAllAsync
             var operatorsTask = _operatorRepo.GetAllAsync(); // Giả sử bạn có phương thức GetAllAsync
             var adminsTask = _adminRepo.GetAllAsync(); // Giả sử bạn có phương thức GetAllAsync
-
+            
             await Task.WhenAll(accountsTask, driversTask, operatorsTask, adminsTask);
 
             var accounts = await accountsTask;
@@ -108,11 +113,15 @@ namespace CoreService.Application.Applications
                 StatusCodes.Status200OK
             );
         }
-
+        
 
         public async Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetByRoleAsync(string role, int? page, int? pageSize)
         {
             var accounts = await _accountRepo.GetAllAsync();
+            if (accounts == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             IEnumerable<AccountDetailDto> dtoList = new List<AccountDetailDto>();
 
             switch (role?.ToLower())
@@ -169,10 +178,13 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<AccountPhoneResponse>> GetByPhoneAsync(string phone)
         {
            
-            await _accountRepo.GetByPhoneAsync(phone);
+            //await _accountRepo.GetByPhoneAsync(phone);
 
             var account = await _accountRepo.GetByPhoneAsync(phone);
-
+            if (account == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             // 2. Kiểm tra nếu không tìm thấy tài khoản
             if (account == null)
             {
@@ -383,6 +395,49 @@ namespace CoreService.Application.Applications
             await _accountRepo.DeleteAsync(id);
             return new ApiResponse<string>(null, true, "Xoá account thành công", StatusCodes.Status200OK);
         }
+        public async Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetInactiveOperatorsAsync(int? page, int? pageSize)
+        {
+            // 1. Lấy tất cả Operator và các tài khoản không hoạt động.
+            // (Bạn có thể dùng _accountRepo.GetAllAsync() và lọc, nhưng GetInactiveAccountsAsync() hiệu quả hơn)
+            var inactiveAccountsTask = _accountRepo.GetInactiveAccountsAsync();
+            if (inactiveAccountsTask == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
+            var operatorsTask = _operatorRepo.GetAllAsync(); // Lấy tất cả Operator để tìm AccountId tương ứng
 
+            await Task.WhenAll(inactiveAccountsTask, operatorsTask);
+
+            var inactiveAccounts = await inactiveAccountsTask;
+            var operators = await operatorsTask;
+
+            // 2. Tạo Dictionary để tra cứu nhanh Operator theo AccountId
+            var operatorsByAccountId = operators.ToDictionary(o => o.AccountId);
+
+            var result = new List<AccountDetailDto>();
+
+            // 3. Lọc: Chỉ giữ lại các Account KHÔNG hoạt động VÀ là Operator
+            foreach (var account in inactiveAccounts)
+            {
+                if (operatorsByAccountId.TryGetValue(account.Id, out var op))
+                {
+                    var dto = _mapper.Map<AccountDetailDto>(account);
+                    dto.RoleName = "Operator";
+                    dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
+
+                    result.Add(dto);
+                }
+            }
+
+            // 4. Phân trang kết quả
+            var pagedResult = PaginationDto<AccountDetailDto>.Create(result, page, pageSize);
+
+            return new ApiResponse<PaginationDto<AccountDetailDto>>(
+                pagedResult,
+                true,
+                "Lấy danh sách operator không hoạt động thành công",
+                StatusCodes.Status200OK
+            );
+        }
     }
 }

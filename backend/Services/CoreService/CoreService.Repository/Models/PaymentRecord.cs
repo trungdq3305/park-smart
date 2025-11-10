@@ -36,6 +36,7 @@ namespace CoreService.Repository.Models
         public string XenditUserId { get; set; }   // for-user-id
         public string CheckoutUrl { get; set; }
         public string CreatedBy { get; set; }
+        public DateTime? DueDate { get; set; }
         public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
         public DateTime UpdatedAt { get; set; } 
         public DateTime? PaidAt { get; set; }
@@ -50,6 +51,9 @@ namespace CoreService.Repository.Models
         Subscription, // Đăng ký
 
         [BsonElement("SES")]
-        ParkingLotSession // Phiên đỗ xe
+        ParkingLotSession, // Phiên đỗ xe
+
+        [BsonElement("OPR")]
+        OperatorCharge // Phí nhà điều hành
     }
 }

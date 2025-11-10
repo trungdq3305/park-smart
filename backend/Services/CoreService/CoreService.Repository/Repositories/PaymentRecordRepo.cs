@@ -77,5 +77,31 @@ namespace CoreService.Repository.Repositories
               .SortByDescending(x => x.CreatedAt)
               .Limit(take)
               .ToListAsync();
+
+        public async Task<IEnumerable<PaymentRecord>> GetByTypeAndStatusAsync(
+    string operatorId,
+    PaymentType type,
+    IEnumerable<string> statuses)
+        {
+            // Tạo bộ lọc chính
+            var filterBuilder = Builders<PaymentRecord>.Filter;
+
+            // 1. Lọc theo Operator ID
+            var filterOperator = filterBuilder.Eq(x => x.OperatorId, operatorId);
+
+            // 2. Lọc theo Payment Type (Ví dụ: Subscription)
+            var filterType = filterBuilder.Eq(x => x.PaymentType, type);
+
+            // 3. Lọc theo Status (Ví dụ: PENDING, EXPIRED)
+            // $in: Tìm các bản ghi mà trường Status nằm trong danh sách statuses
+            var filterStatus = filterBuilder.In(x => x.Status, statuses);
+
+            // Kết hợp tất cả các bộ lọc bằng AND
+            var combinedFilter = filterBuilder.And(filterOperator, filterType, filterStatus);
+
+            return await _col.Find(combinedFilter)
+                             .SortByDescending(x => x.CreatedAt)
+                             .ToListAsync();
+        }
     }
 }
