@@ -135,6 +135,7 @@ export class SubscriptionService implements ISubscriptionService {
         await this.subscriptionRepository.countActiveOnDateByParkingLot(
           createDto.parkingLotId,
           new Date(createDto.startDate),
+          undefined,
           session,
         )
 
@@ -144,6 +145,7 @@ export class SubscriptionService implements ISubscriptionService {
         // (Ví dụ: 20 >= 20 là ĐÚNG ➔ Ném lỗi)
         throw new ConflictException('Đã hết suất thuê bao dài hạn.')
       }
+
       const checkPaymentStatus =
         await this.accountServiceClient.getPaymentStatusByPaymentId(
           createDto.paymentId,
@@ -311,22 +313,17 @@ export class SubscriptionService implements ISubscriptionService {
     userId: string,
   ): Promise<SubscriptionDetailResponseDto> {
     // --- BƯỚC 1: LẤY VÀ KIỂM TRA (GUARD CLAUSES) ---
-
+    // (Phần này của bạn đã đúng: check NotFound, CANCELLED, Payment, Log)
     const existingSubscription =
       await this.subscriptionRepository.findSubscriptionById(id.id, userId)
-
     if (!existingSubscription) {
       throw new NotFoundException('Không tìm thấy gói thuê bao.')
     }
-
-    // ⭐️⭐️ SỬA LỖI 1: CHẶN GÓI ĐÃ HỦY (THEO YÊU CẦU CỦA BẠN) ⭐️⭐️
     if (existingSubscription.status === SubscriptionStatusEnum.CANCELLED) {
       throw new BadRequestException(
         'Gói thuê bao này đã bị hủy. Không thể gia hạn.',
       )
     }
-
-    // (⭐️ BẠN VẪN ĐANG THIẾU BƯỚC KIỂM TRA THANH TOÁN MỚI ⭐️)
     const checkPaymentStatus =
       await this.accountServiceClient.getPaymentStatusByPaymentId(paymentId)
     if (!checkPaymentStatus) {
@@ -338,48 +335,71 @@ export class SubscriptionService implements ISubscriptionService {
       throw new ConflictException('Thanh toán đã được sử dụng')
     }
 
+    // --- Biến tạm cho BƯỚC 2 và 3 ---
+    let newStartDate: Date
+    let newEndDate: Date
+    let dateToCheckForAvailability: Date // ⭐️ Ngày dùng để kiểm tra slot
+
     const session = await this.connection.startSession()
     session.startTransaction()
 
-    let newStartDate: Date
-    let newEndDate: Date
-    let updatedSubscription: Subscription | null // Biến tạm để lưu kết quả update
-
     try {
-      // --- BƯỚC 2: TÍNH TOÁN (LOGIC IF/ELSE ĐÃ SỬA) ---
-
+      // --- BƯỚC 2: TÍNH TOÁN (Xác định ngày tháng) ---
       const now = new Date()
       const oldEndDate = new Date(existingSubscription.endDate)
-
-      // (Giả sử bạn lấy 'packageDuration' (vd: 1 tháng) từ policy)
       const packageDuration = 1 // (TODO: Lấy từ pricingPolicyId)
 
-      // ⭐️⭐️ SỬA LỖI 2&3: GỘP LOGIC 'ACTIVE' VÀ 'EXPIRED' ⭐️⭐️
       if (
         existingSubscription.status === SubscriptionStatusEnum.ACTIVE &&
         oldEndDate >= now
       ) {
         // KỊCH BẢN 1: Vẫn còn hạn (Cộng dồn)
-        newStartDate = existingSubscription.startDate // Giữ nguyên ngày bắt đầu
+        newStartDate = existingSubscription.startDate
         newEndDate = new Date(oldEndDate)
         newEndDate.setMonth(newEndDate.getMonth() + packageDuration)
+
+        // ⭐️ Ngày kiểm tra slot: Là ngày đầu tiên của chu kỳ MỚI
+        dateToCheckForAvailability = new Date(oldEndDate)
+        dateToCheckForAvailability.setDate(oldEndDate.getDate() + 1)
       } else {
-        // KỊCH BẢN 2: Đã hết hạn (hoặc 'ACTIVE' nhưng đã quá hạn)
-        // Tính lại từ đầu
+        // KỊCH BẢN 2: Đã hết hạn
         newStartDate = now // Bắt đầu từ hôm nay
         newEndDate = new Date(now)
         newEndDate.setMonth(newEndDate.getMonth() + packageDuration)
+
+        // ⭐️ Ngày kiểm tra slot: Là ngày HÔM NAY
+        dateToCheckForAvailability = now
       }
 
-      // --- BƯỚC 3: CẬP NHẬT CSDL (CHẠY 1 LẦN) ---
+      // --- BƯỚC 3: KIỂM TRA SỨC CHỨA (ĐÃ DI CHUYỂN RA NGOÀI IF/ELSE) ---
+      const leasedCapacityRule =
+        await this.parkingLotRepository.getLeasedCapacityRule(
+          existingSubscription.parkingLotId,
+          session,
+        )
 
+      const currentActiveCount =
+        await this.subscriptionRepository.countActiveOnDateByParkingLot(
+          existingSubscription.parkingLotId,
+          dateToCheckForAvailability, // ⭐️ SỬA 1: Dùng ngày kiểm tra ĐÚNG
+          id.id, // ⭐️ SỬA 2: Loại trừ chính nó
+          session,
+        )
+
+      if (currentActiveCount >= leasedCapacityRule) {
+        throw new ConflictException(
+          `Đã hết suất thuê bao dài hạn cho bãi đỗ xe này.`,
+        )
+      }
+
+      // --- BƯỚC 4: CẬP NHẬT CSDL (CHẠY 1 LẦN) ---
       const dataSend = {
         startDate: newStartDate,
         endDate: newEndDate,
         status: SubscriptionStatusEnum.ACTIVE, // Luôn kích hoạt lại
       }
 
-      updatedSubscription =
+      const updatedSubscription =
         await this.subscriptionRepository.updateSubscription(
           id.id,
           dataSend,
@@ -390,7 +410,7 @@ export class SubscriptionService implements ISubscriptionService {
         throw new InternalServerErrorException('Gia hạn gói thuê bao thất bại.')
       }
 
-      // Ghi log (Đã đúng)
+      // Ghi log
       const logData = {
         paymentId,
         subscriptionId: existingSubscription._id,
@@ -399,8 +419,18 @@ export class SubscriptionService implements ISubscriptionService {
       }
       await this.subscriptionLogRepository.createLog(logData, session)
 
-      // ⭐️⭐️ SỬA LỖI 2&3: CHỈ COMMIT 1 LẦN ⭐️⭐️
+      // Commit
       await session.commitTransaction()
+
+      // (Lấy updatedSubscription đã populate để trả về)
+      const populatedSub =
+        await this.subscriptionRepository.findSubscriptionById(id.id, userId)
+      if (!populatedSub) {
+        throw new InternalServerErrorException(
+          'Không thể lấy dữ liệu sau khi gia hạn.',
+        )
+      }
+      return this.returnToDto(populatedSub)
     } catch (error) {
       await session.abortTransaction()
       if (error.code === 11000) {
@@ -408,22 +438,10 @@ export class SubscriptionService implements ISubscriptionService {
           'Thanh toán này đã được sử dụng cho một gói thuê bao khác.',
         )
       }
-      // Ném lại các lỗi (BadRequest, NotFound, ...)
       throw error
     } finally {
       await session.endSession()
     }
-
-    // --- BƯỚC 4: TRẢ VỀ (BÊN NGOÀI TRY/CATCH) ---
-    // (Chúng ta populate lại 'updatedSubscription' để lấy DTO đầy đủ nhất)
-    const populatedSub = await this.subscriptionRepository.findSubscriptionById(
-      id.id,
-      userId,
-    )
-    if (!populatedSub) {
-      throw new NotFoundException('Không tìm thấy gói thuê bao.')
-    }
-    return this.returnToDto(populatedSub)
   }
 
   updateSubscriptionByAdmin(
