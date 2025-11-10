@@ -138,6 +138,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   async countActiveOnDateByParkingLot(
     parkingLotId: string,
     requestedDate: Date,
+    subscriptionIdToExclude?: string,
     session?: ClientSession,
   ): Promise<number> {
     return this.subscriptionModel
@@ -147,6 +148,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         deletedAt: null,
         startDate: { $lte: requestedDate },
         endDate: { $gte: requestedDate },
+        _id: { $ne: subscriptionIdToExclude ?? null },
       })
       .session(session ?? null)
       .exec()

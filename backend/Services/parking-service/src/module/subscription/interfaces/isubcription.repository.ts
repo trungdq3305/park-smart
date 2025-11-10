@@ -56,6 +56,7 @@ export interface ISubscriptionRepository {
   countActiveOnDateByParkingLot(
     parkingLotId: string,
     requestedDate: Date,
+    subscriptionIdToExclude?: string,
     session?: ClientSession,
   ): Promise<number>
 
