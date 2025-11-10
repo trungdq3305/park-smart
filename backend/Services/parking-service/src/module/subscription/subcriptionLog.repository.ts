@@ -14,7 +14,8 @@ export class SubscriptionLogRepository implements ISubscriptionLogRepository {
     logData: Partial<SubscriptionLog>,
     session: ClientSession,
   ): Promise<SubscriptionLog | null> {
-    throw new Error('Method not implemented.')
+    const log = new this.subscriptionLogModel(logData)
+    return log.save({ session })
   }
 
   findLogsBySubscriptionId(
