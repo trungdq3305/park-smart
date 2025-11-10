@@ -98,6 +98,12 @@ export interface ISubscriptionService {
   getSubscriptionAvailability(
     parkingLotId: string,
   ): Promise<Record<string, AvailabilitySlotDto>>
+
+  /**
+   * Công việc định kỳ để đánh dấu các gói thuê bao đã hết hạn.
+   * Chạy hàng ngày để cập nhật trạng thái các gói thuê bao.
+   */
+  setExpiredSubscriptionsJob(): Promise<void>
 }
 
 export const ISubscriptionService = Symbol('ISubscriptionService')

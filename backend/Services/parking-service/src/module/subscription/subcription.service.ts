@@ -1,11 +1,14 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
+import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import { Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
@@ -41,6 +44,8 @@ export class SubscriptionService implements ISubscriptionService {
     @Inject(IParkingLotRepository)
     private readonly parkingLotRepository: IParkingLotRepository,
   ) {}
+
+  private readonly logger: Logger = new Logger(SubscriptionService.name)
 
   private returnToDto(
     subscription: Subscription,
@@ -245,8 +250,61 @@ export class SubscriptionService implements ISubscriptionService {
     return this.returnToDto(subscription)
   }
 
-  cancelSubscription(id: IdDto, userId: string): Promise<boolean> {
-    throw new InternalServerErrorException('Tính năng đang phát triển.')
+  async cancelSubscription(id: IdDto, userId: string): Promise<boolean> {
+    const subscription = await this.subscriptionRepository.findSubscriptionById(
+      id.id,
+      userId,
+    )
+
+    if (!subscription) {
+      throw new NotFoundException('Không tìm thấy gói thuê bao.')
+    }
+
+    const now = new Date()
+    const minCancellationDate = new Date()
+    minCancellationDate.setDate(now.getDate() + 5) // Đặt ngày giới hạn là 5 ngày tới
+
+    const subscriptionStartDate = new Date(subscription.startDate) // Ngày bắt đầu của gói
+
+    // 3. SO SÁNH
+    // Nếu ngày bắt đầu của gói <= ngày giới hạn (tức là nằm TRONG VÒNG 5 ngày tới)
+    if (subscriptionStartDate <= minCancellationDate) {
+      throw new BadRequestException(
+        'Không thể hủy gói thuê bao trong vòng 5 ngày trước ngày bắt đầu.',
+      )
+    }
+
+    // 4. KIỂM TRA CÁC LOGIC KHÁC
+    // (Ví dụ: không cho hủy nếu đang có xe trong bãi)
+    if (subscription.isUsed) {
+      throw new ConflictException('Gói đang được sử dụng, không thể hủy.')
+    }
+    const session = await this.connection.startSession()
+    session.startTransaction()
+    try {
+      const cancelResult = await this.subscriptionRepository.cancelSubscription(
+        id.id,
+        userId,
+        session,
+      )
+
+      if (!cancelResult) {
+        throw new InternalServerErrorException('Hủy gói thuê bao thất bại.')
+      }
+
+      const dataForLog = {
+        subscriptionId: subscription._id,
+        transactionType: SubscriptionTransactionType.CANCELLATION,
+      }
+
+      await session.commitTransaction()
+      return true
+    } catch (error) {
+      await session.abortTransaction()
+      throw error
+    } finally {
+      await session.endSession()
+    }
   }
 
   renewSubscription(
@@ -262,5 +320,36 @@ export class SubscriptionService implements ISubscriptionService {
     updateDto: UpdateSubscriptionDto,
   ): Promise<SubscriptionDetailResponseDto> {
     throw new InternalServerErrorException('Tính năng đang phát triển.')
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async setExpiredSubscriptionsJob(): Promise<void> {
+    try {
+      const result =
+        await this.subscriptionRepository.setExpiredSubscriptionsJob()
+
+      // 1. Chỉ log (info) số lượng thành công
+      this.logger.log(
+        `[CronJob] Đã cập nhật ${String(
+          result.modifiedCount,
+        )} gói thuê bao hết hạn.`,
+      )
+
+      // 2. Chỉ cảnh báo (warn) nếu có gì đó không khớp
+      if (result.failedCount > 0) {
+        this.logger.warn(
+          `[CronJob] Có ${String(
+            result.failedCount,
+          )} gói được tìm thấy nhưng không cập nhật.`,
+        )
+      }
+    } catch (error) {
+      // 3. ⭐️ Đây mới là nơi bắt lỗi thực sự (ví dụ: CSDL sập)
+      this.logger.error(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        `[CronJob] Gặp lỗi khi cập nhật gói hết hạn: ${error.message}`,
+        error.stack,
+      )
+    }
   }
 }
