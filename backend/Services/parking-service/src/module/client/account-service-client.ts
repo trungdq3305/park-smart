@@ -32,9 +32,9 @@ export class AccountServiceClient implements IAccountServiceClient {
     private readonly jwtService: JwtService,
   ) {
     // LẤY GIÁ TRỊ TỪ ENVIRONMENT VARIABLE
-    this.CORE_SERVICE_BASE_URL =
-      this.configService.get<string>('CORE_SERVICE_URL') ||
-      'http://parksmarthcmc.io.vn:5001/'
+    this.CORE_SERVICE_BASE_URL = 'http://parksmarthcmc.io.vn:5001/api'
+    // this.configService.get<string>('CORE_SERVICE_URL') ||
+    // 'http://parksmarthcmc.io.vn:5001/'
 
     // 🔥 GIẢ ĐỊNH sử dụng JWT_SECRET làm Internal Token/Key cho Service-to-Service
     //this.INTERNAL_AUTH_TOKEN = this.configService.get<string>('JWT_SECRET') || 'default-secret';
