@@ -22,14 +22,14 @@ namespace CoreService.API.Controllers
         public OperatorPaymentsController(IXenditPlatformService platform, IPaymentApp payment, IOptions<XenditOptions> opt)
         { _platform = platform; _payment = payment; _opt = opt; }
 
-        [HttpPost("xendit-account")]
-        //[Authorize(Roles = "Operator,Admin")]
-        public async Task<IActionResult> CreateXenditAccount(
-            string operatorId, [FromBody] CreateAccountDto dto)
-        {
-            var acc = await _platform.CreateSubAccountAsync(operatorId, dto.Email, dto.BusinessName);
-            return Ok(new { acc.XenditUserId });
-        }
+        //[HttpPost("xendit-account")]
+        ////[Authorize(Roles = "Operator,Admin")]
+        //public async Task<IActionResult> CreateXenditAccount(
+        //    string operatorId, [FromBody] CreateAccountDto dto)
+        //{
+        //    var acc = await _platform.CreateSubAccountAsync(operatorId, dto.Email, dto.BusinessName);
+        //    return Ok(acc);
+        //}
 
         [HttpGet("balance")]
         [Authorize(Roles = "Operator,Admin")]

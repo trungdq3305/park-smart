@@ -28,7 +28,8 @@ namespace CoreService.Application.Applications
         private readonly ICityAdminRepository _adminRepo;
         private readonly IOptions<AppSecurityOptions> _securityOptions;
         private readonly IOperatorPaymentAccountRepo _operatorPaymentAccountRepo;
-        public AuthApplication(IAccountRepository userRepo, Common.Helpers.JwtTokenHelper jwtHelper, IEmailApplication emailApplication, IDriverRepository driverRepo, IParkingLotOperatorRepository opRepo, ICityAdminRepository adminRepo, IOptions<AppSecurityOptions> securityOptions, IOperatorPaymentAccountRepo operatorPaymentAccountRepo)
+        private readonly IXenditPlatformService _paymentService;
+        public AuthApplication(IAccountRepository userRepo, Common.Helpers.JwtTokenHelper jwtHelper, IEmailApplication emailApplication, IDriverRepository driverRepo, IParkingLotOperatorRepository opRepo, ICityAdminRepository adminRepo, IOptions<AppSecurityOptions> securityOptions, IOperatorPaymentAccountRepo operatorPaymentAccountRepo, IXenditPlatformService paymentService)
         {
             _accountRepo = userRepo;
             _jwtHelper = jwtHelper;
@@ -38,6 +39,7 @@ namespace CoreService.Application.Applications
             _adminRepo = adminRepo;
             _securityOptions = securityOptions;
             _operatorPaymentAccountRepo = operatorPaymentAccountRepo;
+            _paymentService = paymentService;
         }
 
         public async Task<ApiResponse<string>> LoginAsync(LoginRequest request)
@@ -135,56 +137,64 @@ namespace CoreService.Application.Applications
 
         public async Task<ApiResponse<string>> OperatorRegisterAsync(OperatorRegisterRequest request)
         {
+            // 1. Kiểm tra tồn tại và điều khoản
             var existingUser = await _accountRepo.GetByEmailAsync(request.Email);
             if (existingUser != null)
-            {
                 throw new ApiException("Email đã tồn tại hoặc chưa được duyệt", StatusCodes.Status400BadRequest);
-            }
 
             var existingphoneUser = await _accountRepo.GetByPhoneAsync(request.PhoneNumber);
             if (existingphoneUser != null)
-            {
                 throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
-            }
+
             if (request.IsAgreeToP != true)
-                throw new ApiException("Vui lòng đồng ý Chính Sách & Diều Khoản", StatusCodes.Status400BadRequest);
+                throw new ApiException("Vui lòng đồng ý Chính Sách & Điều Khoản", StatusCodes.Status400BadRequest);
+
+            // 2. Tạo Account và Operator trong DB
+            // Lưu ý: MongoDB sẽ gán Id sau khi AddAsync, nhưng ta cần Id này để liên kết.
             var acc = new Account
             {
-                Id = null,
                 Email = request.Email,
                 Password = HashPassword(request.Password),
                 PhoneNumber = request.PhoneNumber,
-                RoleId = "68bee1f500a9410adb97d3a0",
-                IsActive = false,
+                RoleId = "68bee1f500a9410adb97d3a0", // Giả sử RoleID này là Operator
+                IsActive = false, // Chờ Admin duyệt
                 IsAgreeToP = request.IsAgreeToP
             };
-
             await _accountRepo.AddAsync(acc);
 
             var op = new ParkingLotOperator
             {
-                Id = null,
                 FullName = request.FullName,
                 PaymentEmail = request.PaymentEmail,
                 BussinessName = request.BussinessName,
                 AccountId = acc.Id,
             };
-
             await _opRepo.AddAsync(op);
 
-            var e = new OperatorPaymentAccount
+            // 3. Khởi tạo bản ghi OperatorPaymentAccount (Chưa có Xendit ID)
+            var paymentAcc = new OperatorPaymentAccount
             {
                 OperatorId = op.Id,
-                XenditUserId = acc.Id,      // dùng "id" làm for-user-id cho các call sau
+                // XenditUserId ban đầu là NULL hoặc một giá trị tạm thời/ID hệ thống
+                XenditUserId = null,
                 CreatedAt = DateTime.UtcNow
             };
+            await _operatorPaymentAccountRepo.AddAsync(paymentAcc);
 
-        await _operatorPaymentAccountRepo.AddAsync(e);
+            // 4. Tạo Sub-Account Xendit và CẬP NHẬT XenditUserId vào DB
+            // Hàm này sẽ trả về Xendit ID và tự cập nhật OperatorPaymentAccount
+            var xenditUserId = await _paymentService.CreateSubAccountAsync(
+                op.Id,
+                request.PaymentEmail,
+                request.BussinessName,
+                paymentAcc.Id // Truyền ID của OperatorPaymentAccount để cập nhật
+            );
 
+            // Xendit ID đã được cập nhật thành công trong CreateSubAccountAsync
             return new ApiResponse<string>(
                 data: null,
                 success: true,
-                message: "Đăng ký thành công, xin chờ Admin duyệt tài khoản",
+                message: "Đăng ký thành công, xin chờ Admin duyệt tài khoản và kiểm tra email để chấp nhận lời mời thanh toán.",
                 statusCode: StatusCodes.Status200OK
             );
         }
