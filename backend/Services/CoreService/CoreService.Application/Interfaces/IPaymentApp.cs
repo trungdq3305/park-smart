@@ -42,5 +42,6 @@ namespace CoreService.Application.Interfaces
         Task<IEnumerable<PaymentRecord>> GetSubscriptionInvoicesByStatusAsync(
             string operatorId, IEnumerable<string> statuses);
         Task<string> GetOperatorAccountStatusAsync(string operatorId);
+        Task<object> GetXenditInvoiceDetailAsync(string xenditInvoiceId);
     }
 }
