@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace CoreService.API.Controllers
 {
-    [Route("api/operators/{operatorId}/payments")]
+    [Route("api/operators/payments")]
     [ApiController]
     public class OperatorPaymentsController : ControllerBase
     {
@@ -22,24 +22,15 @@ namespace CoreService.API.Controllers
         public OperatorPaymentsController(IXenditPlatformService platform, IPaymentApp payment, IOptions<XenditOptions> opt)
         { _platform = platform; _payment = payment; _opt = opt; }
 
-        [HttpPost("xendit-account")]
-        [Authorize(Roles = "Operator,Admin")]
-        public async Task<IActionResult> CreateXenditAccount(
-            string operatorId, [FromBody] CreateAccountDto dto)
-        {
-            var acc = await _platform.CreateSubAccountAsync(operatorId, dto.Email, dto.BusinessName);
-            return Ok(new { acc.XenditUserId, acc.Status });
-        }
+        //[HttpPost("xendit-account")]
+        ////[Authorize(Roles = "Operator,Admin")]
+        //public async Task<IActionResult> CreateXenditAccount(
+        //    string operatorId, [FromBody] CreateAccountDto dto)
+        //{
+        //    var acc = await _platform.CreateSubAccountAsync(operatorId, dto.Email, dto.BusinessName);
+        //    return Ok(acc);
+        //}
 
-        //[HttpGet("balance")]
-        //[Authorize(Roles = "Operator,Admin")]
-        //public async Task<IActionResult> GetBalance(string operatorId)
-        //    => Ok(await _payment.GetOperatorBalanceAsync(operatorId));
-
-        //[HttpGet("transactions")]
-        //[Authorize(Roles = "Operator,Admin")]
-        //public async Task<IActionResult> GetTransactions(string operatorId)
-        //    => Ok(await _payment.GetOperatorPaymentsAsync(operatorId));
         [HttpGet("balance")]
         [Authorize(Roles = "Operator,Admin")]
         public async Task<ActionResult<BalanceDto>> GetBalance(string operatorId)
@@ -102,6 +93,20 @@ namespace CoreService.API.Controllers
 
         //    return Ok(result);
         //}
+        [HttpGet("parking/xendit-invoice-detail")]
+        //[Authorize(Roles = "Driver,Operator,Admin")]
+        public async Task<IActionResult> GetXenditInvoiceDetail( string paymentId)
+        {
+            if (string.IsNullOrEmpty(paymentId))
+            {
+                return BadRequest(new { message = "Cần cung cấp Xendit Invoice ID." });
+            }
+
+            // Gọi phương thức mới để lấy chi tiết hóa đơn
+            var detail = await _payment.GetXenditInvoiceDetailAsync(paymentId);
+
+            return Ok(detail);
+        }
     }
 
     public class CreateAccountDto { public string Email { get; set; } public string BusinessName { get; set; } }

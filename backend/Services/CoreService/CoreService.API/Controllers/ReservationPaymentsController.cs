@@ -3,6 +3,7 @@ using CoreService.Repository.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace CoreService.API.Controllers
 {
@@ -52,12 +53,16 @@ namespace CoreService.API.Controllers
         public class PayRequestDto
         {
             // ID của đối tượng (ReservationId, SubscriptionId, hoặc SessionId)
+            [Required]
             public string EntityId { get; set; }
 
             // Loại thanh toán, sẽ được tự động map từ string JSON sang Enum
+            [Required]
+            [EnumDataType(typeof(PaymentType), ErrorMessage = "PaymentType không hợp lệ. Chỉ chấp nhận: RES, SUB, SES, OPR.")]
             public PaymentType Type { get; set; }
 
             // Số tiền cần thanh toán
+            [Required]
             public long Amount { get; set; }
         }
         // Trong Controller

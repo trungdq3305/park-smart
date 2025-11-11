@@ -68,20 +68,22 @@ namespace CoreService.Application.Applications
             using (var d = JsonDocument.Parse(checkBody))
             {
                 var st = d.RootElement.GetProperty("status").GetString();
-                if (!string.Equals(st, "LIVE", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(st, "REGISTERED", StringComparison.OrdinalIgnoreCase))
                     throw new ApiException($"Tài khoản thanh toán của operator chưa ACTIVE (hiện: {st}). Hãy mở email mời và Accept.");
             }
 
             // 2) Tạo invoice
             var externalId = $"{externalIdPrefix}-{entityId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
             var baseReturn = "https://parksmart.vn/pay-result"; // <-- đổi theo project
-
+            var a = await _payRepo.GetByExternalIdAsync(externalId);
+            var paymentId = a.Id;
             // Tạo successUrl và failureUrl (truyền cả PaymentType qua URL)
             var successUrl = $"{baseReturn}?result=success" +
                              $"&entityId={Uri.EscapeDataString(entityId)}" +
                              $"&operatorId={Uri.EscapeDataString(operatorId)}" +
                              $"&externalId={Uri.EscapeDataString(externalId)}" +
                              $"&accountId={Uri.EscapeDataString(accountId)}" +
+                             $"&paymentId={Uri.EscapeDataString(paymentId)}" +
                              $"&type={type}"; // THÊM TYPE
 
             var failureUrl = $"{baseReturn}?result=failure" +
@@ -89,6 +91,7 @@ namespace CoreService.Application.Applications
                              $"&operatorId={Uri.EscapeDataString(operatorId)}" +
                              $"&externalId={Uri.EscapeDataString(externalId)}" +
                              $"&accountId={Uri.EscapeDataString(accountId)}" +
+                             $"&paymentId={Uri.EscapeDataString(paymentId)}" +
                              $"&type={type}"; // THÊM TYPE
 
             var body = new
@@ -644,6 +647,83 @@ namespace CoreService.Application.Applications
                 operatorId, PaymentType.Subscription, statuses);
 
             return records;
+        }
+        public async Task<string> GetOperatorAccountStatusAsync(string operatorId)
+        {
+            // 1. Lấy Xendit User ID (XenditUserId) của Operator
+            var acc = await _accRepo.GetByOperatorAsync(operatorId)
+                                    ?? throw new ApiException("Operator chưa có tài khoản Xendit");
+
+            // 2. Gọi Xendit API để lấy chi tiết tài khoản
+            // Endpoint: GET /v2/accounts/{user_id}
+            var res = await _x.GetAsync($"/v2/accounts/{acc.XenditUserId}");
+            var checkBody = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                // Xử lý lỗi API nếu có
+                throw new ApiException($"Lỗi khi kiểm tra tài khoản Xendit {res.StatusCode}: {checkBody}");
+            }
+
+            // 3. Phân tích JSON Response để lấy trường "status"
+            using (var d = JsonDocument.Parse(checkBody))
+            {
+                if (d.RootElement.TryGetProperty("status", out var statusElement))
+                {
+                    var status = statusElement.GetString();
+                    return status ?? "UNKNOWN";
+                }
+                else
+                {
+                    return "STATUS_FIELD_NOT_FOUND";
+                }
+            }
+        }
+        public async Task<object> GetXenditInvoiceDetailAsync(string paymentId)
+        {
+            var record = await _payRepo.GetByIdAsync(paymentId);
+            
+            // 1. Gọi Xendit API để lấy chi tiết Hóa đơn
+            // Endpoint: GET /v2/invoices/{invoice_id}
+            var acc = await _accRepo.GetByOperatorAsync(record.OperatorId)
+                      ?? throw new ApiException("Operator chưa có tài khoản Xendit");
+
+            var res = await _x.GetAsync($"/v2/invoices/{record.XenditInvoiceId}", acc.XenditUserId);
+
+            
+            var checkBody = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                // Xử lý lỗi API nếu hóa đơn không tồn tại hoặc lỗi khác
+                throw new ApiException($"Lỗi khi kiểm tra hóa đơn Xendit {res.StatusCode}: {checkBody}", (int)res.StatusCode);
+            }
+
+            // 2. Phân tích JSON Response để lấy các trường mong muốn
+            using (var d = JsonDocument.Parse(checkBody))
+            {
+                var root = d.RootElement;
+
+                // Trạng thái hóa đơn (PAID, PENDING, EXPIRED, v.v.)
+                var status = root.TryGetProperty("status", out var statusElement)
+                             ? statusElement.GetString() : "UNKNOWN";
+
+                // Số tiền
+                var amount = root.TryGetProperty("amount", out var amountElement)
+                             ? amountElement.GetInt64() : 0;
+
+                //var record = await _payRepo.GetByInvoiceIdAsync(xenditInvoiceId);
+
+
+
+                return new
+                {
+                    status = status,
+                    amount = amount,
+                    // Sử dụng email/externalId làm ID định danh người trả tiền
+                    userId = record.CreatedBy
+                };
+            }
         }
     }
     

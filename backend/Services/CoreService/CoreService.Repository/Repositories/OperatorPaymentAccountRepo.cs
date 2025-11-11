@@ -33,6 +33,8 @@ namespace CoreService.Repository.Repositories
 
         public async Task<OperatorPaymentAccount?> GetByOperatorAsync(string operatorId) =>
             await _col.Find(x => x.OperatorId == operatorId).FirstOrDefaultAsync();
+        public async Task<OperatorPaymentAccount?> GetByIdAsync(string Id) =>
+            await _col.Find(x => x.Id == Id).FirstOrDefaultAsync();
 
         public async Task<OperatorPaymentAccount?> GetByXenditUserAsync(string xenditUserId) =>
             await _col.Find(x => x.XenditUserId == xenditUserId).FirstOrDefaultAsync();

@@ -41,5 +41,7 @@ namespace CoreService.Application.Interfaces
         // Method mới để lấy các hóa đơn phí định kỳ theo trạng thái
         Task<IEnumerable<PaymentRecord>> GetSubscriptionInvoicesByStatusAsync(
             string operatorId, IEnumerable<string> statuses);
+        Task<string> GetOperatorAccountStatusAsync(string operatorId);
+        Task<object> GetXenditInvoiceDetailAsync(string paymentId);
     }
 }
