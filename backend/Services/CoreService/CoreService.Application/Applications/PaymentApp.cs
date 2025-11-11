@@ -75,13 +75,15 @@ namespace CoreService.Application.Applications
             // 2) Tạo invoice
             var externalId = $"{externalIdPrefix}-{entityId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
             var baseReturn = "https://parksmart.vn/pay-result"; // <-- đổi theo project
-
+            var a = await _payRepo.GetByExternalIdAsync(externalId);
+            var paymentId = a.Id;
             // Tạo successUrl và failureUrl (truyền cả PaymentType qua URL)
             var successUrl = $"{baseReturn}?result=success" +
                              $"&entityId={Uri.EscapeDataString(entityId)}" +
                              $"&operatorId={Uri.EscapeDataString(operatorId)}" +
                              $"&externalId={Uri.EscapeDataString(externalId)}" +
                              $"&accountId={Uri.EscapeDataString(accountId)}" +
+                             $"&paymentId={Uri.EscapeDataString(paymentId)}" +
                              $"&type={type}"; // THÊM TYPE
 
             var failureUrl = $"{baseReturn}?result=failure" +
@@ -89,6 +91,7 @@ namespace CoreService.Application.Applications
                              $"&operatorId={Uri.EscapeDataString(operatorId)}" +
                              $"&externalId={Uri.EscapeDataString(externalId)}" +
                              $"&accountId={Uri.EscapeDataString(accountId)}" +
+                             $"&paymentId={Uri.EscapeDataString(paymentId)}" +
                              $"&type={type}"; // THÊM TYPE
 
             var body = new
@@ -676,16 +679,16 @@ namespace CoreService.Application.Applications
                 }
             }
         }
-        public async Task<object> GetXenditInvoiceDetailAsync(string xenditInvoiceId)
+        public async Task<object> GetXenditInvoiceDetailAsync(string paymentId)
         {
-            var record = await _payRepo.GetByInvoiceIdAsync(xenditInvoiceId);
+            var record = await _payRepo.GetByIdAsync(paymentId);
             
             // 1. Gọi Xendit API để lấy chi tiết Hóa đơn
             // Endpoint: GET /v2/invoices/{invoice_id}
             var acc = await _accRepo.GetByOperatorAsync(record.OperatorId)
                       ?? throw new ApiException("Operator chưa có tài khoản Xendit");
 
-            var res = await _x.GetAsync($"/v2/invoices/{xenditInvoiceId}", acc.XenditUserId);
+            var res = await _x.GetAsync($"/v2/invoices/{record.XenditInvoiceId}", acc.XenditUserId);
 
             
             var checkBody = await res.Content.ReadAsStringAsync();

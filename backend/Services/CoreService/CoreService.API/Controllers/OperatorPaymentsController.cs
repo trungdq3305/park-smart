@@ -93,17 +93,17 @@ namespace CoreService.API.Controllers
 
         //    return Ok(result);
         //}
-        [HttpGet("xendit-invoice-detail")]
+        [HttpGet("parking/xendit-invoice-detail")]
         //[Authorize(Roles = "Driver,Operator,Admin")]
-        public async Task<IActionResult> GetXenditInvoiceDetail( string xenditInvoiceId)
+        public async Task<IActionResult> GetXenditInvoiceDetail( string paymentId)
         {
-            if (string.IsNullOrEmpty(xenditInvoiceId))
+            if (string.IsNullOrEmpty(paymentId))
             {
                 return BadRequest(new { message = "Cần cung cấp Xendit Invoice ID." });
             }
 
             // Gọi phương thức mới để lấy chi tiết hóa đơn
-            var detail = await _payment.GetXenditInvoiceDetailAsync(xenditInvoiceId);
+            var detail = await _payment.GetXenditInvoiceDetailAsync(paymentId);
 
             return Ok(detail);
         }
