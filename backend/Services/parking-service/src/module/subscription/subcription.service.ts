@@ -18,6 +18,7 @@ import { formatDateToLocalYYYYMMDD } from 'src/utils/formatDateTime.util'
 
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
+import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 // Import các DTOs liên quan đến Subscription
 import {
   AvailabilitySlotDto,
@@ -35,7 +36,6 @@ import { ISubscriptionService } from './interfaces/isubcription.service'
 import { ISubscriptionLogRepository } from './interfaces/isubcriptionLog.repository'
 import { SubscriptionLog } from './schemas/subcriptionLog.schema'
 import { Subscription } from './schemas/subscription.schema'
-import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
   constructor(
