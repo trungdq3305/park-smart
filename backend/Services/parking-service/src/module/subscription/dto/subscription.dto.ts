@@ -10,13 +10,7 @@ import {
   IsNotEmpty,
   IsOptional,
 } from 'class-validator'
-
-// (Giả định bạn có enum này ở đâu đó)
-export enum SubscriptionStatus {
-  ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
-  CANCELLED = 'CANCELLED',
-}
+import { SubscriptionStatusEnum } from '../enums/subscription.enum'
 
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies ---
@@ -54,6 +48,11 @@ export class CreateSubscriptionDto {
   @IsNotEmpty({ message: 'Ngày bắt đầu không được để trống' })
   startDate: string
 
+  // Lưu ý: userId sẽ được lấy từ @GetCurrentUserId() trong controller.
+  // endDate, status, isUsed, subscriptionIdentifier sẽ được set bởi server.
+}
+
+export class UpdatePaymentDto {
   @ApiProperty({
     example: '605e3f5f4f3e8c1d4c9f1e1b',
     description:
@@ -61,9 +60,6 @@ export class CreateSubscriptionDto {
   })
   @IsNotEmpty({ message: 'paymentId không được để trống' })
   paymentId: string
-
-  // Lưu ý: userId sẽ được lấy từ @GetCurrentUserId() trong controller.
-  // endDate, status, isUsed, subscriptionIdentifier sẽ được set bởi server.
 }
 
 /**
@@ -83,14 +79,14 @@ export class UpdateSubscriptionDto {
 
   @ApiPropertyOptional({
     example: 'CANCELLED',
-    enum: SubscriptionStatus,
+    enum: SubscriptionStatusEnum,
     description: 'Cập nhật trạng thái (ví dụ: Hủy gói)',
   })
   @IsOptional()
-  @IsEnum(SubscriptionStatus, {
+  @IsEnum(SubscriptionStatusEnum, {
     message: 'Trạng thái phải là ACTIVE, EXPIRED, hoặc CANCELLED',
   })
-  status: SubscriptionStatus
+  status: SubscriptionStatusEnum
 }
 
 // -----------------------------------------------------------------
@@ -189,4 +185,11 @@ export class SubscriptionLogDto {
 
   @Expose()
   extendedUntil: number
+}
+
+@Exclude()
+export class SubscriptionIdResponseDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
 }

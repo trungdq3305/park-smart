@@ -10,6 +10,10 @@ export class SubscriptionLogRepository implements ISubscriptionLogRepository {
     private readonly subscriptionLogModel: Model<SubscriptionLog>,
   ) {}
 
+  countLogsBySubscriptionId(subscriptionId: string): Promise<number> {
+    return this.subscriptionLogModel.countDocuments({ subscriptionId }).exec()
+  }
+
   createLog(
     logData: Partial<SubscriptionLog>,
     session: ClientSession,

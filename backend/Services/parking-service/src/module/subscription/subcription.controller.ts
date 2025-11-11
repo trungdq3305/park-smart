@@ -53,35 +53,87 @@ export class SubscriptionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.DRIVER) // DRIVER là người dùng mua
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Mua (tạo) một gói thuê bao (subscription) mới' }) // <-- Thay đổi
-  @ApiBody({ type: CreateSubscriptionDto }) // <-- Thay đổi
+  @ApiOperation({ summary: 'Tạo một Hóa đơn (draft) Gói thuê bao mới' }) // <-- Thay đổi
+  @ApiBody({ type: CreateSubscriptionDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Gói thuê bao đã được tạo thành công', // <-- Thay đổi
-    type: ApiResponseDto<SubscriptionDetailResponseDto>, // <-- Thay đổi
+    description: 'Hóa đơn (draft) đã được tạo thành công.', // <-- Thay đổi
+    type: ApiResponseDto<SubscriptionDetailResponseDto>,
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
-    description: 'Lỗi (ví dụ: thanh toán đã được sử dụng, hết suất thuê bao)', // <-- Thay đổi
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: 'Lỗi nghiệp vụ (ví dụ: thanh toán không hợp lệ)', // <-- Thay đổi
+    description: 'Lỗi (ví dụ: đã hết suất thuê bao cho ngày này)', // <-- Thay đổi
   })
   async createSubscription(
-    @Body() createDto: CreateSubscriptionDto, // <-- Thay đổi
+    @Body() createDto: CreateSubscriptionDto,
     @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<SubscriptionDetailResponseDto>> {
-    // <-- Thay đổi
     const subscription = await this.subscriptionService.createSubscription(
-      // <-- Thay đổi
       createDto,
       userId,
     )
     return {
       data: [subscription],
       statusCode: HttpStatus.CREATED,
-      message: 'Gói thuê bao đã được tạo thành công', // <-- Thay đổi
+      message: 'Hóa đơn Gói thuê bao đã được tạo (chờ thanh toán).', // <-- Thay đổi
+      success: true,
+    }
+  }
+
+  // =================================================================
+  // ⭐️ 2. API KÍCH HOẠT THANH TOÁN (HÀM MỚI BẠN YÊU CẦU)
+  // =================================================================
+  @Patch(':id/confirm-payment') // ⭐️ Dùng PATCH
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER) // Cùng người dùng đã tạo hóa đơn
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Kích hoạt Gói thuê bao (Xác nhận thanh toán)' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của Gói (Subscription) đang PENDING',
+    type: 'string',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        paymentId: {
+          type: 'string',
+          example: '69133b7bda89df55a5e59ad4',
+          description: 'ID thanh toán (bằng chứng) từ .NET service',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK, // ⭐️ Trả về 200 (OK) vì đây là cập nhật
+    description: 'Gói thuê bao đã được kích hoạt thành công',
+    type: ApiResponseDto<SubscriptionDetailResponseDto>,
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Lỗi (ví dụ: thanh toán đã được sử dụng, gói đã active)',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy hóa đơn (Subscription) để kích hoạt',
+  })
+  async updateSubscriptionPaymentId(
+    @Param('id') subscriptionId: string, // ⭐️ Lấy ID từ URL
+    @Body('paymentId') paymentId: string, // ⭐️ Lấy paymentId từ Body
+    @GetCurrentUserId() userId: string,
+  ): Promise<ApiResponseDto<SubscriptionDetailResponseDto>> {
+    const subscription =
+      await this.subscriptionService.updateSubscriptionPaymentId(
+        subscriptionId,
+        userId,
+        paymentId,
+      )
+
+    return {
+      data: [subscription],
+      statusCode: HttpStatus.OK, // ⭐️ Trả về 200 (OK)
+      message: 'Gói thuê bao đã được kích hoạt thành công.',
       success: true,
     }
   }

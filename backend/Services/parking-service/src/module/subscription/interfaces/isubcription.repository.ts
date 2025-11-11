@@ -21,8 +21,14 @@ export interface ISubscriptionRepository {
    * Tìm một gói thuê bao bằng ID.
    * @param id ID của gói thuê bao.
    * @param userId ID của người dùng (để kiểm tra quyền truy cập nếu cần).
+   * @param session (Tùy chọn) Phiên làm việc của transaction.
+   * @return Gói thuê bao hoặc null nếu không tìm thấy.
    */
-  findSubscriptionById(id: string, userId: string): Promise<Subscription | null>
+  findSubscriptionById(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<Subscription | null>
 
   /**
    * Tìm một gói thuê bao đang ACTIVE bằng mã định danh (subscriptionIdentifier).
@@ -131,6 +137,30 @@ export interface ISubscriptionRepository {
     userId: string, // Giữ lại để ghi log 'updatedBy'
     session: ClientSession,
   ): Promise<boolean>
+
+  /**
+   * Gia hạn một gói thuê bao.
+   * @param id ID của gói thuê bao.
+   * @param newEndDate Ngày kết thúc mới sau khi gia hạn.
+   * @param session Phiên làm việc của transaction.
+   */
+  updateSubscriptionPaymentId(
+    id: string,
+    paymentId: string,
+    session: ClientSession,
+  ): Promise<Subscription | null>
+
+  /**
+   * Cập nhật trạng thái của một gói thuê bao (dùng cho công việc định kỳ).
+   * @param id ID của gói thuê bao.
+   * @param status Trạng thái mới.
+   * @param session Phiên làm việc của transaction.
+   */
+  updateSubscriptionStatusForCronJob(
+    id: string,
+    status: string,
+    session: ClientSession,
+  ): Promise<Subscription | null>
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')
