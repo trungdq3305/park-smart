@@ -525,4 +525,51 @@ class ParkingLotService {
       rethrow;
     }
   }
+
+  /// Lấy danh sách các liên kết bãi đỗ xe đang hoạt động theo bãi đỗ xe
+  /// GET /parking/parking-lot-links/active/by-parking-lot/:parkingLotId
+  static Future<Map<String, dynamic>> getActiveParkingLotLinksByParkingLot(
+    String parkingLotId,
+  ) async {
+    try {
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/parking-lot-links/active/by-parking-lot/$parkingLotId',
+      );
+
+      print('🔗 Getting active parking lot links by parking lot:');
+      print('  URL: $uri');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully fetched active parking lot links');
+        return responseData;
+      } else {
+        final errorBody = response.body;
+        print('❌ Error fetching active parking lot links: $errorBody');
+        throw Exception(
+          'Failed to fetch active parking lot links: ${response.statusCode} - $errorBody',
+        );
+      }
+    } catch (e) {
+      print('❌ Exception in getActiveParkingLotLinksByParkingLot: $e');
+      rethrow;
+    }
+  }
 }
