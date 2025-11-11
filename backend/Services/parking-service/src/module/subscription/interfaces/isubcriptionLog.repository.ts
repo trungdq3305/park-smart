@@ -38,6 +38,12 @@ export interface ISubscriptionLogRepository {
     paymentId: string,
     session?: ClientSession,
   ): Promise<SubscriptionLog | null>
+
+  /**
+   * Đếm tổng số bản ghi lịch sử của một gói thuê bao.
+   * @param subscriptionId ID của gói thuê bao (Subscription) cha.
+   */
+  countLogsBySubscriptionId(subscriptionId: string): Promise<number>
 }
 
 export const ISubscriptionLogRepository = Symbol('ISubscriptionLogRepository')

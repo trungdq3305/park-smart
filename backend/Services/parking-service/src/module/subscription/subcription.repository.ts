@@ -13,6 +13,47 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
 
+  updateSubscriptionStatusForCronJob(
+    id: string,
+    status: string,
+    session: ClientSession,
+  ): Promise<Subscription | null> {
+    return this.subscriptionModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            status,
+            updatedAt: new Date(),
+          },
+        },
+        { session, new: true },
+      )
+      .lean()
+      .exec()
+  }
+
+  updateSubscriptionPaymentId(
+    id: string,
+    paymentId: string,
+    session: ClientSession,
+  ): Promise<Subscription | null> {
+    return this.subscriptionModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            paymentId,
+            updatedAt: new Date(),
+            status: SubscriptionStatusEnum.ACTIVE,
+          },
+        },
+        { session, new: true },
+      )
+      .lean()
+      .exec()
+  }
+
   async cancelSubscription(
     id: string,
     userId: string,
@@ -58,7 +99,12 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   ): Promise<Pick<Subscription, 'startDate' | 'endDate'>[]> {
     const filter = {
       parkingLotId: parkingLotId,
-      status: SubscriptionStatusEnum.ACTIVE, // Chỉ đếm các gói đang active
+      status: {
+        $or: [
+          SubscriptionStatusEnum.ACTIVE,
+          SubscriptionStatusEnum.PENDING_PAYMENT,
+        ],
+      }, // Chỉ đếm các gói đang active
       deletedAt: null, // Bỏ qua các gói đã xóa mềm
 
       // ⭐️ Logic quan trọng:
@@ -100,9 +146,11 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   findSubscriptionById(
     id: string,
     userId: string,
+    session?: ClientSession,
   ): Promise<Subscription | null> {
     return this.subscriptionModel
       .findOne({ _id: id, createdBy: userId })
+      .session(session ?? null)
       .lean()
       .exec()
   }
