@@ -5,6 +5,7 @@ import '../../../widgets/booking/parking_lot_info_card.dart';
 import '../../../widgets/booking/booking_form_card.dart';
 import '../../../widgets/booking/parking_space_selector.dart';
 import '../../../widgets/booking/electric_car_message.dart';
+import '../../../widgets/booking/pricing_table_card.dart';
 
 class BookingScreen extends StatefulWidget {
   final Map<String, dynamic> parkingLot;
@@ -21,7 +22,9 @@ class _BookingScreenState extends State<BookingScreen> {
 
   bool _isLoading = false;
   bool _isLoadingSpaces = false;
+  bool _isLoadingPricing = false;
   List<Map<String, dynamic>> _parkingSpaces = [];
+  List<Map<String, dynamic>> _pricingLinks = [];
   String? _selectedSpaceId;
   int _selectedLevel = 1;
   List<int> _availableLevels = [];
@@ -32,6 +35,7 @@ class _BookingScreenState extends State<BookingScreen> {
     super.initState();
     _initializeLevels();
     _loadParkingSpaces();
+    _loadPricingLinks();
   }
 
   /// Initialize available levels from parking lot data
@@ -108,6 +112,49 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
+  /// Load pricing links for the parking lot
+  Future<void> _loadPricingLinks() async {
+    setState(() {
+      _isLoadingPricing = true;
+    });
+
+    try {
+      final parkingLotId = widget.parkingLot['_id'] ?? widget.parkingLot['id'];
+      if (parkingLotId == null) {
+        throw Exception('Không tìm thấy ID bãi đỗ xe');
+      }
+
+      print('💰 Loading pricing links for parking lot...');
+
+      final response =
+          await ParkingLotService.getActiveParkingLotLinksByParkingLot(
+            parkingLotId,
+          );
+
+      final linksData = response['data'];
+      List<Map<String, dynamic>> links = [];
+
+      if (linksData is List) {
+        links = List<Map<String, dynamic>>.from(linksData);
+      }
+
+      setState(() {
+        _pricingLinks = links;
+        _isLoadingPricing = false;
+      });
+
+      print('✅ Loaded ${links.length} pricing links');
+    } catch (e) {
+      setState(() {
+        _isLoadingPricing = false;
+      });
+      print('❌ Error loading pricing links: $e');
+
+      // Don't show error snackbar for pricing, just log it
+      // Pricing is not critical for booking flow
+    }
+  }
+
   /// Change selected level and reload spaces
   void _changeLevel(int level) {
     if (level != _selectedLevel) {
@@ -164,6 +211,14 @@ class _BookingScreenState extends State<BookingScreen> {
               children: [
                 // Parking lot info card
                 ParkingLotInfoCard(parkingLot: widget.parkingLot),
+
+                const SizedBox(height: 24),
+
+                // Pricing table card
+                PricingTableCard(
+                  pricingLinks: _pricingLinks,
+                  isLoading: _isLoadingPricing,
+                ),
 
                 const SizedBox(height: 24),
 
