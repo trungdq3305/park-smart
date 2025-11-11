@@ -35,6 +35,7 @@ import { ISubscriptionService } from './interfaces/isubcription.service'
 import { ISubscriptionLogRepository } from './interfaces/isubcriptionLog.repository'
 import { SubscriptionLog } from './schemas/subcriptionLog.schema'
 import { Subscription } from './schemas/subscription.schema'
+import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 @Injectable()
 export class SubscriptionService implements ISubscriptionService {
   constructor(
@@ -48,6 +49,8 @@ export class SubscriptionService implements ISubscriptionService {
     private readonly subscriptionLogRepository: ISubscriptionLogRepository,
     @Inject(IParkingLotRepository)
     private readonly parkingLotRepository: IParkingLotRepository,
+    @Inject(IPricingPolicyRepository)
+    private readonly pricingPolicyRepository: IPricingPolicyRepository,
   ) {}
 
   private readonly logger: Logger = new Logger(SubscriptionService.name)
@@ -64,6 +67,51 @@ export class SubscriptionService implements ISubscriptionService {
     return plainToInstance(SubscriptionLogDto, log, {
       excludeExtraneousValues: true,
     })
+  }
+
+  private async calculateEndDate(
+    pricingPolicyId: string,
+    startDate: Date,
+  ): Promise<Date> {
+    // 1. GỌI HÀM REPO (Hàm của bạn)
+    // Lấy ra các quy tắc (ví dụ: { unit: 'Tháng', durationAmount: 1 })
+    const rules =
+      await this.pricingPolicyRepository.getUnitPackageRateByPolicyId(
+        pricingPolicyId,
+      )
+
+    if (!rules) {
+      throw new InternalServerErrorException(
+        'Gói giá này không tồn tại hoặc đã bị xóa.',
+      )
+    }
+
+    // 2. TÍNH TOÁN (Logic chúng ta đã bàn)
+    const endDate = new Date(startDate.getTime()) // Tạo bản sao
+    const { durationAmount, unit } = rules
+
+    // ⭐️ LƯU Ý: Đảm bảo 'unit' ở đây khớp với giá trị trong CSDL
+    // (Ví dụ: 'MONTH' hoặc 'Tháng' tùy bạn lưu)
+    switch (unit) {
+      case 'DAY': // Hoặc 'Ngày'
+        endDate.setDate(endDate.getDate() + durationAmount)
+        break
+
+      case 'WEEK': // Hoặc 'Tuần'
+        endDate.setDate(endDate.getDate() + durationAmount * 7)
+        break
+
+      case 'MONTH': // Hoặc 'Tháng'
+        endDate.setMonth(endDate.getMonth() + durationAmount)
+        break
+
+      default:
+        throw new InternalServerErrorException(
+          `Đơn vị thời gian không hợp lệ: ${unit}`,
+        )
+    }
+
+    return endDate
   }
 
   updateSubscriptionStatusJob(): Promise<{
@@ -133,7 +181,10 @@ export class SubscriptionService implements ISubscriptionService {
       const updateData = {
         status: SubscriptionStatusEnum.ACTIVE, // Kích hoạt gói
         paymentId: paymentId, // Gán paymentId (gốc)
-        endDate: subscriptionDraft.endDate, // (Gói PENDING đã có endDate)
+        endDate: await this.calculateEndDate(
+          subscriptionDraft.pricingPolicyId,
+          subscriptionDraft.startDate,
+        ), // (Gói PENDING đã có endDate)
         // (Bạn có thể tính lại endDate ở đây nếu logic yêu cầu)
       }
 
@@ -468,7 +519,7 @@ export class SubscriptionService implements ISubscriptionService {
       await this.accountServiceClient.getPaymentStatusByPaymentId(
         paymentId,
         userId,
-        SubscriptionStatusEnum.ACTIVE,
+        'PAID',
       )
     if (!checkPaymentStatus) {
       throw new ConflictException('Vé chưa được thanh toán')
@@ -491,7 +542,6 @@ export class SubscriptionService implements ISubscriptionService {
       // --- BƯỚC 2: TÍNH TOÁN (Xác định ngày tháng) ---
       const now = new Date()
       const oldEndDate = new Date(existingSubscription.endDate)
-      const packageDuration = 1 // (TODO: Lấy từ pricingPolicyId)
 
       if (
         existingSubscription.status === SubscriptionStatusEnum.ACTIVE &&
@@ -499,19 +549,23 @@ export class SubscriptionService implements ISubscriptionService {
       ) {
         // KỊCH BẢN 1: Vẫn còn hạn (Cộng dồn)
         newStartDate = existingSubscription.startDate
-        newEndDate = new Date(oldEndDate)
-        newEndDate.setMonth(newEndDate.getMonth() + packageDuration)
+        newEndDate = await this.calculateEndDate(
+          existingSubscription.pricingPolicyId,
+          oldEndDate,
+        ) // ⭐️ Sửa 1: Dùng await
 
-        // ⭐️ Ngày kiểm tra slot: Là ngày đầu tiên của chu kỳ MỚI
+        // Ngày kiểm tra slot: Là ngày đầu tiên của chu kỳ MỚI
         dateToCheckForAvailability = new Date(oldEndDate)
         dateToCheckForAvailability.setDate(oldEndDate.getDate() + 1)
       } else {
         // KỊCH BẢN 2: Đã hết hạn
         newStartDate = now // Bắt đầu từ hôm nay
-        newEndDate = new Date(now)
-        newEndDate.setMonth(newEndDate.getMonth() + packageDuration)
+        newEndDate = await this.calculateEndDate(
+          existingSubscription.pricingPolicyId,
+          now,
+        ) // ⬅️ Sửa ở đây
 
-        // ⭐️ Ngày kiểm tra slot: Là ngày HÔM NAY
+        // Ngày kiểm tra slot: Là ngày HÔM NAY
         dateToCheckForAvailability = now
       }
 

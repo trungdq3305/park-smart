@@ -15,6 +15,7 @@ import { SubscriptionController } from './subcription.controller'
 import { SubscriptionRepository } from './subcription.repository'
 import { SubscriptionService } from './subcription.service'
 import { SubscriptionLogRepository } from './subcriptionLog.repository'
+import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { SubscriptionLogRepository } from './subcriptionLog.repository'
     ]),
     ClientModule,
     ParkingLotModule,
+    PricingPolicyModule,
   ],
   controllers: [SubscriptionController],
   providers: [

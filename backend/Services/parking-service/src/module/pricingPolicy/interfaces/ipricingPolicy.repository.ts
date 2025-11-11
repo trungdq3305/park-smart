@@ -103,6 +103,16 @@ export interface IPricingPolicyRepository {
     name: string,
     userId: string,
   ): Promise<PricingPolicy | null>
+
+  /**
+   * Lấy giá của gói (package rate) từ một chính sách giá cụ thể.
+   * @param policyId ID của chính sách giá.
+   * @returns Giá của gói (package rate) hoặc null nếu không tìm thấy.
+   */
+  getUnitPackageRateByPolicyId(policyId: string): Promise<{
+    unit: string
+    durationAmount: number
+  } | null>
 }
 
 export const IPricingPolicyRepository = Symbol('IPricingPolicyRepository')
