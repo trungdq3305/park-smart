@@ -39,7 +39,7 @@ export class Subscription extends BaseEntity {
     required: true,
     type: String,
     enum: Object.values(SubscriptionStatusEnum), // ⭐️ 2. Dùng Object.values()
-    default: SubscriptionStatusEnum.ACTIVE,
+    default: SubscriptionStatusEnum.PENDING_PAYMENT,
   })
   status: SubscriptionStatusEnum
 
@@ -63,11 +63,11 @@ export class Subscription extends BaseEntity {
   isUsed: boolean
 
   @Prop({
-    required: true,
+    required: false,
     type: String,
     unique: true,
   })
-  paymentId: string // Mã định danh thanh toán từ hệ thống thanh toán bên thứ ba
+  paymentId: string
 
   // --- Các trường tùy chọn bạn có thể thêm sau ---
   @Prop({

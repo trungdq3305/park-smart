@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-arguments */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
@@ -6,13 +7,16 @@
 
 import { HttpService } from '@nestjs/axios'
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config' // 🔥 THÊM: Import ConfigService
 import { JwtService } from '@nestjs/jwt'
-import { AxiosResponse } from 'axios' // Import để gán kiểu
+import { AxiosError, AxiosResponse } from 'axios' // Import để gán kiểu
 import { firstValueFrom } from 'rxjs'
 
 import { IAccountServiceClient } from './interfaces/iaccount-service-client'
@@ -123,60 +127,71 @@ export class AccountServiceClient implements IAccountServiceClient {
     }
   }
 
-  async getPaymentStatusByPaymentId(paymentId: string): Promise<boolean> {
-    const url = `${this.CORE_SERVICE_BASE_URL}/payments/${paymentId}`
+  async getPaymentStatusByPaymentId(
+    paymentId: string,
+    userId: string, // Tham số mới để so sánh
+    status: string, // Tham số mới để so sánh
+  ): Promise<boolean> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/operators/payments/parking/xendit-invoice-detail?paymentId=${paymentId}`
 
     try {
-      // 1. Chỉ định kiểu trả về là 'any' vì nó không nhất quán
-      const data$ = this.httpService.get(url, {
-        // <-- ⭐️ SỬA 1
+      // 1. Gọi API (vẫn dùng kiểu 'any' vì response có thể là lỗi hoặc success)
+      const data$ = this.httpService.get<any>(url, {
         headers: {
           Authorization: `Bearer ${this.getInternalToken()}`,
         },
       })
 
-      // 2. Lấy response
-      const response: AxiosResponse = await firstValueFrom(data$)
+      const response: AxiosResponse<any> = await firstValueFrom(data$)
+      const responseData = response.data // Đây là { status, amount, userId }
 
-      // 3. ⭐️ SỬA LỖI Ở ĐÂY:
-      // Lấy dữ liệu thô (raw data) từ response
-      const responseData = response.data
+      // 2. ⭐️ BẮT ĐẦU SO SÁNH ⭐️
 
-      // 4. KIỂM TRA KIỂU DỮ LIỆU CỦA PHẢN HỒI
-
-      // Trường hợp 1: Nếu là object (đây là trường hợp lỗi 404/400)
-      if (
-        typeof responseData === 'object' &&
-        responseData !== null &&
-        responseData.success === false
-      ) {
-        // Ném lỗi này ra để Service (NestJS) của bạn bắt được ở khối catch
-        throw new NotFoundException(
-          responseData.error || 'Không tìm thấy thanh toán bên ngoài',
+      // 2a. So sánh Trạng thái (Status)
+      if (responseData.status !== status) {
+        throw new ConflictException(
+          `Thanh toán đang ở trạng thái "${responseData.status}", không phải "${status}".`,
         )
       }
 
-      // Trường hợp 2: Nếu là boolean (đây là trường hợp thành công 'true')
-      if (typeof responseData === 'boolean') {
-        return responseData // Sẽ trả về 'true'
+      // 2b. So sánh Người dùng (User ID)
+      if (responseData.userId !== userId) {
+        throw new ConflictException(
+          'ID người dùng của thanh toán không khớp với người dùng đang đăng nhập.',
+        )
       }
 
-      // Trường hợp 3: API trả về cái gì đó không mong đợi
-      return false // Mặc định an toàn là false
+      // 3. Nếu tất cả đều khớp
+      return true
     } catch (error) {
-      // 5. Xử lý lỗi (Lỗi mạng 500, hoặc lỗi NotFoundException chúng ta vừa ném ở trên)
+      // 4. XỬ LÝ LỖI (Quan trọng)
 
-      // Nếu đây là lỗi NotFound chúng ta chủ động ném, hãy ném lại
-      if (error instanceof NotFoundException) {
+      // 4a. Ném lại các lỗi (409 Conflict) mà chúng ta chủ động ném ở trên
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
         throw error
       }
 
-      // Nếu là lỗi server/mạng...
-      throw new InternalServerErrorException(
-        `Lỗi khi gọi Core Service để lấy trạng thái thanh toán cho paymentId: ${paymentId}`,
+      // 4b. Xử lý lỗi 404 từ .NET service (nếu API trả về 404)
+      if (error instanceof AxiosError && error.response?.status === 404) {
+        // Dù .NET trả về { success: false } hay 404 rỗng,
+        // chúng ta đều coi là NotFoundException.
+        throw new NotFoundException(
+          `Không tìm thấy thanh toán với ID: ${paymentId}`,
+        )
+      }
+
+      // 4c. Các lỗi không mong muốn khác (lỗi mạng, 500 từ .NET...)
+      Logger.error(
+        `Lỗi khi gọi Core Service cho paymentId ${paymentId}: ${error.message}`,
+        'PaymentInternalService',
       )
-      // Trả về 'false' (chưa thanh toán) là mặc định an toàn nhất
-      return false
+      throw new InternalServerErrorException(
+        'Lỗi máy chủ khi xác thực thanh toán.',
+      )
     }
   }
 }

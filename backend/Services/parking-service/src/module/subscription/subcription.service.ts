@@ -66,6 +66,134 @@ export class SubscriptionService implements ISubscriptionService {
     })
   }
 
+  updateSubscriptionStatusJob(): Promise<{
+    modifiedCount: number
+    failedCount: number
+  }> {
+    throw new Error('Method not implemented.')
+  }
+
+  async updateSubscriptionPaymentId(
+    subscriptionId: string, // ID của Hóa đơn (Subscription) đang PENDING
+    userId: string,
+    paymentId: string, // Bằng chứng thanh toán MỚI từ .NET
+  ): Promise<SubscriptionDetailResponseDto> {
+    const session = await this.connection.startSession()
+    session.startTransaction()
+
+    try {
+      // --- BƯỚC 1: LẤY HÓA ĐƠN VÀ QUY TẮC ---
+      // (Lấy bản ghi Subscription và populate 'pricingPolicyId' để biết giá)
+      const subscriptionDraft =
+        await this.subscriptionRepository.findSubscriptionById(
+          subscriptionId,
+          userId,
+          session, // ⭐️ Khóa bản ghi
+        )
+
+      if (!subscriptionDraft) {
+        throw new NotFoundException(
+          'Không tìm thấy hóa đơn (subscription) này.',
+        )
+      }
+
+      if (subscriptionDraft.status !== SubscriptionStatusEnum.PENDING_PAYMENT) {
+        throw new ConflictException(
+          'Gói thuê bao này đã được kích hoạt hoặc đã bị hủy.',
+        )
+      }
+
+      // --- BƯỚC 2: KIỂM TRA (CHECKS) ---
+
+      // ⭐️ Sửa Lỗi 1: Kiểm tra log TRƯỚC
+      const existLog = await this.subscriptionLogRepository.findLogByPaymentId(
+        paymentId,
+        session,
+      )
+      if (existLog) {
+        throw new ConflictException('Thanh toán này đã được sử dụng (log).')
+      }
+
+      // ⭐️ Sửa Lỗi 3: Gọi xác thực với tham số ĐÚNG
+      const checkPaymentStatus =
+        await this.accountServiceClient.getPaymentStatusByPaymentId(
+          paymentId,
+          userId,
+          'PAID', // ⭐️ Trạng thái mong đợi từ .NET
+        )
+      if (!checkPaymentStatus) {
+        throw new ConflictException(
+          'Thanh toán không hợp lệ hoặc sai thông tin.',
+        )
+      }
+
+      // --- BƯỚC 3: HÀNH ĐỘNG (ACT) ---
+
+      // ⭐️ Sửa Lỗi 2: Tính toán và chuẩn bị dữ liệu cập nhật
+      const updateData = {
+        status: SubscriptionStatusEnum.ACTIVE, // Kích hoạt gói
+        paymentId: paymentId, // Gán paymentId (gốc)
+        endDate: subscriptionDraft.endDate, // (Gói PENDING đã có endDate)
+        // (Bạn có thể tính lại endDate ở đây nếu logic yêu cầu)
+      }
+
+      const updatedSubscription =
+        await this.subscriptionRepository.updateSubscription(
+          subscriptionId,
+          updateData,
+          session,
+        )
+
+      if (!updatedSubscription) {
+        throw new InternalServerErrorException(
+          'Cập nhật gói thuê bao thất bại.',
+        )
+      }
+
+      // (Logic đếm log của bạn đã đúng, nhưng có thể bị Race Condition)
+      // Cách an toàn hơn là kiểm tra xem 'paymentId' (gốc) của 'updatedSubscription'
+      // có phải là null hay không.
+      const isInitialPurchase = !subscriptionDraft.paymentId // (Kiểm tra xem đây có phải lần gán đầu tiên không)
+
+      // Ghi log
+      await this.subscriptionLogRepository.createLog(
+        {
+          paymentId: paymentId,
+          subscriptionId: subscriptionId,
+          extendedUntil: updatedSubscription.endDate,
+          transactionType: isInitialPurchase
+            ? SubscriptionTransactionType.INITIAL_PURCHASE
+            : SubscriptionTransactionType.RENEWAL,
+        },
+        session,
+      )
+
+      await session.commitTransaction()
+
+      // Trả về DTO
+      return this.returnToDto(updatedSubscription)
+    } catch (error) {
+      await session.abortTransaction()
+
+      // ⭐️ Sửa Lỗi 4: Bắt lỗi 11000
+      if (error.code === 11000) {
+        throw new ConflictException(
+          'Thanh toán này đã được sử dụng (Lỗi 11000).',
+        )
+      }
+      // Ném lại các lỗi khác
+      if (
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error
+      }
+      throw new InternalServerErrorException(error.message)
+    } finally {
+      await session.endSession()
+    }
+  }
+
   async findLogsBySubscriptionId(
     subscriptionId: string,
     paginationQuery: PaginationQueryDto,
@@ -175,14 +303,6 @@ export class SubscriptionService implements ISubscriptionService {
         throw new ConflictException('Đã hết suất thuê bao dài hạn.')
       }
 
-      const checkPaymentStatus =
-        await this.accountServiceClient.getPaymentStatusByPaymentId(
-          createDto.paymentId,
-        )
-      if (!checkPaymentStatus) {
-        throw new ConflictException('Vé chưa được thanh toán')
-      }
-
       const subscriptionSend = {
         ...createDto,
         endDate: new Date(createDto.startDate).setMonth(
@@ -199,15 +319,6 @@ export class SubscriptionService implements ISubscriptionService {
       if (!newSubscription) {
         throw new InternalServerErrorException('Không thể tạo gói thuê bao.')
       }
-
-      const dataForLog = {
-        paymentId: createDto.paymentId,
-        subscriptionId: newSubscription._id,
-        extendedUntil: newSubscription.endDate,
-        transactionType: SubscriptionTransactionType.INITIAL_PURCHASE,
-      }
-
-      await this.subscriptionLogRepository.createLog(dataForLog, session)
 
       await session.commitTransaction()
 
@@ -354,7 +465,11 @@ export class SubscriptionService implements ISubscriptionService {
       )
     }
     const checkPaymentStatus =
-      await this.accountServiceClient.getPaymentStatusByPaymentId(paymentId)
+      await this.accountServiceClient.getPaymentStatusByPaymentId(
+        paymentId,
+        userId,
+        SubscriptionStatusEnum.ACTIVE,
+      )
     if (!checkPaymentStatus) {
       throw new ConflictException('Vé chưa được thanh toán')
     }

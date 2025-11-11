@@ -11,9 +11,17 @@ export interface IAccountServiceClient {
   /**
    * @description Gọi API của Core Service để lấy trạng thái thanh toán theo ID thanh toán.
    * @param paymentId ID thanh toán của giao dịch.
+   * @param userId ID người dùng (để so sánh)
+   * @param status Trạng thái mong đợi (ví dụ: 'PAID')
+   * @returns true nếu TẤT CẢ thông tin đều khớp.
+   * @throws Lỗi (400, 404, 409) nếu thông tin không khớp hoặc không tìm thấy
    * @returns Trạng thái thanh toán (ví dụ: 'pending', 'completed', 'failed').
    */
-  getPaymentStatusByPaymentId(paymentId: string): Promise<boolean>
+  getPaymentStatusByPaymentId(
+    paymentId: string,
+    userId: string,
+    status: string,
+  ): Promise<boolean>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')

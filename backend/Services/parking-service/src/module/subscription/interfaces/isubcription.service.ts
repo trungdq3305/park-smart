@@ -116,6 +116,17 @@ export interface ISubscriptionService {
     subscriptionId: string,
     paginationQuery: PaginationQueryDto,
   ): Promise<{ data: SubscriptionLogDto[]; pagination: PaginationDto }>
+
+  updateSubscriptionStatusJob(): Promise<{
+    modifiedCount: number
+    failedCount: number
+  }>
+
+  updateSubscriptionPaymentId(
+    subscriptionId: string,
+    userId: string,
+    paymentId: string,
+  ): Promise<SubscriptionDetailResponseDto>
 }
 
 export const ISubscriptionService = Symbol('ISubscriptionService')
