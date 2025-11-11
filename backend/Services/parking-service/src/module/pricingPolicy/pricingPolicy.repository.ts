@@ -13,6 +13,31 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     private readonly pricingPolicyModel: Model<PricingPolicy>,
   ) {}
 
+  async getUnitPackageRateByPolicyId(policyId: string): Promise<{
+    unit: string
+    durationAmount: number
+  } | null> {
+    // 1. Tìm chính sách (policy)
+    const policy = await this.pricingPolicyModel
+      .findOne({ _id: policyId, deletedAt: null, packageRateId: { $ne: null } })
+      .select('packageRateId')
+      // ⭐️ Thêm kiểu (generic) để TypeScript hiểu rõ kiểu populate
+      .populate<{ packageRateId: { unit: string; durationAmount: number } }>({
+        path: 'packageRateId',
+        select: 'unit durationAmount', // Chỉ lấy 2 trường cần thiết
+      })
+      .lean()
+      .exec()
+
+    // 2. Kiểm tra an toàn và trả về 'packageRateId' (đối tượng con)
+    // Nếu policy không tồn tại, hoặc policy không có packageRateId, trả về null
+    if (!policy) {
+      return null
+    }
+
+    return policy.packageRateId
+  }
+
   findByNameAndCreator(
     name: string,
     userId: string,

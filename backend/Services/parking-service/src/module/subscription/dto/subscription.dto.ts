@@ -10,6 +10,7 @@ import {
   IsNotEmpty,
   IsOptional,
 } from 'class-validator'
+
 import { SubscriptionStatusEnum } from '../enums/subscription.enum'
 
 // -----------------------------------------------------------------
