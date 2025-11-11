@@ -14,6 +14,9 @@ export class ParkingLot extends BaseEntity {
   })
   _id: string
 
+  @Prop({ required: true, type: String })
+  name: string
+
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,

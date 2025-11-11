@@ -7,6 +7,7 @@ import type {
   AvailabilitySlotDto,
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
+  SubscriptionLogDto,
   UpdateSubscriptionDto,
 } from '../dto/subscription.dto' // <-- Giả định đường dẫn DTO
 
@@ -98,6 +99,23 @@ export interface ISubscriptionService {
   getSubscriptionAvailability(
     parkingLotId: string,
   ): Promise<Record<string, AvailabilitySlotDto>>
+
+  /**
+   * Công việc định kỳ để đánh dấu các gói thuê bao đã hết hạn.
+   * Chạy hàng ngày để cập nhật trạng thái các gói thuê bao.
+   */
+  setExpiredSubscriptionsJob(): Promise<void>
+
+  /**
+   * Lấy tất cả lịch sử (logs) của một gói thuê bao (có phân trang).
+   * Dùng để hiển thị cho Admin hoặc người dùng.
+   * @param subscriptionId ID của gói thuê bao (Subscription) cha.
+   * @param paginationQuery Tùy chọn phân trang (page, pageSize).
+   */
+  findLogsBySubscriptionId(
+    subscriptionId: string,
+    paginationQuery: PaginationQueryDto,
+  ): Promise<{ data: SubscriptionLogDto[]; pagination: PaginationDto }>
 }
 
 export const ISubscriptionService = Symbol('ISubscriptionService')

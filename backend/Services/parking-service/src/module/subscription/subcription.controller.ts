@@ -36,6 +36,7 @@ import {
   AvailabilitySlotDto,
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
+  SubscriptionLogDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto' // <-- Thay đổi
 import { ISubscriptionService } from './interfaces/isubcription.service' // <-- Thay đổi
@@ -139,7 +140,7 @@ export class SubscriptionController {
   @Roles(RoleEnum.DRIVER)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Lấy tất cả gói thuê bao của người dùng hiện tại (operator)', // <-- Thay đổi
+    summary: 'Lấy tất cả gói thuê bao của người dùng hiện tại', // <-- Thay đổi
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -168,9 +169,6 @@ export class SubscriptionController {
   }
 
   @Get('identifier/:identifier')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(RoleEnum.ADMIN) // Chỉ Admin hoặc Hệ thống (Barie) mới được gọi
-  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Lấy thông tin gói bằng mã QR (cho Barie/Scanner)', // <-- Thay đổi
   })
@@ -201,6 +199,51 @@ export class SubscriptionController {
       data: [subscription],
       statusCode: HttpStatus.OK,
       message: 'Lấy thông tin gói thuê bao thành công', // <-- Thay đổi
+      success: true,
+    }
+  }
+
+  @Get(':id/logs')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER, RoleEnum.OPERATOR, RoleEnum.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy lịch sử (logs) của một gói thuê bao theo ID',
+  }) // <-- Thay đổi
+  @ApiParam({
+    name: 'id',
+    description: 'ID của gói thuê bao',
+    type: 'string',
+  }) // <-- Thay đổi
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách lịch sử gói thuê bao thành công', // <-- Thay đổi
+    type: PaginatedResponseDto<SubscriptionLogDto>, // <-- Thay đổi
+  })
+  @ApiQuery({ name: 'page', required: true, type: Number })
+  @ApiQuery({ name: 'pageSize', required: true, type: Number })
+  async findLogsBySubscriptionId(
+    @Param() id: IdDto,
+    @Query() paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<SubscriptionLogDto>> {
+    // <-- Thay đổi
+    const result = await this.subscriptionService.findLogsBySubscriptionId(
+      // <-- Thay đổi
+      id.id,
+      paginationQuery,
+    )
+    return {
+      data: result.data,
+      pagination: {
+        currentPage: paginationQuery.page,
+        pageSize: paginationQuery.pageSize,
+        totalItems: result.pagination.totalItems,
+        totalPages: Math.ceil(
+          result.pagination.totalItems / paginationQuery.pageSize,
+        ),
+      },
+      statusCode: HttpStatus.OK,
+      message: 'Lấy danh sách lịch sử gói thuê bao thành công', // <-- Thay đổi
       success: true,
     }
   }

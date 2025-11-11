@@ -55,7 +55,7 @@ export class CreateSubscriptionDto {
   startDate: string
 
   @ApiProperty({
-    example: 'ext-1234567890',
+    example: '605e3f5f4f3e8c1d4c9f1e1b',
     description:
       'Mã định danh thanh toán từ hệ thống thanh toán bên thứ ba (paymentId)',
   })
@@ -115,14 +115,24 @@ export class SubscribedPolicyDto {
  * (Sử dụng với ClassSerializerInterceptor)
  */
 @Exclude()
+class ParkingLotSimpleDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  name: string
+}
+
+@Exclude()
 export class SubscriptionDetailResponseDto {
   @Expose()
   @Transform(({ obj }) => obj._id.toString())
   _id: string
 
   @Expose()
-  @Transform(({ obj }) => obj.parkingLotId.toString()) // Giả sử không populate
-  parkingLotId: string
+  @Type(() => ParkingLotSimpleDto)
+  parkingLotId: ParkingLotSimpleDto
 
   /**
    * Trường pricingPolicyId đã được populate (lồng nhau)
@@ -148,6 +158,9 @@ export class SubscriptionDetailResponseDto {
 
   @Expose()
   updatedAt: Date
+
+  @Expose()
+  subscriptionIdentifier: string // Mã QR hoặc mã định danh gói
 }
 
 export class AvailabilitySlotDto {
@@ -163,4 +176,17 @@ export class AvailabilitySlotDto {
     example: true,
   })
   isAvailable: boolean
+}
+
+@Exclude()
+export class SubscriptionLogDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  transactionType: string
+
+  @Expose()
+  extendedUntil: number
 }

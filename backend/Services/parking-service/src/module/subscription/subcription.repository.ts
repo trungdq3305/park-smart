@@ -2,10 +2,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession } from 'mongoose'
 import { Model } from 'mongoose'
 
-import {
-  CreateSubscriptionDto,
-  UpdateSubscriptionDto,
-} from './dto/subscription.dto'
+import { CreateSubscriptionDto } from './dto/subscription.dto'
 import { SubscriptionStatusEnum } from './enums/subscription.enum'
 import { ISubscriptionRepository } from './interfaces/isubcription.repository'
 import { Subscription } from './schemas/subscription.schema'
@@ -15,6 +12,45 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     @InjectModel(Subscription.name)
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
+
+  async cancelSubscription(
+    id: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<boolean> {
+    const result = await this.subscriptionModel
+      .findByIdAndUpdate(
+        id, // ⭐️ CHỈ CẦN TÌM THEO ID
+        {
+          $set: {
+            status: SubscriptionStatusEnum.CANCELLED,
+            updatedBy: userId,
+            updatedAt: new Date(),
+          },
+        },
+        { session, new: true },
+      )
+      .lean()
+      .exec()
+    return result ? true : false
+  }
+
+  async setExpiredSubscriptionsJob(): Promise<{
+    modifiedCount: number
+    failedCount: number
+  }> {
+    const data = await this.subscriptionModel.updateMany(
+      {
+        endDate: { $lt: new Date() },
+        status: { $eq: SubscriptionStatusEnum.ACTIVE },
+      },
+      { $set: { status: SubscriptionStatusEnum.EXPIRED } },
+    )
+    return {
+      modifiedCount: data.modifiedCount,
+      failedCount: data.matchedCount - data.modifiedCount,
+    }
+  }
 
   async findActiveAndFutureSubscriptions(
     parkingLotId: string,
@@ -37,7 +73,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
       .exec()
   }
 
-  createSubscription(
+  async createSubscription(
     subscriptionData: CreateSubscriptionDto,
     userId: string,
     session: ClientSession,
@@ -47,7 +83,18 @@ export class SubscriptionRepository implements ISubscriptionRepository {
       createdBy: userId,
       createdAt: new Date(),
     })
-    return createdSubscription.save({ session })
+    const data = await createdSubscription.save({ session })
+    const populated = await data.populate([
+      {
+        path: 'parkingLotId',
+        select: 'name _id',
+      },
+      {
+        path: 'pricingPolicyId',
+        select: 'name _id',
+      },
+    ])
+    return populated
   }
 
   findSubscriptionById(
@@ -66,7 +113,6 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     return this.subscriptionModel
       .findOne({
         subscriptionIdentifier,
-        isUsed: true,
         status: SubscriptionStatusEnum.ACTIVE,
       })
       .lean()
@@ -89,6 +135,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   async countActiveOnDateByParkingLot(
     parkingLotId: string,
     requestedDate: Date,
+    subscriptionIdToExclude?: string,
     session?: ClientSession,
   ): Promise<number> {
     return this.subscriptionModel
@@ -98,6 +145,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         deletedAt: null,
         startDate: { $lte: requestedDate },
         endDate: { $gte: requestedDate },
+        _id: { $ne: subscriptionIdToExclude ?? null },
       })
       .session(session ?? null)
       .exec()
@@ -112,20 +160,36 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.subscriptionModel
-        .find({ userId })
+        .find({ createdBy: userId, deletedAt: null })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
+        .populate([
+          {
+            path: 'parkingLotId',
+            select: 'name _id',
+          },
+          {
+            path: 'pricingPolicyId',
+            select: 'name _id',
+          },
+        ])
         .lean()
         .exec(),
-      this.subscriptionModel.countDocuments({ userId }).exec(),
+      this.subscriptionModel
+        .countDocuments({ createdBy: userId, deletedAt: null })
+        .exec(),
     ])
     return { data, total }
   }
 
   async updateSubscription(
     id: string,
-    updateData: UpdateSubscriptionDto,
+    updateData: {
+      startDate?: Date
+      endDate?: Date
+      status?: string
+    },
     session: ClientSession,
   ): Promise<Subscription | null> {
     return await this.subscriptionModel

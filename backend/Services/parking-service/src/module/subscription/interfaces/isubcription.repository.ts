@@ -1,10 +1,7 @@
 import type { ClientSession } from 'mongoose'
 
 // Import DTOs và Schema liên quan đến Subscription
-import type {
-  CreateSubscriptionDto,
-  UpdateSubscriptionDto,
-} from '../dto/subscription.dto' // <-- Giả định đường dẫn DTO
+import type { CreateSubscriptionDto } from '../dto/subscription.dto' // <-- Giả định đường dẫn DTO
 import type { Subscription } from '../schemas/subscription.schema' // <-- Giả định đường dẫn Schema
 
 export interface ISubscriptionRepository {
@@ -15,7 +12,7 @@ export interface ISubscriptionRepository {
    * @param session (Bắt buộc) Phiên làm việc của transaction.
    */
   createSubscription(
-    subscriptionData: CreateSubscriptionDto,
+    subscriptionData: Partial<CreateSubscriptionDto>,
     userId: string,
     session: ClientSession,
   ): Promise<Subscription | null>
@@ -59,6 +56,7 @@ export interface ISubscriptionRepository {
   countActiveOnDateByParkingLot(
     parkingLotId: string,
     requestedDate: Date,
+    subscriptionIdToExclude?: string,
     session?: ClientSession,
   ): Promise<number>
 
@@ -82,7 +80,11 @@ export interface ISubscriptionRepository {
    */
   updateSubscription(
     id: string,
-    updateData: UpdateSubscriptionDto,
+    updateData: {
+      startDate?: Date
+      endDate?: Date
+      status?: string
+    },
     session: ClientSession,
   ): Promise<Subscription | null>
 
@@ -108,6 +110,27 @@ export interface ISubscriptionRepository {
     parkingLotId: string,
     fromDate: Date,
   ): Promise<Pick<Subscription, 'startDate' | 'endDate'>[]> // ⭐️ Chỉ lấy 2 trường
+
+  /**
+   * Công việc định kỳ để đánh dấu các gói thuê bao đã hết hạn.
+   * Chạy hàng ngày để cập nhật trạng thái các gói thuê bao.
+   */
+  setExpiredSubscriptionsJob(): Promise<{
+    modifiedCount: number
+    failedCount: number
+  }>
+
+  /**
+   * Hủy một gói thuê bao.
+   * @param id ID của gói thuê bao.
+   * @param userId ID của người dùng thực hiện hủy.
+   * @param session Phiên làm việc của transaction.
+   */
+  cancelSubscription(
+    id: string,
+    userId: string, // Giữ lại để ghi log 'updatedBy'
+    session: ClientSession,
+  ): Promise<boolean>
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')

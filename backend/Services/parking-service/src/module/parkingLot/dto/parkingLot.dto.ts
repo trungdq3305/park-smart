@@ -87,6 +87,10 @@ export class CreateParkingLotDto {
   @IsNotEmpty({ message: 'Mã địa chỉ không được để trống' })
   addressId: string
 
+  @ApiProperty({ example: 'Bãi đỗ xe quận 1' })
+  @IsNotEmpty({ message: 'Tên bãi đỗ xe không được để trống' })
+  name: string
+
   @ApiProperty({ example: 50 })
   @Type(() => Number)
   @IsNumber({}, { message: 'Sức chứa mỗi tầng phải là số' })
@@ -276,6 +280,9 @@ export class ParkingLotRequestResponseDto {
   _id: string
 
   @Expose()
+  name: string
+
+  @Expose()
   requestType: string
 
   @Expose()
@@ -318,6 +325,9 @@ export class ParkingLotHistoryLogResponseDto {
   @Expose()
   @Transform(({ obj }) => obj._id.toString())
   _id: string
+
+  @Expose()
+  name: string
 
   @Expose()
   @Transform(({ obj }) => obj.parkingLotId.toString())
