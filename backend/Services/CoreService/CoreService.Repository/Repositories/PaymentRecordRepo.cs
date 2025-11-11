@@ -64,7 +64,7 @@ namespace CoreService.Repository.Repositories
                       .ToListAsync();
 
         public async Task<PaymentRecord?> GetLatestByReservationIdAsync(string reservationId) =>
-        await _col.Find(x => x.ReservationId == reservationId)
+        await _col.Find(x => x.ReservationId == reservationId || x.SubscriptionId == reservationId || x.ParkingLotSessionId == reservationId)
                   .SortByDescending(x => x.CreatedAt)
                   .FirstOrDefaultAsync();
 
