@@ -520,28 +520,19 @@ namespace CoreService.Application.Applications
 
         public async Task UpdatePaymentStatusAsync(string invoiceId, string newStatus)
         {
-            var pr = await _payRepo.GetByInvoiceIdAsync(invoiceId);
+            var pr = await _payRepo.GetByIdAsync(invoiceId);
             if (pr == null) return;
             pr.Status = newStatus;
             pr.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow); ;
             await _payRepo.UpdateAsync(pr);
         }
 
-        public async Task<bool> GetByIdAsync(string Id)
+        public async Task<PaymentRecord> GetByIdAsync(string Id)
         {
             // Giả định _payRepo có phương thức tìm kiếm theo ExternalId
             var pr = await _payRepo.GetByIdAsync(Id);
 
-            // Bạn có thể thêm logic kiểm tra null và ném ApiException nếu cần
-            if (pr == null)
-            {
-                throw new ApiException($"Không tìm thấy PaymentRecord với  ID: {Id}");
-            }
-            if (pr.Status != "PAID")
-            {
-                return false;
-            }
-            return true;
+            return pr;
         }
         public async Task<IEnumerable<PaymentRecord>> GetByCreatedByAsync(string accountId)
         {
