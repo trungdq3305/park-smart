@@ -160,13 +160,13 @@ namespace CoreService.API.Controllers
         [AllowAnonymous] // redirect từ Xendit không có auth
         public async Task<IActionResult> Confirm(
             [FromQuery] string operatorId,
-            [FromQuery] string reservationId
+            [FromQuery] string entityId
             //[FromQuery] string externalId,
             //[FromQuery] string result // "success" | "failure"
         )
         {
             // 1) Lấy payment record mới nhất theo reservation
-            var pr = await _payment.GetLatestPaymentByReservationAsync(reservationId);
+            var pr = await _payment.GetLatestPaymentByReservationAsync(entityId);
             if (pr == null)
                 return NotFound(new { message = "No payment found for reservation" });
 
@@ -179,7 +179,7 @@ namespace CoreService.API.Controllers
 
             // 4) (tuỳ chọn) chuyển hướng sang UI cuối cùng, mang theo status
             var finalUi = $"https://parksmart.vn/pay-result" +
-                          $"?reservationId={Uri.EscapeDataString(reservationId)}" +
+                          $"?entityId={Uri.EscapeDataString(entityId)}" +
                           $"&invoiceId={Uri.EscapeDataString(pr.XenditInvoiceId)}" +
                           $"&status={Uri.EscapeDataString(status)}";
             return Redirect(finalUi);
