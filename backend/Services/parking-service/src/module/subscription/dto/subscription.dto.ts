@@ -55,7 +55,7 @@ export class CreateSubscriptionDto {
   startDate: string
 
   @ApiProperty({
-    example: 'ext-1234567890',
+    example: '605e3f5f4f3e8c1d4c9f1e1b',
     description:
       'Mã định danh thanh toán từ hệ thống thanh toán bên thứ ba (paymentId)',
   })
