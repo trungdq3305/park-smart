@@ -75,8 +75,27 @@ namespace CoreService.Application.Applications
             // 2) Tạo invoice
             var externalId = $"{externalIdPrefix}-{entityId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
             var baseReturn = "https://parksmart.vn/pay-result"; // <-- đổi theo project
-            var a = await _payRepo.GetByExternalIdAsync(externalId);
-            var paymentId = a.Id;
+            var pr = new PaymentRecord
+            {
+                OperatorId = operatorId,
+                ExternalId = externalId,
+                Amount = amount,
+                XenditUserId = acc.XenditUserId,
+                CreatedBy = accountId,
+                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+
+                // GÁN LOẠI THANH TOÁN (ENUM) VÀ ID TƯƠNG ỨNG
+                PaymentType = type,
+                ReservationId = (type == PaymentType.Reservation) ? entityId : null,
+                SubscriptionId = (type == PaymentType.Subscription) ? entityId : null,
+                ParkingLotSessionId = (type == PaymentType.ParkingLotSession) ? entityId : null,
+
+                // Gán trạng thái ban đầu (Pending/Created/Draft)
+                Status = "CREATED", // Tùy thuộc vào cấu trúc dữ liệu của bạn
+            };
+            // LƯU VÀO DB ĐỂ CÓ ID THẬT
+            await _payRepo.AddAsync(pr); // <--- LƯU TRƯỚC
+            var paymentId = pr.Id;
             // Tạo successUrl và failureUrl (truyền cả PaymentType qua URL)
             var successUrl = $"{baseReturn}?result=success" +
                              $"&entityId={Uri.EscapeDataString(entityId)}" +
@@ -119,25 +138,11 @@ namespace CoreService.Application.Applications
             var url = doc.RootElement.GetProperty("invoice_url").GetString();
 
             // 3. Tạo PaymentRecord (CẬP NHẬT GÁN ID và TYPE)
-            var pr = new PaymentRecord
-            {
-                OperatorId = operatorId,
-                XenditInvoiceId = invoiceId,
-                ExternalId = externalId,
-                Amount = amount,
-                Status = status,
-                XenditUserId = acc.XenditUserId,
-                CheckoutUrl = url,
-                CreatedBy = accountId,
-                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+            pr.XenditInvoiceId = invoiceId;
+            pr.Status = status; // Trạng thái ban đầu từ Xendit thường là PENDING/ACTIVE
+            pr.CheckoutUrl = url;
 
-                // GÁN LOẠI THANH TOÁN (ENUM) VÀ ID TƯƠNG ỨNG
-                PaymentType = type,
-                ReservationId = (type == PaymentType.Reservation) ? entityId : null,
-                SubscriptionId = (type == PaymentType.Subscription) ? entityId : null,
-                ParkingLotSessionId = (type == PaymentType.ParkingLotSession) ? entityId : null,
-            };
-            await _payRepo.AddAsync(pr);
+            await _payRepo.UpdateAsync(pr);
             return pr;
         }
 
