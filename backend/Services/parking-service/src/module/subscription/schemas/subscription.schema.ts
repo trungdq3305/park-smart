@@ -66,6 +66,7 @@ export class Subscription extends BaseEntity {
     required: false,
     type: String,
     unique: true,
+    sparse: true,
   })
   paymentId: string
 
