@@ -68,7 +68,7 @@ namespace CoreService.Application.Applications
             using (var d = JsonDocument.Parse(checkBody))
             {
                 var st = d.RootElement.GetProperty("status").GetString();
-                if (!string.Equals(st, "LIVE", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(st, "REGISTERED", StringComparison.OrdinalIgnoreCase))
                     throw new ApiException($"Tài khoản thanh toán của operator chưa ACTIVE (hiện: {st}). Hãy mở email mời và Accept.");
             }
 
