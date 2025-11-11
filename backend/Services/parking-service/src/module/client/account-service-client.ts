@@ -170,7 +170,7 @@ export class AccountServiceClient implements IAccountServiceClient {
       if (error instanceof NotFoundException) {
         throw error
       }
-
+      console.log(error)
       // Nếu là lỗi server/mạng...
       throw new InternalServerErrorException(
         `Lỗi khi gọi Core Service để lấy trạng thái thanh toán cho paymentId: ${paymentId}`,
