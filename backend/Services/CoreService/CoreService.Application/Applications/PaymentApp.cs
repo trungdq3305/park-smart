@@ -122,7 +122,7 @@ namespace CoreService.Application.Applications
                 success_redirect_url = successUrl,
                 failure_redirect_url = failureUrl,
                 should_send_email = false,
-                invoice_duration = 60
+                invoice_duration = 600
             };
 
             var res = await _x.PostAsync("/v2/invoices", body, forUserId: acc.XenditUserId);
