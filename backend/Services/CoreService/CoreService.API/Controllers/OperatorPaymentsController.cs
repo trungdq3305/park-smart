@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace CoreService.API.Controllers
 {
-    [Route("api/operators/{operatorId}/payments")]
+    [Route("api/operators/payments")]
     [ApiController]
     public class OperatorPaymentsController : ControllerBase
     {
@@ -93,18 +93,19 @@ namespace CoreService.API.Controllers
 
         //    return Ok(result);
         //}
-        [HttpGet("account-status")]
-        //[Authorize(Roles = "Operator,Admin")]
-        public async Task<IActionResult> GetXenditAccountStatus(string operatorId)
+        [HttpGet("xendit-invoice-detail")]
+        //[Authorize(Roles = "Driver,Operator,Admin")]
+        public async Task<IActionResult> GetXenditInvoiceDetail( string xenditInvoiceId)
         {
-            // Gọi phương thức mới để lấy trạng thái
-            var status = await _payment.GetOperatorAccountStatusAsync(operatorId);
-
-            return Ok(new
+            if (string.IsNullOrEmpty(xenditInvoiceId))
             {
-                OperatorId = operatorId,
-                XenditAccountStatus = status
-            });
+                return BadRequest(new { message = "Cần cung cấp Xendit Invoice ID." });
+            }
+
+            // Gọi phương thức mới để lấy chi tiết hóa đơn
+            var detail = await _payment.GetXenditInvoiceDetailAsync(xenditInvoiceId);
+
+            return Ok(detail);
         }
     }
 
