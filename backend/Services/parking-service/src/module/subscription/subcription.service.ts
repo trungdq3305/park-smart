@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 import {
   BadRequestException,
   ConflictException,
@@ -114,11 +115,39 @@ export class SubscriptionService implements ISubscriptionService {
     return endDate
   }
 
-  updateSubscriptionStatusJob(): Promise<{
-    modifiedCount: number
-    failedCount: number
-  }> {
-    throw new Error('Method not implemented.')
+  /**
+   * ⭐️ HÀM CRON JOB ĐÃ SỬA
+   * Chạy mỗi 5 phút (hoặc 10 phút) để tìm và hủy các
+   * gói "chờ thanh toán" (PENDING_PAYMENT) đã quá 10 phút.
+   */
+  @Cron('*/3 * * * *') // Chạy mỗi 3 phút
+  async handlePendingSubscriptionsTimeout(): Promise<void> {
+    this.logger.log(
+      '[CronJob] Bắt đầu dọn dẹp các gói PENDING_PAYMENT quá hạn...',
+    )
+
+    // 1. Tính thời gian "cắt" (10 phút trước)
+    const TEN_MINUTES_AGO_MS = 10 * 60 * 1000
+    const cutoffTime = new Date(Date.now() - TEN_MINUTES_AGO_MS)
+
+    try {
+      // 2. Gọi hàm Repository (đã sửa)
+      const result =
+        await this.subscriptionRepository.updateExpiredPendingSubscriptions(
+          cutoffTime,
+        )
+
+      if (result.modifiedCount > 0) {
+        this.logger.log(
+          `[CronJob] Đã hủy ${String(result.modifiedCount)} gói thuê bao quá hạn.`,
+        )
+      }
+    } catch (error) {
+      this.logger.error(
+        `[CronJob] Gặp lỗi khi dọn dẹp gói thuê bao: ${error.message}`,
+        error.stack,
+      )
+    }
   }
 
   async updateSubscriptionPaymentId(

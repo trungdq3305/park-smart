@@ -117,10 +117,7 @@ export interface ISubscriptionService {
     paginationQuery: PaginationQueryDto,
   ): Promise<{ data: SubscriptionLogDto[]; pagination: PaginationDto }>
 
-  updateSubscriptionStatusJob(): Promise<{
-    modifiedCount: number
-    failedCount: number
-  }>
+  handlePendingSubscriptionsTimeout(): Promise<void>
 
   updateSubscriptionPaymentId(
     subscriptionId: string,

@@ -3,6 +3,7 @@ export enum SubscriptionStatusEnum {
   ACTIVE = 'ACTIVE',
   EXPIRED = 'EXPIRED',
   CANCELLED = 'CANCELLED',
+  CANCELLED_DUE_TO_NON_PAYMENT = 'CANCELLED_DUE_TO_NON_PAYMENT',
 }
 
 export enum SubscriptionTransactionType {
