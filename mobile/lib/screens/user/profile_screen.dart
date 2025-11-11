@@ -328,13 +328,6 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
                     _buildTile(
-                      icon: Icons.chat_outlined,
-                      title: 'Tin nhắn',
-                      onTap: () {
-                        // TODO: Navigate to chat screen
-                      },
-                    ),
-                    _buildTile(
                       icon: Icons.history_outlined,
                       title: 'Lịch sử đặt chỗ',
                       onTap: () {

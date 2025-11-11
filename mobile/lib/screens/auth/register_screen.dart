@@ -19,6 +19,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool genderIsMale = true; // true: male, false: female
   bool isLoading = false;
+  bool isAgreeToTerms = false;
   String? _errorMessage;
 
   @override
@@ -52,6 +53,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (password != confirmPassword) {
       setState(() {
         _errorMessage = 'Mật khẩu nhập lại không khớp';
+      });
+      return;
+    }
+
+    if (!isAgreeToTerms) {
+      setState(() {
+        _errorMessage = 'Vui lòng chấp nhận điều khoản dịch vụ';
       });
       return;
     }
@@ -259,13 +267,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
 
+              const SizedBox(height: 12),
+
+              // Checkbox chấp nhận điều khoản
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: isAgreeToTerms,
+                      onChanged: (value) {
+                        setState(() {
+                          isAgreeToTerms = value ?? false;
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            isAgreeToTerms = !isAgreeToTerms;
+                          });
+                        },
+                        child: const Text(
+                          "Chấp nhận điều khoản dịch vụ",
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               const SizedBox(height: 20),
 
               // Nút đăng ký
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: ElevatedButton(
-                  onPressed: isLoading ? null : _handleRegister,
+                  onPressed: (isLoading || !isAgreeToTerms)
+                      ? null
+                      : _handleRegister,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 14),
