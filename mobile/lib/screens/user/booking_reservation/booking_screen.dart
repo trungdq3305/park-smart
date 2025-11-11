@@ -3,7 +3,6 @@ import '../../../widgets/app_scaffold.dart';
 import '../../../services/parking_lot_service.dart';
 import '../../../widgets/booking/parking_lot_info_card.dart';
 import '../../../widgets/booking/booking_form_card.dart';
-import '../../../widgets/booking/parking_space_selector.dart';
 import '../../../widgets/booking/electric_car_message.dart';
 import '../../../widgets/booking/pricing_table_card.dart';
 
@@ -222,41 +221,11 @@ class _BookingScreenState extends State<BookingScreen> {
 
                 const SizedBox(height: 24),
 
-                // Parking space selector
-                ParkingSpaceSelector(
-                  parkingSpaces: _parkingSpaces,
-                  isLoadingSpaces: _isLoadingSpaces,
-                  availableLevels: _availableLevels,
-                  selectedLevel: _selectedLevel,
-                  selectedSpaceId: _selectedSpaceId,
-                  onLevelChanged: _changeLevel,
-                  onSpaceSelected: (spaceId) {
-                    setState(() {
-                      _selectedSpaceId = spaceId;
-                      // Update electric car status when selecting/deselecting
-                      if (spaceId != null) {
-                        final selectedSpace = _parkingSpaces.firstWhere(
-                          (space) => (space['_id'] ?? space['id']) == spaceId,
-                          orElse: () => {},
-                        );
-                        _isSelectedSpaceElectric =
-                            selectedSpace['isElectricCar'] ?? false;
-                      } else {
-                        _isSelectedSpaceElectric = false;
-                      }
-                    });
-                  },
-                ),
-
-                const SizedBox(height: 12),
-
                 // Electric car message
                 ElectricCarMessage(
                   isVisible:
                       _selectedSpaceId != null && _isSelectedSpaceElectric,
                 ),
-
-                const SizedBox(height: 24),
 
                 // Booking form card
                 BookingFormCard(
