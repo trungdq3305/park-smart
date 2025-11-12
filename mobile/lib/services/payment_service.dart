@@ -46,7 +46,7 @@ class PaymentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl//payments/pay').replace(
+      final uri = Uri.parse('$baseUrl/core/payments/pay').replace(
         queryParameters: {if (operatorId != null) 'operatorId': operatorId},
       );
 

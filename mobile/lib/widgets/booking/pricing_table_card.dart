@@ -1,20 +1,30 @@
 import 'package:flutter/material.dart';
 
-class PricingTableCard extends StatelessWidget {
+class PricingTableCard extends StatefulWidget {
   final List<Map<String, dynamic>> pricingLinks;
   final bool isLoading;
+  final String? selectedPricingPolicyId;
+  final Function(String pricingPolicyId, Map<String, dynamic> pricingLink)?
+  onPricingSelected;
 
   const PricingTableCard({
     super.key,
     required this.pricingLinks,
     this.isLoading = false,
+    this.selectedPricingPolicyId,
+    this.onPricingSelected,
   });
 
+  @override
+  State<PricingTableCard> createState() => _PricingTableCardState();
+}
+
+class _PricingTableCardState extends State<PricingTableCard> {
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
-          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-          (Match m) => '${m[1]},',
-        );
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
   }
 
   String _getBasisName(Map<String, dynamic>? basisId) {
@@ -29,7 +39,7 @@ class PricingTableCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
+    if (widget.isLoading) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -54,7 +64,7 @@ class PricingTableCard extends StatelessWidget {
       );
     }
 
-    if (pricingLinks.isEmpty) {
+    if (widget.pricingLinks.isEmpty) {
       return Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -74,28 +84,18 @@ class PricingTableCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  Icons.price_check,
-                  color: Colors.green.shade600,
-                  size: 24,
-                ),
+                Icon(Icons.price_check, color: Colors.green.shade600, size: 24),
                 const SizedBox(width: 8),
                 const Text(
                   'Bảng giá',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Text(
               'Chưa có thông tin bảng giá',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -122,23 +122,16 @@ class PricingTableCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.price_check,
-                color: Colors.green.shade600,
-                size: 24,
-              ),
+              Icon(Icons.price_check, color: Colors.green.shade600, size: 24),
               const SizedBox(width: 8),
               const Text(
                 'Bảng giá',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          ...pricingLinks.asMap().entries.map((entry) {
+          ...widget.pricingLinks.asMap().entries.map((entry) {
             final index = entry.key;
             final link = entry.value;
             final pricingPolicy = link['pricingPolicyId'];
@@ -155,124 +148,158 @@ class PricingTableCard extends StatelessWidget {
             final basisDescription = _getBasisDescription(basisId);
             final priority = link['priority'] ?? 0;
 
-            return Container(
-              margin: EdgeInsets.only(bottom: index < pricingLinks.length - 1 ? 12 : 0),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.grey.shade200,
+            // Get pricing policy ID
+            final pricingPolicyId = pricingPolicy['_id'] ?? pricingPolicy['id'];
+            final isSelected =
+                widget.selectedPricingPolicyId == pricingPolicyId;
+
+            return InkWell(
+              onTap: widget.onPricingSelected != null
+                  ? () {
+                      if (pricingPolicyId != null) {
+                        widget.onPricingSelected!(pricingPolicyId, link);
+                      }
+                    }
+                  : null,
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                margin: EdgeInsets.only(
+                  bottom: index < widget.pricingLinks.length - 1 ? 12 : 0,
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          policyName,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ),
-                      if (priority > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange.shade100,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? Colors.green.shade50
+                      : Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isSelected
+                        ? Colors.green.shade400
+                        : Colors.grey.shade200,
+                    width: isSelected ? 2 : 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
                           child: Text(
-                            'Ưu tiên $priority',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.orange.shade700,
+                            policyName,
+                            style: const TextStyle(
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
+                              color: Colors.black87,
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.category,
-                        size: 16,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        basisName,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (basisDescription.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      basisDescription,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (packageRate != null) ...[
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Thời lượng: $durationAmount $unit',
+                        if (priority > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade100,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              'Ưu tiên $priority',
                               style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.grey.shade700,
+                                fontSize: 12,
+                                color: Colors.orange.shade700,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.category,
+                          size: 16,
+                          color: Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          basisName,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (basisDescription.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        basisDescription,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        if (packageRate != null) ...[
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Thời lượng: $durationAmount $unit',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey.shade700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color: Colors.green.shade200,
+                                ),
+                              ),
+                              child: Text(
+                                '${_formatPrice(price)} đ',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.green.shade700,
+                                ),
+                              ),
+                            ),
+                            if (isSelected) ...[
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.check_circle,
+                                color: Colors.green.shade600,
+                                size: 24,
+                              ),
+                            ],
                           ],
                         ),
                       ],
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: Colors.green.shade200,
-                          ),
-                        ),
-                        child: Text(
-                          '${_formatPrice(price)} đ',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.green.shade700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             );
           }).toList(),
@@ -281,4 +308,3 @@ class PricingTableCard extends StatelessWidget {
     );
   }
 }
-

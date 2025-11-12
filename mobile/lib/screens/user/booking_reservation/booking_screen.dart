@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../services/parking_lot_service.dart';
+import '../../../services/subcription_service.dart';
+import '../../../services/payment_service.dart';
 import '../../../widgets/booking/parking_lot_info_card.dart';
-import '../../../widgets/booking/booking_form_card.dart';
 import '../../../widgets/booking/electric_car_message.dart';
 import '../../../widgets/booking/pricing_table_card.dart';
+import 'payment_checkout_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final Map<String, dynamic> parkingLot;
@@ -22,9 +24,11 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isLoading = false;
   bool _isLoadingSpaces = false;
   bool _isLoadingPricing = false;
+  bool _isCreatingSubscription = false;
   List<Map<String, dynamic>> _parkingSpaces = [];
   List<Map<String, dynamic>> _pricingLinks = [];
   String? _selectedSpaceId;
+  String? _selectedPricingPolicyId;
   int _selectedLevel = 1;
   List<int> _availableLevels = [];
   bool _isSelectedSpaceElectric = false;
@@ -217,6 +221,8 @@ class _BookingScreenState extends State<BookingScreen> {
                 PricingTableCard(
                   pricingLinks: _pricingLinks,
                   isLoading: _isLoadingPricing,
+                  selectedPricingPolicyId: _selectedPricingPolicyId,
+                  onPricingSelected: _onPricingSelected,
                 ),
 
                 const SizedBox(height: 24),
@@ -227,12 +233,14 @@ class _BookingScreenState extends State<BookingScreen> {
                       _selectedSpaceId != null && _isSelectedSpaceElectric,
                 ),
 
-                // Submit button
+                // Submit button for subscription
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _submitBooking,
+                    onPressed: (_isLoading || _isCreatingSubscription)
+                        ? null
+                        : _createSubscription,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -240,7 +248,7 @@ class _BookingScreenState extends State<BookingScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: _isLoading
+                    child: (_isLoading || _isCreatingSubscription)
                         ? const SizedBox(
                             height: 20,
                             width: 20,
@@ -252,7 +260,7 @@ class _BookingScreenState extends State<BookingScreen> {
                             ),
                           )
                         : const Text(
-                            'Xác nhận đặt chỗ',
+                            'Đăng ký gói thuê bao',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -279,6 +287,267 @@ class _BookingScreenState extends State<BookingScreen> {
     final total = duration * basePrice;
 
     return total.toString();
+  }
+
+  /// Handle pricing policy selection (toggle)
+  void _onPricingSelected(String pricingPolicyId, Map<String, dynamic> link) {
+    setState(() {
+      // If clicking on already selected item, deselect it
+      if (_selectedPricingPolicyId == pricingPolicyId) {
+        _selectedPricingPolicyId = null;
+        print('❌ Deselected pricing policy: $pricingPolicyId');
+      } else {
+        _selectedPricingPolicyId = pricingPolicyId;
+        print('✅ Selected pricing policy: $pricingPolicyId');
+      }
+    });
+  }
+
+  /// Create subscription with selected pricing policy and payment
+  Future<void> _createSubscription() async {
+    // Validate parking lot ID
+    final parkingLotId = widget.parkingLot['_id'] ?? widget.parkingLot['id'];
+    if (parkingLotId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy ID bãi đỗ xe'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Validate pricing policy selection
+    if (_selectedPricingPolicyId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn gói thuê bao'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Find the selected pricing link to get pricing policy details
+    final selectedLink = _pricingLinks.firstWhere((link) {
+      final pricingPolicy = link['pricingPolicyId'];
+      final pricingPolicyId = pricingPolicy?['_id'] ?? pricingPolicy?['id'];
+      return pricingPolicyId == _selectedPricingPolicyId;
+    }, orElse: () => <String, dynamic>{});
+
+    if (selectedLink.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy thông tin gói thuê bao đã chọn'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Extract pricing policy and package rate information
+    final pricingPolicy = selectedLink['pricingPolicyId'];
+    final packageRate = pricingPolicy?['packageRateId'];
+
+    if (pricingPolicy == null || packageRate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thông tin gói thuê bao không đầy đủ'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Get required data for payment
+    final entityId = pricingPolicy['_id'] ?? pricingPolicy['id'];
+    final amount = packageRate['price'] as int? ?? 0;
+    final operatorId = widget.parkingLot['parkingLotOperatorId'] as String?;
+
+    if (entityId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy ID của gói thuê bao'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (amount <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Giá gói thuê bao không hợp lệ'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCreatingSubscription = true;
+    });
+
+    try {
+      // Step 1: Create payment
+      print('💳 Creating payment:');
+      print('  Entity ID (Pricing Policy): $entityId');
+      print('  Type: Subscription');
+      print('  Amount: $amount');
+      print('  Operator ID: $operatorId');
+
+      final paymentResponse = await PaymentService.createPayment(
+        entityId: entityId,
+        type: 'Subscription',
+        amount: amount,
+        operatorId: operatorId,
+      );
+
+      final paymentId =
+          paymentResponse['data']?['_id'] ??
+          paymentResponse['data']?['id'] ??
+          paymentResponse['_id'] ??
+          paymentResponse['id'];
+
+      if (paymentId == null) {
+        throw Exception('Không nhận được Payment ID từ server');
+      }
+
+      print('✅ Payment created successfully. Payment ID: $paymentId');
+
+      // Get checkout URL from payment response
+      final checkoutUrl =
+          paymentResponse['data']?['checkoutUrl'] ??
+          paymentResponse['checkoutUrl'];
+
+      if (checkoutUrl == null || checkoutUrl.toString().isEmpty) {
+        throw Exception('Không nhận được checkout URL từ server');
+      }
+
+      print('🔗 Checkout URL: $checkoutUrl');
+
+      // Step 2: Create subscription
+      final now = DateTime.now();
+      final startDate = DateTime(
+        now.year,
+        now.month,
+        now.day,
+      ).toUtc().toIso8601String();
+
+      print('📝 Creating subscription:');
+      print('  Parking Lot ID: $parkingLotId');
+      print('  Pricing Policy ID: $_selectedPricingPolicyId');
+      print('  Start Date: $startDate');
+
+      final subscriptionResponse = await SubscriptionService.createSubscription(
+        parkingLotId: parkingLotId,
+        pricingPolicyId: _selectedPricingPolicyId!,
+        startDate: startDate,
+      );
+
+      final subscriptionId =
+          subscriptionResponse['data']?['_id'] ??
+          subscriptionResponse['data']?['id'] ??
+          subscriptionResponse['_id'] ??
+          subscriptionResponse['id'];
+
+      print(
+        '✅ Subscription created successfully. Subscription ID: $subscriptionId',
+      );
+
+      // Step 3: Open payment checkout WebView
+      if (mounted) {
+        final paymentResult = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentCheckoutScreen(
+              checkoutUrl: checkoutUrl.toString(),
+              paymentId: paymentId,
+              onPaymentComplete: (success, returnedPaymentId) async {
+                if (success) {
+                  // Step 4: Confirm payment for subscription (activate subscription)
+                  if (subscriptionId != null && paymentId != null) {
+                    try {
+                      print('💳 Confirming payment for subscription:');
+                      print('  Subscription ID: $subscriptionId');
+                      print('  Payment ID: $paymentId');
+
+                      await SubscriptionService.confirmPayment(
+                        subscriptionId: subscriptionId,
+                        paymentId: paymentId,
+                      );
+
+                      print('✅ Payment confirmed and subscription activated');
+
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Đăng ký gói thuê bao và thanh toán thành công!',
+                            ),
+                            backgroundColor: Colors.green,
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    } catch (confirmError) {
+                      print('⚠️ Error confirming payment: $confirmError');
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Thanh toán thành công nhưng có lỗi khi kích hoạt gói: ${confirmError.toString()}',
+                            ),
+                            backgroundColor: Colors.orange,
+                            duration: const Duration(seconds: 3),
+                          ),
+                        );
+                      }
+                    }
+                  }
+                } else {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Thanh toán đã bị hủy hoặc thất bại.'),
+                        backgroundColor: Colors.orange,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+        );
+
+        // Navigate back after payment process
+        if (mounted && paymentResult == true) {
+          // Payment successful, already handled in onPaymentComplete
+          Navigator.pop(context, subscriptionResponse);
+        } else if (mounted) {
+          // Payment cancelled or failed
+          Navigator.pop(context);
+        }
+      }
+    } catch (e) {
+      print('❌ Error creating subscription/payment: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingSubscription = false;
+        });
+      }
+    }
   }
 
   Future<void> _submitBooking() async {
