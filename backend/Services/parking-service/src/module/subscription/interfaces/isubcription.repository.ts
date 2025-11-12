@@ -161,6 +161,11 @@ export interface ISubscriptionRepository {
     status: string,
     session: ClientSession,
   ): Promise<Subscription | null>
+  
+  findExpiringSubscriptions(
+    daysRemaining: number,
+    today: Date, // Date(0, 0, 0, 0)
+  ): Promise<Pick<Subscription, '_id' | 'createdBy' | 'endDate' | 'status'>[]>;
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')

@@ -127,6 +127,8 @@ export interface ISubscriptionService {
     userId: string,
     paymentId: string,
   ): Promise<SubscriptionDetailResponseDto>
+
+  sendExpiringSubscriptionNotificationsJob(): Promise<void>;
 }
 
 export const ISubscriptionService = Symbol('ISubscriptionService')

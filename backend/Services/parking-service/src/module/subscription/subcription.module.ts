@@ -16,6 +16,7 @@ import { SubscriptionRepository } from './subcription.repository'
 import { SubscriptionService } from './subcription.service'
 import { SubscriptionLogRepository } from './subcriptionLog.repository'
 import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
+import { NotificationModule } from '../notification/notification.module' // <-- THÊM DÒNG NÀY
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
     ClientModule,
     ParkingLotModule,
     PricingPolicyModule,
+    NotificationModule,
   ],
   controllers: [SubscriptionController],
   providers: [
