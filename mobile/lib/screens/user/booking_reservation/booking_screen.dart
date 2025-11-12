@@ -403,28 +403,65 @@ class _BookingScreenState extends State<BookingScreen> {
         operatorId: operatorId,
       );
 
-      final paymentId =
-          paymentResponse['data']?['_id'] ??
-          paymentResponse['data']?['id'] ??
-          paymentResponse['_id'] ??
-          paymentResponse['id'];
+      print('📦 Payment response type: ${paymentResponse.runtimeType}');
+      print('📦 Payment response: $paymentResponse');
 
-      if (paymentId == null) {
-        throw Exception('Không nhận được Payment ID từ server');
+      // Safely extract payment data - handle both Map and List responses
+      dynamic paymentData;
+      try {
+        paymentData = paymentResponse['data'];
+        print('📦 Payment data type: ${paymentData?.runtimeType}');
+
+        // If data is a List, take the first item
+        if (paymentData is List && paymentData.isNotEmpty) {
+          paymentData = paymentData[0]; // Take first item if it's a list
+          print(
+            '📦 Payment data (after List extraction): ${paymentData.runtimeType}',
+          );
+        }
+      } catch (e) {
+        print('⚠️ Error extracting payment data: $e');
+        paymentData = null;
       }
 
-      print('✅ Payment created successfully. Payment ID: $paymentId');
+      // Payment ID may not be available immediately, will be in callback URL
+      String? paymentId;
+      try {
+        if (paymentData is Map) {
+          paymentId = paymentData['_id'] ?? paymentData['id'];
+        }
+        paymentId ??= paymentResponse['_id'] ?? paymentResponse['id'];
+      } catch (e) {
+        print('⚠️ Error extracting payment ID: $e');
+        paymentId = null;
+      }
+
+      print('✅ Payment created successfully.');
+      if (paymentId != null) {
+        print('  Payment ID (from response): $paymentId');
+      } else {
+        print('  Payment ID will be available in callback URL after payment');
+      }
 
       // Get checkout URL from payment response
-      final checkoutUrl =
-          paymentResponse['data']?['checkoutUrl'] ??
-          paymentResponse['checkoutUrl'];
+      String? checkoutUrl;
+      try {
+        if (paymentData is Map) {
+          checkoutUrl = paymentData['checkoutUrl']?.toString();
+        }
+        checkoutUrl ??= paymentResponse['checkoutUrl']?.toString();
+      } catch (e) {
+        print('⚠️ Error extracting checkout URL: $e');
+        checkoutUrl = null;
+      }
 
       if (checkoutUrl == null || checkoutUrl.toString().isEmpty) {
         throw Exception('Không nhận được checkout URL từ server');
       }
 
       print('🔗 Checkout URL: $checkoutUrl');
+      print('🔗 Checkout URL type: ${checkoutUrl.runtimeType}');
+      print('🔗 Checkout URL toString: ${checkoutUrl.toString()}');
 
       // Step 2: Create subscription
       final now = DateTime.now();
@@ -445,11 +482,41 @@ class _BookingScreenState extends State<BookingScreen> {
         startDate: startDate,
       );
 
-      final subscriptionId =
-          subscriptionResponse['data']?['_id'] ??
-          subscriptionResponse['data']?['id'] ??
-          subscriptionResponse['_id'] ??
-          subscriptionResponse['id'];
+      print(
+        '📦 Subscription response type: ${subscriptionResponse.runtimeType}',
+      );
+      print('📦 Subscription response: $subscriptionResponse');
+
+      // Safely extract subscription data - handle both Map and List responses
+      dynamic subscriptionData;
+      try {
+        subscriptionData = subscriptionResponse['data'];
+        print('📦 Subscription data type: ${subscriptionData?.runtimeType}');
+
+        // If data is a List, take the first item
+        if (subscriptionData is List && subscriptionData.isNotEmpty) {
+          subscriptionData =
+              subscriptionData[0]; // Take first item if it's a list
+          print(
+            '📦 Subscription data (after List extraction): ${subscriptionData.runtimeType}',
+          );
+        }
+      } catch (e) {
+        print('⚠️ Error extracting subscription data: $e');
+        subscriptionData = null;
+      }
+
+      String? subscriptionId;
+      try {
+        if (subscriptionData is Map) {
+          subscriptionId = subscriptionData['_id'] ?? subscriptionData['id'];
+        }
+        subscriptionId ??=
+            subscriptionResponse['_id'] ?? subscriptionResponse['id'];
+      } catch (e) {
+        print('⚠️ Error extracting subscription ID: $e');
+        subscriptionId = null;
+      }
 
       print(
         '✅ Subscription created successfully. Subscription ID: $subscriptionId',
@@ -457,46 +524,77 @@ class _BookingScreenState extends State<BookingScreen> {
 
       // Step 3: Open payment checkout WebView
       if (mounted) {
+        final finalCheckoutUrl = checkoutUrl.toString();
+        print('🚀 Opening payment checkout WebView:');
+        print('  Final Checkout URL: $finalCheckoutUrl');
+        print('  Payment ID: $paymentId');
+
         final paymentResult = await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PaymentCheckoutScreen(
-              checkoutUrl: checkoutUrl.toString(),
-              paymentId: paymentId,
-              onPaymentComplete: (success, returnedPaymentId) async {
-                if (success) {
-                  // Step 4: Confirm payment for subscription (activate subscription)
-                  if (subscriptionId != null && paymentId != null) {
-                    try {
-                      print('💳 Confirming payment for subscription:');
-                      print('  Subscription ID: $subscriptionId');
-                      print('  Payment ID: $paymentId');
+            builder: (context) {
+              print('📱 Building PaymentCheckoutScreen route');
+              return PaymentCheckoutScreen(
+                checkoutUrl: finalCheckoutUrl,
+                paymentId: paymentId, // May be null, will get from URL callback
+                onPaymentComplete: (success, returnedPaymentId) async {
+                  if (success) {
+                    // Step 4: Confirm payment for subscription (activate subscription)
+                    // PaymentId from URL callback is required
+                    final finalPaymentId = returnedPaymentId ?? paymentId;
 
-                      await SubscriptionService.confirmPayment(
-                        subscriptionId: subscriptionId,
-                        paymentId: paymentId,
-                      );
+                    if (subscriptionId != null && finalPaymentId != null) {
+                      try {
+                        print('💳 Confirming payment for subscription:');
+                        print('  Subscription ID: $subscriptionId');
+                        print('  Payment ID (from URL): $returnedPaymentId');
+                        print('  Payment ID (original): $paymentId');
+                        print('  Using Payment ID: $finalPaymentId');
 
-                      print('✅ Payment confirmed and subscription activated');
-
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Đăng ký gói thuê bao và thanh toán thành công!',
-                            ),
-                            backgroundColor: Colors.green,
-                            duration: Duration(seconds: 3),
-                          ),
+                        await SubscriptionService.confirmPayment(
+                          subscriptionId: subscriptionId,
+                          paymentId: finalPaymentId,
                         );
+
+                        print('✅ Payment confirmed and subscription activated');
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Đăng ký gói thuê bao và thanh toán thành công!',
+                              ),
+                              backgroundColor: Colors.green,
+                              duration: Duration(seconds: 3),
+                            ),
+                          );
+                        }
+                      } catch (confirmError) {
+                        print('⚠️ Error confirming payment: $confirmError');
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Thanh toán thành công nhưng có lỗi khi kích hoạt gói: ${confirmError.toString()}',
+                              ),
+                              backgroundColor: Colors.orange,
+                              duration: const Duration(seconds: 3),
+                            ),
+                          );
+                        }
                       }
-                    } catch (confirmError) {
-                      print('⚠️ Error confirming payment: $confirmError');
+                    } else {
+                      print('⚠️ Missing subscriptionId or paymentId');
+                      print('  Subscription ID: $subscriptionId');
+                      print('  Payment ID from URL: $returnedPaymentId');
+                      print('  Payment ID from response: $paymentId');
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(
-                              'Thanh toán thành công nhưng có lỗi khi kích hoạt gói: ${confirmError.toString()}',
+                              returnedPaymentId == null
+                                  ? 'Không nhận được Payment ID từ URL callback. Vui lòng thử lại.'
+                                  : 'Thiếu thông tin để kích hoạt gói thuê bao.',
                             ),
                             backgroundColor: Colors.orange,
                             duration: const Duration(seconds: 3),
@@ -504,20 +602,20 @@ class _BookingScreenState extends State<BookingScreen> {
                         );
                       }
                     }
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Thanh toán đã bị hủy hoặc thất bại.'),
+                          backgroundColor: Colors.orange,
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
                   }
-                } else {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Thanh toán đã bị hủy hoặc thất bại.'),
-                        backgroundColor: Colors.orange,
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                  }
-                }
-              },
-            ),
+                },
+              );
+            },
           ),
         );
 

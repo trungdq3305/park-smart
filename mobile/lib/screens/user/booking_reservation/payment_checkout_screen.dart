@@ -24,91 +24,198 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
   @override
   void initState() {
     super.initState();
+    print('🔗 PaymentCheckoutScreen initialized');
+    print('  Checkout URL: ${widget.checkoutUrl}');
+    print('  Payment ID: ${widget.paymentId}');
     _initializeWebView();
   }
 
   void _initializeWebView() {
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setUserAgent(
-        'Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
-      )
-      ..setNavigationDelegate(
-        NavigationDelegate(
-          onProgress: (int progress) {
-            // Update loading progress if needed
-          },
-          onPageStarted: (String url) {
-            setState(() {
-              _isLoading = true;
-            });
-          },
-          onPageFinished: (String url) {
-            setState(() {
-              _isLoading = false;
-            });
+    print('🌐 Initializing WebView...');
 
-            // Check for payment completion indicators
-            _checkPaymentStatus(url);
-          },
-          onWebResourceError: (WebResourceError error) {
-            print('❌ WebView error: ${error.description}');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Lỗi tải trang: ${error.description}'),
-                  backgroundColor: Colors.red,
-                ),
-              );
-            }
-          },
-          onNavigationRequest: (NavigationRequest request) {
-            // Check for payment success/failure URLs
-            final url = request.url.toLowerCase();
-            
-            // Xendit success indicators
-            if (url.contains('success') || 
-                url.contains('completed') || 
-                url.contains('paid')) {
-              _handlePaymentSuccess();
-              return NavigationDecision.prevent;
-            }
-            
-            // Xendit failure indicators
-            if (url.contains('failed') || 
-                url.contains('error') || 
-                url.contains('cancelled') ||
-                url.contains('expired')) {
-              _handlePaymentFailure();
-              return NavigationDecision.prevent;
-            }
+    try {
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..setUserAgent(
+          'Mozilla/5.0 (Linux; Android 10; SM-G973F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
+        )
+        ..setNavigationDelegate(
+          NavigationDelegate(
+            onProgress: (int progress) {
+              print('📊 WebView loading progress: $progress%');
+            },
+            onPageStarted: (String url) {
+              print('📄 Page started loading: $url');
+              setState(() {
+                _isLoading = true;
+              });
+            },
+            onPageFinished: (String url) {
+              print('✅ Page finished loading: $url');
+              setState(() {
+                _isLoading = false;
+              });
 
-            return NavigationDecision.navigate;
-          },
-        ),
-      )
-      ..loadRequest(Uri.parse(widget.checkoutUrl));
+              // Check for payment completion indicators
+              _checkPaymentStatus(url);
+            },
+            onWebResourceError: (WebResourceError error) {
+              print('❌ WebView error:');
+              print('  Description: ${error.description}');
+              print('  Error Code: ${error.errorCode}');
+              print('  Error Type: ${error.errorType}');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Lỗi tải trang: ${error.description}'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 5),
+                  ),
+                );
+              }
+            },
+            onNavigationRequest: (NavigationRequest request) {
+              final url = request.url;
+
+              // Check for parksmart.vn/pay-result URL
+              if (url.contains('parksmart.vn/pay-result') ||
+                  url.contains('pay-result')) {
+                try {
+                  final uri = Uri.parse(url);
+                  final result = uri.queryParameters['result'];
+                  final paymentIdFromUrl = uri.queryParameters['paymentId'];
+
+                  print('🔍 Payment result URL detected:');
+                  print('  Full URL: $url');
+                  print('  Result: $result');
+                  print('  Payment ID from URL: $paymentIdFromUrl');
+                  print('  Payment ID from widget: ${widget.paymentId}');
+
+                  if (result != null) {
+                    if (result.toLowerCase() == 'success') {
+                      // PaymentId from URL callback is required for confirmation
+                      if (paymentIdFromUrl == null ||
+                          paymentIdFromUrl.isEmpty) {
+                        print(
+                          '⚠️ Warning: Payment ID not found in callback URL',
+                        );
+                        print('  URL: $url');
+                        // Still try to use widget.paymentId as fallback
+                      }
+                      // Use paymentId from URL if available (required), otherwise use widget.paymentId
+                      final finalPaymentId =
+                          paymentIdFromUrl ?? widget.paymentId;
+                      print('  Using Payment ID: $finalPaymentId');
+                      _handlePaymentSuccess(finalPaymentId);
+                      return NavigationDecision.prevent;
+                    } else if (result.toLowerCase() == 'failure') {
+                      _handlePaymentFailure();
+                      return NavigationDecision.prevent;
+                    }
+                  }
+                } catch (e) {
+                  print('❌ Error parsing payment result URL: $e');
+                }
+              }
+
+              // Fallback: Check for other success/failure indicators
+              final lowerUrl = url.toLowerCase();
+
+              // Xendit success indicators
+              if (lowerUrl.contains('success') ||
+                  lowerUrl.contains('completed') ||
+                  lowerUrl.contains('paid')) {
+                _handlePaymentSuccess(widget.paymentId);
+                return NavigationDecision.prevent;
+              }
+
+              // Xendit failure indicators
+              if (lowerUrl.contains('failed') ||
+                  lowerUrl.contains('error') ||
+                  lowerUrl.contains('cancelled') ||
+                  lowerUrl.contains('expired')) {
+                _handlePaymentFailure();
+                return NavigationDecision.prevent;
+              }
+
+              return NavigationDecision.navigate;
+            },
+          ),
+        );
+
+      // Load the checkout URL
+      final checkoutUri = Uri.parse(widget.checkoutUrl);
+      print('🔗 Loading checkout URL: $checkoutUri');
+      _controller.loadRequest(checkoutUri);
+    } catch (e) {
+      print('❌ Error initializing WebView: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi khởi tạo WebView: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
   }
 
   void _checkPaymentStatus(String url) {
-    // Check URL for payment status indicators
+    // Check for parksmart.vn/pay-result URL
+    if (url.contains('parksmart.vn/pay-result') || url.contains('pay-result')) {
+      try {
+        final uri = Uri.parse(url);
+        final result = uri.queryParameters['result'];
+        final paymentIdFromUrl = uri.queryParameters['paymentId'];
+
+        print('🔍 Payment result URL detected in onPageFinished:');
+        print('  Full URL: $url');
+        print('  Result: $result');
+        print('  Payment ID from URL: $paymentIdFromUrl');
+        print('  Payment ID from widget: ${widget.paymentId}');
+
+        if (result != null) {
+          if (result.toLowerCase() == 'success') {
+            // PaymentId from URL callback is required for confirmation
+            if (paymentIdFromUrl == null || paymentIdFromUrl.isEmpty) {
+              print('⚠️ Warning: Payment ID not found in callback URL');
+              print('  URL: $url');
+              // Still try to use widget.paymentId as fallback
+            }
+            final finalPaymentId = paymentIdFromUrl ?? widget.paymentId;
+            print('  Using Payment ID: $finalPaymentId');
+            _handlePaymentSuccess(finalPaymentId);
+            return;
+          } else if (result.toLowerCase() == 'failure') {
+            _handlePaymentFailure();
+            return;
+          }
+        }
+      } catch (e) {
+        print('❌ Error parsing payment result URL: $e');
+      }
+    }
+
+    // Fallback: Check URL for other payment status indicators
     final lowerUrl = url.toLowerCase();
-    
-    if (lowerUrl.contains('success') || 
-        lowerUrl.contains('completed') || 
+
+    if (lowerUrl.contains('success') ||
+        lowerUrl.contains('completed') ||
         lowerUrl.contains('paid')) {
-      _handlePaymentSuccess();
-    } else if (lowerUrl.contains('failed') || 
-               lowerUrl.contains('error') || 
-               lowerUrl.contains('cancelled')) {
+      _handlePaymentSuccess(widget.paymentId);
+    } else if (lowerUrl.contains('failed') ||
+        lowerUrl.contains('error') ||
+        lowerUrl.contains('cancelled')) {
       _handlePaymentFailure();
     }
   }
 
-  void _handlePaymentSuccess() {
+  void _handlePaymentSuccess(String? paymentId) {
     print('✅ Payment successful');
+    print('  Using Payment ID: $paymentId');
     if (widget.onPaymentComplete != null) {
-      widget.onPaymentComplete!(true, widget.paymentId);
+      widget.onPaymentComplete!(true, paymentId);
     }
     if (mounted) {
       Navigator.of(context).pop(true);
@@ -127,6 +234,8 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    print('🏗️ Building PaymentCheckoutScreen widget');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Thanh toán'),
@@ -153,9 +262,7 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
                       Navigator.of(context).pop(); // Close dialog
                       Navigator.of(context).pop(false); // Close WebView
                     },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.red,
-                    ),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red),
                     child: const Text('Hủy thanh toán'),
                   ),
                 ],
@@ -166,13 +273,25 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
       ),
       body: Stack(
         children: [
+          // WebView widget
           WebViewWidget(controller: _controller),
+          // Loading indicator
           if (_isLoading)
             Container(
               color: Colors.white,
               child: const Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Đang tải trang thanh toán...',
+                      style: TextStyle(color: Colors.grey, fontSize: 14),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -181,4 +300,3 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
     );
   }
 }
-
