@@ -214,21 +214,25 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
   void _handlePaymentSuccess(String? paymentId) {
     print('✅ Payment successful');
     print('  Using Payment ID: $paymentId');
+    // Call callback - navigation will be handled in the callback
     if (widget.onPaymentComplete != null) {
       widget.onPaymentComplete!(true, paymentId);
     }
+    // Close WebView - navigation to result screen is handled in callback
     if (mounted) {
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop();
     }
   }
 
   void _handlePaymentFailure() {
     print('❌ Payment failed or cancelled');
+    // Call callback - navigation will be handled in the callback
     if (widget.onPaymentComplete != null) {
       widget.onPaymentComplete!(false, widget.paymentId);
     }
+    // Close WebView - navigation to result screen is handled in callback
     if (mounted) {
-      Navigator.of(context).pop(false);
+      Navigator.of(context).pop();
     }
   }
 

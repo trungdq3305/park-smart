@@ -7,6 +7,7 @@ import '../../../widgets/booking/parking_lot_info_card.dart';
 import '../../../widgets/booking/electric_car_message.dart';
 import '../../../widgets/booking/pricing_table_card.dart';
 import 'payment_checkout_screen.dart';
+import 'payment_result_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final Map<String, dynamic> parkingLot;
@@ -529,7 +530,10 @@ class _BookingScreenState extends State<BookingScreen> {
         print('  Final Checkout URL: $finalCheckoutUrl');
         print('  Payment ID: $paymentId');
 
-        final paymentResult = await Navigator.push(
+        // Store booking screen context for navigation after WebView closes
+        final bookingContext = context;
+
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) {
@@ -538,6 +542,9 @@ class _BookingScreenState extends State<BookingScreen> {
                 checkoutUrl: finalCheckoutUrl,
                 paymentId: paymentId, // May be null, will get from URL callback
                 onPaymentComplete: (success, returnedPaymentId) async {
+                  // Wait a bit for WebView to close
+                  await Future.delayed(const Duration(milliseconds: 300));
+
                   if (success) {
                     // Step 4: Confirm payment for subscription (activate subscription)
                     // PaymentId from URL callback is required
@@ -558,27 +565,34 @@ class _BookingScreenState extends State<BookingScreen> {
 
                         print('✅ Payment confirmed and subscription activated');
 
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Đăng ký gói thuê bao và thanh toán thành công!',
+                        // Navigate to success screen using booking context
+                        if (mounted && bookingContext.mounted) {
+                          Navigator.of(bookingContext).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => PaymentResultScreen(
+                                isSuccess: true,
+                                message:
+                                    'Gói thuê bao của bạn đã được kích hoạt thành công.',
+                                paymentId: finalPaymentId,
+                                subscriptionId: subscriptionId,
                               ),
-                              backgroundColor: Colors.green,
-                              duration: Duration(seconds: 3),
                             ),
                           );
                         }
                       } catch (confirmError) {
                         print('⚠️ Error confirming payment: $confirmError');
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Thanh toán thành công nhưng có lỗi khi kích hoạt gói: ${confirmError.toString()}',
+                        // Navigate to failure screen with error message
+                        if (mounted && bookingContext.mounted) {
+                          Navigator.of(bookingContext).pushReplacement(
+                            MaterialPageRoute(
+                              builder: (context) => PaymentResultScreen(
+                                isSuccess: false,
+                                message:
+                                    'Thanh toán thành công nhưng có lỗi khi kích hoạt gói.',
+                                errorMessage: confirmError.toString(),
+                                paymentId: finalPaymentId,
+                                subscriptionId: subscriptionId,
                               ),
-                              backgroundColor: Colors.orange,
-                              duration: const Duration(seconds: 3),
                             ),
                           );
                         }
@@ -588,27 +602,33 @@ class _BookingScreenState extends State<BookingScreen> {
                       print('  Subscription ID: $subscriptionId');
                       print('  Payment ID from URL: $returnedPaymentId');
                       print('  Payment ID from response: $paymentId');
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              returnedPaymentId == null
-                                  ? 'Không nhận được Payment ID từ URL callback. Vui lòng thử lại.'
+                      // Navigate to failure screen
+                      if (mounted && bookingContext.mounted) {
+                        Navigator.of(bookingContext).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => PaymentResultScreen(
+                              isSuccess: false,
+                              message: returnedPaymentId == null
+                                  ? 'Không nhận được Payment ID từ URL callback.'
                                   : 'Thiếu thông tin để kích hoạt gói thuê bao.',
+                              paymentId: returnedPaymentId ?? paymentId,
+                              subscriptionId: subscriptionId,
                             ),
-                            backgroundColor: Colors.orange,
-                            duration: const Duration(seconds: 3),
                           ),
                         );
                       }
                     }
                   } else {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Thanh toán đã bị hủy hoặc thất bại.'),
-                          backgroundColor: Colors.orange,
-                          duration: Duration(seconds: 3),
+                    // Payment failed or cancelled
+                    if (mounted && bookingContext.mounted) {
+                      Navigator.of(bookingContext).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (context) => PaymentResultScreen(
+                            isSuccess: false,
+                            message: 'Thanh toán đã bị hủy hoặc thất bại.',
+                            paymentId: returnedPaymentId ?? paymentId,
+                            subscriptionId: subscriptionId,
+                          ),
                         ),
                       );
                     }
@@ -619,14 +639,8 @@ class _BookingScreenState extends State<BookingScreen> {
           ),
         );
 
-        // Navigate back after payment process
-        if (mounted && paymentResult == true) {
-          // Payment successful, already handled in onPaymentComplete
-          Navigator.pop(context, subscriptionResponse);
-        } else if (mounted) {
-          // Payment cancelled or failed
-          Navigator.pop(context);
-        }
+        // Payment result is handled in onPaymentComplete callback
+        // Navigation to result screen is done there
       }
     } catch (e) {
       print('❌ Error creating subscription/payment: $e');
