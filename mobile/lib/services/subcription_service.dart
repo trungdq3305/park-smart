@@ -45,7 +45,7 @@ class SubscriptionService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/subscriptions');
+      final uri = Uri.parse('$baseUrl/parking/subscriptions');
 
       final requestBody = {
         'parkingLotId': parkingLotId,
@@ -100,7 +100,7 @@ class SubscriptionService {
       }
 
       final uri = Uri.parse(
-        '$baseUrl/subscriptions/$subscriptionId/confirm-payment',
+        '$baseUrl/parking/subscriptions/$subscriptionId/confirm-payment',
       );
 
       final requestBody = {'paymentId': paymentId};
@@ -151,7 +151,9 @@ class SubscriptionService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/subscriptions/$subscriptionId/renew');
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/$subscriptionId/renew',
+      );
 
       final requestBody = {'paymentId': paymentId};
 
@@ -201,7 +203,7 @@ class SubscriptionService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/subscriptions/my').replace(
+      final uri = Uri.parse('$baseUrl/parking/subscriptions/my').replace(
         queryParameters: {
           'pageSize': pageSize.toString(),
           'page': page.toString(),
@@ -251,7 +253,9 @@ class SubscriptionService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/subscriptions/identifier/$identifier');
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/identifier/$identifier',
+      );
 
       print('🔍 Getting subscription by identifier:');
       print('  URL: $uri');

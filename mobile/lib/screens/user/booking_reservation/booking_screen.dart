@@ -227,18 +227,6 @@ class _BookingScreenState extends State<BookingScreen> {
                       _selectedSpaceId != null && _isSelectedSpaceElectric,
                 ),
 
-                // Booking form card
-                BookingFormCard(
-                  durationController: _durationController,
-                  selectedSpaceInfo: _selectedSpaceId != null
-                      ? _getSelectedSpaceInfo()
-                      : null,
-                  isSelectedSpaceElectric: _isSelectedSpaceElectric,
-                  calculateEstimatedCost: _calculateEstimatedCost,
-                ),
-
-                const SizedBox(height: 24),
-
                 // Submit button
                 SizedBox(
                   width: double.infinity,

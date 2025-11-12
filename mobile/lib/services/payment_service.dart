@@ -46,7 +46,7 @@ class PaymentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/payments/pay').replace(
+      final uri = Uri.parse('$baseUrl//payments/pay').replace(
         queryParameters: {if (operatorId != null) 'operatorId': operatorId},
       );
 
@@ -102,7 +102,7 @@ class PaymentService {
       }
 
       final uri = Uri.parse(
-        '$baseUrl/api/payments/confirm',
+        '$baseUrl/core/payments/confirm',
       ).replace(queryParameters: {'paymentId': paymentId});
 
       print('✅ Confirming payment:');
@@ -152,7 +152,7 @@ class PaymentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/payments/$paymentId/refund-by-id')
+      final uri = Uri.parse('$baseUrl/core/payments/$paymentId/refund-by-id')
           .replace(
             queryParameters: {if (operatorId != null) 'operatorId': operatorId},
           );
@@ -206,7 +206,7 @@ class PaymentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/payments/refunds/createdBy/me');
+      final uri = Uri.parse('$baseUrl/core/payments/refunds/createdBy/me');
 
       print('📋 Getting my refunds:');
       print('  URL: $uri');
@@ -249,7 +249,7 @@ class PaymentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/payments/createdBy/me');
+      final uri = Uri.parse('$baseUrl/core/payments/createdBy/me');
 
       print('📋 Getting my payments:');
       print('  URL: $uri');
@@ -294,7 +294,7 @@ class PaymentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/payments/$id');
+      final uri = Uri.parse('$baseUrl/core/payments/$id');
 
       print('🔍 Getting payment by ID:');
       print('  URL: $uri');
