@@ -72,7 +72,7 @@ export class Reservation extends BaseEntity {
     required: true,
     type: String,
     enum: Object.values(ReservationStatusEnum), // ⭐️ SỬA ĐỔI QUAN TRỌNG
-    default: ReservationStatusEnum.CONFIRMED,
+    default: ReservationStatusEnum.PENDING_PAYMENT,
   })
   status: ReservationStatusEnum // ⭐️ Thay thế cho 'reservation_status_id'
 

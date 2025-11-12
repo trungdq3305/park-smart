@@ -1,5 +1,9 @@
 import type { ClientSession } from 'mongoose'
 
+import type {
+  ConfirmReservationPaymentDto,
+  CreateReservationDto,
+} from '../dto/reservation.dto'
 // Import DTO (Nếu dùng) hoặc Schema
 import type { ReservationStatusEnum } from '../enums/reservation.enum'
 import type { Reservation } from '../schemas/reservation.schema' // <-- Đường dẫn Schema
@@ -12,7 +16,7 @@ export interface IReservationRepository {
    * @param session (Bắt buộc) Phiên làm việc của transaction.
    */
   createReservation(
-    reservationData: Partial<Reservation>, // Service sẽ chuẩn bị dữ liệu này
+    reservationData: Partial<CreateReservationDto>, // Service sẽ chuẩn bị dữ liệu này
     session: ClientSession,
   ): Promise<Reservation | null>
 
@@ -37,9 +41,11 @@ export interface IReservationRepository {
   /**
    * Tìm một đơn đặt chỗ hợp lệ (ví dụ: 'CONFIRMED') bằng ID của nó.
    * Dùng cho logic Check-in (khi người dùng quét mã QR của vé).
-   * @param id ID của đơn đặt chỗ.
+   * @param reservationIdentifier ID của đơn đặt chỗ.
    */
-  findValidReservationForCheckIn(id: string): Promise<Reservation | null>
+  findValidReservationForCheckIn(
+    reservationIdentifier: string,
+  ): Promise<Reservation | null>
 
   /**
    * Lấy danh sách tất cả đơn đặt chỗ của một người dùng (có phân trang).
@@ -74,6 +80,19 @@ export interface IReservationRepository {
   expireOverdueReservations(
     cutoffTime: Date,
   ): Promise<{ modifiedCount: number; matchedCount: number }>
+
+  /**
+   * Cập nhật 'paymentId' cho một đơn đặt chỗ.
+   * Dùng khi cần liên kết thanh toán sau khi tạo đơn đặt chỗ.
+   * @param id ID của đơn đặt chỗ.
+   * @param paymentId ID thanh toán từ .NET service.
+   * @param session (Bắt buộc) Phải chạy trong transaction.
+   */
+  updateReservationPaymentId(
+    id: string,
+    updateData: ConfirmReservationPaymentDto,
+    session: ClientSession,
+  ): Promise<boolean>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')
