@@ -7,6 +7,7 @@ import 'package:mobile/services/user_service.dart';
 import 'profile/personal_info_screen.dart';
 import 'profile/booking_history_screen.dart';
 import 'profile/my_car_screen.dart';
+import 'profile/my_subscriptions_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -313,7 +314,12 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       icon: Icons.confirmation_number_outlined,
                       title: 'Vé của tôi',
                       onTap: () {
-                        // TODO: Navigate to tickets screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MySubscriptionsScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildTile(
