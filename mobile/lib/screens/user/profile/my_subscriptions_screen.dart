@@ -303,7 +303,6 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
     final startDate = subscription['startDate'];
     final endDate = subscription['endDate'];
-    final price = packageRate?['price'] ?? 0;
     final durationAmount = packageRate?['durationAmount'] ?? 0;
     final unit = packageRate?['unit'] ?? '';
 
@@ -440,7 +439,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     );
   }
 
-  Future<void> _showQRCodeDialog(Map<String, dynamic> subscription) async {
+  void _showQRCodeDialog(Map<String, dynamic> subscription) {
     // Get identifier from subscription (subscriptionIdentifier field)
     final identifier =
         subscription['subscriptionIdentifier'] as String? ??
@@ -458,65 +457,8 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       return;
     }
 
-    // Show loading dialog first
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-          ),
-        ),
-      );
-    }
-
-    try {
-      // Call API to get subscription details by identifier
-      final response = await SubscriptionService.getSubscriptionByIdentifier(
-        identifier: identifier,
-      );
-
-      // Close loading dialog
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      // Extract subscription data
-      dynamic subscriptionData = response['data'] ?? response;
-      if (subscriptionData is Map) {
-        final subscriptionMap = Map<String, dynamic>.from(subscriptionData);
-
-        // Show QR code dialog
-        if (mounted) {
-          _showQRCodePopup(subscriptionMap, identifier);
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Không thể lấy thông tin gói thuê bao'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      // Close loading dialog
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-
-      print('❌ Error loading subscription by identifier: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: ${e.toString()}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+    // Show QR code popup directly with subscription data
+    _showQRCodePopup(subscription, identifier);
   }
 
   void _showQRCodePopup(Map<String, dynamic> subscription, String identifier) {
@@ -673,13 +615,6 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  String _formatPrice(int price) {
-    return price.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
     );
   }
 }
