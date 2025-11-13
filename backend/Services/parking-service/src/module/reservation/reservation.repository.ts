@@ -96,7 +96,7 @@ export class ReservationRepository implements IReservationRepository {
     ]).then(([data, total]) => ({ data, total }))
   }
 
-  updateReservationStatus(
+  async updateReservationStatus(
     id: string,
     status: ReservationStatusEnum,
     session: ClientSession,

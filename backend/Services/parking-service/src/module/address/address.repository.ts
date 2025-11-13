@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import mongoose, { ClientSession, Model } from 'mongoose'
+import { ClientSession, Model } from 'mongoose'
 
 import { CreateAddressDto, UpdateAddressDto } from './dto/address.dto'
 import { IAddressRepository } from './interfaces/iaddress.repository'
