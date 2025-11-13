@@ -83,7 +83,7 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpGet("confirm-operator")]
+        [HttpPut("confirm-operator")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ConfirmOperator(string id)
         {
