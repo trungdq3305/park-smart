@@ -1,4 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
+import { randomUUID } from 'crypto'
 import mongoose, { HydratedDocument } from 'mongoose'
 import { BaseEntity } from 'src/common/schema/baseEntity.schema'
 
@@ -11,9 +12,13 @@ export type ReservationDocument = HydratedDocument<Reservation>
  * Quản lý các đơn đặt chỗ (vé) ngắn hạn đã bán cho người dùng (Xô 2).
  * Được tạo sau khi kiểm tra 'BookingInventory' và thanh toán thành công.
  */
-@Schema({ timestamps: true })
+@Schema()
 export class Reservation extends BaseEntity {
-  // Kế thừa _id, createdAt, updatedAt từ BaseEntity
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    default: () => new mongoose.Types.ObjectId(),
+  })
+  _id: string
 
   @Prop({
     required: true,
@@ -59,6 +64,12 @@ export class Reservation extends BaseEntity {
 
   @Prop({
     required: true,
+    type: Date,
+  })
+  estimatedEndTime: Date // Tổng tiền (sau khi áp dụng khuyến mãi nếu có)
+
+  @Prop({
+    required: true,
     type: Number,
   })
   prepaidAmount: number // Số tiền đã trả trước (tương ứng 'total_price')
@@ -67,17 +78,26 @@ export class Reservation extends BaseEntity {
     required: true,
     type: String,
     enum: Object.values(ReservationStatusEnum), // ⭐️ SỬA ĐỔI QUAN TRỌNG
-    default: ReservationStatusEnum.CONFIRMED,
+    default: ReservationStatusEnum.PENDING_PAYMENT,
   })
   status: ReservationStatusEnum // ⭐️ Thay thế cho 'reservation_status_id'
 
   @Prop({
-    required: true,
+    required: false,
     type: String,
     unique: true, // ⭐️ RẤT QUAN TRỌNG: Chống lạm dụng
     index: true,
+    sparse: true,
   })
   paymentId: string
+
+  @Prop({
+    type: String,
+    unique: true, // ⭐️ 2. Bắt buộc unique
+    default: () => randomUUID(), // ⭐️ 3. Tự động tạo UUID v4
+    index: true,
+  })
+  reservationIdentifier: string
 }
 
 export const ReservationSchema = SchemaFactory.createForClass(Reservation)

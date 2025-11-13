@@ -8,7 +8,10 @@ export interface IParkingLotRepository {
     session: ClientSession,
   ): Promise<ParkingLot | null>
 
-  findParkingLotById(id: string): Promise<ParkingLot | null>
+  findParkingLotById(
+    id: string,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null>
 
   findByAddressIds(addressIds: string[]): Promise<ParkingLot[]>
 

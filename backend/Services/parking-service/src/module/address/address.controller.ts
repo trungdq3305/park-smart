@@ -8,20 +8,16 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common'
 import {
-  ApiBearerAuth,
   ApiBody,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger'
-import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { IdDto } from 'src/common/dto/params.dto'
-import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 
 import {
   AddressResponseDto,
@@ -32,8 +28,6 @@ import { IAddressService } from './interfaces/iaddress.service'
 
 @ApiTags('address')
 @Controller('addresses')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class AddressController {
   constructor(
     @Inject(IAddressService)
@@ -53,12 +47,8 @@ export class AddressController {
   @ApiOperation({ summary: 'Tạo một địa chỉ mới' })
   async create(
     @Body() createAddressDto: CreateAddressDto,
-    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<AddressResponseDto>> {
-    const address = await this.addressService.createAddress(
-      createAddressDto,
-      userId,
-    )
+    const address = await this.addressService.createAddress(createAddressDto)
     return {
       data: [address],
       message: 'Tạo địa chỉ thành công',
@@ -125,12 +115,10 @@ export class AddressController {
   async update(
     @Param() parameters: IdDto,
     @Body() updateAddressDto: UpdateAddressDto,
-    @GetCurrentUserId() userId: string,
   ): Promise<ApiResponseDto<AddressResponseDto>> {
     const updatedAddress = await this.addressService.updateAddress(
       parameters.id,
       updateAddressDto,
-      userId,
     )
     return {
       data: [updatedAddress],
@@ -151,14 +139,8 @@ export class AddressController {
     description: 'Địa chỉ không tồn tại',
   })
   @ApiOperation({ summary: 'Xóa một địa chỉ theo ID' })
-  async delete(
-    @Param() parameters: IdDto,
-    @GetCurrentUserId() userId: string,
-  ): Promise<ApiResponseDto<boolean>> {
-    const result = await this.addressService.deleteAddress(
-      parameters.id,
-      userId,
-    )
+  async delete(@Param() parameters: IdDto): Promise<ApiResponseDto<boolean>> {
+    const result = await this.addressService.deleteAddress(parameters.id)
     return {
       data: [result],
       message: 'Xóa địa chỉ thành công',

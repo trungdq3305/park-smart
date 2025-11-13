@@ -147,7 +147,6 @@ export class AddressService implements IAddressService {
 
   async createAddress(
     createAddressDto: CreateAddressDto,
-    userId: string,
   ): Promise<AddressResponseDto> {
     const coordinates = await this.getCoordinatesFromAddress(
       createAddressDto.fullAddress,
@@ -157,7 +156,6 @@ export class AddressService implements IAddressService {
     const address = await this.addressRepository.createAddress(
       createAddressDto,
       coordinates,
-      userId,
     )
     if (!address) {
       throw new BadRequestException('Không thể tạo địa chỉ')
@@ -168,7 +166,6 @@ export class AddressService implements IAddressService {
   async updateAddress(
     id: string,
     updateAddressDto: UpdateAddressDto,
-    userId: string,
   ): Promise<AddressResponseDto> {
     const coordinates = await this.getCoordinatesFromAddress(
       updateAddressDto.fullAddress,
@@ -179,7 +176,6 @@ export class AddressService implements IAddressService {
       id,
       updateAddressDto,
       coordinates,
-      userId,
     )
     if (!address) {
       throw new NotFoundException('Không tìm thấy địa chỉ')
@@ -187,8 +183,8 @@ export class AddressService implements IAddressService {
     return this.returnAddressResponseDto(address)
   }
 
-  async deleteAddress(id: string, userId: string): Promise<boolean> {
-    const result = await this.addressRepository.deleteAddress(id, userId)
+  async deleteAddress(id: string): Promise<boolean> {
+    const result = await this.addressRepository.deleteAddress(id)
     if (!result) {
       throw new BadRequestException('Xóa địa chỉ thất bại')
     }

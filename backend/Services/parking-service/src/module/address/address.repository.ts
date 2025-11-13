@@ -15,7 +15,6 @@ export class AddressRepository implements IAddressRepository {
   async createAddress(
     createAddressDto: CreateAddressDto,
     coordinates: { latitude: number; longitude: number },
-    userId: string,
   ): Promise<Address> {
     const createdAddress = new this.addressModel({
       fullAddress: createAddressDto.fullAddress,
@@ -26,7 +25,6 @@ export class AddressRepository implements IAddressRepository {
         type: 'Point',
         coordinates: [coordinates.longitude, coordinates.latitude], // !!! [kinh độ, vĩ độ]
       },
-      createdBy: new mongoose.Types.ObjectId(userId),
     })
     return createdAddress.save()
   }
