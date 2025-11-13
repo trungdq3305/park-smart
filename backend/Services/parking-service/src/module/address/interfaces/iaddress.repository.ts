@@ -7,7 +7,6 @@ export interface IAddressRepository {
   createAddress(
     address: CreateAddressDto,
     coordinates: { latitude: number; longitude: number },
-    userId: string,
   ): Promise<Address | null>
   findAllAddresses(): Promise<Address[] | null>
   findAddressById(id: string): Promise<Address | null>
@@ -15,9 +14,8 @@ export interface IAddressRepository {
     id: string,
     address: UpdateAddressDto,
     coordinates: { latitude: number; longitude: number },
-    userId: string,
   ): Promise<Address | null>
-  deleteAddress(id: string, userId: string): Promise<boolean>
+  deleteAddress(id: string): Promise<boolean>
   setAddressAsUsed(id: string, session: ClientSession): Promise<Address | null>
   findWithinBox(
     bottomLeft: [number, number],

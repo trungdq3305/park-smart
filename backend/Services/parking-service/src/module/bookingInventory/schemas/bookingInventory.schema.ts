@@ -10,8 +10,11 @@ export type BookingInventoryDocument = HydratedDocument<BookingInventory>
  */
 @Schema()
 export class BookingInventory extends BaseEntity {
-  // Chúng ta kế thừa _id từ BaseEntity,
-  // không cần định nghĩa lại _id như trong ParkingLot của bạn.
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    default: () => new mongoose.Types.ObjectId(),
+  })
+  _id: string
 
   @Prop({
     required: true,

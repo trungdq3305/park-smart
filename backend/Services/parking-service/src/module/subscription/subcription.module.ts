@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 
 import { ClientModule } from '../client/client.module'
 import { ParkingLotModule } from '../parkingLot/parkingLot.module'
+import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
 import { ISubscriptionRepository } from './interfaces/isubcription.repository'
 import { ISubscriptionService } from './interfaces/isubcription.service'
 import { ISubscriptionLogRepository } from './interfaces/isubcriptionLog.repository'

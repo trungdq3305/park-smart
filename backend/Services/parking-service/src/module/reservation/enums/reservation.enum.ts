@@ -2,6 +2,11 @@
 
 export enum ReservationStatusEnum {
   /**
+   * Mới tạo, chờ thanh toán.
+   * Vé chưa hợp lệ cho đến khi thanh toán thành công.
+   */
+  PENDING_PAYMENT = 'PENDING_PAYMENT', // Chờ thanh toán
+  /**
    * Đã thanh toán trả trước (PAID), đang chờ check-in.
    * Đây là trạng thái "vé hợp lệ".
    */

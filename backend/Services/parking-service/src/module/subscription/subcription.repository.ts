@@ -13,24 +13,31 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
 
-  updateSubscriptionStatusForCronJob(
-    id: string,
-    status: string,
-    session: ClientSession,
-  ): Promise<Subscription | null> {
-    return this.subscriptionModel
-      .findByIdAndUpdate(
-        id,
-        {
-          $set: {
-            status,
-            updatedAt: new Date(),
-          },
-        },
-        { session, new: true },
-      )
-      .lean()
-      .exec()
+  async updateExpiredPendingSubscriptions(
+    cutoffTime: Date,
+  ): Promise<{ modifiedCount: number; matchedCount: number }> {
+    // 1. Điều kiện lọc
+    const filter = {
+      status: SubscriptionStatusEnum.PENDING_PAYMENT,
+      createdAt: { $lt: cutoffTime }, // ⭐️ Lấy các bản ghi TẠO TRƯỚC thời gian "cắt"
+      deletedAt: null,
+    }
+
+    // 2. Dữ liệu cập nhật
+    const update = {
+      $set: {
+        status: SubscriptionStatusEnum.CANCELLED_DUE_TO_NON_PAYMENT, // ⭐️ Trạng thái mới
+        updatedAt: new Date(),
+      },
+    }
+
+    // 3. Thực thi
+    const result = await this.subscriptionModel.updateMany(filter, update)
+
+    return {
+      modifiedCount: result.modifiedCount,
+      matchedCount: result.matchedCount,
+    }
   }
 
   updateSubscriptionPaymentId(
