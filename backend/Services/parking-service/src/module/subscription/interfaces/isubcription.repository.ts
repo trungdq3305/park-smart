@@ -151,16 +151,13 @@ export interface ISubscriptionRepository {
   ): Promise<Subscription | null>
 
   /**
-   * Cập nhật trạng thái của một gói thuê bao (dùng cho công việc định kỳ).
-   * @param id ID của gói thuê bao.
-   * @param status Trạng thái mới.
-   * @param session Phiên làm việc của transaction.
+   * ⭐️ HÀM ĐÃ SỬA (thay thế hàm cũ của bạn)
+   * Tìm và cập nhật tất cả các gói 'PENDING_PAYMENT' đã quá hạn.
+   * @param cutoffTime Thời gian "cắt" (ví dụ: 10 phút trước).
    */
-  updateSubscriptionStatusForCronJob(
-    id: string,
-    status: string,
-    session: ClientSession,
-  ): Promise<Subscription | null>
+  updateExpiredPendingSubscriptions(
+    cutoffTime: Date,
+  ): Promise<{ modifiedCount: number; matchedCount: number }>
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')
