@@ -702,7 +702,6 @@ export class SubscriptionService implements ISubscriptionService {
     } catch (error) {
       // 3. ⭐️ Đây mới là nơi bắt lỗi thực sự (ví dụ: CSDL sập)
       this.logger.error(
-         
         `[CronJob] Gặp lỗi khi cập nhật gói hết hạn: ${error.message}`,
         error.stack,
       )
