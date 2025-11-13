@@ -148,10 +148,10 @@ const ManageTermsPolicies: React.FC = () => {
           >
             <div>
               <Title level={3} style={{ margin: 0 }}>
-                Quản lý Terms & Policies
+                Quản lý điều khoản & chính sách
               </Title>
               <Paragraph type="secondary" style={{ margin: 0 }}>
-                Tạo, chỉnh sửa và xoá điều khoản/chính sách
+                Tạo, chỉnh sửa và xoá các điều khoản, chính sách của hệ thống
               </Paragraph>
             </div>
             <Button

@@ -42,51 +42,51 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     {
       key: '/admin/manage-account',
       icon: <TeamOutlined />,
-      label: 'Users',
+      label: 'Tài khoản',
       badge: '164',
       active: true,
     },
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: 'Bảng điều khiển',
     },
     {
       key: '/parking-spots',
       icon: <EnvironmentOutlined />,
-      label: 'Parking Spots',
+      label: 'Điểm đỗ xe',
       badge: '12/15',
       active: true,
     },
     {
       key: '/analytics',
       icon: <BarChartOutlined />,
-      label: 'Analytics',
+      label: 'Phân tích',
     },
     {
       key: '/admin/reports',
       icon: <FileTextOutlined />,
-      label: 'Reports',
+      label: 'Báo cáo',
     },
     {
       key: '/admin/terms-policies',
       icon: <AppstoreOutlined />,
-      label: 'Terms & Policies',
+      label: 'Điều khoản & Chính sách',
     },
     {
       key: '/payments',
       icon: <WalletOutlined />,
-      label: 'Payments',
+      label: 'Thanh toán',
     },
     {
       key: '/history',
       icon: <HistoryOutlined />,
-      label: 'History',
+      label: 'Lịch sử',
     },
     {
       key: '/security',
       icon: <SafetyOutlined />,
-      label: 'Security',
+      label: 'Bảo mật',
     },
   ]
 

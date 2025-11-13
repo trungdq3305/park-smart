@@ -38,6 +38,21 @@ interface ListAccountResponse {
   isLoading: boolean
 }
 
+const translateRoleName = (roleName: string) => {
+  switch (roleName.toLowerCase()) {
+    case 'admin':
+      return 'Quản trị viên'
+    case 'operator':
+      return 'Chủ bãi xe'
+    case 'driver':
+      return 'Tài xế'
+    case 'user':
+      return 'Người dùng'
+    default:
+      return roleName
+  }
+}
+
 const ManageAccountPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -153,16 +168,16 @@ const ManageAccountPage: React.FC = () => {
   const getMenuItems = (account: Account): MenuProps['items'] => [
     {
       key: 'view',
-      label: 'Xem profile',
+      label: 'Xem hồ sơ',
       icon: <EyeOutlined />,
       onClick: () => handleViewDetails(account),
     },
     {
       key: 'permission',
-      label: 'Thay đổi quyền',
+      label: 'Điều chỉnh quyền hạn',
       icon: <KeyOutlined />,
       onClick: () => {
-        message.info('Tính năng thay đổi quyền đang được phát triển')
+        message.info('Tính năng điều chỉnh quyền đang được phát triển')
       },
     },
     {
@@ -208,28 +223,28 @@ const ManageAccountPage: React.FC = () => {
             <div className="stat-icon admin-icon">👤</div>
             <div className="stat-content">
               <h3>{totalAdmins}</h3>
-              <p>Admin</p>
+              <p>Quản trị viên</p>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon operator-icon">🏢</div>
             <div className="stat-content">
               <h3>{totalOperators}</h3>
-              <p>Operator</p>
+              <p>Chủ bãi xe</p>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon driver-icon">🚗</div>
             <div className="stat-content">
               <h3>{totalDrivers}</h3>
-              <p>Driver</p>
+              <p>Tài xế</p>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon total-icon">📊</div>
             <div className="stat-content">
               <h3>{totalItems}</h3>
-              <p>Tổng cộng</p>
+              <p>Tổng tài khoản</p>
             </div>
           </div>
         </div>
@@ -269,7 +284,7 @@ const ManageAccountPage: React.FC = () => {
                       </td>
                       <td>
                         <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
-                          {account.roleName}
+                          {translateRoleName(account.roleName)}
                         </span>
                       </td>
                       <td>

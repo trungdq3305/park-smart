@@ -42,60 +42,60 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
     {
       key: '/operator/create-parking-lot-request',
       icon: <CarOutlined />,
-      label: 'Create Parking Lot Request',
+      label: 'Tạo yêu cầu bãi đỗ',
       active: true,
     },
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: 'Bảng điều khiển',
     },
     {
       key: '/parking-spots',
       icon: <EnvironmentOutlined />,
-      label: 'Parking Spots',
+      label: 'Điểm đỗ xe',
       badge: '12/15',
       active: true,
     },
     {
       key: '/analytics',
       icon: <BarChartOutlined />,
-      label: 'Analytics',
+      label: 'Phân tích',
     },
     {
       key: '/operator/create-report',
       icon: <FileTextOutlined />,
-      label: 'Create Report',
+      label: 'Tạo báo cáo',
     },
     {
       key: '/integrations',
       icon: <AppstoreOutlined />,
-      label: 'Integrations',
+      label: 'Tích hợp',
     },
     {
       key: '/companies',
       icon: <BankOutlined />,
-      label: 'Companies',
+      label: 'Doanh nghiệp',
     },
     {
       key: '/vehicles',
       icon: <CarOutlined />,
-      label: 'Vehicles',
+      label: 'Phương tiện',
     },
     {
       key: '/payments',
       icon: <WalletOutlined />,
-      label: 'Payments',
+      label: 'Thanh toán',
     },
     {
       key: '/history',
       icon: <HistoryOutlined />,
-      label: 'History',
+      label: 'Lịch sử',
     },
     {
       key: '/security',
       icon: <SafetyOutlined />,
-      label: 'Security',
+      label: 'Bảo mật',
     },
   ]
 

@@ -23,7 +23,7 @@ interface AdminHeaderProps {
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
-  const fullName = getUserFullName('Admin User')
+  const fullName = getUserFullName('Quản trị viên')
   const logout = useLogout()
   const { userId, userRole } = useAuth()
 
@@ -58,12 +58,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
   const userMenuItems = [
     {
       key: '1',
-      label: 'Profile',
+      label: 'Hồ sơ cá nhân',
       icon: <UserOutlined />,
     },
     {
       key: '2',
-      label: 'Settings',
+      label: 'Cài đặt',
       icon: <SettingOutlined />,
     },
     {
@@ -71,7 +71,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
     },
     {
       key: '3',
-      label: 'Logout',
+      label: 'Đăng xuất',
       icon: <LogoutOutlined />,
       danger: true,
       onClick: () => {
@@ -94,13 +94,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
       <div className="header-left">
         <h3>
           {isMobile
-            ? `Welcome, ${fullName.split(' ')[0]}!`
-            : `Welcome back, ${fullName}, let's manage your parking lots !`}
+            ? `Xin chào, ${fullName.split(' ')[0]}!`
+            : `Chào mừng quay lại, ${fullName}! Cùng quản lý hệ thống bãi đỗ nhé.`}
         </h3>
       </div>
       <div className="header-right">
         <Space size="middle">
-          Noti Test
+          Gửi thông báo thử
           <Button
             type="text"
             className="header-action-btn notification-btn"

@@ -217,14 +217,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       <Title level={2} className="brand-title">
         ParkSmart
       </Title>
-      <Title level={3} className="welcome-title">
-        Create Operator Account
-      </Title>
+      <Title level={3} className="welcome-title">Tạo tài khoản chủ bãi đỗ xe</Title>
 
       <Text className="signup-prompt">
-        Already have an account?
+        Đã có tài khoản?
         <span onClick={onSwitchToLogin} className="signup-link">
-          Sign in here
+          Đăng nhập tại đây
         </span>
       </Text>
 
@@ -251,11 +249,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           <>
             <Form.Item
               name="fullName"
-              rules={[{ required: true, message: 'Please input your full name!' }]}
+              rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}
             >
               <Input
                 prefix={<UserOutlined />}
-                placeholder="Full Name"
+                placeholder="Họ và tên"
                 size="large"
                 className="login-input"
               />
@@ -263,8 +261,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             <Form.Item
               name="email"
               rules={[
-                { required: true, message: 'Please input your email!' },
-                { type: 'email', message: 'Please enter a valid email!' },
+                { required: true, message: 'Vui lòng nhập email!' },
+                { type: 'email', message: 'Email không hợp lệ!' },
               ]}
             >
               <Input
@@ -277,8 +275,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             <Form.Item
               name="paymentEmail"
               rules={[
-                { required: true, message: 'Please input your email thanh toán!' },
-                { type: 'email', message: 'Please enter a valid email!' },
+                { required: true, message: 'Vui lòng nhập email thanh toán!' },
+                { type: 'email', message: 'Email không hợp lệ!' },
               ]}
             >
               <Input
@@ -300,18 +298,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             >
               <Input
                 prefix={<PhoneOutlined />}
-                placeholder="Phone Number"
+                placeholder="Số điện thoại"
                 size="large"
                 className="login-input"
               />
             </Form.Item>
             <Form.Item
               name="bussinessName"
-              rules={[{ required: true, message: 'Please input your company name!' }]}
+              rules={[{ required: true, message: 'Vui lòng nhập tên doanh nghiệp!' }]}
             >
               <Input
                 prefix={<BankOutlined />}
-                placeholder="Tên công ty"
+                placeholder="Tên doanh nghiệp"
                 size="large"
                 className="login-input"
               />
@@ -338,27 +336,27 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
               name="confirmPassword"
               dependencies={['password']}
               rules={[
-                { required: true, message: 'Please confirm your password!' },
+                { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
                 ({ getFieldValue }) => ({
                   validator(_, value) {
                     if (!value || getFieldValue('password') === value) {
                       return Promise.resolve()
                     }
-                    return Promise.reject(new Error('Passwords do not match!'))
+                    return Promise.reject(new Error('Mật khẩu không khớp!'))
                   },
                 }),
               ]}
             >
               <Input.Password
                 prefix={<LockOutlined />}
-                placeholder="Confirm Password"
+                placeholder="Xác nhận mật khẩu"
                 size="large"
                 className="login-input"
               />
             </Form.Item>
             <Form.Item>
               <Button type="primary" onClick={nextStep} size="large" className="login-button" block>
-                Next
+                Tiếp tục
               </Button>
             </Form.Item>
           </>
@@ -432,6 +430,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                         format="HH:mm"
                         className="w-100"
                         disabled={form.getFieldValue('is24Hours')}
+                        placeholder="Chọn giờ"
                       />
                     </Form.Item>
                   )}
@@ -458,6 +457,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                         format="HH:mm"
                         className="w-100"
                         disabled={form.getFieldValue('is24Hours')}
+                        placeholder="Chọn giờ"
                       />
                     </Form.Item>
                   )}
@@ -474,7 +474,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                   name="effectiveDate"
                   rules={[{ required: true, message: 'Chọn ngày hiệu lực' }]}
                 >
-                  <DatePicker format="YYYY-MM-DD" className="w-100" />
+                <DatePicker format="YYYY-MM-DD" className="w-100" placeholder="Chọn ngày" />
                 </Form.Item>
               </Col>
             </Row>
@@ -551,7 +551,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
             </Form.Item>
             <Form.Item>
               <Button type="primary" onClick={prevStep} size="large" className="login-button" block>
-                Back
+                Quay lại
               </Button>
             </Form.Item>
 

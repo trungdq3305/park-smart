@@ -74,7 +74,9 @@ const CreateReport: React.FC = () => {
       }
 
       await createReport(payload).unwrap()
-      message.success('Báo cáo đã được gửi thành công! Admin sẽ xem xét và phản hồi sớm nhất.')
+      message.success(
+        'Báo cáo đã được gửi thành công! Quản trị viên sẽ xem xét và phản hồi sớm nhất.'
+      )
       form.resetFields()
       refetch()
     } catch (err: unknown) {
@@ -109,7 +111,7 @@ const CreateReport: React.FC = () => {
               Tạo báo cáo mới
             </Typography.Title>
             <Typography.Paragraph className="hero-subtitle">
-              Gửi báo cáo chi tiết về vấn đề, đề xuất hoặc phản hồi để Admin xem xét và xử lý
+              Gửi báo cáo chi tiết về vấn đề, đề xuất hoặc phản hồi để Quản trị viên xem xét và xử lý
             </Typography.Paragraph>
           </Col>
           <Col flex="none">
@@ -124,7 +126,7 @@ const CreateReport: React.FC = () => {
                 Xem báo cáo đã gửi
               </Button>
               <Tag color="gold" className="hero-badge">
-                Operator
+                Chủ bãi xe
               </Tag>
             </Space>
           </Col>

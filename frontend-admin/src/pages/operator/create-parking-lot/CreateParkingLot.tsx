@@ -76,7 +76,7 @@ const CreateParkingLot: React.FC = () => {
       }
 
       await createParkingLot(payload).unwrap()
-      message.success('Yêu cầu tạo bãi đỗ xe đã được gửi tới Admin')
+      message.success('Yêu cầu tạo bãi đỗ xe đã được gửi tới Quản trị viên')
       form.resetFields()
     } catch (err: unknown) {
       const extractMessage = (e: unknown): string => {
@@ -110,12 +110,12 @@ const CreateParkingLot: React.FC = () => {
               Tạo yêu cầu bãi đỗ xe mới
             </Typography.Title>
             <Typography.Paragraph className="hero-subtitle">
-              Gửi thông tin chi tiết để Admin xem xét và phê duyệt yêu cầu của bạn
+              Gửi thông tin chi tiết để Quản trị viên xem xét và phê duyệt yêu cầu của bạn
             </Typography.Paragraph>
           </Col>
           <Col flex="none">
             <Tag color="gold" className="hero-badge">
-              Operator
+              Chủ bãi xe
             </Tag>
           </Col>
         </Row>
