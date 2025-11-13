@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession, Model } from 'mongoose'
 
-import {
-  ConfirmReservationPaymentDto,
-  CreateReservationDto,
-} from './dto/reservation.dto'
+import { ConfirmReservationPaymentDto } from './dto/reservation.dto'
 import { ReservationStatusEnum } from './enums/reservation.enum'
 import { IReservationRepository } from './interfaces/ireservation.repository'
 import { Reservation } from './schemas/reservation.schema'
@@ -39,19 +36,25 @@ export class ReservationRepository implements IReservationRepository {
   }
 
   createReservation(
-    reservationData: Partial<CreateReservationDto>,
+    reservationData: Partial<Reservation>,
     session: ClientSession,
   ): Promise<Reservation | null> {
     const createdReservation = new this.reservationModel(reservationData)
     return createdReservation.save({ session })
   }
 
-  findReservationById(id: string): Promise<Reservation | null> {
-    return this.reservationModel
+  findReservationById(
+    id: string,
+    session?: ClientSession,
+  ): Promise<Reservation | null> {
+    const query = this.reservationModel
       .findById(id)
       .populate('parkingLotId') // Populate chi tiết bãi đỗ xe
       .populate('pricingPolicyId') // Populate chi tiết chính sách giá
-      .exec()
+    if (session) {
+      query.session(session)
+    }
+    return query.exec()
   }
 
   findReservationByPaymentId(

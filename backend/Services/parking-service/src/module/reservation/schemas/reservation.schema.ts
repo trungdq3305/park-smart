@@ -64,6 +64,12 @@ export class Reservation extends BaseEntity {
 
   @Prop({
     required: true,
+    type: Date,
+  })
+  estimatedEndTime: Date // Tổng tiền (sau khi áp dụng khuyến mãi nếu có)
+
+  @Prop({
+    required: true,
     type: Number,
   })
   prepaidAmount: number // Số tiền đã trả trước (tương ứng 'total_price')

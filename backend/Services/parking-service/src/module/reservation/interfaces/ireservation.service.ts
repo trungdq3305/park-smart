@@ -46,7 +46,7 @@ export interface IReservationService {
     id: IdDto,
     confirmDto: ConfirmReservationPaymentDto,
     userId: string,
-  ): Promise<ReservationDetailResponseDto> // Trả về vé đã 'CONFIRMED'
+  ): Promise<boolean> // Trả về vé đã 'CONFIRMED'
 
   /**
    * Lấy danh sách tất cả đơn đặt chỗ của người dùng hiện tại (có phân trang).
@@ -65,12 +65,8 @@ export interface IReservationService {
    * Lấy thông tin chi tiết một đơn đặt chỗ bằng ID.
    * (Service sẽ kiểm tra quyền sở hữu của 'userId').
    * @param id ID của đơn đặt chỗ.
-   * @param userId ID của người dùng (để kiểm tra quyền).
    */
-  findReservationById(
-    id: IdDto,
-    userId: string,
-  ): Promise<ReservationDetailResponseDto>
+  findReservationById(id: IdDto): Promise<ReservationDetailResponseDto>
 
   /**
    * (Dùng cho BARIE/SCANNER) Lấy vé 'CONFIRMED' bằng mã QR.

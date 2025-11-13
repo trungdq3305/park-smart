@@ -1,9 +1,6 @@
 import type { ClientSession } from 'mongoose'
 
-import type {
-  ConfirmReservationPaymentDto,
-  CreateReservationDto,
-} from '../dto/reservation.dto'
+import type { ConfirmReservationPaymentDto } from '../dto/reservation.dto'
 // Import DTO (Nếu dùng) hoặc Schema
 import type { ReservationStatusEnum } from '../enums/reservation.enum'
 import type { Reservation } from '../schemas/reservation.schema' // <-- Đường dẫn Schema
@@ -16,7 +13,7 @@ export interface IReservationRepository {
    * @param session (Bắt buộc) Phiên làm việc của transaction.
    */
   createReservation(
-    reservationData: Partial<CreateReservationDto>, // Service sẽ chuẩn bị dữ liệu này
+    reservationData: Partial<Reservation>, // Service sẽ chuẩn bị dữ liệu này
     session: ClientSession,
   ): Promise<Reservation | null>
 
@@ -24,8 +21,12 @@ export interface IReservationRepository {
    * Tìm một đơn đặt chỗ bằng ID (bao gồm populate chi tiết).
    * (Dùng cho cả User xem chi tiết và Service kiểm tra).
    * @param id ID của đơn đặt chỗ.
+   * @param session (Tùy chọn) Phiên làm việc của transaction.
    */
-  findReservationById(id: string): Promise<Reservation | null>
+  findReservationById(
+    id: string,
+    session?: ClientSession,
+  ): Promise<Reservation | null>
 
   /**
    * (Rất quan trọng) Tìm một đơn đặt chỗ bằng 'paymentId'.

@@ -97,7 +97,10 @@ export class ParkingLotRepository implements IParkingLotRepository {
     return data
   }
 
-  findParkingLotById(id: string): Promise<ParkingLot | null> {
+  findParkingLotById(
+    id: string,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null> {
     return this.parkingLotModel
       .findById(id)
       .populate({
@@ -108,6 +111,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
         },
       })
       .lean()
+      .session(session ?? null)
       .exec()
   }
 

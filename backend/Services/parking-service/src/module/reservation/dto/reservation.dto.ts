@@ -10,6 +10,8 @@ import {
   IsNotEmpty,
   IsOptional,
 } from 'class-validator'
+import { IsAfterNow } from 'src/common/decorators/isAfterNow.decorator'
+import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
 
 // (Giả định Enum này đã được cập nhật để bao gồm PENDING_PAYMENT)
 import { ReservationStatusEnum } from '../enums/reservation.enum'
@@ -55,9 +57,25 @@ export class CreateReservationDto {
     {},
     { message: 'Thời gian đến phải là định dạng ngày tháng hợp lệ' },
   )
+  @IsAfterNow({ message: 'Thời gian đến phải là trong tương lai' })
   @IsNotEmpty({ message: 'Thời gian đến không được để trống' })
   // ⭐️ (Nên thêm @IsAfterNow như đã bàn)
   userExpectedTime: string
+
+  // ⭐️ BỔ SUNG TRƯỜNG NÀY ⭐️
+  @ApiProperty({
+    example: '2025-11-10T11:00:00.000Z',
+    description: 'Thời gian dự kiến rời đi (ISO 8601)',
+  })
+  @IsDateString(
+    {},
+    { message: 'Thời gian kết thúc phải là định dạng ngày tháng hợp lệ' },
+  )
+  @IsNotEmpty({ message: 'Thời gian kết thúc không được để trống' })
+  @IsAfterTime('userExpectedTime', {
+    message: 'Thời gian kết thúc phải sau thời gian đến',
+  })
+  estimatedEndTime: string
 
   // ⭐️ Lưu ý: prepaidAmount, inventoryTimeSlot, status, v.v.
   // sẽ do server tính toán và thiết lập.
