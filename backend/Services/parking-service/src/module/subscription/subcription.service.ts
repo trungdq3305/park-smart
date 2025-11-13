@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import {
   BadRequestException,
@@ -13,8 +14,8 @@ import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import { Connection } from 'mongoose'
 import {
- NotificationRole,
- NotificationType,
+  NotificationRole,
+  NotificationType,
 } from 'src/common/constants/notification.constant'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
@@ -716,45 +717,50 @@ export class SubscriptionService implements ISubscriptionService {
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // Chạy mỗi ngày vào lúc 00:00:00
-    async sendExpiringSubscriptionNotificationsJob(): Promise<void> {
-        this.logger.log('[CronJob] Bắt đầu quét gói thuê bao sắp hết hạn...');
+  async sendExpiringSubscriptionNotificationsJob(): Promise<void> {
+    this.logger.log('[CronJob] Bắt đầu quét gói thuê bao sắp hết hạn...')
 
-        try {
-            const DAYS_REMAINING = 3;
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Chuẩn hóa về 0h
+    try {
+      const DAYS_REMAINING = 3
+      const today = new Date()
+      today.setHours(0, 0, 0, 0) // Chuẩn hóa về 0h
 
-            const expiringSubscriptions = 
-                await this.subscriptionRepository.findExpiringSubscriptions(
-                    DAYS_REMAINING,
-                    today,
-                );
+      const expiringSubscriptions =
+        await this.subscriptionRepository.findExpiringSubscriptions(
+          DAYS_REMAINING,
+          today,
+        )
 
-            this.logger.log(`[CronJob] Tìm thấy ${expiringSubscriptions.length} gói sắp hết hạn.`);
+      this.logger.log(
+        `[CronJob] Tìm thấy ${expiringSubscriptions.length} gói sắp hết hạn.`,
+      )
 
-            for (const sub of expiringSubscriptions) {
-                const expiryDate = sub.endDate.toLocaleDateString('vi-VN'); // Định dạng ngày cho dễ đọc
-                
-                // Gửi thông báo
-                await this.notificationService.createAndSendNotification({
-                    recipientId: sub.createdBy as string, // ID người dùng
-                    recipientRole: NotificationRole.DRIVER, // Giả định người mua là DRIVER
-                    type: NotificationType.SUBSCRIPTION_ALERT, // Cần định nghĩa thêm loại này
-                    title: 'Gói Thuê Bao Sắp Hết Hạn! 🔔',
-                    body: `Gói thuê bao của bạn (ID: ${sub._id.toString().slice(-4)}) sẽ hết hạn vào ngày ${expiryDate}. Vui lòng gia hạn để tiếp tục sử dụng.`,
-                    data: {
-                        subscriptionId: sub._id.toString(),
-                        expiryDate: sub.endDate.toISOString(),
-                    },
-                });
-            }
+      for (const sub of expiringSubscriptions) {
+        const expiryDate = sub.endDate.toLocaleDateString('vi-VN') // Định dạng ngày cho dễ đọc
 
-            this.logger.log('[CronJob] Hoàn thành gửi thông báo gói thuê bao sắp hết hạn.');
-        } catch (error) {
-            this.logger.error(
-                `[CronJob Error] Lỗi khi gửi thông báo hết hạn: ${error.message}`,
-                error.stack,
-            );
-        }
+        // Gửi thông báo
+        await this.notificationService.createAndSendNotification({
+          recipientId: sub.createdBy!, // ID người dùng
+          recipientRole: NotificationRole.DRIVER, // Giả định người mua là DRIVER
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          type: NotificationType.SUBSCRIPTION_ALERT, // Cần định nghĩa thêm loại này
+          title: 'Gói Thuê Bao Sắp Hết Hạn! 🔔',
+          body: `Gói thuê bao của bạn (ID: ${sub._id.slice(-4)}) sẽ hết hạn vào ngày ${expiryDate}. Vui lòng gia hạn để tiếp tục sử dụng.`,
+          data: {
+            subscriptionId: sub._id,
+            expiryDate: sub.endDate.toISOString(),
+          },
+        })
+      }
+
+      this.logger.log(
+        '[CronJob] Hoàn thành gửi thông báo gói thuê bao sắp hết hạn.',
+      )
+    } catch (error) {
+      this.logger.error(
+        `[CronJob Error] Lỗi khi gửi thông báo hết hạn: ${error.message}`,
+        error.stack,
+      )
     }
+  }
 }
