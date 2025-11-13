@@ -13,6 +13,8 @@ import {
   Row,
   Col,
   Space,
+  Steps,
+  Checkbox,
 } from 'antd'
 import {
   UserOutlined,
@@ -22,6 +24,7 @@ import {
   ClockCircleOutlined,
   CalendarOutlined,
   ThunderboltOutlined,
+  BankOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useRegisterMutation } from '../../features/auth/authApi'
@@ -45,6 +48,7 @@ interface RegisterFormValues {
   wardId: string
   fullAddress: string
   is24Hours: boolean
+  isAgreeToP: boolean
   openTime?: dayjs.Dayjs | null
   closeTime?: dayjs.Dayjs | null
   effectiveDate: dayjs.Dayjs
@@ -53,6 +57,7 @@ interface RegisterFormValues {
   totalCapacityEachLevel: number
   totalLevel: number
   electricCarPercentage: number
+  bussinessName: string
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
@@ -60,36 +65,52 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [loading, setLoading] = useState(false)
   const [register] = useRegisterMutation()
   const [step, setStep] = useState(1)
+  const [isAgreeToP, setIsAgreeToP] = useState(false)
   const { data: wards, isLoading: isLoadingWards } = useGetWardQuery({})
   const wardData = (wards?.data?.[0] as Ward[]) || []
   const [createAddress, { isLoading: isCreatingAddress }] = useCreateAddressMutation()
   const [createParkingLot, { isLoading: isCreatingParkingLot }] = useCreateParkingLotMutation()
+  const [formData, setFormData] = useState<Partial<RegisterFormValues>>({})
 
   const nextStep = async () => {
     try {
-      await form.validateFields(['fullName', 'email', 'phoneNumber', 'password', 'confirmPassword'])
-      setStep(2)
+      await form.validateFields([
+        'fullName',
+        'email',
+        'phoneNumber',
+        'password',
+        'confirmPassword',
+        'paymentEmail',
+      ])
+      setFormData((prev) => ({ ...prev, ...form.getFieldsValue() }))
+      setStep((prev) => prev + 1)
     } catch (error) {
       // validation errors handled by antd
     }
   }
-  const prevStep = () => setStep(step - 1)
+  const prevStep = () => {
+    setStep(step - 1)
+    form.setFieldsValue(formData)
+  }
 
   const onFinish = async (values: RegisterFormValues) => {
     setLoading(true)
+    const mergedValues = { ...formData, ...values } as RegisterFormValues
     try {
       const registerData = {
-        email: values.email,
-        password: values.password,
-        paymentEmail: values.paymentEmail,
-        phoneNumber: values.phoneNumber.trim(),
-        fullName: values.fullName.trim(),
+        email: mergedValues.email,
+        password: mergedValues.password,
+        paymentEmail: mergedValues.paymentEmail,
+        phoneNumber: mergedValues.phoneNumber,
+        fullName: mergedValues.fullName,
+        bussinessName: mergedValues.bussinessName,
+        isAgreeToP: mergedValues.isAgreeToP,
       }
       await register(registerData).unwrap()
 
-      const createdAddress: any = await createAddress({
-        wardId: values.wardId,
-        fullAddress: values.fullAddress,
+      const createdAddress = await createAddress({
+        wardId: mergedValues.wardId,
+        fullAddress: mergedValues.fullAddress,
       }).unwrap()
 
       const addressId = createdAddress?.data?.[0]?._id
@@ -97,28 +118,43 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         throw new Error('Không lấy được addressId từ API tạo địa chỉ')
       }
 
-      const is24Hours = Boolean(values.is24Hours)
+      const is24Hours = Boolean(mergedValues.is24Hours)
       const payload = {
         addressId,
-        openTime: is24Hours ? '00:00' : values.openTime ? values.openTime.format('HH:mm') : null,
-        closeTime: is24Hours ? '23:59' : values.closeTime ? values.closeTime.format('HH:mm') : null,
+        openTime: is24Hours
+          ? '00:00'
+          : mergedValues.openTime
+          ? mergedValues.openTime.format('HH:mm')
+          : null,
+        closeTime: is24Hours
+          ? '23:59'
+          : mergedValues.closeTime
+          ? mergedValues.closeTime.format('HH:mm')
+          : null,
         is24Hours,
         maxVehicleHeight:
-          values.maxVehicleHeight != null ? Number(values.maxVehicleHeight) : null,
-        maxVehicleWidth: values.maxVehicleWidth != null ? Number(values.maxVehicleWidth) : null,
+          mergedValues.maxVehicleHeight != null ? Number(mergedValues.maxVehicleHeight) : null,
+        maxVehicleWidth:
+          mergedValues.maxVehicleWidth != null ? Number(mergedValues.maxVehicleWidth) : null,
         totalCapacityEachLevel:
-          values.totalCapacityEachLevel != null ? Number(values.totalCapacityEachLevel) : null,
-        totalLevel: values.totalLevel != null ? Number(values.totalLevel) : null,
+          mergedValues.totalCapacityEachLevel != null
+            ? Number(mergedValues.totalCapacityEachLevel)
+            : null,
+        totalLevel: mergedValues.totalLevel != null ? Number(mergedValues.totalLevel) : null,
         electricCarPercentage:
-          values.electricCarPercentage != null ? Number(values.electricCarPercentage) : null,
-        effectiveDate: values.effectiveDate ? values.effectiveDate.format('YYYY-MM-DD') : null,
+          mergedValues.electricCarPercentage != null
+            ? Number(mergedValues.electricCarPercentage)
+            : null,
+        effectiveDate: mergedValues.effectiveDate
+          ? mergedValues.effectiveDate.format('YYYY-MM-DD')
+          : null,
       }
 
       await createParkingLot(payload).unwrap()
 
       notification.success({
         message: 'Đăng ký thành công!',
-        description: `Người dùng ${values.fullName} đã tạo tài khoản thành công với email đăng nhập là ${values.email}`,
+        description: `Người dùng ${mergedValues.fullName} đã tạo tài khoản thành công với email đăng nhập là ${mergedValues.email}`,
         duration: 4.5,
       })
       notification.success({
@@ -129,6 +165,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       })
       form.resetFields()
       setStep(1)
+      setIsAgreeToP(false)
+      setFormData({})
     } catch (error: unknown) {
       let errorMessage = 'Đã xảy ra lỗi không xác định'
 
@@ -184,7 +222,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       </Title>
 
       <Text className="signup-prompt">
-        Already have an account?{' '}
+        Already have an account?
         <span onClick={onSwitchToLogin} className="signup-link">
           Sign in here
         </span>
@@ -200,8 +238,15 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           is24Hours: true,
           openTime: dayjs('08:00', 'HH:mm'),
           closeTime: dayjs('17:00', 'HH:mm'),
+          isAgreeToP: false,
         }}
       >
+        <Steps
+          current={step - 1}
+          items={[{ title: 'Thông tin tài khoản' }, { title: 'Thông tin bãi đỗ' }]}
+          size="small"
+          style={{ marginBottom: 24 }}
+        />
         {step === 1 && (
           <>
             <Form.Item
@@ -256,6 +301,17 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
               <Input
                 prefix={<PhoneOutlined />}
                 placeholder="Phone Number"
+                size="large"
+                className="login-input"
+              />
+            </Form.Item>
+            <Form.Item
+              name="bussinessName"
+              rules={[{ required: true, message: 'Please input your company name!' }]}
+            >
+              <Input
+                prefix={<BankOutlined />}
+                placeholder="Tên công ty"
                 size="large"
                 className="login-input"
               />
@@ -479,12 +535,26 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                 </Form.Item>
               </Col>
             </Row>
-
+            <Form.Item
+              name="isAgreeToP"
+              valuePropName="checked"
+              rules={[
+                {
+                  validator: (_, value) =>
+                    value ? Promise.resolve() : Promise.reject(new Error('Bạn cần đồng ý với điều khoản')),
+                },
+              ]}
+            >
+              <Checkbox onChange={(e) => setIsAgreeToP(e.target.checked)}>
+                Tôi đã đọc và đồng ý với Chính sách & Điều khoản
+              </Checkbox>
+            </Form.Item>
             <Form.Item>
               <Button type="primary" onClick={prevStep} size="large" className="login-button" block>
                 Back
               </Button>
             </Form.Item>
+
             <Form.Item>
               <Button
                 type="primary"
@@ -493,11 +563,12 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                 className="login-button"
                 block
                 loading={loading || isCreatingAddress || isCreatingParkingLot}
+               disabled={!isAgreeToP}
               >
                 Gửi yêu cầu tạo bãi đỗ
               </Button>
             </Form.Item>
-        </>
+          </>
         )}
       </Form>
     </div>

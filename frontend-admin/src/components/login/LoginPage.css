@@ -216,7 +216,6 @@
 }
 
 .login-form .login-button {
-  background: #1f2937;
   border: none;
   height: 4.8vh;
   font-size: 1rem;
@@ -225,9 +224,6 @@
   margin-top: 1rem;
 }
 
-.login-form .login-button:hover {
-  background: #374151;
-}
 
 /* Google Login Button */
 .login-form-section .google-login-button {

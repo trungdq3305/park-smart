@@ -24,6 +24,9 @@ export const authAPI = apiSlice.injectEndpoints({
         password: string
         phoneNumber: string
         fullName: string
+        paymentEmail: string
+        isAgreeToP: boolean
+        bussinessName: string
       }) => ({
         url: '/core/auths/operator-register',
         method: 'POST',
