@@ -122,7 +122,7 @@ namespace CoreService.Application.Applications
                 success_redirect_url = successUrl,
                 failure_redirect_url = failureUrl,
                 should_send_email = false,
-                invoice_duration = 60
+                invoice_duration = 600
             };
 
             var res = await _x.PostAsync("/v2/invoices", body, forUserId: acc.XenditUserId);
@@ -520,28 +520,19 @@ namespace CoreService.Application.Applications
 
         public async Task UpdatePaymentStatusAsync(string invoiceId, string newStatus)
         {
-            var pr = await _payRepo.GetByInvoiceIdAsync(invoiceId);
+            var pr = await _payRepo.GetByIdAsync(invoiceId);
             if (pr == null) return;
             pr.Status = newStatus;
             pr.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow); ;
             await _payRepo.UpdateAsync(pr);
         }
 
-        public async Task<bool> GetByIdAsync(string Id)
+        public async Task<PaymentRecord> GetByIdAsync(string Id)
         {
             // Giả định _payRepo có phương thức tìm kiếm theo ExternalId
             var pr = await _payRepo.GetByIdAsync(Id);
 
-            // Bạn có thể thêm logic kiểm tra null và ném ApiException nếu cần
-            if (pr == null)
-            {
-                throw new ApiException($"Không tìm thấy PaymentRecord với  ID: {Id}");
-            }
-            if (pr.Status != "PAID")
-            {
-                return false;
-            }
-            return true;
+            return pr;
         }
         public async Task<IEnumerable<PaymentRecord>> GetByCreatedByAsync(string accountId)
         {

@@ -158,31 +158,26 @@ namespace CoreService.API.Controllers
         //}
         [HttpGet("confirm")]
         [AllowAnonymous] // redirect từ Xendit không có auth
-        public async Task<IActionResult> Confirm(
-            [FromQuery] string operatorId,
-            [FromQuery] string entityId
+        public async Task<IActionResult> Confirm(string paymentId
             //[FromQuery] string externalId,
             //[FromQuery] string result // "success" | "failure"
         )
         {
             // 1) Lấy payment record mới nhất theo reservation
-            var pr = await _payment.GetLatestPaymentByReservationAsync(entityId);
+            var pr = await _payment.GetByIdAsync(paymentId);
             if (pr == null)
                 return NotFound(new { message = "No payment found for reservation" });
 
             // 2) Gọi Xendit get invoice để lấy trạng thái thật (tránh user tự sửa query)
-            var status = await _payment.GetInvoiceStatusAsync(operatorId, pr.XenditInvoiceId);
+            var status = await _payment.GetInvoiceStatusAsync(pr.OperatorId, pr.XenditInvoiceId);
 
             // 3) Map trạng thái -> cập nhật DB
             //  PENDING/PAID/SETTLED/EXPIRED/CANCELED
-            await _payment.UpdatePaymentStatusAsync(pr.XenditInvoiceId, status);
+            await _payment.UpdatePaymentStatusAsync(paymentId, status);
 
             // 4) (tuỳ chọn) chuyển hướng sang UI cuối cùng, mang theo status
-            var finalUi = $"https://parksmart.vn/pay-result" +
-                          $"?entityId={Uri.EscapeDataString(entityId)}" +
-                          $"&invoiceId={Uri.EscapeDataString(pr.XenditInvoiceId)}" +
-                          $"&status={Uri.EscapeDataString(status)}";
-            return Redirect(finalUi);
+
+            return Ok("Xác nhận thanh toán thành công");
         }
     }
 

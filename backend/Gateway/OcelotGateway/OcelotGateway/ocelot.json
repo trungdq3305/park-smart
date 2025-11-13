@@ -168,7 +168,7 @@
       }
     },
     {
-      "DownstreamPathTemplate": "/api/operators/{operatorId}/payments/{everything}",
+      "DownstreamPathTemplate": "/api/operators/payments/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -176,7 +176,7 @@
           "Port": 8080
         }
       ],
-      "UpstreamPathTemplate": "/core/operators/{operatorId}/payments/{everything}",
+      "UpstreamPathTemplate": "/core/operators/payments/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "PATCH", "DELETE"],
       "AddHeadersToRequest": {
         "X-Forwarded-Proto": "https",
