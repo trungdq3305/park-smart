@@ -742,7 +742,7 @@ export class SubscriptionService implements ISubscriptionService {
         await this.notificationService.createAndSendNotification({
           recipientId: sub.createdBy!, // ID người dùng
           recipientRole: NotificationRole.DRIVER, // Giả định người mua là DRIVER
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+           
           type: NotificationType.SUBSCRIPTION_ALERT, // Cần định nghĩa thêm loại này
           title: 'Gói Thuê Bao Sắp Hết Hạn! 🔔',
           body: `Gói thuê bao của bạn (ID: ${sub._id.slice(-4)}) sẽ hết hạn vào ngày ${expiryDate}. Vui lòng gia hạn để tiếp tục sử dụng.`,
