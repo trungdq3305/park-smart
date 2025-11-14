@@ -63,6 +63,10 @@ export class AddressRepository implements IAddressRepository {
             ...updateAddressDto,
             latitude: coordinates.latitude,
             longitude: coordinates.longitude,
+            location: {
+              type: 'Point',
+              coordinates: [coordinates.longitude, coordinates.latitude],
+            },
           },
         },
         { new: true },
