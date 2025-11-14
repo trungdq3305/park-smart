@@ -16,6 +16,7 @@ import {
   useGetAccountQuery,
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
+  useGetInactiveAccountQuery,
 } from '../../../features/admin/accountAPI'
 import type { Account } from '../../../types/Account'
 import './ManageAccountPage.css'
@@ -36,6 +37,19 @@ interface ListAccountResponse {
     }
   }
   isLoading: boolean
+}
+
+interface ListInactiveAccountResponse {
+  data: {
+    data: Account[]
+    totalItems: number
+    pageSize: number
+    totalPages: number
+    currentPage: number
+  }
+  success: boolean
+  message: string
+  isLoading :boolean
 }
 
 const translateRoleName = (roleName: string) => {
@@ -65,22 +79,36 @@ const ManageAccountPage: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
   const [isPageLoading, setIsPageLoading] = useState(false)
+  const [showInactiveAccounts, setShowInactiveAccounts] = useState(false)
 
   const { data, isLoading } = useGetAccountQuery<ListAccountResponse>({
     page: currentPage,
     pageSize,
   })
 
+  const { data: inactiveAccountData, isLoading: isInactiveAccountLoading } = useGetInactiveAccountQuery({
+    page: currentPage,
+    pageSize,
+  }) as { data: ListInactiveAccountResponse | undefined; isLoading: boolean }
+
   const [deleteAccount] = useDeleteAccountMutation()
   const [toggleAccountStatus] = useToggleAccountStatusMutation()
 
-  const accounts = data?.data?.pagedAccounts?.data || []
-  const totalItems = data?.data?.pagedAccounts?.totalItems || 0
-  const totalPages = Math.ceil(totalItems / pageSize)
+  const activeAccounts = data?.data?.pagedAccounts?.data || []
+  const inActiveAccounts = inactiveAccountData?.data?.data || []
+  
+  // Determine which accounts to display based on toggle state
+  const accounts = showInactiveAccounts ? inActiveAccounts : activeAccounts
+  const totalItems = showInactiveAccounts 
+    ? (inactiveAccountData?.data?.totalItems || 0)
+    : (data?.data?.pagedAccounts?.totalItems || 0)
+  const totalPages = showInactiveAccounts
+    ? (inactiveAccountData?.data?.totalPages || 0)
+    : Math.ceil(totalItems / pageSize)
+  
   const totalAdmins = data?.data?.totalAdmins || 0
   const totalOperators = data?.data?.totalOperators || 0
-  const totalDrivers = data?.data?.totalDrivers || 0
-
+  const totalDrivers = data?.data?.totalDrivers || 0 
   // Functions to update URL parameters
   const updateSearchParams = (updates: Record<string, string | number | null>) => {
     const newSearchParams = new URLSearchParams(searchParams)
@@ -198,7 +226,15 @@ const ManageAccountPage: React.FC = () => {
     },
   ]
 
-  if (isLoading && !isPageLoading) {
+  const handleToggleView = () => {
+    setShowInactiveAccounts(!showInactiveAccounts)
+    // Reset to page 1 when switching views
+    updateSearchParams({ page: 1 })
+  }
+
+  const isLoadingData = showInactiveAccounts ? isInactiveAccountLoading : isLoading
+
+  if (isLoadingData && !isPageLoading) {
     return (
       <div className="manage-account-page">
         <div className="loading-container">
@@ -253,7 +289,15 @@ const ManageAccountPage: React.FC = () => {
         <div className="table-container">
           <div className="table-header">
             <h3>Danh sách tài khoản</h3>
-            <span className="table-count">{accounts.length} tài khoản</span>
+            <div className="table-controls">
+              <button
+                className={`filter-btn ${showInactiveAccounts ? 'active' : ''}`}
+                onClick={handleToggleView}
+              >
+                {showInactiveAccounts ? 'Tài khoản không hoạt động' : 'Tài khoản hoạt động'}
+              </button>
+              <span className="table-count">{accounts.length} tài khoản</span>
+            </div>
           </div>
 
           <div className="table-wrapper">

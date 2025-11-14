@@ -11,6 +11,15 @@ export const accountAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['account'],
     }),
+    getInactiveAccount: builder.query({
+      query: ({ page, pageSize }) => ({
+        url: '/core/accounts/inactive-operators',
+        method: 'GET',
+        params: { page, pageSize },
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['account'],
+    }),
     getAccountById: builder.query({
       query: (id: string) => ({
         url: `/core/accounts/${id}`,
@@ -54,6 +63,14 @@ export const accountAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['account'],
     }),
+    confirmOperator: builder.mutation({
+      query: (id: string) => ({
+        url: `/core/auths/confirm-operator?id=${id}`,
+        method: 'PUT',
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['account'],
+    }),
   }),
 })
 
@@ -64,4 +81,6 @@ export const {
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
   useCreateAccountMutation,
+  useGetInactiveAccountQuery,
+  useConfirmOperatorMutation,
 } = accountAPI

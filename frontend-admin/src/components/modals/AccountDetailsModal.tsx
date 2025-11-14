@@ -1,6 +1,7 @@
 import React from 'react'
-import { Modal, Button, Descriptions, Tag } from 'antd'
+import { Modal, Button, Descriptions, Tag, message } from 'antd'
 import type { Account } from '../../types/Account'
+import { useConfirmOperatorMutation } from '../../features/admin/accountAPI'
 
 interface AccountDetailsModalProps {
   open: boolean
@@ -9,6 +10,14 @@ interface AccountDetailsModalProps {
 }
 
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
+  const [confirmOperator, { isLoading: isConfirmingOperator }] = useConfirmOperatorMutation()
+
+  const handleConfirmOperator = async () => {
+    if (account?._id) {
+      await confirmOperator(account._id).unwrap()
+      message.success('Xác nhận tài khoản operator thành công')
+    }
+  }
   const getRoleBadgeColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {
       case 'admin':
@@ -82,19 +91,24 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
               <Descriptions.Item label="Tên đầy đủ">
                 {account.operatorDetail.fullName}
               </Descriptions.Item>
-              <Descriptions.Item label="Tên công ty">
-                {account.operatorDetail.companyName}
+              <Descriptions.Item label="Tên doanh nghiệp">
+                {account.operatorDetail.bussinessName}
               </Descriptions.Item>
               <Descriptions.Item label="Mã số thuế">
-                {account.operatorDetail.taxCode}
+                {account.operatorDetail.taxCode ? account.operatorDetail.taxCode : 'Không có'}
               </Descriptions.Item>
-              <Descriptions.Item label="Email liên hệ">
-                {account.operatorDetail.contactEmail}
+              <Descriptions.Item label="Email thanh toán">
+                {account.operatorDetail.paymentEmail ? account.operatorDetail.paymentEmail : 'Không có'}
               </Descriptions.Item>
               <Descriptions.Item label="Xác thực">
                 <Tag color={account.operatorDetail.isVerified ? 'green' : 'red'}>
                   {account.operatorDetail.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
                 </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Duyệt tài khoản">
+                <Button type="primary" onClick={handleConfirmOperator} loading={isConfirmingOperator}>
+                  {isConfirmingOperator ? 'Đang duyệt...' : 'Duyệt'}
+                </Button>
               </Descriptions.Item>
             </Descriptions>
           )}
