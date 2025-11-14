@@ -3,7 +3,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { ApiProperty } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
-import { IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import {
+  IsLatLong,
+  IsMongoId,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator'
 
 // --- DTO for Request Bodies ---
 export class CreateAddressDto {
@@ -16,6 +25,20 @@ export class CreateAddressDto {
   @IsNotEmpty()
   @IsMongoId()
   wardId: string
+
+  @ApiProperty({ example: '10.762622', required: true })
+  @IsNotEmpty()
+  @IsNumber({}, { message: 'Vĩ độ (latitude) phải là một con số.' })
+  @Min(-90, { message: 'Vĩ độ (latitude) không được nhỏ hơn -90.' })
+  @Max(90, { message: 'Vĩ độ (latitude) không được lớn hơn 90.' })
+  latitude: number
+
+  @ApiProperty({ example: '106.660172', required: true })
+  @IsNotEmpty()
+  @IsNumber({}, { message: 'Kinh độ (longitude) phải là một con số.' })
+  @Min(-180, { message: 'Kinh độ (longitude) không được nhỏ hơn -180.' })
+  @Max(180, { message: 'Kinh độ (longitude) không được lớn hơn 180.' })
+  longitude: number
 }
 
 export class UpdateAddressDto {
@@ -28,6 +51,20 @@ export class UpdateAddressDto {
   @IsOptional()
   @IsMongoId()
   wardId: string
+
+  @ApiProperty({ example: '10.762622', required: true })
+  @IsNotEmpty()
+  @IsNumber({}, { message: 'Vĩ độ (latitude) phải là một con số.' })
+  @Min(-90, { message: 'Vĩ độ (latitude) không được nhỏ hơn -90.' })
+  @Max(90, { message: 'Vĩ độ (latitude) không được lớn hơn 90.' })
+  latitude: number
+
+  @ApiProperty({ example: '106.660172', required: true })
+  @IsNotEmpty()
+  @IsNumber({}, { message: 'Kinh độ (longitude) phải là một con số.' })
+  @Min(-180, { message: 'Kinh độ (longitude) không được nhỏ hơn -180.' })
+  @Max(180, { message: 'Kinh độ (longitude) không được lớn hơn 180.' })
+  longitude: number
 }
 
 // --- DTO for Response (sử dụng với ClassSerializerInterceptor) ---
