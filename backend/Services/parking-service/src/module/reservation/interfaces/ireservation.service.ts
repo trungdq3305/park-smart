@@ -94,13 +94,8 @@ export interface IReservationService {
   updateReservationStatusByAdmin(
     id: IdDto,
     updateDto: UpdateReservationStatusDto,
-  ): Promise<ReservationDetailResponseDto>
-
-  /**
-   * Tự động cập nhật các đơn đặt chỗ quá hạn thành 'EXPIRED'.
-   * (Chạy trong cron job).
-   */
-  updateOverdueReservationsToExpired(): Promise<void>
+    userId: string,
+  ): Promise<boolean>
 }
 
 export const IReservationService = Symbol('IReservationService')
