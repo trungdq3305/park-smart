@@ -31,14 +31,6 @@ export class Reservation extends BaseEntity {
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Người dùng đặt vé
-    index: true,
-  })
-  userId: string
-
-  @Prop({
-    required: true,
-    type: mongoose.Schema.Types.ObjectId,
     ref: 'PricingPolicy', // Chính sách giá đã dùng để tính tiền
   })
   pricingPolicyId: string
@@ -66,7 +58,7 @@ export class Reservation extends BaseEntity {
     required: true,
     type: Date,
   })
-  estimatedEndTime: Date // Tổng tiền (sau khi áp dụng khuyến mãi nếu có)
+  estimatedEndTime: Date // Giờ dự kiến kết thúc (11:15)
 
   @Prop({
     required: true,

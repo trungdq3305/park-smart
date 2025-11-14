@@ -9,6 +9,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
@@ -50,6 +51,8 @@ export class ReservationService implements IReservationService {
     @Inject(IAccountServiceClient)
     private readonly accountServiceClient: IAccountServiceClient,
   ) {}
+
+  private readonly logger: Logger = new Logger(ReservationService.name)
 
   private returnToDto(reservation: Reservation): ReservationDetailResponseDto {
     // Chuyển đổi entity/model sang DTO (có thể dùng class-transformer nếu cần)
@@ -388,14 +391,11 @@ export class ReservationService implements IReservationService {
           'Thanh toán không hợp lệ hoặc sai thông tin.',
         )
       }
-      const updateData = {
-        status: ReservationStatusEnum.CONFIRMED,
-        paymentId: confirmDto.paymentId,
-      }
+
       const updatedReservation =
         await this.reservationRepository.updateReservationPaymentId(
           id.id,
-          updateData,
+          confirmDto.paymentId,
           session,
         )
       if (!updatedReservation) {
@@ -403,6 +403,7 @@ export class ReservationService implements IReservationService {
           'Không thể cập nhật thông tin thanh toán cho đơn đặt chỗ.',
         )
       }
+      await session.commitTransaction()
       return updatedReservation
     } catch (error) {
       await session.abortTransaction()
@@ -473,19 +474,153 @@ export class ReservationService implements IReservationService {
     return this.returnToDto(data)
   }
 
-  cancelReservationByUser(id: IdDto, userId: string): Promise<boolean> {
-    throw new Error('Method not implemented.')
+  async cancelReservationByUser(id: IdDto, userId: string): Promise<boolean> {
+    const session = await this.connection.startSession()
+    session.startTransaction()
+
+    try {
+      // --- BƯỚC 1: LẤY VÉ (RESERVATION) ---
+      // (Lấy bản ghi, khóa nó lại bằng session)
+      const reservation = await this.reservationRepository.findReservationById(
+        id.id,
+        session, // ⭐️ Rất quan trọng: Khóa bản ghi này
+      )
+
+      if (!reservation) {
+        throw new NotFoundException('Không tìm thấy đơn đặt chỗ.')
+      }
+
+      // --- BƯỚC 2: KIỂM TRA TRẠNG THÁI (GUARD CLAUSES) ---
+      // Chỉ cho hủy nếu vé đang PENDING hoặc CONFIRMED
+      if (
+        reservation.status !== ReservationStatusEnum.PENDING_PAYMENT &&
+        reservation.status !== ReservationStatusEnum.CONFIRMED
+      ) {
+        throw new ConflictException(
+          'Không thể hủy: Vé này đã được check-in, đã hết hạn hoặc đã bị hủy trước đó.',
+        )
+      }
+
+      // --- BƯỚC 3: KIỂM TRA QUY TẮC CẮT GIỜ (LOGIC CỦA BẠN) ---
+      const CANCELLATION_CUTOFF_MINUTES = 15 // ⭐️ Quy tắc 15 phút
+      const now = new Date()
+      const expectedTime = new Date(reservation.userExpectedTime)
+
+      // Tính số mili-giây còn lại
+      const timeRemainingMs = expectedTime.getTime() - now.getTime()
+      const timeRemainingMinutes = timeRemainingMs / (1000 * 60)
+
+      if (timeRemainingMinutes <= CANCELLATION_CUTOFF_MINUTES) {
+        throw new BadRequestException(
+          `Không thể hủy. Đã quá sát giờ (còn ${CANCELLATION_CUTOFF_MINUTES} phút).`,
+        )
+      }
+
+      // --- BƯỚC 4: HÀNH ĐỘNG (ACT) ---
+
+      // 4a. Cập nhật "Vé" -> HỦY
+      await this.reservationRepository.updateReservationStatus(
+        id.id,
+        ReservationStatusEnum.CANCELLED_BY_USER,
+        userId,
+        session,
+      )
+
+      // 4b. TRẢ LẠI "SLOT" CHO KHO (Rất quan trọng)
+      // (Chỉ trả slot nếu vé đã được xác nhận, vì PENDING chưa lấy slot)
+      if (reservation.status === ReservationStatusEnum.CONFIRMED) {
+        // (Bạn cần tính lại inventoryStartTime/EndTime dựa trên vé)
+        const inventoryStartTime = new Date(reservation.inventoryTimeSlot)
+        const inventoryEndTime = new Date(reservation.estimatedEndTime)
+        inventoryEndTime.setMinutes(0, 0, 0) // Chuẩn hóa về 00 phút
+        // (Bạn cần logic để lấy lại 'estimatedEndTime' và 'blockSize')
+
+        await this.bookingInventoryRepository.updateInventoryCounts(
+          reservation.parkingLotId,
+          inventoryStartTime,
+          inventoryEndTime,
+          -1, // ⭐️ Trừ 1 (TRẢ SLOT)
+          session,
+        )
+      }
+
+      // (4c. Xử lý Hoàn tiền - Gọi Payment Service để refund 'paymentId')
+      // if (reservation.paymentId) {
+      //   await this.paymentService.requestRefund(reservation.paymentId);
+      // }
+
+      await session.commitTransaction()
+      return true
+    } catch (error) {
+      await session.abortTransaction()
+      throw error // Ném lại lỗi (404, 400, 409...)
+    } finally {
+      await session.endSession()
+    }
   }
 
-  updateReservationStatusByAdmin(
+  async updateReservationStatusByAdmin(
     id: IdDto,
     updateDto: UpdateReservationStatusDto,
-  ): Promise<ReservationDetailResponseDto> {
-    throw new Error('Method not implemented.')
+    userId: string,
+  ): Promise<boolean> {
+    const data = await this.reservationRepository.findReservationById(id.id)
+    if (!data) {
+      throw new NotFoundException('Đơn đặt chỗ không tồn tại.')
+    }
+    // Cập nhật trạng thái
+    const session = await this.connection.startSession()
+    session.startTransaction()
+    try {
+      const updatedReservation =
+        await this.reservationRepository.updateReservationStatusForAdmin(
+          id.id,
+          userId,
+          updateDto.status,
+          session,
+        )
+      if (!updatedReservation) {
+        throw new InternalServerErrorException(
+          'Không thể cập nhật trạng thái đơn đặt chỗ.',
+        )
+      }
+      await session.commitTransaction()
+      return true
+    } catch (error) {
+      await session.abortTransaction()
+      throw error
+    } finally {
+      await session.endSession()
+    }
   }
 
   @Cron('0 */3 * * * *')
-  updateOverdueReservationsToExpired(): Promise<void> {
-    throw new Error('Method not implemented.')
+  async updateOverdueReservationsToExpired(): Promise<void> {
+    this.logger.log(
+      '[CronJob] Bắt đầu dọn dẹp các reservation PENDING_PAYMENT quá hạn...',
+    )
+
+    // 1. Tính thời gian "cắt" (10 phút trước)
+    const TEN_MINUTES_AGO_MS = 10 * 60 * 1000
+    const cutoffTime = new Date(Date.now() - TEN_MINUTES_AGO_MS)
+
+    try {
+      // 2. Gọi hàm Repository (đã sửa)
+      const result =
+        await this.reservationRepository.updateExpiredPendingReservations(
+          cutoffTime,
+        )
+
+      if (result.modifiedCount > 0) {
+        this.logger.log(
+          `[CronJob] Đã hủy ${String(result.modifiedCount)} gói thuê bao quá hạn thanh toán.`,
+        )
+      }
+    } catch (error) {
+      this.logger.error(
+        `[CronJob] Gặp lỗi khi dọn dẹp gói thuê bao: ${error.message}`,
+        error.stack,
+      )
+    }
   }
 }
