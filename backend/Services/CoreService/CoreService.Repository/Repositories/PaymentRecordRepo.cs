@@ -103,5 +103,19 @@ namespace CoreService.Repository.Repositories
                              .SortByDescending(x => x.CreatedAt)
                              .ToListAsync();
         }
+        public async Task<IEnumerable<PaymentRecord>> GetByCreatedByAndStatusAsync(
+    string accountId,
+    string status,
+    int take = 50)
+        {
+            // Tạo filter cho cả CreatedBy và Status
+            var filter = Builders<PaymentRecord>.Filter.Eq(x => x.CreatedBy, accountId) &
+                         Builders<PaymentRecord>.Filter.Eq(x => x.Status, status);
+
+            return await _col.Find(filter)
+                .SortByDescending(x => x.CreatedAt)
+                .Limit(take)
+                .ToListAsync();
+        }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.DashboardDtos;
 using CoreService.Application.DTOs.PaymentDtos.CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Repository.Models;
 using System;
@@ -43,5 +44,12 @@ namespace CoreService.Application.Interfaces
             string operatorId, IEnumerable<string> statuses);
         Task<string> GetOperatorAccountStatusAsync(string operatorId);
         Task<object> GetXenditInvoiceDetailAsync(string paymentId);
+        Task<IEnumerable<PaymentRecord>> GetByCreatedByAndStatusAsync(
+        string accountId,
+        string status);
+    //    Task<IEnumerable<DriverRevenueDetailDto>> GetDriverRevenueForOperatorAsync(
+    //string operatorId, DateTime? from, DateTime? to);
+    //    Task<IEnumerable<SaasRevenueDetailDto>> GetSaasRevenueForAdminAsync(
+    //DateTime? from, DateTime? to);
     }
 }
