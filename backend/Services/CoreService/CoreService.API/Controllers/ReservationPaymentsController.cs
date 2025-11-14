@@ -93,7 +93,43 @@ namespace CoreService.API.Controllers
         }
         // Trong PaymentController
         // ...
+        [HttpGet("createdBy/me/status")]
+        [Authorize(Roles = "Driver,Operator,Admin")] // Các vai trò có thể tạo invoice
+        public async Task<IActionResult> GetByCreatedByMeAndStatus([FromQuery] string status)
+        {
+            // 1. Lấy accountId của người dùng hiện tại từ token
+            var accountId = User.FindFirst("id")?.Value;
 
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return Unauthorized(new { message = "Không tìm thấy Account ID trong token." });
+            }
+
+            if (string.IsNullOrEmpty(status))
+            {
+                return BadRequest(new { message = "Vui lòng cung cấp trạng thái (status) cần lọc." });
+            }
+
+            try
+            {
+                // 2. Gọi Application Layer để lấy danh sách PaymentRecord theo CreatedBy và Status
+                var records = await _payment.GetByCreatedByAndStatusAsync(accountId, status);
+
+                if (records == null || !records.Any())
+                {
+                    return NotFound(new { message = $"Không tìm thấy giao dịch nào với trạng thái '{status}' được tạo bởi bạn." });
+                }
+
+                // 3. Trả về danh sách
+                return Ok(records);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi (tùy thuộc vào cấu trúc logging của bạn)
+                // Ví dụ: _logger.LogError(ex, "Lỗi khi lấy giao dịch theo trạng thái.");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi nội bộ khi xử lý yêu cầu." });
+            }
+        }
         [HttpGet("refunds/createdBy/me")] // Endpoint mới
         [Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> GetRefundsByCreatedByMe()
@@ -118,8 +154,8 @@ namespace CoreService.API.Controllers
         }
 
 
-        [HttpPost("{paymentId}/refund-by-id")] // Endpoint mới: refund theo PaymentRecord ID
-        [Authorize(Roles = "Operator,Admin")]
+        [HttpPost("refund-by-id")] // Endpoint mới: refund theo PaymentRecord ID
+        [Authorize(Roles = "Driver")]
         public async Task<IActionResult> RefundByPaymentId(
     string operatorId, string paymentId, [FromBody] RefundDto dto)
         {
