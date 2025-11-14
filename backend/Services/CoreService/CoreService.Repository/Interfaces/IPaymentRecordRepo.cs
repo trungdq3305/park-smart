@@ -28,5 +28,9 @@ namespace CoreService.Repository.Interfaces
         string operatorId,
         PaymentType type,
         IEnumerable<string> statuses);
+        Task<IEnumerable<PaymentRecord>> GetByCreatedByAndStatusAsync(
+        string accountId,
+        string status,
+        int take = 50);
     }
 }

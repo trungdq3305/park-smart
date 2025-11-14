@@ -1,4 +1,5 @@
 ﻿using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.DashboardDtos;
 using CoreService.Application.DTOs.PaymentDtos.CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
@@ -22,6 +23,8 @@ namespace CoreService.Application.Applications
         private readonly IPaymentRecordRepo _payRepo;
         private readonly IRefundRecordRepo _refundRepo;
         private readonly IAccountApplication _accountApp;
+        private readonly IAccountRepository _accountRepo;
+
         public PaymentApp(IXenditClient x,
             IOperatorPaymentAccountRepo accRepo,
             IPaymentRecordRepo payRepo,
@@ -721,6 +724,162 @@ namespace CoreService.Application.Applications
                 };
             }
         }
+        public async Task<IEnumerable<PaymentRecord>> GetByCreatedByAndStatusAsync(
+    string accountId,
+    string status)
+        {
+            // Có thể thêm logic validation ở đây nếu cần
+
+            // Gọi Repository (Giả định bạn muốn giới hạn 50 bản ghi)
+            var records = await _payRepo.GetByCreatedByAndStatusAsync(accountId, status, 50);
+
+            return records;
+        }
+
+    //    public async Task<IEnumerable<SaasRevenueDetailDto>> GetSaasRevenueForAdminAsync(
+    //DateTime? from, DateTime? to)
+    //    {
+    //        // 1. Lấy tất cả PaymentRecord loại OperatorCharge trong khoảng thời gian
+    //        var records = await _payRepo.GetOperatorChargesAsync(from, to);
+    //        // (Giả định có method này trong Repo)
+
+    //        // 2. Lấy tất cả thông tin Operator liên quan
+    //        var operatorIds = records.Select(r => r.OperatorId).Distinct().ToList();
+    //        var operators = await _operatorRepo.GetByIdsAsync(operatorIds);
+    //        var operatorsDict = operators.ToDictionary(o => o.Id);
+
+    //        // 3. Mapping và trả về
+    //        var result = new List<SaasRevenueDetailDto>();
+    //        foreach (var record in records.OrderByDescending(r => r.CreatedAt))
+    //        {
+    //            if (operatorsDict.TryGetValue(record.OperatorId, out var op))
+    //            {
+    //                result.Add(new SaasRevenueDetailDto
+    //                {
+    //                    OperatorName = op.FullName,
+    //                    OperatorBusinessName = op.BussinessName,
+    //                    PaymentId = record.Id,
+    //                    Amount = record.Amount,
+    //                    DueDate = record.DueDate ?? DateTime.MinValue,
+    //                    Status = record.Status,
+    //                    CreatedAt = record.CreatedAt
+    //                });
+    //            }
+    //        }
+    //        return result;
+    //    }
+
+    //    public async Task<IEnumerable<DriverRevenueDetailDto>> GetDriverRevenueForOperatorAsync(
+    //string operatorId, DateTime? from, DateTime? to)
+    //    {
+    //        // 1. Lấy PaymentRecord cho OperatorId, loại trừ OperatorCharge
+    //        var records = await _payRepo.GetPaymentsByOperatorExcludingChargeAsync(
+    //            operatorId, from, to);
+    //        // (Giả định có method này trong Repo: Lấy RES, SUB, SES)
+
+    //        // 2. Lấy tất cả Driver Account liên quan (CreatedBy là AccountId của Driver)
+    //        var createdByAccountIds = records.Select(r => r.CreatedBy).Distinct().ToList();
+
+    //        // Chú ý: Bạn cần method trong AccountApplication hoặc Repo để lấy Driver và Account
+    //        // Giả định bạn có: IDriverRepository.GetByAccountIdsAsync(createdByAccountIds)
+    //        var drivers = await _driverRepo.GetByAccountIdsAsync(createdByAccountIds);
+    //        var accounts = await _accountRepo.GetByIdsAsync(createdByAccountIds);
+
+    //        var driversDict = drivers.ToDictionary(d => d.AccountId);
+    //        var accountsDict = accounts.ToDictionary(a => a.Id);
+
+    //        // 3. Mapping và trả về
+    //        var result = new List<DriverRevenueDetailDto>();
+    //        foreach (var record in records.OrderByDescending(r => r.CreatedAt))
+    //        {
+    //            if (accountsDict.TryGetValue(record.CreatedBy, out var acc) &&
+    //                driversDict.TryGetValue(record.CreatedBy, out var driver))
+    //            {
+    //                result.Add(new DriverRevenueDetailDto
+    //                {
+    //                    DriverName = driver.FullName,
+    //                    DriverPhoneNumber = acc.PhoneNumber,
+    //                    Amount = record.Amount,
+    //                    PaymentType = record.PaymentType.ToString(),
+    //                    Status = record.Status,
+    //                    CreatedAt = record.CreatedAt
+    //                });
+    //            }
+    //        }
+    //        return result;
+    //    }
+    //    public async Task<IEnumerable<SaasRevenueDetailDto>> GetSaasRevenueForAdminAsync(
+    //DateTime? from, DateTime? to)
+    //    {
+    //        // 1. Lấy tất cả PaymentRecord loại OperatorCharge trong khoảng thời gian
+    //        var records = await _payRepo.GetOperatorChargesAsync(from, to);
+    //        // (Giả định có method này trong Repo)
+
+    //        // 2. Lấy tất cả thông tin Operator liên quan
+    //        var operatorIds = records.Select(r => r.OperatorId).Distinct().ToList();
+    //        var operators = await _operatorRepo.GetByIdsAsync(operatorIds);
+    //        var operatorsDict = operators.ToDictionary(o => o.Id);
+
+    //        // 3. Mapping và trả về
+    //        var result = new List<SaasRevenueDetailDto>();
+    //        foreach (var record in records.OrderByDescending(r => r.CreatedAt))
+    //        {
+    //            if (operatorsDict.TryGetValue(record.OperatorId, out var op))
+    //            {
+    //                result.Add(new SaasRevenueDetailDto
+    //                {
+    //                    OperatorName = op.FullName,
+    //                    OperatorBusinessName = op.BussinessName,
+    //                    PaymentId = record.Id,
+    //                    Amount = record.Amount,
+    //                    DueDate = record.DueDate ?? DateTime.MinValue,
+    //                    Status = record.Status,
+    //                    CreatedAt = record.CreatedAt
+    //                });
+    //            }
+    //        }
+    //        return result;
+    //    }
+
+    //    public async Task<IEnumerable<DriverRevenueDetailDto>> GetDriverRevenueForOperatorAsync(
+    //string operatorId, DateTime? from, DateTime? to)
+    //    {
+    //        // 1. Lấy PaymentRecord cho OperatorId, loại trừ OperatorCharge
+    //        var records = await _payRepo.GetPaymentsByOperatorExcludingChargeAsync(
+    //            operatorId, from, to);
+    //        // (Giả định có method này trong Repo: Lấy RES, SUB, SES)
+
+    //        // 2. Lấy tất cả Driver Account liên quan (CreatedBy là AccountId của Driver)
+    //        var createdByAccountIds = records.Select(r => r.CreatedBy).Distinct().ToList();
+
+    //        // Chú ý: Bạn cần method trong AccountApplication hoặc Repo để lấy Driver và Account
+    //        // Giả định bạn có: IDriverRepository.GetByAccountIdsAsync(createdByAccountIds)
+    //        var drivers = await _driverRepo.GetByAccountIdsAsync(createdByAccountIds);
+    //        var accounts = await _accountRepo.GetByIdsAsync(createdByAccountIds);
+
+    //        var driversDict = drivers.ToDictionary(d => d.AccountId);
+    //        var accountsDict = accounts.ToDictionary(a => a.Id);
+
+    //        // 3. Mapping và trả về
+    //        var result = new List<DriverRevenueDetailDto>();
+    //        foreach (var record in records.OrderByDescending(r => r.CreatedAt))
+    //        {
+    //            if (accountsDict.TryGetValue(record.CreatedBy, out var acc) &&
+    //                driversDict.TryGetValue(record.CreatedBy, out var driver))
+    //            {
+    //                result.Add(new DriverRevenueDetailDto
+    //                {
+    //                    DriverName = driver.FullName,
+    //                    DriverPhoneNumber = acc.PhoneNumber,
+    //                    Amount = record.Amount,
+    //                    PaymentType = record.PaymentType.ToString(),
+    //                    Status = record.Status,
+    //                    CreatedAt = record.CreatedAt
+    //                });
+    //            }
+    //        }
+    //        return result;
+    //    }
     }
     
     }
