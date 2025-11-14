@@ -44,12 +44,8 @@ const useScrollAnimation = (options: ScrollAnimationOptions = {}) => {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          if (ref.current) {
-            observer.unobserve(ref.current)
-          }
-        }
+        // Cập nhật trạng thái dựa trên việc element có trong viewport hay không
+        setIsVisible(entry.isIntersecting)
       },
       {
         threshold: options.threshold || 0.1,
@@ -57,16 +53,17 @@ const useScrollAnimation = (options: ScrollAnimationOptions = {}) => {
       }
     )
 
-    if (ref.current) {
-      observer.observe(ref.current)
+    const currentRef = ref.current
+    if (currentRef) {
+      observer.observe(currentRef)
     }
 
     return () => {
-      if (ref.current) {
-        observer.unobserve(ref.current)
+      if (currentRef) {
+        observer.unobserve(currentRef)
       }
     }
-  }, [])
+  }, [options.threshold, options.rootMargin])
 
   return [ref, isVisible] as const
 }
@@ -415,7 +412,7 @@ const HomePage: React.FC = () => {
 
       <section id="testimonials" className="testimonials-section">
         <div ref={testimonialsHeadingRef} className={`section-heading light ${testimonialsHeadingVisible ? 'animate-in' : ''}`}>
-          <Tag color="green">Khách hàng nói gì?</Tag>
+          <Tag color="darkgreen">Khách hàng nói gì?</Tag>
           <h2>Niềm tin từ hàng nghìn người dùng mỗi ngày</h2>
           <p>
             Các chủ bãi đỗ, doanh nghiệp và người lái xe trên khắp Việt Nam đang tăng trưởng cùng
