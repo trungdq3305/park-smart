@@ -280,27 +280,29 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     daysRemaining: number,
     today: Date,
   ): Promise<Pick<Subscription, '_id' | 'createdBy' | 'endDate' | 'status'>[]> {
-    const targetDate = new Date(today.getTime());
+    const targetDate = new Date(today.getTime())
     // Thêm số ngày để tính ra ngày HẾT HẠN MONG MUỐN (ví dụ: today + 3 ngày)
-    targetDate.setDate(targetDate.getDate() + daysRemaining);
+    targetDate.setDate(targetDate.getDate() + daysRemaining)
 
     const filter = {
       status: SubscriptionStatusEnum.ACTIVE, // Chỉ quét các gói đang hoạt động
       deletedAt: null,
-      
+
       // Ngày hết hạn (endDate) phải TRƯỚC HOẶC BẰNG ngày mục tiêu (targetDate)
       // VÀ phải LỚN HƠN ngày hiện tại (today)
-      endDate: { 
-        $lte: targetDate, 
-        $gt: today 
+      endDate: {
+        $lte: targetDate,
+        $gt: today,
       },
-    };
+    }
 
-    return this.subscriptionModel
-      .find(filter)
-      // Lấy các trường cần thiết để gửi thông báo (ID gói, ID người dùng, ngày hết hạn)
-      .select('_id createdBy endDate status')
-      .lean()
-      .exec();
+    return (
+      this.subscriptionModel
+        .find(filter)
+        // Lấy các trường cần thiết để gửi thông báo (ID gói, ID người dùng, ngày hết hạn)
+        .select('_id createdBy endDate status')
+        .lean()
+        .exec()
+    )
   }
 }

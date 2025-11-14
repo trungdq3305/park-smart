@@ -33,4 +33,19 @@ export enum ReservationStatusEnum {
    * Admin hoặc hệ thống (ví dụ: lỗi thanh toán) hủy vé.
    */
   CANCELLED_BY_OPERATOR = 'CANCELLED_BY_OPERATOR',
+
+  /**
+   * Hoàn tiền cho người dùng sau khi hủy vé.
+   */
+  REFUND = 'REFUND',
+
+  /**
+   * Hủy do không thanh toán trong thời gian quy định.
+   */
+  CANCELLED_DUE_TO_NON_PAYMENT = 'CANCELLED_DUE_TO_NON_PAYMENT',
+
+  /**
+   * Thanh toán không thành công.
+   */
+  PAYMENT_FAILED = 'PAYMENT_FAILED',
 }

@@ -1,6 +1,5 @@
 import type { ClientSession } from 'mongoose'
 
-import type { ConfirmReservationPaymentDto } from '../dto/reservation.dto'
 // Import DTO (Nếu dùng) hoặc Schema
 import type { ReservationStatusEnum } from '../enums/reservation.enum'
 import type { Reservation } from '../schemas/reservation.schema' // <-- Đường dẫn Schema
@@ -65,11 +64,13 @@ export interface IReservationRepository {
    * Cập nhật trạng thái của một đơn đặt chỗ (ví dụ: CONFIRMED -> CHECKED_IN).
    * @param id ID của đơn đặt chỗ.
    * @param status Trạng thái mới.
+   * @param userId ID của người dùng (để ghi log).
    * @param session (Bắt buộc) Phải chạy trong transaction (ví dụ: cùng với việc tạo ParkingSession).
    */
   updateReservationStatus(
     id: string,
     status: ReservationStatusEnum,
+    userId: string,
     session: ClientSession,
   ): Promise<boolean>
 
@@ -91,9 +92,31 @@ export interface IReservationRepository {
    */
   updateReservationPaymentId(
     id: string,
-    updateData: ConfirmReservationPaymentDto,
+    paymentId: string,
     session: ClientSession,
   ): Promise<boolean>
+
+  /**
+   * Cập nhật trạng thái của một đơn đặt chỗ (ví dụ: CONFIRMED -> CHECKED_IN).
+   * @param id ID của đơn đặt chỗ.
+   * @param userId ID của admin.
+   * @param status Trạng thái mới.
+   * @param session (Bắt buộc) Phải chạy trong transaction (ví dụ: cùng với việc tạo ParkingSession).
+   */
+  updateReservationStatusForAdmin(
+    id: string,
+    userId: string,
+    status: ReservationStatusEnum,
+    session: ClientSession,
+  ): Promise<boolean>
+
+  /**   * Cập nhật tất cả các đơn đặt chỗ 'PENDING_PAYMENT' đã quá hạn sang 'EXPIRED'.
+   * Dùng cho Cron Job.
+   * @param cutoffTime Thời gian "cắt" (ví dụ: 15 phút trước).
+   */
+  updateExpiredPendingReservations(
+    cutoffTime: Date,
+  ): Promise<{ modifiedCount: number; matchedCount: number }>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')

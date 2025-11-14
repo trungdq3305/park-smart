@@ -23,6 +23,7 @@ import { ParkingLotPolicyLinkModule } from './module/parkingLotPolicyLinks/parki
 import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
 import { ParkingSpaceStatusModule } from './module/parkingSpaceStatus/parkingSpaceStatus.module'
 import { PricingPolicyModule } from './module/pricingPolicy/pricingPolicy.module'
+import { ReservationModule } from './module/reservation/reservation.module'
 import { SubscriptionModule } from './module/subscription/subcription.module'
 import { TieredRateSetModule } from './module/tieredRateSet/tieredRateSet.module'
 import { WardModule } from './module/ward/ward.module'
@@ -66,6 +67,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     AnnouncementModule,
     ParkingLotPolicyLinkModule,
     SubscriptionModule,
+    ReservationModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
