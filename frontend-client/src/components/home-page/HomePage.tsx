@@ -346,7 +346,10 @@ const HomePage: React.FC = () => {
               </Row>
 
               <Form.Item label="Số điện thoại" name="phone">
-                <Input prefix={<PhoneOutlined />} placeholder="Nhập số điện thoại để nhận xác nhận" />
+                <Input
+                  prefix={<PhoneOutlined />}
+                  placeholder="Nhập số điện thoại để nhận xác nhận"
+                />
               </Form.Item>
 
               <Button type="primary" size="large" block>
@@ -354,19 +357,23 @@ const HomePage: React.FC = () => {
               </Button>
             </Form>
             <div className="form-meta">
-              <ClockCircleOutlined /> Giữ chỗ miễn phí trong 45 phút • <SmileOutlined /> Hỗ trợ khách hàng 24/7
+              <ClockCircleOutlined /> Giữ chỗ miễn phí trong 45 phút • <SmileOutlined /> Hỗ trợ
+              khách hàng 24/7
             </div>
           </Card>
         </div>
       </header>
 
       <section id="features" className="features-section">
-        <div ref={featuresHeadingRef} className={`section-heading ${featuresHeadingVisible ? 'animate-in' : ''}`}>
+        <div
+          ref={featuresHeadingRef}
+          className={`section-heading ${featuresHeadingVisible ? 'animate-in' : ''}`}
+        >
           <Tag color="green">Tại sao chọn ParkSmart?</Tag>
           <h2>Trải nghiệm đỗ xe thông minh và liền mạch</h2>
           <p>
-            ParkSmart kết nối bạn với hệ sinh thái bãi đỗ xe hiện đại, giúp tiết kiệm thời gian,
-            chi phí và đảm bảo an toàn tối đa cho phương tiện.
+            ParkSmart kết nối bạn với hệ sinh thái bãi đỗ xe hiện đại, giúp tiết kiệm thời gian, chi
+            phí và đảm bảo an toàn tối đa cho phương tiện.
           </p>
         </div>
 
@@ -379,7 +386,10 @@ const HomePage: React.FC = () => {
 
       <section id="benefits" className="benefits-section">
         <div className="benefits-content">
-          <div ref={benefitsTextRef} className={`benefits-text ${benefitsTextVisible ? 'animate-in' : ''}`}>
+          <div
+            ref={benefitsTextRef}
+            className={`benefits-text ${benefitsTextVisible ? 'animate-in' : ''}`}
+          >
             <Tag color="green">Dành cho chủ bãi & doanh nghiệp</Tag>
             <h2>Tăng trưởng doanh thu và vận hành dễ dàng</h2>
             <p>
@@ -411,7 +421,10 @@ const HomePage: React.FC = () => {
       </section>
 
       <section id="testimonials" className="testimonials-section">
-        <div ref={testimonialsHeadingRef} className={`section-heading light ${testimonialsHeadingVisible ? 'animate-in' : ''}`}>
+        <div
+          ref={testimonialsHeadingRef}
+          className={`section-heading light ${testimonialsHeadingVisible ? 'animate-in' : ''}`}
+        >
           <Tag color="darkgreen">Khách hàng nói gì?</Tag>
           <h2>Niềm tin từ hàng nghìn người dùng mỗi ngày</h2>
           <p>
@@ -434,7 +447,9 @@ const HomePage: React.FC = () => {
               <span className="brand-logo">P</span>
               <div>
                 <h3>ParkSmart</h3>
-                <p>Đồng hành cùng hàng nghìn chủ bãi và tài xế trong hành trình đỗ xe thông minh.</p>
+                <p>
+                  Đồng hành cùng hàng nghìn chủ bãi và tài xế trong hành trình đỗ xe thông minh.
+                </p>
               </div>
             </div>
             <nav className="footer-nav">
@@ -444,8 +459,9 @@ const HomePage: React.FC = () => {
               <a href="#testimonials">Khách hàng</a>
             </nav>
             <p className="footer-description">
-              ParkSmart mang đến nền tảng đặt chỗ và quản lý bãi đỗ xe toàn diện. Từ sân bay, trung tâm
-              thương mại đến khu dân cư, chúng tôi giúp tối ưu lưu lượng đỗ xe và gia tăng trải nghiệm khách hàng.
+              ParkSmart mang đến nền tảng đặt chỗ và quản lý bãi đỗ xe toàn diện. Từ sân bay, trung
+              tâm thương mại đến khu dân cư, chúng tôi giúp tối ưu lưu lượng đỗ xe và gia tăng trải
+              nghiệm khách hàng.
             </p>
           </div>
 

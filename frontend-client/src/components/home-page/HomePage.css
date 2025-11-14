@@ -20,7 +20,12 @@
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(6, 58, 37, 0.92) 10%, rgba(8, 100, 60, 0.8) 45%, rgba(8, 24, 19, 0.92) 85%);
+  background: linear-gradient(
+    135deg,
+    rgba(6, 58, 37, 0.92) 10%,
+    rgba(8, 100, 60, 0.8) 45%,
+    rgba(8, 24, 19, 0.92) 85%
+  );
   z-index: 0;
 }
 
@@ -123,7 +128,7 @@
   border-radius: 999px;
   padding: 0.6vh 1.67vh;
   background: rgba(125, 255, 185, 0.18);
-  color: #8fffc9 ;
+  color: #8fffc9;
   border: none;
   font-weight: 600;
   margin-bottom: 2.5vh;
@@ -255,7 +260,9 @@
   border-radius: 2.1vh;
   padding: 2.9vh;
   box-shadow: 0 2.5vh 5vh rgba(6, 58, 37, 0.12);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   height: 100%;
 }
 
@@ -395,7 +402,9 @@
   height: 100%;
   opacity: 0;
   transform: translateY(3.1vh) scale(0.95);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 
 .testimonial-card-wrapper.animate-in {
@@ -577,7 +586,9 @@
   background: rgba(255, 255, 255, 0.08);
   color: #7ef6c3;
   font-size: 1.125rem;
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
 }
 
 .footer-socials a:hover {
@@ -761,7 +772,9 @@
 .hero-content {
   opacity: 0;
   transform: translateY(4.2vh);
-  transition: opacity 1s ease-out, transform 1s ease-out;
+  transition:
+    opacity 1s ease-out,
+    transform 1s ease-out;
 }
 
 .hero-content.animate-in {
@@ -772,7 +785,9 @@
 .section-heading {
   opacity: 0;
   transform: translateY(4.2vh);
-  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+  transition:
+    opacity 0.8s ease-out,
+    transform 0.8s ease-out;
 }
 
 .section-heading.animate-in {
@@ -783,7 +798,9 @@
 .benefits-text {
   opacity: 0;
   transform: translateX(-6.25vh);
-  transition: opacity 0.9s ease-out, transform 0.9s ease-out;
+  transition:
+    opacity 0.9s ease-out,
+    transform 0.9s ease-out;
 }
 
 .benefits-text.animate-in {
@@ -794,7 +811,9 @@
 .feature-card-wrapper {
   opacity: 0;
   transform: translateY(5.2vh);
-  transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
 }
 
 .feature-card-wrapper.animate-in {
@@ -805,7 +824,9 @@
 .benefit-card-wrapper {
   opacity: 0;
   transform: translateX(4.2vh) scale(0.95);
-  transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+  transition:
+    opacity 0.7s ease-out,
+    transform 0.7s ease-out;
 }
 
 .benefit-card-wrapper.animate-in {
@@ -815,7 +836,9 @@
 
 /* Enhanced hover effects for animated cards */
 .feature-card-wrapper.animate-in .feature-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .feature-card-wrapper.animate-in:hover .feature-card {
@@ -824,7 +847,9 @@
 }
 
 .benefit-card-wrapper.animate-in .benefit-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .benefit-card-wrapper.animate-in:hover .benefit-card {
@@ -833,7 +858,9 @@
 }
 
 .testimonial-card-wrapper.animate-in .testimonial-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .testimonial-card-wrapper.animate-in:hover .testimonial-card {
@@ -860,9 +887,9 @@ html {
   .feature-card-wrapper,
   .benefit-card-wrapper,
   .testimonial-card-wrapper {
-    animation: none ;
-    opacity: 1 ;
-    transform: none ;
-    transition: none ;
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 }
