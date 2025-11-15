@@ -43,5 +43,7 @@ namespace CoreService.Repository.Repositories
 
         public Task UpdateAsync(OperatorPaymentAccount entity) =>
             _col.ReplaceOneAsync(x => x.Id == entity.Id, entity);
+        public async Task DeleteAsync(string id) =>
+            await _col.DeleteOneAsync(u => u.Id == id);
     }
 }

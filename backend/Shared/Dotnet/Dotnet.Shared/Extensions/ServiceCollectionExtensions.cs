@@ -5,7 +5,6 @@ using MongoDB.Driver;
 using Polly;
 using Polly.Extensions.Http;
 using Dotnet.Shared.Mongo;
-using Dotnet.Shared.ServiceClients;
 using System;
 using System.Collections.Generic;
 using System.Linq;
