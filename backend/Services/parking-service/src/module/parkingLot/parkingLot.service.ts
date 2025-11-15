@@ -96,20 +96,14 @@ export class ParkingLotService implements IParkingLotService {
     }
 
     for (let level = 1; level <= parkingLot.totalLevel; level++) {
-      const numberOfElectricSpaces = Math.round(
-        (parkingLot.totalCapacityEachLevel * parkingLot.electricCarPercentage) /
-          100,
-      )
       const codePrefix = level === 1 ? 'G' : `L${(level - 1).toString()}`
 
       for (let i = 1; i <= parkingLot.totalCapacityEachLevel; i++) {
-        const isElectric = i <= numberOfElectricSpaces
         spacesToCreate.push({
           parkingLotId: parkingLot._id,
           parkingSpaceStatusId: defaultStatus,
           code: `${codePrefix}-${i.toString()}`,
           level: level,
-          isElectricCar: isElectric,
         })
       }
     }
@@ -121,8 +115,6 @@ export class ParkingLotService implements IParkingLotService {
 
   async createCreateRequest(
     createDto: CreateParkingLotDto,
-    userId: string,
-    operatorId: string,
   ): Promise<ParkingLotRequestResponseDto> {
     // 1. KIỂM TRA ĐIỀU KIỆN TRƯỚC
     const addressExist = await this.addressRepository.findAddressById(
@@ -130,6 +122,17 @@ export class ParkingLotService implements IParkingLotService {
     )
     if (!addressExist) {
       throw new NotFoundException('Địa chỉ không tồn tại.')
+    }
+
+    if (
+      createDto.bookableCapacity +
+        createDto.leasedCapacity +
+        createDto.walkInCapacity >
+      createDto.totalCapacityEachLevel * createDto.totalLevel
+    ) {
+      throw new ConflictException(
+        'Số suất trong các loại chỉ định không được vượt quá tổng sức chứa của bãi đỗ xe.',
+      )
     }
 
     // (SỬA ĐỔI) Khai báo biến để lưu kết quả ở ngoài
@@ -141,14 +144,13 @@ export class ParkingLotService implements IParkingLotService {
 
     try {
       const { effectiveDate, ...payloadData } = createDto
-      const payload = { ...payloadData, parkingLotOperatorId: operatorId }
+      const payload = { ...payloadData }
 
       const requestData: Partial<ParkingLotRequest> = {
         payload: payload,
         effectiveDate: new Date(effectiveDate),
         requestType: RequestType.CREATE,
         status: RequestStatus.PENDING,
-        createdBy: userId,
       }
 
       // (SỬA ĐỔI) Gán kết quả vào biến, không return ngay
@@ -358,7 +360,6 @@ export class ParkingLotService implements IParkingLotService {
 
     let processed = 0
     let failed = 0
-
     for (const request of requests) {
       const session = await this.connection.startSession()
       session.startTransaction()
@@ -381,6 +382,9 @@ export class ParkingLotService implements IParkingLotService {
               request.payload.totalCapacityEachLevel *
               request.payload.totalLevel,
             parkingLotStatus: RequestStatus.APPROVED,
+            totalCapacity:
+              request.payload.totalCapacityEachLevel *
+              request.payload.totalLevel,
           }
 
           const newParkingLot =
@@ -516,7 +520,7 @@ export class ParkingLotService implements IParkingLotService {
   async getParkingLotDetails(id: IdDto): Promise<ParkingLotResponseDto> {
     const parkingLot = await this.parkingLotRepository.findParkingLotById(id.id)
     if (!parkingLot) {
-      throw new Error('Không tìm thấy bãi đỗ xe')
+      throw new NotFoundException('Không tìm thấy bãi đỗ xe')
     }
     return this.returnParkingLotResponseDto(parkingLot)
   }
@@ -666,5 +670,9 @@ export class ParkingLotService implements IParkingLotService {
   async getAllRequest(): Promise<ParkingLotRequestResponseDto[]> {
     const requests = await this.parkingLotRequestRepository.findAllRequests()
     return requests.map((item) => this.returnParkingLotRequestResponseDto(item))
+  }
+
+  hardDeleteRequestById(id: string): Promise<boolean> {
+    return this.parkingLotRequestRepository.hardDeleteById(id)
   }
 }

@@ -19,7 +19,7 @@ namespace CoreService.Repository.Interfaces
         Task DeleteAsync(string id);
         Task<Account> GetByRefreshTokenAsync(string emailConfirmToken);
         Task<Account?> GetByPasswordResetTokenAsync(string token);
-
+        Task<IEnumerable<Account>> GetInactiveAccountsAsync();
         Task<Account?> GetByPhoneNumberAsync(string phoneNumber);
     }
 }

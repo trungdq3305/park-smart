@@ -1,6 +1,7 @@
 ﻿using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
+using CoreService.Application.DTOs.EmailDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
@@ -26,7 +27,11 @@ namespace CoreService.Application.Applications
         private readonly IParkingLotOperatorRepository _opRepo;
         private readonly ICityAdminRepository _adminRepo;
         private readonly IOptions<AppSecurityOptions> _securityOptions;
-        public AuthApplication(IAccountRepository userRepo, Common.Helpers.JwtTokenHelper jwtHelper, IEmailApplication emailApplication, IDriverRepository driverRepo, IParkingLotOperatorRepository opRepo, ICityAdminRepository adminRepo, IOptions<AppSecurityOptions> securityOptions)
+        private readonly IOperatorPaymentAccountRepo _operatorPaymentAccountRepo;
+        private readonly IXenditPlatformService _paymentService;
+        private readonly IAddressApiService _addressApiService; // Service gọi HTTP /addresses
+        private readonly IParkingLotApiService _parkingLotApiService;
+        public AuthApplication(IAccountRepository userRepo, Common.Helpers.JwtTokenHelper jwtHelper, IEmailApplication emailApplication, IDriverRepository driverRepo, IParkingLotOperatorRepository opRepo, ICityAdminRepository adminRepo, IOptions<AppSecurityOptions> securityOptions, IOperatorPaymentAccountRepo operatorPaymentAccountRepo, IXenditPlatformService paymentService, IAddressApiService addressApiService, IParkingLotApiService parkingLotApiService)
         {
             _accountRepo = userRepo;
             _jwtHelper = jwtHelper;
@@ -35,6 +40,10 @@ namespace CoreService.Application.Applications
             _opRepo = opRepo;
             _adminRepo = adminRepo;
             _securityOptions = securityOptions;
+            _operatorPaymentAccountRepo = operatorPaymentAccountRepo;
+            _paymentService = paymentService;
+            _addressApiService = addressApiService;
+            _parkingLotApiService = parkingLotApiService;
         }
 
         public async Task<ApiResponse<string>> LoginAsync(LoginRequest request)
@@ -78,6 +87,8 @@ namespace CoreService.Application.Applications
             var existingphoneUser = await _accountRepo.GetByPhoneAsync(request.PhoneNumber);
             if (existingphoneUser != null)
                 throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
+            if (request.IsAgreeToP != true)
+                throw new ApiException("Vui lòng đồng ý Chính Sách & Diều Khoản", StatusCodes.Status400BadRequest);
 
             var acc = new Account
             {
@@ -86,7 +97,8 @@ namespace CoreService.Application.Applications
                 Password = HashPassword(request.Password),
                 PhoneNumber = request.PhoneNumber,
                 RoleId = "68bee20c00a9410adb97d3a1",
-                IsActive = false
+                IsActive = false,
+                IsAgreeToP = request.IsAgreeToP
             };
 
             // Tạo OTP
@@ -127,50 +139,211 @@ namespace CoreService.Application.Applications
             );
         }
 
-        public async Task<ApiResponse<string>> OperatorRegisterAsync(OperatorRegisterRequest request)
+        public async Task<ApiResponse<string>> OperatorRegisterAndCreateParkingLotAsync(FullOperatorCreationRequest fullRequest)
         {
-            var existingUser = await _accountRepo.GetByEmailAsync(request.Email);
-            if (existingUser != null)
+            var registerReq = fullRequest.RegisterRequest;
+            var addressReq = fullRequest.AddressRequest;
+            var parkingLotReq = fullRequest.ParkingLotRequest;
+
+            // Biến lưu trữ đối tượng/ID đã tạo thành công
+            Account createdAccount = null;
+            ParkingLotOperator createdOperator = null;
+            string createdAddressId = null;
+            string createdParkingLotRequestId = null; // <--- BIẾN MỚI
+
+            try
             {
-                throw new ApiException("Email đã tồn tại hoặc chưa được duyệt", StatusCodes.Status400BadRequest);
+                // 1. KIỂM TRA XÁC THỰC CƠ BẢN (Không cần Rollback nếu thất bại ở đây)
+                var existingUser = await _accountRepo.GetByEmailAsync(registerReq.Email);
+                if (existingUser != null)
+                    throw new ApiException("Email đã tồn tại hoặc chưa được duyệt", StatusCodes.Status400BadRequest);
+
+                var existingphoneUser = await _accountRepo.GetByPhoneAsync(registerReq.PhoneNumber);
+                if (existingphoneUser != null)
+                    throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
+
+                if (registerReq.IsAgreeToP != true)
+                    throw new ApiException("Vui lòng đồng ý Chính Sách & Điều Khoản", StatusCodes.Status400BadRequest);
+
+                // 2. TẠO ACCOUNT VÀ OPERATOR (DB)
+                var acc = new Account
+                {
+                    Email = registerReq.Email,
+                    Password = HashPassword(registerReq.Password), // Giả định có hàm này
+                    PhoneNumber = registerReq.PhoneNumber,
+                    RoleId = "68bee1f500a9410adb97d3a0",
+                    IsActive = false,
+                    IsAgreeToP = registerReq.IsAgreeToP
+                };
+                await _accountRepo.AddAsync(acc);
+                createdAccount = acc; // Lưu trữ để Rollback
+
+                var op = new ParkingLotOperator
+                {
+                    FullName = registerReq.FullName,
+                    PaymentEmail = registerReq.PaymentEmail,
+                    BussinessName = registerReq.BussinessName,
+                    AccountId = acc.Id,
+                };
+                await _opRepo.AddAsync(op);
+                createdOperator = op; // Lưu trữ để Rollback
+
+                // 3. GỌI API TẠO ĐỊA CHỈ (/addresses)
+                var addressCreationResponse = await _addressApiService.CreateAddressAsync(addressReq);
+                // Giả định CreateAddressAsync trả về object có thuộc tính Success và Data (chứa Id)
+                if (addressCreationResponse == null || !addressCreationResponse.Success)
+                    throw new ApiException("Tạo địa chỉ thất bại. Vui lòng kiểm tra WardId.", StatusCodes.Status400BadRequest);
+
+                // Giả định Response data trả về ID của Address
+                // Cần thay đổi tùy theo cấu trúc Response thực tế của API
+                createdAddressId = addressCreationResponse.Data._id;
+
+                // 4. GỌI API TẠO BÃI ĐỖ XE (/parking-lots/create-parking-lot-request)
+                parkingLotReq.AddressId = createdAddressId;
+                parkingLotReq.ParkingLotOperatorId = createdOperator.Id;// Liên kết Address
+                                                                        // Có thể cần gán thêm OperatorId/AccountId nếu API tạo bãi đỗ xe yêu cầu
+
+                var parkingLotCreationResponse = await _parkingLotApiService.CreateParkingLotAsync(parkingLotReq);
+                if (parkingLotCreationResponse == null || !parkingLotCreationResponse.Success)
+                    throw new ApiException("Tạo bãi đỗ xe thất bại.", StatusCodes.Status400BadRequest);
+                createdParkingLotRequestId = parkingLotCreationResponse.Data._id; // <--- LƯU TRỮ
+
+                // 5. TẠO PAYMENT ACCOUNT VÀ XENDIT SUB-ACCOUNT (DB/Service)
+                var paymentAcc = new OperatorPaymentAccount { OperatorId = op.Id, XenditUserId = null };
+                await _operatorPaymentAccountRepo.AddAsync(paymentAcc);
+
+                // Tạo Sub-Account Xendit và cập nhật XenditUserId vào DB
+                var xenditUserId = await _paymentService.CreateSubAccountAsync(op.Id, registerReq.PaymentEmail, registerReq.BussinessName, paymentAcc.Id);
+
+                // 6. HOÀN TẤT
+                return new ApiResponse<string>(
+                    data: null,
+                    success: true,
+                    message: "Đăng ký, tạo địa chỉ và bãi đỗ xe thành công. Xin chờ Admin duyệt.",
+                    statusCode: StatusCodes.Status200OK
+                );
             }
-
-            var existingphoneUser = await _accountRepo.GetByPhoneAsync(request.PhoneNumber);
-            if (existingphoneUser != null)
+            catch (Exception ex)
             {
-                throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
+                // 7. THỰC HIỆN ROLLBACK KHI XẢY RA LỖI
+                await PerformRollbackAsync(createdAccount, createdOperator, createdAddressId, createdParkingLotRequestId);
+
+                // 8. TRẢ VỀ LỖI
+                if (ex is ApiException apiEx)
+                {
+                    // Trả về lỗi đã được định nghĩa trong luồng nghiệp vụ
+                    return new ApiResponse<string>(
+                        data: null,
+                        success: false,
+                        message: $"Lỗi Đăng ký/Tạo bãi đỗ xe: {apiEx.Message}",
+                        statusCode: apiEx.StatusCode
+                    );
+                }
+                else
+                {
+                    // Ghi log lỗi hệ thống (rất quan trọng)
+                    // _logger.LogError(ex, "Lỗi hệ thống không xác định trong quá trình đăng ký Operator.");
+                    return new ApiResponse<string>(
+                        data: null,
+                        success: false,
+                        message: "Lỗi hệ thống không xác định. Dữ liệu đã được hoàn tác.",
+                        statusCode: StatusCodes.Status500InternalServerError
+                    );
+                }
             }
-
-            var acc = new Account
-            {
-                Id = null,
-                Email = request.Email,
-                Password = HashPassword(request.Password),
-                PhoneNumber = request.PhoneNumber,
-                RoleId = "68bee1f500a9410adb97d3a0",
-                IsActive = false
-            };
-
-            await _accountRepo.AddAsync(acc);
-
-            var op = new ParkingLotOperator
-            {
-                Id = null,
-                FullName = request.FullName,
-                AccountId = acc.Id,
-            };
-
-            await _opRepo.AddAsync(op);
-
-
-            return new ApiResponse<string>(
-                data: null,
-                success: true,
-                message: "Đăng ký thành công, xin chờ Admin duyệt tài khoản",
-                statusCode: StatusCodes.Status200OK
-            );
         }
 
+        private async Task PerformRollbackAsync(Account account, ParkingLotOperator op, string addressId, string parkingLotRequestId)
+        {
+            if (parkingLotRequestId != null)
+            {
+                try
+                {
+                    // DELETE /parking-lots/core/requests/{requestId}
+                    await _parkingLotApiService.DeleteParkingLotRequestAsync(parkingLotRequestId);
+                }
+                catch (Exception ex)
+                {
+                    // Ghi log: Không thể xóa Parking Lot Request
+                    // _logger.LogError(ex, $"ROLLBACK FAILED: Cannot delete Parking Lot Request {parkingLotRequestId}.");
+                }
+            }
+            // 1. Rollback Address (Sử dụng API DELETE)
+            if (addressId != null)
+            {
+                try
+                {
+                    // Gọi API DELETE /addresses/{id}
+                    await _addressApiService.DeleteAddressAsync(addressId);
+                }
+                catch (Exception)
+                {
+                    // Ghi log: Không thể xóa Address (cần theo dõi)
+                }
+            }
+
+            // 2. Rollback Payment Account và Xendit (Nếu có)
+            if (op != null)
+            {
+                try
+                {
+                    // 2a. Tìm Payment Account dựa trên OperatorId
+                    var paymentAcc = await _operatorPaymentAccountRepo.GetByOperatorAsync(op.Id);
+
+                    if (paymentAcc != null)
+                    {
+                        // 2b. Gọi Service Xendit để hủy Sub-Account nếu đã tạo Xendit ID
+                        if (!string.IsNullOrEmpty(paymentAcc.XenditUserId))
+                        {
+                            // Giả định bạn có hàm Rollback trong IXenditPlatformService
+                            // await _paymentService.RollbackXenditSubAccountAsync(paymentAcc.XenditUserId); 
+                        }
+
+                        // 2c. Xóa Payment Account khỏi DB
+                        await _operatorPaymentAccountRepo.DeleteAsync(paymentAcc.Id);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Ghi log: Không thể Rollback Payment/Xendit (cần theo dõi)
+                    // _logger.LogError(ex, $"ROLLBACK FAILED: Cannot rollback Payment Account for Operator {op.Id}.");
+                }
+            }
+
+            // 3. Rollback Operator (DB)
+            if (op != null)
+            {
+                try
+                {
+                    await _opRepo.DeleteAsync(op.Id);
+                }
+                catch (Exception)
+                {
+                    // Ghi log: Không thể xóa Operator
+                }
+            }
+
+            // 4. Rollback Account (DB)
+            if (account != null)
+            {
+                try
+                {
+                    await _accountRepo.DeleteAsync(account.Id);
+                }
+                catch (Exception)
+                {
+                    // Ghi log: Không thể xóa Account
+                }
+            }
+        }
+        public class ParkingLotRequestCreationResponse
+        {
+            // Giả định API trả về ID Request trong trường "data" là Id
+            public string _id { get; set; }
+
+            // Nếu API trả về { "data": { "_id": "..." } }, bạn cần dùng thuộc tính _id
+            // public string _id { get; set; } 
+        }
         public async Task<ApiResponse<string>> CreateAdminAsync(CreateAdminRequest request)
         {
             var existingUser = await _accountRepo.GetByEmailAsync(request.Email);
@@ -327,6 +500,7 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<string>> ConfirmOperatorAsync(string id)
         {
             var account = await _accountRepo.GetByIdAsync(id);
+            var operatorEntity = await _opRepo.GetByAccountIdAsync(id);
             if (account == null)
             {
                 throw new ApiException("Tài khoản không tồn tại", StatusCodes.Status400BadRequest);
@@ -338,6 +512,15 @@ namespace CoreService.Application.Applications
             }
 
             account.IsActive = true;
+            var subject = "Tài khoản ParkSmart – Tài khoản Parking Lot Operator";
+            var body = $@"
+        <h2>Chào mừng bạn đến với ParkSmart</h2>
+        <p>Tài khoản của bạn đã được tạo Admin phê duyệt.</p>
+        <p>Bạn có thể đăng nhập theo cách thông thường (email & mật khẩu), 
+        qua đường dận đến trang quản lý chính thức dánh cho Operator</p>
+        <p>Vui lòng kiểm tra Email {operatorEntity.PaymentEmail} bạn đã đăng ký tài khoản nhận tiền trước đó để xác nhận và sử dụng </p>
+        <p>Trân trọng,<br/>ParkSmart</p>";
+            await _emailApplication.SendEmailAsync(account.Email, subject, body);
             account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
             await _accountRepo.UpdateAsync(account);

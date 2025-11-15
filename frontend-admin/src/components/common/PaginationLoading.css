@@ -1,0 +1,64 @@
+/* PaginationLoading Component Styles */
+.pagination-loading-wrapper {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+
+.pagination-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(0.2vh);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  border-radius: 0.8vh;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+.pagination-loading-spinner {
+  width: 4vh;
+  height: 4vh;
+  border: 0.3vh solid #f3f3f3;
+  border-top: 0.3vh solid #1890ff;
+  border-radius: 50%;
+  animation: pagination-spin 1s linear infinite;
+  margin-bottom: 1.2vh;
+}
+
+.pagination-loading-text {
+  margin: 0;
+  color: #666;
+  font-size: 1.4vh;
+  font-weight: 500;
+  text-align: center;
+}
+
+@keyframes pagination-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .pagination-loading-spinner {
+    width: 3.2vh;
+    height: 3.2vh;
+    border-width: 0.2vh;
+  }
+
+  .pagination-loading-text {
+    font-size: 1.2vh;
+  }
+}

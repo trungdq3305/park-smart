@@ -10,7 +10,7 @@
 :where(.ant-layout-footer),
 :where(.ant-select),
 :where(.ant-select-selector) {
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'Inter', sans-serif;
 }
 
 :root {
@@ -42,7 +42,7 @@ body {
 }
 
 body {
-  font-family: 'Inter', sans-serif !important;
+  font-family: 'Inter', sans-serif;
   min-width: 32vh;
   min-height: 100vh;
 }

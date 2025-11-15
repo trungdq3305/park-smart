@@ -1,13 +1,20 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Outlet } from 'react-router-dom'
 import { Layout } from 'antd'
 import AdminHeader from '../header/AdminHeader'
 import AdminSidebar from '../sideBar/AdminSidebar'
+import { useMobileMenu } from '../../../hooks/useMobileMenu'
 
 const { Content } = Layout
 
 function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false)
+  const { isMobile, mobileMenuOpen, toggleMobileMenu, closeMobileMenu } = useMobileMenu()
+
+  // Use useCallback for event handlers to prevent unnecessary re-renders
+  const handleCollapse = useCallback((collapsed: boolean) => {
+    setCollapsed(collapsed)
+  }, [])
 
   return (
     <Layout
@@ -16,26 +23,35 @@ function AdminLayout() {
         background: '#f5f5f5',
       }}
     >
-      <AdminSidebar 
-        collapsed={collapsed} 
-        onCollapse={setCollapsed}
+      <AdminSidebar
+        collapsed={collapsed}
+        onCollapse={handleCollapse}
+        isMobile={isMobile}
+        mobileOpen={mobileMenuOpen}
+        onMobileToggle={toggleMobileMenu}
       />
+
+      {/* Mobile Overlay */}
+      {isMobile && mobileMenuOpen && (
+        <div className="mobile-overlay show" onClick={closeMobileMenu} />
+      )}
+
       <Layout
         style={{
-          marginLeft: collapsed ? '10vh' : '35vh',
-          transition: 'margin-left 0.2s ease',
+          marginLeft: isMobile ? 0 : collapsed ? '10vh' : '35vh',
+          transition: 'margin-left 0.3s ease',
           background: '#f5f5f5',
         }}
       >
-        <AdminHeader />
+        <AdminHeader onMobileMenuToggle={toggleMobileMenu} isMobile={isMobile} />
         <Content
           style={{
-            margin: '1.6vh',
-            padding: '2.4vh',
+            margin: isMobile ? '0.8vh' : '1.6vh',
+            padding: isMobile ? '1.6vh' : '2.4vh',
             background: '#ffffff',
-            borderRadius: '2vh',
+            borderRadius: isMobile ? '1.2vh' : '2vh',
             boxShadow: '0 0.1vh 0.3vh rgba(0, 0, 0, 0.1)',
-            minHeight: 'calc(100vh - 12vh)',
+            minHeight: isMobile ? 'calc(100vh - 8vh)' : 'calc(100vh - 12vh)',
             overflow: 'auto',
           }}
         >

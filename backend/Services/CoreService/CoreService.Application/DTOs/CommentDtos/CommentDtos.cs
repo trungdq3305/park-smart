@@ -27,6 +27,7 @@ namespace CoreService.Application.DTOs.CommentDtos
 
     public class CommentItemDto
     {
+        [JsonPropertyName("_id")]
         public string Id { get; set; }
         public string TargetId { get; set; }
         public string TargetType { get; set; }

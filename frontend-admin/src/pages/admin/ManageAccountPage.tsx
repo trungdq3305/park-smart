@@ -2,29 +2,37 @@ import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { message, Dropdown, Button } from 'antd'
 import type { MenuProps } from 'antd'
-import { MoreOutlined, EyeOutlined, EditOutlined, KeyOutlined, DeleteOutlined, PauseOutlined, PlayCircleOutlined } from '@ant-design/icons'
+import {
+  MoreOutlined,
+  EyeOutlined,
+  KeyOutlined,
+  DeleteOutlined,
+  PauseOutlined,
+  PlayCircleOutlined,
+} from '@ant-design/icons'
 import { AccountDetailsModal, DeleteConfirmModal } from '../../components/modals'
-import { 
-  useGetAccountQuery, 
-  useDeleteAccountMutation, 
-  useToggleAccountStatusMutation 
-} from '../../features/accountAPI'
+import { PaginationLoading } from '../../components/common'
+import {
+  useGetAccountQuery,
+  useDeleteAccountMutation,
+  useToggleAccountStatusMutation,
+} from '../../features/admin/accountAPI'
 import type { Account } from '../../types/Account'
 import './ManageAccountPage.css'
 
 interface ListAccountResponse {
   data: {
-    data :{
+    data: {
       pagedAccounts: {
         data: Account[]
         currentPage: number
         pageSize: number
         totalItems: number
       }
-  totalAdmins :number
-  totalDrivers :number
-  totalOperators :number
-  totalUsers :number
+      totalAdmins: number
+      totalDrivers: number
+      totalOperators: number
+      totalUsers: number
     }
   }
   isLoading: boolean
@@ -32,19 +40,20 @@ interface ListAccountResponse {
 
 const ManageAccountPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
-  
+
   // Get values from URL parameters with defaults
   const currentPage = parseInt(searchParams.get('page') || '1', 10)
   const pageSize = 5 // Fixed page size, not from URL
-  
+
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
+  const [isPageLoading, setIsPageLoading] = useState(false)
 
   const { data, isLoading } = useGetAccountQuery<ListAccountResponse>({
-    page : currentPage,
-    pageSize
+    page: currentPage,
+    pageSize,
   })
 
   const [deleteAccount] = useDeleteAccountMutation()
@@ -60,7 +69,7 @@ const ManageAccountPage: React.FC = () => {
   // Functions to update URL parameters
   const updateSearchParams = (updates: Record<string, string | number | null>) => {
     const newSearchParams = new URLSearchParams(searchParams)
-    
+
     Object.entries(updates).forEach(([key, value]) => {
       if (value === null || value === '' || value === 'all') {
         newSearchParams.delete(key)
@@ -68,15 +77,19 @@ const ManageAccountPage: React.FC = () => {
         newSearchParams.set(key, value.toString())
       }
     })
-    
+
     setSearchParams(newSearchParams, { replace: true })
   }
 
   const handlePageChange = (page: number) => {
+    setIsPageLoading(true)
     updateSearchParams({ page })
+
+    // Reset loading state after a short delay to show the loading effect
+    setTimeout(() => {
+      setIsPageLoading(false)
+    }, 500)
   }
-
-
 
   const handleViewDetails = (account: Account) => {
     setSelectedAccount(account)
@@ -87,7 +100,6 @@ const ManageAccountPage: React.FC = () => {
     setShowModal(false)
     setSelectedAccount(null)
   }
-
 
   const handleDeleteAccount = (account: Account) => {
     setAccountToDelete(account)
@@ -112,7 +124,7 @@ const ManageAccountPage: React.FC = () => {
     try {
       await toggleAccountStatus({
         id: account._id,
-        isActive: !account.isActive
+        isActive: !account.isActive,
       }).unwrap()
       message.success(`Trạng thái tài khoản ${account.email} đã được cập nhật!`)
     } catch (error) {
@@ -120,12 +132,6 @@ const ManageAccountPage: React.FC = () => {
       message.error('Có lỗi xảy ra khi cập nhật trạng thái tài khoản!')
     }
   }
-
-  const handleEditAccount = (account: Account) => {
-    setSelectedAccount(account)
-    setShowModal(true)
-  }
-
 
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? 'badge-active' : 'badge-inactive'
@@ -149,13 +155,7 @@ const ManageAccountPage: React.FC = () => {
       key: 'view',
       label: 'Xem profile',
       icon: <EyeOutlined />,
-      onClick: () => handleViewDetails(account)
-    },
-    {
-      key: 'edit',
-      label: 'Chỉnh sửa chi tiết',
-      icon: <EditOutlined />,
-      onClick: () => handleEditAccount(account)
+      onClick: () => handleViewDetails(account),
     },
     {
       key: 'permission',
@@ -163,27 +163,27 @@ const ManageAccountPage: React.FC = () => {
       icon: <KeyOutlined />,
       onClick: () => {
         message.info('Tính năng thay đổi quyền đang được phát triển')
-      }
+      },
     },
     {
-      type: 'divider'
+      type: 'divider',
     },
     {
       key: 'toggle',
       label: account.isActive ? 'Vô hiệu hóa' : 'Kích hoạt',
       icon: account.isActive ? <PauseOutlined /> : <PlayCircleOutlined />,
-      onClick: () => handleToggleStatus(account)
+      onClick: () => handleToggleStatus(account),
     },
     {
       key: 'delete',
       label: 'Xóa tài khoản',
       icon: <DeleteOutlined />,
       danger: true,
-      onClick: () => handleDeleteAccount(account)
-    }
+      onClick: () => handleDeleteAccount(account),
+    },
   ]
 
-  if (isLoading) {
+  if (isLoading && !isPageLoading) {
     return (
       <div className="manage-account-page">
         <div className="loading-container">
@@ -194,7 +194,6 @@ const ManageAccountPage: React.FC = () => {
     )
   }
 
-
   return (
     <div className="manage-account-page">
       <div className="page-header">
@@ -203,7 +202,6 @@ const ManageAccountPage: React.FC = () => {
       </div>
 
       <div className="page-content">
-
         {/* Stats Cards */}
         <div className="stats-section">
           <div className="stat-card">
@@ -244,108 +242,105 @@ const ManageAccountPage: React.FC = () => {
           </div>
 
           <div className="table-wrapper">
-            <table className="accounts-table">
-              <thead>
-                <tr>
-                  <th>Thông tin tài khoản</th>
-                  <th>Vai trò</th>
-                  <th>Trạng thái</th>
-                  <th>Lần đăng nhập cuối</th>
-                  <th>Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {accounts.map((account: Account) => (
-                  <tr key={account._id}>
-                    <td>
-                      <div className="account-info">
-                        <div className="account-avatar">
-                          {account.email.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="account-details">
-                          <h4>{account.email}</h4>
-                          <p>{account.phoneNumber}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td>
-                      <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
-                        {account.roleName}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${getStatusBadge(account.isActive)}`}>
-                        {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                      </span>
-                    </td>
-                    <td>
-                      {account.lastLoginAt 
-                        ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
-                        : 'Chưa đăng nhập'
-                      }
-                    </td>
-                    <td>
-                      <div className="action-cell">
-                        <Dropdown
-                          menu={{ items: getMenuItems(account) }}
-                          trigger={['click']}
-                          placement="bottomRight"
-                        >
-                          <Button 
-                            type="text" 
-                            icon={<MoreOutlined />}
-                            className="action-dropdown-trigger"
-                            title="Thao tác"
-                          />
-                        </Dropdown>
-                      </div>
-                    </td>
+            <PaginationLoading isLoading={isPageLoading} loadingText="Đang tải trang...">
+              <table className="accounts-table">
+                <thead>
+                  <tr>
+                    <th>Thông tin tài khoản</th>
+                    <th>Vai trò</th>
+                    <th>Trạng thái</th>
+                    <th>Lần đăng nhập cuối</th>
+                    <th>Thao tác</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {accounts.map((account: Account) => (
+                    <tr key={account._id}>
+                      <td>
+                        <div className="account-info">
+                          <div className="account-avatar">
+                            {account.email.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="account-details">
+                            <h4>{account.email}</h4>
+                            <p>{account.phoneNumber}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
+                          {account.roleName}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-badge ${getStatusBadge(account.isActive)}`}>
+                          {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                        </span>
+                      </td>
+                      <td>
+                        {account.lastLoginAt
+                          ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
+                          : 'Chưa đăng nhập'}
+                      </td>
+                      <td>
+                        <div className="action-cell">
+                          <Dropdown
+                            menu={{ items: getMenuItems(account) }}
+                            trigger={['click']}
+                            placement="bottomRight"
+                          >
+                            <Button
+                              type="text"
+                              icon={<MoreOutlined />}
+                              className="action-dropdown-trigger"
+                              title="Thao tác"
+                            />
+                          </Dropdown>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </PaginationLoading>
           </div>
 
           {/* Pagination */}
           <div className="pagination">
-            <button 
+            <button
               className="pagination-btn"
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isPageLoading}
               onClick={() => handlePageChange(currentPage - 1)}
             >
-              Trước
+              {isPageLoading ? '...' : 'Trước'}
             </button>
-            
+
             <div className="pagination-numbers">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
-                  className={`pagination-number ${currentPage === page ? 'active' : ''}`}
+                  className={`pagination-number ${currentPage === page ? 'active' : ''} ${isPageLoading ? 'loading' : ''}`}
                   onClick={() => handlePageChange(page)}
+                  disabled={isPageLoading}
                 >
                   {page}
                 </button>
               ))}
             </div>
 
-            <button 
+            <button
               className="pagination-btn"
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || isPageLoading}
               onClick={() => handlePageChange(currentPage + 1)}
             >
-              Sau
+              {isPageLoading ? '...' : 'Sau'}
             </button>
           </div>
         </div>
       </div>
 
       {/* Account Details Modal */}
-      <AccountDetailsModal
-        open={showModal}
-        onClose={handleCloseModal}
-        account={selectedAccount}
-        onEdit={handleEditAccount}
-      />
+      <AccountDetailsModal open={showModal} onClose={handleCloseModal} account={selectedAccount} />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal

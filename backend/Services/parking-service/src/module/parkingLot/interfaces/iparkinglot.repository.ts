@@ -8,7 +8,10 @@ export interface IParkingLotRepository {
     session: ClientSession,
   ): Promise<ParkingLot | null>
 
-  findParkingLotById(id: string): Promise<ParkingLot | null>
+  findParkingLotById(
+    id: string,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null>
 
   findByAddressIds(addressIds: string[]): Promise<ParkingLot[]>
 
@@ -56,6 +59,14 @@ export interface IParkingLotRepository {
     id: string,
     session?: ClientSession,
   ): Promise<ParkingLot | null>
+
+  updateBookingSlotDurationHours(
+    id: string,
+    durationHours: number,
+    session?: ClientSession,
+  ): Promise<boolean>
+
+  getLeasedCapacityRule(id: string, session?: ClientSession): Promise<number>
 }
 
 export const IParkingLotRepository = Symbol('IParkingLotRepository')
