@@ -14,5 +14,6 @@ namespace CoreService.Repository.Interfaces
         Task<OperatorPaymentAccount?> GetByXenditUserAsync(string xenditUserId);
         Task AddAsync(OperatorPaymentAccount entity);
         Task UpdateAsync(OperatorPaymentAccount entity);
+        Task DeleteAsync(string id);
     }
 }

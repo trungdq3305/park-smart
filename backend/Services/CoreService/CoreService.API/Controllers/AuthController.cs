@@ -55,9 +55,9 @@ namespace KLTN.CoreService.API.Controllers
         }
 
         [HttpPost("operator-register")]
-        public async Task<IActionResult> OperatorRegister(OperatorRegisterRequest request)
+        public async Task<IActionResult> OperatorRegister(FullOperatorCreationRequest request)
         {
-            var response = await _authApplication.OperatorRegisterAsync(request);
+            var response = await _authApplication.OperatorRegisterAndCreateParkingLotAsync(request);
             return StatusCode(response.StatusCode, response);
         }
         
