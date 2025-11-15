@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:mobile/screens/user/home_screen.dart';
 import 'package:mobile/utils/custom_http_overrides.dart';
 import 'screens/auth/login_screen.dart';
@@ -11,6 +12,18 @@ import 'screens/main/main_wrapper.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  try {
+    // Check if Firebase is already initialized
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (e) {
+    debugPrint('Firebase initialization error: $e');
+    // Re-throw to prevent app from running without Firebase
+    rethrow;
+  }
 
   // Load biến môi trường - tạm thời comment vì không có file .env
   await dotenv.load(fileName: ".env");

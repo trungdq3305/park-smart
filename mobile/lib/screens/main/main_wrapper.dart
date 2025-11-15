@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/screens/user/home_screen.dart';
 import 'package:mobile/screens/user/parking_lot_screen.dart';
-import 'package:mobile/screens/user/chat_screen.dart';
-import 'package:mobile/screens/user/recent_screen.dart';
 import 'package:mobile/screens/user/profile_screen.dart';
+import 'package:mobile/screens/user/message_list_screen.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
 
 class MainWrapper extends StatefulWidget {
@@ -18,9 +17,9 @@ class _MainWrapperState extends State<MainWrapper> {
 
   final List<Widget> _pages = [
     const HomeScreen(),
-    const ChatScreen(),
+    const MessageListScreen(),
     const ParkingLotScreen(),
-    const RecentScreen(),
+    const MessageListScreen(),
     const ProfileScreen(),
   ];
 

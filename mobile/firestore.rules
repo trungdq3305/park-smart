@@ -1,0 +1,37 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ⚠️ DEVELOPMENT MODE: Allow all reads and writes
+    // TODO: Replace with proper security rules for production
+    
+    // Option 1: For development/testing - allow all access
+    // WARNING: This allows anyone to read/write. Use only for development!
+    match /{document=**} {
+      allow read, write: if true;
+    }
+    
+    /* 
+    // Option 2: For production - restrict based on custom authentication
+    // Since you're using custom JWT auth (not Firebase Auth), 
+    // you'll need to either:
+    // 1. Implement Firebase Auth alongside your custom auth
+    // 2. Use Firebase Admin SDK to validate tokens and set custom claims
+    // 3. Validate tokens in your backend and use that to secure Firestore
+    
+    // Example with Firebase Auth (if you implement it):
+    match /chatRooms/{userId}/rooms/{roomId} {
+      allow read, write: if request.auth != null && 
+                          request.auth.uid == userId;
+      
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null && 
+                            (resource.data.senderId == request.auth.uid ||
+                             resource.data.receiverId == request.auth.uid);
+      }
+    }
+    */
+  }
+}
+

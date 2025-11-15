@@ -55,6 +55,7 @@ dependencies:
 
   flutter_polyline_points: ^2.0.0
   dio: ^5.7.0
+  qr_flutter: ^4.1.0
 
 
 dev_dependencies:

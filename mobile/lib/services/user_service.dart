@@ -95,6 +95,33 @@ class UserService {
     return userInfo?['photoUrl'];
   }
 
+  // Lấy user ID từ API hoặc token
+  static Future<String?> getUserId() async {
+    try {
+      // Thử lấy từ API trước
+      final apiData = await getUserProfile();
+      if (apiData['data'] != null && apiData['data']['_id'] != null) {
+        return apiData['data']['_id'] as String;
+      }
+    } catch (e) {
+      // Fallback to token
+    }
+
+    // Fallback: decode từ token
+    final token = await getToken();
+    if (token != null) {
+      final claims = await decodeJWTToken(token);
+      if (claims != null) {
+        return claims['sub'] ??
+            claims['id'] ??
+            claims['_id'] ??
+            claims['userId'];
+      }
+    }
+
+    return null;
+  }
+
   // Decode JWT token để lấy thông tin role
   static Future<Map<String, dynamic>?> decodeJWTToken(String token) async {
     try {
