@@ -4,7 +4,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import {
-  IsLatLong,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
