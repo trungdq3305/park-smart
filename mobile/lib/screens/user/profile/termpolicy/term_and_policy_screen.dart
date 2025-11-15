@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
-import '../../../widgets/bloc/term_policy_bloc.dart';
-import '../../../services/term_policy_service.dart';
+import '../../../../widgets/bloc/term_policy_bloc.dart';
+import '../../../../services/term_policy_service.dart';
 
 class TermAndPolicyScreen extends StatefulWidget {
   const TermAndPolicyScreen({super.key});

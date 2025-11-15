@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/services/user_service.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
-import '../../../widgets/auth/change_password_dialog.dart';
+import '../../../../widgets/auth/change_password_dialog.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   final Map<String, dynamic> claims;

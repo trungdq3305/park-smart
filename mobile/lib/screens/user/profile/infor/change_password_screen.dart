@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/auth/change_password_dialog.dart';
+import '../../../../widgets/auth/change_password_dialog.dart';
 
 class ChangePasswordScreen extends StatelessWidget {
   const ChangePasswordScreen({super.key});
