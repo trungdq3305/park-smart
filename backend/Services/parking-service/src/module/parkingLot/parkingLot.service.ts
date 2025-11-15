@@ -115,8 +115,6 @@ export class ParkingLotService implements IParkingLotService {
 
   async createCreateRequest(
     createDto: CreateParkingLotDto,
-    userId: string,
-    operatorId: string,
   ): Promise<ParkingLotRequestResponseDto> {
     // 1. KIỂM TRA ĐIỀU KIỆN TRƯỚC
     const addressExist = await this.addressRepository.findAddressById(
@@ -146,14 +144,13 @@ export class ParkingLotService implements IParkingLotService {
 
     try {
       const { effectiveDate, ...payloadData } = createDto
-      const payload = { ...payloadData, parkingLotOperatorId: operatorId }
+      const payload = { ...payloadData }
 
       const requestData: Partial<ParkingLotRequest> = {
         payload: payload,
         effectiveDate: new Date(effectiveDate),
         requestType: RequestType.CREATE,
         status: RequestStatus.PENDING,
-        createdBy: userId,
       }
 
       // (SỬA ĐỔI) Gán kết quả vào biến, không return ngay
@@ -673,5 +670,9 @@ export class ParkingLotService implements IParkingLotService {
   async getAllRequest(): Promise<ParkingLotRequestResponseDto[]> {
     const requests = await this.parkingLotRequestRepository.findAllRequests()
     return requests.map((item) => this.returnParkingLotRequestResponseDto(item))
+  }
+
+  hardDeleteRequestById(id: string): Promise<boolean> {
+    return this.parkingLotRequestRepository.hardDeleteById(id)
   }
 }

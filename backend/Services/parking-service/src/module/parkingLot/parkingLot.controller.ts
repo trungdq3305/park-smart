@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Inject,
@@ -185,21 +186,12 @@ export class ParkingLotController {
 
   // ======= Endpoints cho Quản trị viên (Admin) =======
   @Post('create-parking-lot-request')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Tạo yêu cầu tạo mới một bãi đỗ xe' })
   @ApiBody({ type: CreateParkingLotDto })
   async createCreateRequest(
     @Body() createDto: CreateParkingLotDto,
-    @GetCurrentUserId() userId: string,
-    @GetCurrenIdOfUserRole() currentIdOfUserRole: string,
   ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
-    const data = await this.parkingLotService.createCreateRequest(
-      createDto,
-      userId,
-      currentIdOfUserRole,
-    )
+    const data = await this.parkingLotService.createCreateRequest(createDto)
     return {
       data: [data],
       message: 'Tạo yêu cầu bãi đỗ xe thành công',
@@ -495,6 +487,21 @@ export class ParkingLotController {
     return {
       data: [result],
       message: 'Xử lý yêu cầu đã duyệt và đến hạn thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
+  @Delete('/core/requests/:requestId')
+  @ApiOperation({ summary: '[CORE] Xóa vĩnh viễn một yêu cầu bãi đỗ xe' })
+  @ApiParam({ name: 'requestId', description: 'ID của yêu cầu (Request)' })
+  async hardDeleteRequestById(
+    @Param() { requestId }: RequestIdDto,
+  ): Promise<ApiResponseDto<boolean>> {
+    const result = await this.parkingLotService.hardDeleteRequestById(requestId)
+    return {
+      data: [result],
+      message: 'Xóa vĩnh viễn yêu cầu bãi đỗ xe thành công',
       statusCode: HttpStatus.OK,
       success: true,
     }
