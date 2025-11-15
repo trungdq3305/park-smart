@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../../../services/subcription_service.dart';
-import '../../../widgets/app_scaffold.dart';
+import '../../../../services/subcription_service.dart';
+import '../../../../widgets/app_scaffold.dart';
 
 class MySubscriptionsScreen extends StatefulWidget {
   const MySubscriptionsScreen({super.key});
