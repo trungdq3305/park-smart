@@ -45,16 +45,20 @@ class CommentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/comments/by-parkinglot/$parkingLotId')
-          .replace(
-            queryParameters: {
-              if (page != null) 'page': page.toString(),
-              if (pageSize != null) 'pageSize': pageSize.toString(),
-            },
-          );
+      // Build query parameters
+      final queryParams = <String, String>{};
+      if (page != null) queryParams['page'] = page.toString();
+      if (pageSize != null) queryParams['pageSize'] = pageSize.toString();
+
+      final uri = Uri.parse(
+        '$baseUrl/core/comments/by-parkinglot/$parkingLotId',
+      ).replace(queryParameters: queryParams.isEmpty ? null : queryParams);
 
       print('💬 Getting comments by parking lot:');
-      print('  URL: $uri');
+      print('  Base URL: $baseUrl');
+      print('  Parking Lot ID: $parkingLotId');
+      print('  Full URL: $uri');
+      print('  Query params: $queryParams');
       print('  Token: ${token.substring(0, 20)}...');
 
       final response = await http.get(
@@ -62,16 +66,28 @@ class CommentService {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
         },
       );
 
       print('📡 Response status: ${response.statusCode}');
+      print('📡 Response headers: ${response.headers}');
       print('📡 Response body: ${response.body}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         print('✅ Successfully fetched comments by parking lot');
         return responseData;
+      } else if (response.statusCode == 404) {
+        final errorBody = response.body;
+        print(
+          '❌ 404 Not Found - Endpoint may not exist or parking lot ID invalid',
+        );
+        print('  URL tried: $uri');
+        print('  Response: $errorBody');
+        throw Exception(
+          'Không tìm thấy endpoint hoặc ID bãi đỗ xe không hợp lệ (404)',
+        );
       } else {
         final errorBody = response.body;
         print('❌ Error fetching comments by parking lot: $errorBody');
@@ -98,7 +114,7 @@ class CommentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/comments/by-faq/$faqId').replace(
+      final uri = Uri.parse('$baseUrl/core/comments/by-faq/$faqId').replace(
         queryParameters: {
           if (page != null) 'page': page.toString(),
           if (pageSize != null) 'pageSize': pageSize.toString(),
@@ -152,7 +168,7 @@ class CommentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/comments');
+      final uri = Uri.parse('$baseUrl/core/comments');
 
       final requestBody = {
         'targetId': targetId,
@@ -209,7 +225,7 @@ class CommentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/comments');
+      final uri = Uri.parse('$baseUrl/core/comments');
 
       final requestBody = {
         'id': id,
@@ -262,7 +278,7 @@ class CommentService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/comments/$id');
+      final uri = Uri.parse('$baseUrl/core/comments/$id');
 
       print('💬 Deleting comment:');
       print('  URL: $uri');

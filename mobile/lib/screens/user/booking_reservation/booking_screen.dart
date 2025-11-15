@@ -6,6 +6,7 @@ import '../../../services/payment_service.dart';
 import '../../../widgets/booking/parking_lot_info_card.dart';
 import '../../../widgets/booking/electric_car_message.dart';
 import '../../../widgets/booking/pricing_table_card.dart';
+import '../../../widgets/booking/comments_section.dart';
 import 'payment_checkout_screen.dart';
 import 'payment_result_screen.dart';
 
@@ -233,7 +234,6 @@ class _BookingScreenState extends State<BookingScreen> {
                   isVisible:
                       _selectedSpaceId != null && _isSelectedSpaceElectric,
                 ),
-
                 // Submit button for subscription
                 SizedBox(
                   width: double.infinity,
@@ -271,6 +271,27 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
 
                 const SizedBox(height: 16),
+
+                // Comments section
+                Builder(
+                  builder: (context) {
+                    final parkingLotId =
+                        widget.parkingLot['_id'] ??
+                        widget.parkingLot['id'] ??
+                        '';
+                    if (parkingLotId.isEmpty) {
+                      print(
+                        '⚠️ Warning: Parking lot ID is empty in BookingScreen',
+                      );
+                      print('  Parking lot data: ${widget.parkingLot.keys}');
+                    } else {
+                      print('✅ Parking lot ID for comments: $parkingLotId');
+                    }
+                    return CommentsSection(parkingLotId: parkingLotId);
+                  },
+                ),
+
+                const SizedBox(height: 24),
               ],
             ),
           ),
