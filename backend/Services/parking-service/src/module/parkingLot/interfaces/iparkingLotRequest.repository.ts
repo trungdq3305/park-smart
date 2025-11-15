@@ -33,6 +33,8 @@ export interface IParkingLotRequestRepository {
   findByParkingLotId(parkingLotId: string): Promise<ParkingLotRequest[]>
 
   findAllRequests(): Promise<ParkingLotRequest[]>
+
+  hardDeleteById(id: string, session?: ClientSession): Promise<boolean>
 }
 
 export const IParkingLotRequestRepository = Symbol(

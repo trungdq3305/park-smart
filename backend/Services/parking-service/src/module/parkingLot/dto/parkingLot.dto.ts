@@ -137,6 +137,11 @@ export class CreateParkingLotDto {
   @IsPositive({ message: 'Thời gian đặt trước phải là số dương' })
   @Max(24, { message: 'Thời gian đặt trước không được vượt quá 24 giờ' })
   bookingSlotDurationHours: number
+
+  @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4567' })
+  @IsMongoId({ message: 'Mã nhà điều hành bãi đỗ xe không hợp lệ' })
+  @IsNotEmpty({ message: 'Mã nhà điều hành bãi đỗ xe không được để trống' })
+  parkingLotOperatorId: string
 }
 
 // =================================================================

@@ -1,15 +1,11 @@
 import { HttpService } from '@nestjs/axios'
 import {
   BadRequestException,
-  HttpException,
-  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common'
-import axios from 'axios'
 import { plainToInstance } from 'class-transformer'
-import { firstValueFrom } from 'rxjs'
 
 import { IWardRepository } from '../ward/interfaces/iward.repository'
 import {
@@ -21,11 +17,6 @@ import { IAddressRepository } from './interfaces/iaddress.repository'
 import { IAddressService } from './interfaces/iaddress.service'
 import { Address } from './schemas/address.schema'
 // Giữ lại các type cho Nominatim
-interface NominatimLocation {
-  lat: string
-  lon: string
-}
-type NominatimResponse = NominatimLocation[]
 
 @Injectable()
 export class AddressService implements IAddressService {

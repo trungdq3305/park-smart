@@ -13,6 +13,14 @@ export class ParkingLotRequestRepository
     private parkingLotRequestModel: Model<ParkingLotRequest>,
   ) {}
 
+  async hardDeleteById(id: string, session?: ClientSession): Promise<boolean> {
+    const result = await this.parkingLotRequestModel.deleteOne(
+      { _id: id },
+      session ? { session } : {},
+    )
+    return result.deletedCount === 1
+  }
+
   async createNewRequest(
     requestData: Partial<ParkingLotRequest>,
     session: ClientSession,
