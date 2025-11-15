@@ -343,7 +343,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                     ),
                     _buildTile(
                       icon: Icons.question_answer_outlined,
-                      title: 'Các câu hỏi thường gặp của tôi',
+                      title: 'Các câu hỏi thường gặp',
                       onTap: () {
                         Navigator.push(
                           context,
