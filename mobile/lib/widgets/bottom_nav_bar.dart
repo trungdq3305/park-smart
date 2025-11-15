@@ -79,16 +79,16 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 label: 'Trang chủ',
               ),
               BottomNavigationBarItem(
-                icon: _buildIcon(Icons.search_rounded, 1),
-                label: 'Tìm kiếm',
+                icon: _buildIcon(Icons.message_outlined, 1),
+                label: 'Tin nhắn',
               ),
               BottomNavigationBarItem(
                 icon: _buildIcon(Icons.location_on_rounded, 2),
                 label: 'Địa chỉ',
               ),
               BottomNavigationBarItem(
-                icon: _buildIcon(Icons.message_outlined, 3),
-                label: 'Tin nhắn',
+                icon: _buildIcon(Icons.notifications_outlined, 3),
+                label: 'Thông báo',
               ),
               BottomNavigationBarItem(
                 icon: _buildIcon(Icons.person_rounded, 4),
