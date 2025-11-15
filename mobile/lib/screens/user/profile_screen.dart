@@ -6,7 +6,6 @@ import 'package:mobile/widgets/app_scaffold.dart';
 import 'package:mobile/services/user_service.dart';
 import 'profile/personal_info_screen.dart';
 import 'profile/booking_history_screen.dart';
-import 'profile/my_car_screen.dart';
 import 'profile/my_subscriptions_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -322,17 +321,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                         );
                       },
                     ),
-                    _buildTile(
-                      icon: Icons.directions_car_outlined,
-                      title: 'Xe của tôi',
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const MyCarScreen(),
-                          ),
-                        );
-                      },
-                    ),
+
                     _buildTile(
                       icon: Icons.history_outlined,
                       title: 'Lịch sử đặt chỗ',
