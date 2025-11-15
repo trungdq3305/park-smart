@@ -5,7 +5,6 @@ using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
 using Dotnet.Shared.DTOs;
-using Dotnet.Shared.ServiceClients;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -19,13 +18,11 @@ namespace CoreService.Application.Applications
     {
         private readonly IParkingLotOperatorRepository _operatorRepo;
         private readonly IAccountRepository _accountRepo;
-        private readonly IParkingServiceClient _parkingClient;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        public OperatorApplication(IParkingLotOperatorRepository operatorRepo, IAccountRepository accountRepo, IParkingServiceClient parkingClient, IHttpContextAccessor httpContextAccessor)
+        public OperatorApplication(IParkingLotOperatorRepository operatorRepo, IAccountRepository accountRepo, IHttpContextAccessor httpContextAccessor)
         {
             _operatorRepo = operatorRepo;
             _accountRepo = accountRepo;
-            _parkingClient = parkingClient;
             _httpContextAccessor = httpContextAccessor;
         }
 

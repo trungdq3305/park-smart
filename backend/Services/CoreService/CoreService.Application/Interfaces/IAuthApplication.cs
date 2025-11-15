@@ -14,7 +14,7 @@ namespace CoreService.Application.Interfaces
     {
         Task<ApiResponse<string>> LoginAsync(LoginRequest request);
         Task<ApiResponse<string>> DriverRegisterAsync(DriverRegisterRequest request);
-        Task<ApiResponse<string>> OperatorRegisterAsync(OperatorRegisterRequest request);
+        Task<ApiResponse<string>> OperatorRegisterAndCreateParkingLotAsync(FullOperatorCreationRequest fullRequest);
         Task<ApiResponse<string>> CreateAdminAsync(CreateAdminRequest request);
         Task<ApiResponse<string>> ConfirmEmailAsync(ConfirmEmailByCodeRequest request);
         Task<ApiResponse<string>> ResendConfirmationAsync(string email);

@@ -16,6 +16,7 @@ namespace CoreService.Application.DTOs.ApiResponse
         public string Message { get; set; }
         public int StatusCode { get; set; }
 
+        public ApiResponse() { }
         public ApiResponse(T data, bool success, string message, int statusCode)
         {
             Data = data;
