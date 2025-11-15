@@ -341,6 +341,13 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
                     _buildTile(
+                      icon: Icons.question_answer,
+                      title: 'Các câu hỏi thường gặpgặp',
+                      onTap: () {
+                        // TODO: Navigate to tickets screen
+                      },
+                    ),
+                    _buildTile(
                       icon: Icons.note_alt_outlined,
                       title: 'Điều khoản & Chính sách',
                       onTap: () {
