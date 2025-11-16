@@ -21,12 +21,12 @@ namespace CoreService.Application.Applications
             _storage = storage;
         }
 
-        public async Task<Image> UploadAsync(IFormFile file, string ownerType, string ownerId, string? description)
+        public async Task<Image> UploadAsync(IFormFile file, OwnerType ownerType, string ownerId, string? description)
         {
             var (url, mime) = await _storage.SaveImageAsync(file);
             var entity = new Image
             {
-                Owner = new OwnerRef { Type = ownerType, Id = ownerId },
+                Owner = new OwnerRef { Type = ownerType, Id = ownerId }, // Sử dụng enum
                 Url = url,
                 FileType = mime,
                 Description = description
@@ -35,7 +35,8 @@ namespace CoreService.Application.Applications
             return entity;
         }
 
-        public Task<List<Image>> GetByOwnerAsync(string ownerType, string ownerId)
+        // CẬP NHẬT: Thay đổi tham số ownerType sang OwnerType enum
+        public Task<List<Image>> GetByOwnerAsync(OwnerType ownerType, string ownerId)
             => _repo.GetByOwnerAsync(ownerType, ownerId);
 
         public async Task<bool> DeleteAsync(string id)

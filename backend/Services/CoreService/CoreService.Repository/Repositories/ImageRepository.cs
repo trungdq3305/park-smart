@@ -49,9 +49,9 @@ namespace CoreService.Repository.Repositories
         public Task<Image?> GetByIdAsync(string id) =>
             _collection.Find(x => x.Id == id && x.DeletedAt == null).FirstOrDefaultAsync();
 
-        public Task<List<Image>> GetByOwnerAsync(string ownerType, string ownerId, int skip = 0, int limit = 50) =>
-            _collection.Find(x => x.Owner.Type == ownerType && x.Owner.Id == ownerId && x.DeletedAt == null)
-                       .Skip(skip).Limit(limit).ToListAsync();
+        public Task<List<Image>> GetByOwnerAsync(OwnerType ownerType, string ownerId, int skip = 0, int limit = 50) =>
+        _collection.Find(x => x.Owner.Type == ownerType && x.Owner.Id == ownerId && x.DeletedAt == null)
+                    .Skip(skip).Limit(limit).ToListAsync();
 
         public async Task<bool> HardDeleteAsync(string id)
         {
@@ -59,7 +59,7 @@ namespace CoreService.Repository.Repositories
             return res.DeletedCount == 1;
         }
 
-        public async Task<long> HardDeleteByOwnerAsync(string ownerType, string ownerId)
+        public async Task<long> HardDeleteByOwnerAsync(OwnerType ownerType, string ownerId)
         {
             var res = await _collection.DeleteManyAsync(x => x.Owner.Type == ownerType && x.Owner.Id == ownerId);
             return res.DeletedCount;
