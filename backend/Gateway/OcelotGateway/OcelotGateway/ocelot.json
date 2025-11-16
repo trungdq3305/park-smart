@@ -359,22 +359,6 @@
         "X-Forwarded-Host": "parksmarthcmc.io.vn"
       }
     },
-    //{
-    //  "DownstreamPathTemplate": "/signin-google",
-    //  "DownstreamScheme": "http",
-    //  "DownstreamHostAndPorts": [
-    //    {
-    //      "Host": "coreservice",
-    //      "Port": 8080
-    //    }
-    //  ],
-    //  "UpstreamPathTemplate": "/signin-google",
-    //  "UpstreamHttpMethod": [ "GET", "POST" ],
-    //  "AddHeadersToRequest": {
-    //    "X-Forwarded-Proto": "https",
-    //    "X-Forwarded-Host": "parksmarthcmc.io.vn"
-    //  }
-    //},
     {
       "DownstreamPathTemplate": "/addresses/{everything}",
       "DownstreamScheme": "http",
@@ -505,6 +489,18 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/parking-lot-links/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+    },
+    {
+      "DownstreamPathTemplate": "/reservations/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/reservations/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
     {
