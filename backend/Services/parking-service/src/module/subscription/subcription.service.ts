@@ -149,6 +149,10 @@ export class SubscriptionService implements ISubscriptionService {
         this.logger.log(
           `[CronJob] Đã hủy ${String(result.modifiedCount)} gói thuê bao quá hạn.`,
         )
+      } else {
+        this.logger.log(
+          '[CronJob] Không có gói thuê bao PENDING_PAYMENT nào quá hạn để hủy.',
+        )
       }
     } catch (error) {
       this.logger.error(
@@ -742,7 +746,7 @@ export class SubscriptionService implements ISubscriptionService {
         await this.notificationService.createAndSendNotification({
           recipientId: sub.createdBy!, // ID người dùng
           recipientRole: NotificationRole.DRIVER, // Giả định người mua là DRIVER
-           
+
           type: NotificationType.SUBSCRIPTION_ALERT, // Cần định nghĩa thêm loại này
           title: 'Gói Thuê Bao Sắp Hết Hạn! 🔔',
           body: `Gói thuê bao của bạn (ID: ${sub._id.slice(-4)}) sẽ hết hạn vào ngày ${expiryDate}. Vui lòng gia hạn để tiếp tục sử dụng.`,
