@@ -127,7 +127,7 @@ export class ParkingLotController {
 
   @Get('in-bounds')
   @ApiOperation({ summary: 'Tìm các bãi đỗ xe trong một khung nhìn bản đồ' })
-  @ApiOperation({ summary: 'Tìm các bãi đỗ xe trong một khung nhìn bản đồ' })
+  //@ApiOperation({ summary: 'Tìm các bãi đỗ xe trong một khung nhìn bản đồ' })
   // --- BỔ SUNG CÁC @ApiQuery Ở ĐÂY ---
   @ApiQuery({
     name: 'bottomLeftLng',
