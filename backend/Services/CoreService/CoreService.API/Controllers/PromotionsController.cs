@@ -25,6 +25,16 @@ namespace CoreService.API.Controllers
             var res = await _app.GetAllAsync();
             return StatusCode(res.StatusCode, res);
         }
+        [HttpGet("operator")]
+        [Authorize(Roles = "Admin,Operator")]
+        public async Task<IActionResult> GetByOperatorId()
+        {
+            var accountId = User.FindFirst("id")?.Value;
+
+            var res = await _app.GetByOperatorIdAsync(accountId);
+
+            return StatusCode(res.StatusCode, res);
+        }
 
         [HttpGet("{id}")]
         [AllowAnonymous]
