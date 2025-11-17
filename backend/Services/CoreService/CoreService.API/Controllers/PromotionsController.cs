@@ -36,7 +36,7 @@ namespace CoreService.API.Controllers
 
         // Admin/Operator endpoints
         [HttpPost]
-        [Authorize(Roles = "Admin,Operator")]
+        [Authorize(Roles = "Operator")]
         public async Task<IActionResult> Create([FromBody] PromotionCreateDto dto)
         {
             var accountId = User.FindFirst("id")?.Value;
@@ -78,6 +78,25 @@ namespace CoreService.API.Controllers
         {
             var accountId = User.FindFirst("id")?.Value;
             var res = await _app.RemoveRuleAsync(ruleId, accountId);
+            return StatusCode(res.StatusCode, res);
+        }
+
+        [HttpPost("calculate")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Calculate([FromBody] PromotionCalculateRequestDto dto)
+        {
+            var res = await _app.CalculateAsync(dto);
+            return StatusCode(res.StatusCode, res);
+        }
+
+        [HttpPost("use")]
+        [Authorize(Roles = "User,Admin,Operator")]
+        public async Task<IActionResult> Use([FromBody] PromotionCalculateRequestDto dto)
+        {
+            var userId = User.FindFirst("id")?.Value;
+            dto.AccountId = userId;
+
+            var res = await _app.UsePromotionAsync(dto);
             return StatusCode(res.StatusCode, res);
         }
     }

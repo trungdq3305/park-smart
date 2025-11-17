@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CoreService.Repository.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -13,6 +14,7 @@ namespace CoreService.Application.DTOs.PromotionDtos
         public string Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public DiscountType? DiscountType { get; set; }
         public decimal? DiscountValue { get; set; }
         public decimal? MaxDiscountAmount { get; set; }
         public DateTime? StartDate { get; set; }
