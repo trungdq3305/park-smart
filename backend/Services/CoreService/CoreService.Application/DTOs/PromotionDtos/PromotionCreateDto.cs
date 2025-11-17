@@ -1,4 +1,6 @@
 ﻿using CoreService.Repository.Models;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -10,6 +12,8 @@ namespace CoreService.Application.DTOs.PromotionDtos
 {
     public class PromotionCreateDto
     {
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string EventId { get; set; }
         [Required(ErrorMessage = "Mã khuyến mãi không được để trống")]
         public string Code { get; set; }
 

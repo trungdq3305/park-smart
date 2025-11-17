@@ -15,14 +15,11 @@ namespace CoreService.Repository.Models
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; }
 
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string UserId { get; set; }
+        public string AccountId { get; set; }
 
-        [BsonRepresentation(BsonType.ObjectId)]
         public string PromotionId { get; set; }
 
-        [BsonRepresentation(BsonType.ObjectId)]
-        public string ReservationId { get; set; }
+        public string EntityId { get; set; }
 
         public DateTime UsedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
     }
