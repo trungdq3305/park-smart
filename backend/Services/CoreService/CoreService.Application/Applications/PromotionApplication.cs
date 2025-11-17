@@ -20,12 +20,14 @@ namespace CoreService.Application.Applications
         private readonly IPromotionRuleRepository _ruleRepo;
         private readonly IUserPromotionUsageRepository _usageRepo;
         private readonly IAccountApplication _accountApplication;
-        public PromotionApplication(IPromotionRepository promoRepo, IPromotionRuleRepository ruleRepo, IUserPromotionUsageRepository usageRepo, IAccountApplication accountApplication)
+        private readonly IEventRepository _eventRepository;
+        public PromotionApplication(IPromotionRepository promoRepo, IPromotionRuleRepository ruleRepo, IUserPromotionUsageRepository usageRepo, IAccountApplication accountApplication, IEventRepository eventRepository)
         {
             _promoRepo = promoRepo;
             _ruleRepo = ruleRepo;
             _usageRepo = usageRepo;
             _accountApplication = accountApplication;
+            _eventRepository = eventRepository;
         }
 
         public async Task<ApiResponse<PromotionResponseDto>> CreateAsync(PromotionCreateDto dto, string actorAccountId)
@@ -36,7 +38,22 @@ namespace CoreService.Application.Applications
 
             if (dto.StartDate >= dto.EndDate)
                 throw new ApiException("Ngày bắt đầu phải trước ngày kết thúc", StatusCodes.Status400BadRequest);
+            if (!string.IsNullOrEmpty(dto.EventId))
+            {
+                // 1. Lấy thông tin Event
+                var eventEntity = await _eventRepository.GetByIdAsync(dto.EventId);
 
+                if (eventEntity == null)
+                {
+                    throw new ApiException("Sự kiện không tồn tại", StatusCodes.Status404NotFound);
+                }
+
+                // 2. Kiểm tra điều kiện IncludedPromotions
+                if (!eventEntity.IncludedPromotions)
+                {
+                    throw new ApiException("Sự kiện này không cho phép thêm khuyến mãi", StatusCodes.Status400BadRequest);
+                }
+            }
             // --- LOGIC KIỂM TRA BỔ SUNG BẮT ĐẦU TẠI ĐÂY ---
             if (dto.DiscountType == DiscountType.Percentage)
             {
@@ -318,6 +335,10 @@ namespace CoreService.Application.Applications
             return new ApiResponse<object>(
                 new
                 {
+                    PromotionId = promo.Id,
+                    PromotionCode = promo.Code,
+                    EntityId = dto.EntiTyId,
+                    OriginalAmount = dto.OriginalAmount,
                     FinalAmount = amountFinal,
                     DiscountAmount = calc.Data.DiscountAmount
                 },
@@ -325,6 +346,21 @@ namespace CoreService.Application.Applications
                 "Áp dụng mã giảm giá thành công",
                 200
             );
+        }
+        public async Task<ApiResponse<List<PromotionResponseDto>>> GetByOperatorIdAsync(string operatorId)
+        {
+            var items = await _promoRepo.GetByOperatorIdAsync(operatorId);
+
+            if (items == null || !items.Any())
+            {
+                // Nếu không có dữ liệu, bạn có thể trả về danh sách rỗng hoặc throw ApiException tùy theo thiết kế của bạn.
+                return new ApiResponse<List<PromotionResponseDto>>(new List<PromotionResponseDto>(), true, "Không có khuyến mãi nào được tạo bởi Operator này.", StatusCodes.Status200OK);
+            }
+
+            var tasks = items.Select(MapToResponseDto);
+            var list = (await Task.WhenAll(tasks)).ToList();
+
+            return new ApiResponse<List<PromotionResponseDto>>(list, true, "Lấy danh sách khuyến mãi theo Operator thành công", StatusCodes.Status200OK);
         }
 
 
