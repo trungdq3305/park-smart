@@ -219,18 +219,11 @@
     margin-right: 0;
   }
 }
-/* ======================================= */
-/* === NOTIFICATION DROP-DOWN HIGHLIGHT === */
-/* ======================================= */
 
-/* 1. Kiểu cho List Item chưa đọc */
 /* Áp dụng cho List.Item (className={item.className}) */
 .ant-list-item.notification-item-unread {
-    /* Nền màu xanh nhạt để highlight */
     background-color: #f0f8ff !important; 
-    /* Thanh dọc bên trái */
     border-left: 4px solid #1890ff; 
-    /* Đẩy nội dung vào để nhường chỗ cho thanh dọc */
     padding-left: 8px !important; 
     transition: background-color 0.3s ease, border-left 0.3s ease;
 }
