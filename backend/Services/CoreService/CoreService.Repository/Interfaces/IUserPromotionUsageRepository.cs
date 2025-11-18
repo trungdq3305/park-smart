@@ -11,6 +11,8 @@ namespace CoreService.Repository.Interfaces
     {
         Task<int> CountUserUsageAsync(string userId, string promotionId);
         Task AddAsync(UserPromotionUsage entity);
+        Task<UserPromotionUsage> GetByEntityIdAsync(string entityId);
+        Task UpdateAsync(UserPromotionUsage entity);
     }
 
 }

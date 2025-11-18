@@ -21,13 +21,15 @@ namespace CoreService.Application.Applications
         private readonly IUserPromotionUsageRepository _usageRepo;
         private readonly IAccountApplication _accountApplication;
         private readonly IEventRepository _eventRepository;
-        public PromotionApplication(IPromotionRepository promoRepo, IPromotionRuleRepository ruleRepo, IUserPromotionUsageRepository usageRepo, IAccountApplication accountApplication, IEventRepository eventRepository)
+        private readonly IPaymentRecordRepo _paymentRecordRepo;
+        public PromotionApplication(IPromotionRepository promoRepo, IPromotionRuleRepository ruleRepo, IUserPromotionUsageRepository usageRepo, IAccountApplication accountApplication, IEventRepository eventRepository, IPaymentRecordRepo paymentRecordRepo)
         {
             _promoRepo = promoRepo;
             _ruleRepo = ruleRepo;
             _usageRepo = usageRepo;
             _accountApplication = accountApplication;
             _eventRepository = eventRepository;
+            _paymentRecordRepo = paymentRecordRepo;
         }
 
         public async Task<ApiResponse<PromotionResponseDto>> CreateAsync(PromotionCreateDto dto, string actorAccountId)
@@ -323,7 +325,8 @@ namespace CoreService.Application.Applications
                 AccountId = dto.AccountId,
                 PromotionId = promo.Id,
                 EntityId = dto.EntiTyId, // Đơn hàng hoặc booking id sau này
-                UsedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow)
+                UsedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+                Status = UsageStatus.Used
             };
 
             await _usageRepo.AddAsync(usage);
@@ -363,6 +366,37 @@ namespace CoreService.Application.Applications
             return new ApiResponse<List<PromotionResponseDto>>(list, true, "Lấy danh sách khuyến mãi theo Operator thành công", StatusCodes.Status200OK);
         }
 
+        public async Task<ApiResponse<object>> RefundPromotionUsageAsync(string paymentId, string actorAccountId)
+        {
+            // 1. Tìm bản ghi sử dụng liên quan đến EntityId (đơn hàng/booking)
 
+            var paymentRecord = await _paymentRecordRepo.GetByIdAsync(paymentId)
+                                 ?? throw new ApiException("Bản ghi thanh toán không tồn tại.", StatusCodes.Status404NotFound);
+            var entityId = paymentRecord.ReservationId ?? paymentRecord.SubscriptionId ?? paymentRecord.ParkingLotSessionId;
+            var usageEntity = await _usageRepo.GetByEntityIdAsync(entityId)
+                              ?? throw new ApiException("Lịch sử sử dụng khuyến mãi không tồn tại.", StatusCodes.Status404NotFound);
+
+            if (usageEntity.Status != UsageStatus.Used)
+                throw new ApiException("Mã khuyến mãi đã được hoàn tiền/hủy trước đó.", StatusCodes.Status400BadRequest);
+
+            // 2. Cập nhật trạng thái sử dụng
+            usageEntity.Status = UsageStatus.Refunded;
+            usageEntity.RefundedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            await _usageRepo.UpdateAsync(usageEntity); // Cần có phương thức Update trong usageRepo
+
+            // 3. Giảm CurrentUsageCount của Promotion
+            var promotion = await _promoRepo.GetByIdAsync(usageEntity.PromotionId)
+                            ?? throw new ApiException("Khuyến mãi không tồn tại.", StatusCodes.Status404NotFound);
+
+            if (promotion.CurrentUsageCount > 0)
+            {
+                promotion.CurrentUsageCount -= 1;
+                promotion.UpdatedBy = actorAccountId;
+                promotion.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+                await _promoRepo.UpdateAsync(promotion);
+            }
+
+            return new ApiResponse<object>(null, true, "Hoàn tác sử dụng khuyến mãi thành công.", StatusCodes.Status200OK);
+        }
     }
 }

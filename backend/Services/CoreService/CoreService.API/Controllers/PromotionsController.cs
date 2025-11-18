@@ -100,13 +100,22 @@ namespace CoreService.API.Controllers
         }
 
         [HttpPost("use")]
-        [Authorize(Roles = "User,Admin,Operator")]
+        [Authorize(Roles = "Driver,Admin,Operator")]
         public async Task<IActionResult> Use([FromBody] PromotionCalculateRequestDto dto)
         {
             var userId = User.FindFirst("id")?.Value;
             dto.AccountId = userId;
 
             var res = await _app.UsePromotionAsync(dto);
+            return StatusCode(res.StatusCode, res);
+        }
+
+        [HttpPost("refund")]
+        [Authorize(Roles = "Admin,Operator,Driver")]
+        public async Task<IActionResult> Refund(string entityId)
+        {
+            var actorAccountId = User.FindFirst("id")?.Value;
+            var res = await _app.RefundPromotionUsageAsync(entityId, actorAccountId);
             return StatusCode(res.StatusCode, res);
         }
     }

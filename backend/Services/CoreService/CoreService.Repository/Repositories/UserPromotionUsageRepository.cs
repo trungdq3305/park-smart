@@ -31,5 +31,9 @@ namespace CoreService.Repository.Repositories
 
         public Task AddAsync(UserPromotionUsage entity)
             => _collection.InsertOneAsync(entity);
+        public async Task<UserPromotionUsage> GetByEntityIdAsync(string entityId) =>
+            await _collection.Find(x => x.EntityId == entityId ).FirstOrDefaultAsync();
+        public Task UpdateAsync(UserPromotionUsage entity) => _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
+
     }
 }
