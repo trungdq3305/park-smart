@@ -19,6 +19,7 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger'
 import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
 import { Roles } from 'src/common/decorators/roles.decorator'
@@ -34,6 +35,7 @@ import { RolesGuard } from 'src/guard/role.guard'
 import {
   ConfirmReservationPaymentDto,
   CreateReservationDto,
+  ReservationAvailabilitySlotDto,
   ReservationDetailResponseDto,
   UpdateReservationStatusDto,
 } from './dto/reservation.dto' // <-- Thay đổi
@@ -46,6 +48,57 @@ export class ReservationController {
     @Inject(IReservationService) // <-- Thay đổi
     private readonly reservationService: IReservationService, // <-- Thay đổi
   ) {}
+
+  @Get('availability/:parkingLotId')
+  @ApiOperation({
+    summary: 'Lấy tình trạng chỗ đặt trước (Xô 2) theo giờ trong ngày',
+  })
+  @ApiParam({
+    name: 'parkingLotId',
+    description: 'ID của bãi đỗ xe',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'date',
+    description: 'Ngày cần xem (YYYY-MM-DD)',
+    required: true,
+    example: '2025-11-20',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Trả về Map tình trạng từng giờ (00:00 -> 23:00).',
+    schema: {
+      type: 'object',
+      // ⭐️ Cấu hình Dynamic Key cho Swagger
+      additionalProperties: {
+        $ref: getSchemaPath(ReservationAvailabilitySlotDto),
+      },
+      example: {
+        '08:00': { remaining: 30, isAvailable: true },
+        '09:00': { remaining: 5, isAvailable: true },
+        '10:00': { remaining: 0, isAvailable: false },
+      },
+    },
+  })
+  async getReservationAvailability(
+    @Param('parkingLotId') parkingLotId: string,
+    @Query('date') date: string,
+  ): Promise<ApiResponseDto<any>> {
+    // Trả về any/object
+
+    const availabilityMap =
+      await this.reservationService.getReservationAvailability(
+        parkingLotId,
+        date,
+      )
+
+    return {
+      data: [availabilityMap],
+      statusCode: HttpStatus.OK,
+      message: 'Lấy tình trạng đặt chỗ thành công',
+      success: true,
+    }
+  }
 
   // =================================================================
   // 1. API TẠO BẢN NHÁP (HÓA ĐƠN)

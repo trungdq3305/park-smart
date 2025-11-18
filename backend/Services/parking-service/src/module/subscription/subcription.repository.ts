@@ -13,6 +13,16 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
 
+  async countPendingByUser(userId: string): Promise<number> {
+    return this.subscriptionModel
+      .countDocuments({
+        userId: userId,
+        status: SubscriptionStatusEnum.PENDING_PAYMENT,
+        deletedAt: null,
+      })
+      .exec()
+  }
+
   async updateExpiredPendingSubscriptions(
     cutoffTime: Date,
   ): Promise<{ modifiedCount: number; matchedCount: number }> {

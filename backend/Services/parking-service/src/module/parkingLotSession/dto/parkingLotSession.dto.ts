@@ -15,6 +15,34 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator'
  * Dùng cho Kiosk khi xe Vãng lai (Xô 3) vào.
  * File ảnh sẽ được gửi riêng (multipart-form-data).
  */
+
+export class CheckInDto {
+  @ApiPropertyOptional({
+    description:
+      'Biển số xe (từ OCR hoặc nhập tay). Bắt buộc nếu là khách vãng lai.',
+    example: '51A-123.46',
+  })
+  @IsOptional()
+  @IsString({ message: 'Biển số xe phải là chuỗi ký tự' })
+  plateNumber?: string
+
+  @ApiPropertyOptional({
+    description: 'Mã định danh từ QR Code (nếu quét được).',
+    example: '5349b4ddd-27e6-4722-91b1-8d874514031e',
+  })
+  @IsOptional()
+  @IsString({ message: 'Mã định danh phải là chuỗi ký tự' })
+  identifier?: string // Là reservationIdentifier hoặc subscriptionIdentifier
+
+  @ApiPropertyOptional({
+    description: 'Mô tả tùy chọn (ví dụ: "Check-in tại cổng A")',
+    example: 'Cổng vào số 1',
+  })
+  @IsOptional()
+  @IsString()
+  description?: string
+}
+
 export class CreateParkingSessionDto {
   @ApiProperty({
     description: 'Biển số xe (đã được xác nhận sau khi OCR/nhập tay)',

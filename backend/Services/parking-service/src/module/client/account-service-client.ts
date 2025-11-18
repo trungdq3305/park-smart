@@ -44,6 +44,15 @@ export class AccountServiceClient implements IAccountServiceClient {
     //this.INTERNAL_AUTH_TOKEN = this.configService.get<string>('JWT_SECRET') || 'default-secret';
   }
 
+  uploadImageToImageService(
+    fileBuffer: Buffer,
+    ownerType: string,
+    ownerId: string,
+    description: string,
+  ): Promise<boolean> {
+    throw new Error('Method not implemented.')
+  }
+
   private getInternalToken(): string {
     // 🔥 TẠO PAYLOAD MÔ PHỎNG ACCOUNT ADMIN NỘI BỘ
     const payload = {
