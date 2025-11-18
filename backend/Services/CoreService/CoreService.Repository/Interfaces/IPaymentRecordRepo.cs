@@ -32,5 +32,19 @@ namespace CoreService.Repository.Interfaces
         string accountId,
         string status,
         int take = 50);
+        Task<IEnumerable<PaymentRecord>> GetFilteredPaymentsAsync(
+        string? operatorId, // Có thể null (Admin) hoặc có giá trị (Operator)
+        IEnumerable<PaymentType>? paymentTypes, // Lọc theo loại thanh toán
+        string? status, // Lọc theo trạng thái
+        DateTime? fromDate, // Ngày bắt đầu
+        DateTime? toDate
+    );
+        Task<long> CountFilteredPaymentsAsync(
+            string? operatorId,
+            IEnumerable<PaymentType>? paymentTypes,
+            string? status,
+            DateTime? fromDate,
+            DateTime? toDate
+        );
     }
 }
