@@ -107,7 +107,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     const filter = {
       parkingLotId: parkingLotId,
       status: {
-        $or: [
+        $in: [
           SubscriptionStatusEnum.ACTIVE,
           SubscriptionStatusEnum.PENDING_PAYMENT,
         ],
