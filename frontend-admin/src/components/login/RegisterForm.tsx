@@ -80,6 +80,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
   const [tempLocation, setTempLocation] = useState<{ lat: number; lng: number } | null>(null)
 
+  const HO_CHI_MINH_BOUNDS = {
+    lat: { min: 10.35, max: 11.25 },
+    lng: { min: 106.3, max: 107.2 },
+  }
+  const HO_CHI_MINH_BOUNDS_RECT: [[number, number], [number, number]] = [
+    [HO_CHI_MINH_BOUNDS.lat.min, HO_CHI_MINH_BOUNDS.lng.min],
+    [HO_CHI_MINH_BOUNDS.lat.max, HO_CHI_MINH_BOUNDS.lng.max],
+  ]
+
+  const isWithinHoChiMinh = (lat: number, lng: number) =>
+    lat >= HO_CHI_MINH_BOUNDS.lat.min &&
+    lat <= HO_CHI_MINH_BOUNDS.lat.max &&
+    lng >= HO_CHI_MINH_BOUNDS.lng.min &&
+    lng <= HO_CHI_MINH_BOUNDS.lng.max
+
   const nextStep = async () => {
     try {
       await form.validateFields([
@@ -113,6 +128,14 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   }
 
   const handleLocationSelect = (coords: { lat: number; lng: number }) => {
+    if (!isWithinHoChiMinh(coords.lat, coords.lng)) {
+      notification.warning({
+        message: 'Ngoài phạm vi TP.HCM',
+        description: 'Vui lòng chọn vị trí thuộc khu vực TP.HCM.',
+        duration: 4.5,
+      })
+      return
+    }
     setTempLocation(coords)
   }
 
@@ -750,7 +773,11 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           Nhấp vào vị trí trên bản đồ để đặt điểm đánh dấu. Bạn có thể thu phóng hoặc kéo bản đồ
           để chọn chính xác vị trí bãi đỗ xe.
         </Paragraph>
-        <LocationPickerMap value={mapLocation} onChange={handleLocationSelect} />
+        <LocationPickerMap
+          value={mapLocation}
+          onChange={handleLocationSelect}
+          bounds={HO_CHI_MINH_BOUNDS_RECT}
+        />
       </Modal>
     </>
   )

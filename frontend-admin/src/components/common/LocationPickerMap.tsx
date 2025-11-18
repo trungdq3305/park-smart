@@ -1,6 +1,10 @@
 import React from 'react'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
-import type { LatLngExpression, LeafletMouseEvent } from 'leaflet'
+import type {
+  LatLngBoundsExpression,
+  LatLngExpression,
+  LeafletMouseEvent,
+} from 'leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -19,6 +23,7 @@ type LatLng = { lat: number; lng: number }
 interface LocationPickerMapProps {
   value: LatLng | null
   onChange: (coords: LatLng) => void
+  bounds?: LatLngBoundsExpression
 }
 
 const MapClickHandler: React.FC<{ onSelect: (coords: LatLng) => void }> = ({ onSelect }) => {
@@ -32,7 +37,7 @@ const MapClickHandler: React.FC<{ onSelect: (coords: LatLng) => void }> = ({ onS
 
 const DEFAULT_CENTER: LatLng = { lat: 10.776889, lng: 106.700806 } // Ho Chi Minh City
 
-const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ value, onChange }) => {
+const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ value, onChange, bounds }) => {
   const center: LatLngExpression = value ?? DEFAULT_CENTER
 
   return (
@@ -40,6 +45,8 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ value, onChange }
       center={center}
       zoom={14}
       scrollWheelZoom
+      maxBounds={bounds}
+      maxBoundsViscosity={bounds ? 1 : undefined}
       style={{ height: 420, width: '100%', borderRadius: 12, overflow: 'hidden' }}
     >
 
