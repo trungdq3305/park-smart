@@ -19,7 +19,7 @@ export class ParkingLotRequest extends BaseEntity {
     type: String,
     enum: Object.values(RequestType), // 'UPDATE' hoặc 'DELETE'
   })
-  requestType: string
+  requestType: RequestType
 
   @Prop({
     required: true,

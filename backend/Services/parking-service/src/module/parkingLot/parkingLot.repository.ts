@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { InjectModel } from '@nestjs/mongoose'
-import { ClientSession, Model, Types } from 'mongoose'
+import { ClientSession, Model } from 'mongoose'
 
 import { IParkingLotRepository } from './interfaces/iparkinglot.repository'
 import { ParkingLot } from './schemas/parkingLot.schema'
@@ -132,7 +132,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
     // 1. Thêm điều kiện lọc để chỉ lấy các bãi đỗ đã được duyệt
     //    Bạn có thể thêm các điều kiện khác nếu cần (ví dụ: isDeleted: false)
     const queryCondition = {
-      parkingLotStatusId: new Types.ObjectId(parkingLotStatusId),
+      parkingLotStatus: parkingLotStatusId,
     }
 
     // 2. Dùng async/await với Promise.all cho dễ đọc hơn
@@ -146,10 +146,8 @@ export class ParkingLotRepository implements IParkingLotRepository {
           path: 'addressId',
           populate: {
             path: 'wardId',
+            select: 'wardName -_id',
           },
-        })
-        .populate({
-          path: 'parkingLotStatusId',
         })
         .lean() // .lean() vẫn là một tối ưu tốt ở đây
         .exec(),
