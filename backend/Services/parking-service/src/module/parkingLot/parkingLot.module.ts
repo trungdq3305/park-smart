@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
 import { AddressModule } from '../address/address.module'
@@ -35,7 +35,7 @@ import {
     AddressModule,
     ParkingSpaceModule,
     ParkingSpaceStatusModule,
-    ParkingLotSessionModule,
+    forwardRef(() => ParkingLotSessionModule),
   ],
   controllers: [ParkingLotController],
   providers: [
@@ -57,6 +57,11 @@ import {
     },
     ParkingLotGateway,
   ],
-  exports: [IParkingLotService, IParkingLotRepository],
+  exports: [
+    IParkingLotService,
+    IParkingLotRepository,
+    IParkingLotHistoryLogRepository,
+    IParkingLotRequestRepository,
+  ],
 })
 export class ParkingLotModule {}

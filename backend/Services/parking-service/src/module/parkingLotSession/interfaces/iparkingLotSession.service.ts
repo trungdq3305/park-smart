@@ -3,7 +3,7 @@ import type { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 // Import DTOs liên quan đến Parking Lot Session
 import type {
-  CreateParkingSessionDto,
+  CheckInDto,
   ParkingLotSessionResponseDto,
 } from '../dto/parkingLotSession.dto' // <-- Giả định đường dẫn DTO
 
@@ -20,9 +20,9 @@ export interface IParkingLotSessionService {
    * @param createDto DTO chứa 'plateNumber' và 'description'.
    * @param file File ảnh (từ 'multipart/form-data').
    */
-  checkInWalkIn(
+  checkIn(
     parkingLotId: string,
-    createDto: CreateParkingSessionDto,
+    createDto: CheckInDto,
     file: Express.Multer.File,
   ): Promise<ParkingLotSessionResponseDto>
 
@@ -50,17 +50,6 @@ export interface IParkingLotSessionService {
    * @param paymentId ID thanh toán (bằng chứng) từ .NET.
    */
   confirmWalkInCheckout(sessionId: string, paymentId: string): Promise<boolean>
-
-  /**
-   * (Hàm nội bộ - Gửi WebSocket)
-   * Cập nhật 'availableSpots' trong DB và phát sóng (broadcast) cho client.
-   * @param parkingLotId ID của bãi xe.
-   * @param change Số lượng thay đổi (-1 khi Check-in, +1 khi Check-out).
-   */
-  updateAvailableSpotsForWebsocket(
-    parkingLotId: string,
-    change: number,
-  ): Promise<boolean>
 
   /**
    * (Lịch sử) Lấy tất cả các phiên đỗ xe của một người dùng (có phân trang).

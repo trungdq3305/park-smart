@@ -13,26 +13,67 @@ export class ParkingLotSessionRepository
     private parkingLotSessionModel: Model<ParkingLotSession>,
   ) {}
 
+  async findAllSessionsByParkingLotId(
+    parkingLotId: string,
+    page: number,
+    pageSize: number,
+    startTime?: Date,
+    endTime?: Date,
+    session?: ClientSession,
+  ): Promise<{ data: ParkingLotSession[]; total: number }> {
+    const [data, total] = await Promise.all([
+      this.parkingLotSessionModel
+        .find({
+          parkingLotId: parkingLotId,
+          ...(startTime ? { createdAt: { $gte: startTime } } : {}),
+          ...(endTime ? { createdAt: { $lte: endTime } } : {}),
+        })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .session(session ?? null)
+        .exec(),
+      this.parkingLotSessionModel
+        .countDocuments({
+          parkingLotId: parkingLotId,
+          ...(startTime ? { createdAt: { $gte: startTime } } : {}),
+          ...(endTime ? { createdAt: { $lte: endTime } } : {}),
+        })
+        .session(session ?? null)
+        .exec(),
+    ])
+    return { data, total }
+  }
+
   createSession(
     sessionData: Partial<ParkingLotSession>,
     session: ClientSession,
   ): Promise<ParkingLotSession | null> {
-    throw new Error('Method not implemented.')
+    const createdSession = new this.parkingLotSessionModel(sessionData)
+    return createdSession.save({ session })
   }
 
   findActiveSessionByPlate(
     plateNumber: string,
     parkingLotId?: string,
-  ): Promise<ParkingLotSession | null> {
-    throw new Error('Method not implemented.')
+  ): Promise<ParkingLotSession[] | null> {
+    const data = this.parkingLotSessionModel
+      .find({
+        plateNumber: plateNumber,
+        parkingLotId: parkingLotId,
+      })
+      .sort({ createdAt: -1 })
+    return data.exec()
   }
 
-  updateSessionOnCheckout(
+  async updateSessionOnCheckout(
     sessionId: string,
     updateData: Partial<ParkingLotSession>,
     session: ClientSession,
   ): Promise<boolean> {
-    throw new Error('Method not implemented.')
+    return this.parkingLotSessionModel
+      .updateOne({ _id: sessionId }, { $set: updateData })
+      .session(session)
+      .then((res) => res.modifiedCount > 0)
   }
 
   async countActiveWalkInSessions(
@@ -86,11 +127,19 @@ export class ParkingLotSessionRepository
       .exec()
   }
 
-  findAllSessionsByUserId(
+  async findAllSessionsByUserId(
     userId: string,
     page: number,
     pageSize: number,
   ): Promise<{ data: ParkingLotSession[]; total: number }> {
-    throw new Error('Method not implemented.')
+    const [data, total] = await Promise.all([
+      this.parkingLotSessionModel
+        .find({ createdBy: userId })
+        .skip((page - 1) * pageSize)
+        .limit(pageSize)
+        .exec(),
+      this.parkingLotSessionModel.countDocuments({ createdBy: userId }).exec(),
+    ])
+    return { data, total }
   }
 }

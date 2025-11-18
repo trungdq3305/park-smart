@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
 import { BookingInventoryModule } from '../bookingInventory/bookingInventory.module'
@@ -18,7 +18,7 @@ import { Reservation, ReservationSchema } from './schemas/reservation.schema'
       { name: Reservation.name, schema: ReservationSchema },
     ]),
     BookingInventoryModule,
-    ParkingLotModule,
+    forwardRef(() => ParkingLotModule),
     PricingPolicyModule,
     ClientModule,
   ],

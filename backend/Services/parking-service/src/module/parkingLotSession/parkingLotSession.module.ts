@@ -1,9 +1,13 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
+import { ClientModule } from '../client/client.module'
+import { ParkingLotModule } from '../parkingLot/parkingLot.module'
+import { ReservationModule } from '../reservation/reservation.module'
+import { SubscriptionModule } from '../subscription/subcription.module'
 import { IParkingLotSessionRepository } from './interfaces/iparkingLotSession.repository'
 import { IParkingLotSessionService } from './interfaces/iparkingLotSession.service'
-// import { ParkingLotSessionController } from './parkingLotSession.controller'
+import { ParkingLotSessionController } from './parkingLotSession.controller'
 import { ParkingLotSessionRepository } from './parkingLotSession.repository'
 import { ParkingLotSessionService } from './parkingLotSession.service'
 import {
@@ -16,8 +20,12 @@ import {
     MongooseModule.forFeature([
       { name: ParkingLotSession.name, schema: ParkingLotSessionSchema },
     ]),
+    forwardRef(() => ParkingLotModule),
+    forwardRef(() => SubscriptionModule),
+    forwardRef(() => ReservationModule),
+    ClientModule,
   ],
-  controllers: [],
+  controllers: [ParkingLotSessionController],
   providers: [
     { provide: IParkingLotSessionService, useClass: ParkingLotSessionService },
     {

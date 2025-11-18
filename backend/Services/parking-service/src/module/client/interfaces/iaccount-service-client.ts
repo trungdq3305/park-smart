@@ -22,6 +22,21 @@ export interface IAccountServiceClient {
     userId: string,
     status: string,
   ): Promise<boolean>
+
+  /**
+   * @description Gọi API của Core Service để tải ảnh lên Image Service.
+   * @param fileBuffer Buffer của file ảnh.
+   * @param ownerType Loại chủ sở hữu ảnh (ví dụ: 'ParkingSession').
+   * @param ownerId ID tham chiếu (ví dụ: ID của ParkingSession).
+   * @param description Mô tả ảnh.
+   * @returns Promise<void>
+   */
+  uploadImageToImageService(
+    fileBuffer: Buffer,
+    ownerType: string,
+    ownerId: string,
+    description: string,
+  ): Promise<boolean>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')
