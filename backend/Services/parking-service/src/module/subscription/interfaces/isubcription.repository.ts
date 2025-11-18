@@ -163,6 +163,8 @@ export interface ISubscriptionRepository {
     daysRemaining: number,
     today: Date, // Date(0, 0, 0, 0)
   ): Promise<Pick<Subscription, '_id' | 'createdBy' | 'endDate' | 'status'>[]>
+
+  countPendingByUser(userId: string): Promise<number>
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')

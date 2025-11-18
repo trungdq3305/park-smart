@@ -6,6 +6,7 @@ import type { IdDto } from 'src/common/dto/params.dto'
 import type {
   ConfirmReservationPaymentDto, // ⭐️ DTO cho API 2
   CreateReservationDto,
+  ReservationAvailabilitySlotDto,
   ReservationDetailResponseDto,
   UpdateReservationStatusDto, // (Cho Admin)
 } from '../dto/reservation.dto' // <-- Giả định đường dẫn DTO
@@ -96,6 +97,11 @@ export interface IReservationService {
     updateDto: UpdateReservationStatusDto,
     userId: string,
   ): Promise<boolean>
+
+  getReservationAvailability(
+    parkingLotId: string,
+    dateStr: string, // Input dạng 'YYYY-MM-DD'
+  ): Promise<Record<string, ReservationAvailabilitySlotDto>>
 }
 
 export const IReservationService = Symbol('IReservationService')

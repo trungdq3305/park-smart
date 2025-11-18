@@ -20,7 +20,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
       .findById(id)
       .select('leasedCapacity')
       .lean()
-      .session(session || null)
+      .session(session ?? null)
       .exec()
     return data?.leasedCapacity ?? 0
   }

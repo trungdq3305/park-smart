@@ -25,7 +25,7 @@ export interface IParkingLotSessionRepository {
   findActiveSessionByPlate(
     plateNumber: string,
     parkingLotId?: string,
-  ): Promise<ParkingLotSession | null>
+  ): Promise<ParkingLotSession[] | null>
 
   /**
    * (Check-out) Cập nhật một phiên khi xe rời bãi.
@@ -79,6 +79,24 @@ export interface IParkingLotSessionRepository {
     userId: string,
     page: number,
     pageSize: number,
+  ): Promise<{ data: ParkingLotSession[]; total: number }>
+
+  /**
+   * (Quản lý bãi) Lấy tất cả các phiên đỗ xe trong một bãi cụ thể (có phân trang).
+   * @param parkingLotId ID của bãi đỗ xe.
+   * @param page Số trang.
+   * @param pageSize Kích thước trang.
+   * @param startTime (Tùy chọn) Lọc từ thời gian này trở đi.
+   * @param endTime (Tùy chọn) Lọc đến thời gian này.
+   * @param session (Tùy chọn) Dùng trong transaction.
+   */
+  findAllSessionsByParkingLotId(
+    parkingLotId: string,
+    page: number,
+    pageSize: number,
+    startTime?: Date,
+    endTime?: Date,
+    session?: ClientSession,
   ): Promise<{ data: ParkingLotSession[]; total: number }>
 }
 

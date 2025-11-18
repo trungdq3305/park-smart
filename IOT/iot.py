@@ -2,38 +2,40 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from ultralytics import YOLO
-from typing import List
-import requests
-from pyzbar.pyzbar import decode, ZBarSymbol
 import time
 import json
+import threading
+import base64
+import requests
+from ultralytics import YOLO
+from pyzbar.pyzbar import decode, ZBarSymbol
+
+# Flask & SocketIO
+from flask import Flask, Response, request, jsonify
+from flask_socketio import SocketIO
+from flask_cors import CORS
+from flasgger import Swagger # ⭐️ 1. Import Flasgger
 
 # =============================
-# 1) CONFIG
+# 1) CONFIG (CẤU HÌNH)
 # =============================
-# --- Đường dẫn đến các mô hình đã huấn luyện ---
+# ... (Giữ nguyên phần config của bạn) ...
 YOLO_MODEL_PATH = 'lp_detect_v4.pt'
 OCR_MODEL_PATH = 'best_ocr_model.pth'
-ESP32_ENDPOINT = "http://10.20.30.42/open" # <<<--- THAY ĐỔI ĐỊA CHỈ NÀY
-
-# --- Cài đặt 2 Camera riêng biệt ---
-# Chạy lệnh `ls /dev/video*` trên Linux/RPi hoặc thử các số khác nhau trên Windows
-QR_CAM_INDEX = "http://10.20.30.19:8081/video"      # Chỉ số của camera quét QR
-PLATE_CAM_INDEX = "http://10.20.30.168:8080/video"   # Chỉ số của camera chụp biển số
-
-# Các thông số của mô hình OCR
+ESP32_ENDPOINT = "http://10.20.30.42/open"
+QR_CAM_INDEX = "http://10.20.30.19:8081/video"
+PLATE_CAM_INDEX = "http://10.20.30.168:8080/video"
+NESTJS_API_URL = "http://localhost:5000/api/parking-sessions/check-in" 
+PARKING_LOT_ID = "605e3f5f4f3e8c1d4c9f1e1a"
 IMG_HEIGHT = 64
 MAX_IMG_WIDTH = 256
 CHAR_LIST = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 BLANK_IDX = len(CHAR_LIST)
 
 # =============================
-# 2) ĐỊNH NGHĨA LẠI KIẾN TRÚC VÀ CÁC HÀM HỖ TRỢ
+# 2) MÔ HÌNH OCR & HÀM HỖ TRỢ (GIỮ NGUYÊN)
 # =============================
-
-# Dán class CRNN từ tệp huấn luyện của bạn vào đây
+# ... (Giữ nguyên class CRNN và các hàm preprocess, decode, open_barrier) ...
 class CRNN(nn.Module):
     def __init__(self, num_classes: int):
         super().__init__()
@@ -59,32 +61,26 @@ class CRNN(nn.Module):
         logits = self.fc(seq)
         return logits.permute(1, 0, 2)
 
-# Khởi tạo từ điển tra cứu
 int_to_char = {i: c for i, c in enumerate(CHAR_LIST)}
 int_to_char[BLANK_IDX] = ""
 
 def preprocess_for_ocr(img: np.ndarray) -> torch.Tensor:
-    """Tiền xử lý ảnh đã cắt cho mô hình CRNN."""
     if len(img.shape) == 3 and img.shape[2] == 3:
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:
         img_gray = img
-        
     h, w = img_gray.shape
     ratio = w / h
     new_w = int(IMG_HEIGHT * ratio)
     new_w = max(1, min(new_w, MAX_IMG_WIDTH))
     img_resized = cv2.resize(img_gray, (new_w, IMG_HEIGHT), interpolation=cv2.INTER_LINEAR)
-    
     canvas = np.ones((IMG_HEIGHT, MAX_IMG_WIDTH), dtype=np.uint8) * 255
     canvas[:, :new_w] = img_resized
-    
     tensor_img = torch.from_numpy(canvas.astype(np.float32) / 255.0).unsqueeze(0)
     return tensor_img.unsqueeze(0)
 
 @torch.no_grad()
 def ctc_greedy_decode(logits_TNC: torch.Tensor) -> str:
-    """Giải mã kết quả thô từ mô hình."""
     best = logits_TNC.argmax(dim=2).permute(1, 0)
     decoded_str = ""
     for seq in best:
@@ -106,125 +102,265 @@ def open_barrier():
     except requests.exceptions.RequestException as e:
         print(f"LỖI: Không thể gửi lệnh đến ESP32: {e}")
 
-def capture_plate_image():
-    """Hàm chuyên dụng để chụp một ảnh chất lượng cao từ camera biển số."""
-    cap = cv2.VideoCapture(PLATE_CAM_INDEX)
-    if not cap.isOpened():
-        print(f"Lỗi: Không thể mở camera biển số (index {PLATE_CAM_INDEX})")
-        return None
-    
-    time.sleep(1) # Cho camera thời gian để ổn định
-    ret, frame = cap.read()
-    cap.release()
-    
-    if ret:
-        print("--> Đã chụp ảnh biển số thành công!")
-        cv2.imwrite("last_plate_capture.jpg", frame) # Lưu lại ảnh để kiểm tra
-        return frame
-    else:
-        print("--> Lỗi: Không thể chụp ảnh từ camera biển số.")
-        return None
-
 # =============================
-# 3) TẢI CÁC MÔ HÌNH VÀO BỘ NHỚ
+# 3) KHỞI TẠO SERVER & MODEL
 # =============================
+app = Flask(__name__)
+CORS(app)
 
+# ⭐️ 2. Cấu hình Swagger
+app.config['SWAGGER'] = {
+    'title': 'Python IOT Service API',
+    'uiversion': 3,
+    'description': 'API documentation for AI/IOT Service (Flask)',
+    'version': '1.0.0'
+}
+swagger = Swagger(app) # Khởi tạo Swagger
+
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# ... (Giữ nguyên phần load model) ...
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Hệ thống sẽ chạy trên thiết bị: {device}")
+print(f"--> Sử dụng thiết bị: {device}")
 
-# Tải mô hình YOLO detector
 model_detector = YOLO(YOLO_MODEL_PATH)
-
-# Tải mô hình CRNN recognizer đã huấn luyện
 model_recognizer = CRNN(num_classes=len(CHAR_LIST) + 1).to(device)
+
 try:
-    checkpoint = torch.load(OCR_MODEL_PATH, map_location=device, weights_only=True)
+    checkpoint = torch.load(OCR_MODEL_PATH, map_location=device)
     model_recognizer.load_state_dict(checkpoint['model_state'])
     model_recognizer.eval()
-    print("Tải mô hình OCR tùy chỉnh thành công.")
+    print("--> Đã tải mô hình OCR.")
 except Exception as e:
-    print(f"LỖI: Không thể tải tệp mô hình OCR tại '{OCR_MODEL_PATH}'. Lỗi: {e}")
-    model_recognizer = None
+    print(f"--> LỖI tải mô hình OCR: {e}")
+
+current_qr_frame = None
+lock = threading.Lock()
 
 # =============================
-# 4) VÒNG LẶP CHÍNH
+# 4) LOGIC XỬ LÝ CAMERA (GIỮ NGUYÊN)
 # =============================
-def main_loop():
-    if model_recognizer is None:
-        print("Không thể khởi động do lỗi tải mô hình OCR.")
-        return
+def capture_full_scene():
+    cap = cv2.VideoCapture(PLATE_CAM_INDEX)
+    if not cap.isOpened(): return None
+    time.sleep(0.5)
+    ret, frame = cap.read()
+    cap.release()
+    return frame if ret else None
 
-    qr_cam = cv2.VideoCapture(QR_CAM_INDEX)
-    if not qr_cam.isOpened():
-        print(f"Lỗi: Không thể mở camera QR (index {QR_CAM_INDEX})")
-        return
-
-    print("Hệ thống đã sẵn sàng. Hãy đưa mã QR vào Camera 1...")
-    print("Nhấn 'q' trên cửa sổ camera để thoát.")
+def process_camera_loop():
+    global current_qr_frame
     
-    last_qr_time = 0
+    qr_cam = cv2.VideoCapture(QR_CAM_INDEX)
+    last_scan_time = 0
+    
+    print("--> Bắt đầu luồng xử lý Camera...")
 
     while True:
-        ret, qr_frame = qr_cam.read()
+        ret, frame = qr_cam.read()
         if not ret:
-            print("Lỗi: Mất kết nối camera QR.")
-            break
+            time.sleep(0.1)
+            qr_cam.release()
+            qr_cam = cv2.VideoCapture(QR_CAM_INDEX)
+            continue
 
-        decoded_objects = decode(qr_frame, symbols=[ZBarSymbol.QRCODE])
+        with lock:
+            current_qr_frame = frame.copy()
 
-        if decoded_objects:
+        decoded_objects = decode(frame, symbols=[ZBarSymbol.QRCODE])
+        
+        if decoded_objects and (time.time() - last_scan_time > 5):
+            last_scan_time = time.time()
+            
             qr_content = decoded_objects[0].data.decode("utf-8")
-            current_time = time.time()
+            print(f"[QR] Phát hiện: {qr_content}")
             
-            if (current_time - last_qr_time > 10):
-                last_qr_time = current_time
-                print(f"\n[PHÁT HIỆN QR]: {qr_content}")
+            identifier = qr_content
+            try:
+                qr_json = json.loads(qr_content)
+                identifier = qr_json.get("identifier", qr_content)
+            except:
+                pass
 
-                try:
-                    qr_data = json.loads(qr_content)
-                    plate_from_qr = qr_data.get("plate")
-                    
-                    if not plate_from_qr:
-                        print("Lỗi: Mã QR không chứa thông tin 'plate'.")
-                        continue
+            print("--> Đang chụp ảnh toàn cảnh...")
+            full_scene_image = capture_full_scene()
+            
+            plate_text = ""
+            scene_image_base64 = None
 
-                    # Kích hoạt camera biển số
-                    plate_image = capture_plate_image()
-                    
-                    if plate_image is not None:
-                        # Nhận dạng biển số từ ảnh vừa chụp
-                        detections = model_detector(plate_image, verbose=False)[0]
-                        
-                        if len(detections.boxes) > 0:
-                            best_detection = max(detections.boxes, key=lambda box: box.conf)
-                            x1, y1, x2, y2 = map(int, best_detection.xyxy[0])
-                            plate_crop = plate_image[y1:y2, x1:x2]
-                            
-                            image_tensor = preprocess_for_ocr(plate_crop).to(device)
-                            logits = model_recognizer(image_tensor)
-                            plate_from_ai = ctc_greedy_decode(logits)
-                            print(f"--> AI nhận dạng: {plate_from_ai}")
-                            
-                            # So sánh và ra quyết định
-                            print(f"--> So sánh: '{plate_from_ai}' (AI) vs '{plate_from_qr}' (QR)")
-                            if plate_from_ai == plate_from_qr:
-                                print("===> Hợp lệ! Mở barie. <===")
-                                open_barrier()
-                            else:
-                                print("===> KHÔNG hợp lệ! Biển số không khớp. <===")
-                        else:
-                            print("--> Không phát hiện được biển số trong ảnh chụp.")
+            if full_scene_image is not None:
+                detections = model_detector(full_scene_image, verbose=False)[0]
                 
-                except Exception as e:
-                    print(f"Đã xảy ra lỗi trong quá trình xử lý: {e}")
+                if len(detections.boxes) > 0:
+                    best_box = max(detections.boxes, key=lambda b: b.conf)
+                    x1, y1, x2, y2 = map(int, best_box.xyxy[0])
+                    
+                    plate_crop = full_scene_image[y1:y2, x1:x2]
+                    
+                    tensor = preprocess_for_ocr(plate_crop).to(device)
+                    logits = model_recognizer(tensor)
+                    plate_text = ctc_greedy_decode(logits)
+                    print(f"[OCR] Biển số: {plate_text}")
+                else:
+                    print("[YOLO] Không tìm thấy biển số trong ảnh toàn cảnh.")
 
-        cv2.imshow("QR Scanner Feed - Nhan 'q' de thoat", qr_frame)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+                _, buffer = cv2.imencode('.jpg', full_scene_image)
+                scene_image_base64 = base64.b64encode(buffer).decode('utf-8')
             
-    qr_cam.release()
-    cv2.destroyAllWindows()
+            print("--> Gửi dữ liệu lên Kiosk...")
+            socketio.emit('scan_result', {
+                'identifier': identifier,
+                'plateNumber': plate_text,
+                'image': f"data:image/jpeg;base64,{scene_image_base64}" if scene_image_base64 else None
+            })
 
+        time.sleep(0.03) 
+
+# =============================
+# 5) ROUTES FLASK & SWAGGER DOCS
+# =============================
+
+def generate_video():
+    while True:
+        with lock:
+            if current_qr_frame is None:
+                continue
+            _, buffer = cv2.imencode('.jpg', current_qr_frame)
+            frame_bytes = buffer.tobytes()
+        
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        time.sleep(0.05)
+
+@app.route('/video_feed')
+def video_feed():
+    """
+    Stream video MJPEG cho thẻ <img>.
+    ---
+    tags:
+      - Camera
+    description: Trả về luồng video multipart/x-mixed-replace để hiển thị trực tiếp trên trình duyệt.
+    responses:
+      200:
+        description: Luồng video đang chạy
+    """
+    return Response(generate_video(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/confirm-checkin', methods=['POST'])
+def confirm_checkin():
+    """
+    API nhận lệnh Check-in từ Kiosk và chuyển tiếp lên NestJS.
+    ---
+    tags:
+      - Operations
+    description: Kiosk gọi API này khi bảo vệ bấm nút 'Check-in' (hoặc 'Mở cổng'). Server Python sẽ đóng gói ảnh và gửi lên Backend NestJS.
+    consumes:
+      - application/json
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - plateNumber
+          properties:
+            plateNumber:
+              type: string
+              description: Biển số xe (đã được xác nhận/sửa bởi bảo vệ)
+              example: "51A-123.45"
+            identifier:
+              type: string
+              description: Mã QR hoặc UUID (nếu có)
+              example: "5349b4ddd-27e6-4722-91b1-8d874514031e"
+            image:
+              type: string
+              description: Chuỗi Base64 của ảnh chụp (bao gồm header 'data:image/jpeg;base64,...')
+              example: "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+    responses:
+      200:
+        description: Check-in thành công, Barie đã mở.
+      400:
+        description: Lỗi dữ liệu đầu vào.
+      500:
+        description: Lỗi server hoặc NestJS từ chối.
+    """
+    try:
+        data = request.json
+        plate_number = data.get('plateNumber')
+        identifier = data.get('identifier')
+        image_base64 = data.get('image') 
+
+        print(f"--> Nhận lệnh Check-in từ Kiosk: Plate={plate_number}")
+
+        # 2. Chuẩn bị file ảnh TOÀN CẢNH để gửi NestJS
+        files = {}
+        if image_base64:
+            if "base64," in image_base64:
+                image_base64 = image_base64.split("base64,")[1]
+            
+            try:
+                image_bytes = base64.b64decode(image_base64)
+                files = {
+                    'file': ('snapshot.jpg', image_bytes, 'image/jpeg')
+                }
+            except Exception as img_err:
+                print(f"Lỗi decode ảnh: {img_err}")
+
+        payload = {
+            'plateNumber': plate_number,
+            'identifier': identifier,
+            'description': f"Check-in từ Kiosk tại bãi {PARKING_LOT_ID}"
+        }
+        
+        if not payload['identifier']:
+            del payload['identifier']
+
+        # 3. Gọi API NestJS (All-in-One)
+        url = f"{NESTJS_API_URL}/{PARKING_LOT_ID}"
+        
+        # requests.post tự động set header multipart/form-data khi có 'files'
+        response = requests.post(url, data=payload, files=files, timeout=10)
+
+        if response.status_code == 201:
+            print("===> NestJS OK! Mở Barie. <===")
+            open_barrier()
+            return jsonify({"success": True, "message": "Check-in thành công!"}), 200
+        else:
+            error_msg = "Lỗi không xác định từ Server"
+            try:
+                error_msg = response.json().get('message', error_msg)
+            except:
+                error_msg = response.text
+            
+            print(f"===> NestJS từ chối: {error_msg}")
+            return jsonify({"success": False, "message": error_msg}), response.status_code
+
+    except Exception as e:
+        print(f"Lỗi xử lý: {e}")
+        return jsonify({"success": False, "message": str(e)}), 500
+
+@app.route('/')
+def index():
+    """
+    Trang chủ.
+    ---
+    tags:
+      - General
+    responses:
+      200:
+        description: Server đang chạy
+    """
+    return "Python IOT Server is running! Go to /apidocs for Swagger UI."
+
+# =============================
+# 6) KHỞI ĐỘNG
+# =============================
 if __name__ == '__main__':
-    main_loop()
+    t = threading.Thread(target=process_camera_loop)
+    t.daemon = True
+    t.start()
+    
+    print("--> Khởi động Web Server tại http://0.0.0.0:1836")
+    # Swagger UI sẽ có tại: http://localhost:1836/apidocs
+    socketio.run(app, host='0.0.0.0', port=1836, allow_unsafe_werkzeug=True)

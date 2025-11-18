@@ -369,6 +369,16 @@ export class SubscriptionService implements ISubscriptionService {
     createDto: CreateSubscriptionDto,
     userId: string,
   ): Promise<SubscriptionDetailResponseDto> {
+    const pendingCount =
+      await this.subscriptionRepository.countPendingByUser(userId)
+
+    if (pendingCount >= 1) {
+      // Giới hạn chỉ cho phép 1 đơn chờ
+      throw new ConflictException(
+        'Bạn đang có một giao dịch chưa thanh toán. Vui lòng hoàn tất hoặc hủy nó trước khi mua gói mới.',
+      )
+    }
+
     const session = await this.connection.startSession()
     session.startTransaction()
     try {

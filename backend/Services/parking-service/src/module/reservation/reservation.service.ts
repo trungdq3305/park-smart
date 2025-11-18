@@ -27,6 +27,7 @@ import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPo
 import {
   ConfirmReservationPaymentDto,
   CreateReservationDto,
+  ReservationAvailabilitySlotDto,
   ReservationDetailResponseDto,
   UpdateReservationStatusDto,
 } from './dto/reservation.dto'
@@ -622,5 +623,76 @@ export class ReservationService implements IReservationService {
         error.stack,
       )
     }
+  }
+
+  async getReservationAvailability(
+    parkingLotId: string,
+    dateStr: string, // Input dạng 'YYYY-MM-DD'
+  ): Promise<Record<string, ReservationAvailabilitySlotDto>> {
+    // ⭐️ Kiểu trả về Map
+
+    // 1. Lấy Quy tắc (Rule)
+    const lot = await this.parkingLotRepository.findParkingLotById(parkingLotId)
+    if (!lot) {
+      throw new NotFoundException('Bãi đỗ xe không tồn tại.')
+    }
+    const bookableCapacityRule = lot.bookableCapacity // Ví dụ: 30
+
+    // 2. Xác định khoảng thời gian (00:00 -> 23:59 của ngày được chọn)
+    const startOfDay = new Date(dateStr)
+
+    if (isNaN(startOfDay.getTime())) {
+      throw new BadRequestException('Ngày không hợp lệ (Format: YYYY-MM-DD).')
+    }
+
+    if (startOfDay < new Date(new Date().toDateString())) {
+      throw new BadRequestException(
+        'Không thể kiểm tra tình trạng đặt chỗ cho ngày đã qua.',
+      )
+    }
+    // Reset về đầu ngày (theo giờ Local/Server)
+    startOfDay.setHours(0, 0, 0, 0)
+
+    const endOfDay = new Date(startOfDay)
+    endOfDay.setDate(endOfDay.getDate() + 1) // Sang đầu ngày hôm sau
+
+    // 3. Lấy Dữ liệu Tồn kho (1 lần gọi DB)
+    const inventories =
+      await this.bookingInventoryRepository.findInventoriesForAvailability(
+        parkingLotId,
+        startOfDay,
+        endOfDay,
+      )
+
+    // 4. Xử lý trong bộ nhớ (In-memory)
+    const availabilityMap: Record<string, ReservationAvailabilitySlotDto> = {}
+
+    // Biến đổi mảng inventories thành Map để tra cứu nhanh (O(1))
+    // Key: Giờ (0-23) -> Value: bookedCount
+    const inventoryLookup = new Map<number, number>()
+    inventories.forEach((inv) => {
+      const hour = new Date(inv.timeSlot).getHours()
+      inventoryLookup.set(hour, inv.bookedCount)
+    })
+
+    // Lặp 24 giờ trong ngày
+    for (let i = 0; i < 24; i++) {
+      // Lấy số lượng đã đặt (nếu không có trong DB nghĩa là 0)
+      const bookedCount = inventoryLookup.get(i) ?? 0
+
+      // Tính toán số suất còn lại
+      const remaining = Math.max(0, bookableCapacityRule - bookedCount)
+
+      // Logic: Còn chỗ (>0) VÀ Giờ đó chưa trôi qua (Optional)
+      // (Ở đây tôi giữ logic đơn giản là còn chỗ thì true)
+      const isAvailable = remaining > 0
+
+      // Tạo key giờ đẹp (ví dụ: "09:00")
+      const hourKey = i.toString().padStart(2, '0') + ':00'
+
+      availabilityMap[hourKey] = { remaining, isAvailable }
+    }
+
+    return availabilityMap
   }
 }

@@ -71,6 +71,9 @@ export class ParkingLot extends BaseEntity {
     default: 3, // Giả định mặc định là 3 giờ
   })
   bookingSlotDurationHours: number
+
+  @Prop({ default: 0, index: true })
+  displayAvailableSpots: number
 }
 
 export const ParkingLotSchema = SchemaFactory.createForClass(ParkingLot)

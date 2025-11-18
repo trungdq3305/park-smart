@@ -20,6 +20,7 @@ import { NotificationModule } from './module/notification/notification.module'
 import { PackageRateModule } from './module/packageRate/packageRate.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
 import { ParkingLotPolicyLinkModule } from './module/parkingLotPolicyLinks/parkingLotPolicyLinks.module'
+import { ParkingLotSessionModule } from './module/parkingLotSession/parkingLotSession.module'
 import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
 import { ParkingSpaceStatusModule } from './module/parkingSpaceStatus/parkingSpaceStatus.module'
 import { PricingPolicyModule } from './module/pricingPolicy/pricingPolicy.module'
@@ -68,6 +69,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     ParkingLotPolicyLinkModule,
     SubscriptionModule,
     ReservationModule,
+    ParkingLotSessionModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
