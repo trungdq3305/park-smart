@@ -575,9 +575,29 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                     </Space>
                   }
                   name="effectiveDate"
-                  rules={[{ required: true, message: 'Chọn ngày hiệu lực' }]}
+                  rules={[
+                    { required: true, message: 'Chọn ngày hiệu lực' },
+                    {
+                      validator: (_, value) => {
+                        if (!value) return Promise.reject(new Error('Chọn ngày hiệu lực'))
+                        const diffDays = value.startOf('day').diff(dayjs().startOf('day'), 'day')
+                        return diffDays >= 1
+                          ? Promise.resolve()
+                          : Promise.reject(
+                              new Error('Ngày hiệu lực phải muộn hơn hiện tại ít nhất 1 ngày')
+                            )
+                      },
+                    },
+                  ]}
                 >
-                <DatePicker format="YYYY-MM-DD" className="w-100" placeholder="Chọn ngày" />
+                <DatePicker
+                  format="YYYY-MM-DD"
+                  className="w-100"
+                  placeholder="Chọn ngày"
+                  disabledDate={(current) =>
+                    !!current && current.startOf('day').diff(dayjs().startOf('day'), 'day') < 1
+                  }
+                />
                 </Form.Item>
               </Col>
             </Row>
