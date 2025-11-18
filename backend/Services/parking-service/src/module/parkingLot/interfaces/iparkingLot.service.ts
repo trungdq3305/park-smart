@@ -112,7 +112,10 @@ export interface IParkingLotService {
     change: number,
   ): Promise<boolean>
 
-  getAllRequest(): Promise<ParkingLotRequestResponseDto[]>
+  getAllRequest(
+    status: string,
+    type: string,
+  ): Promise<ParkingLotRequestResponseDto[]>
 
   hardDeleteRequestById(id: string): Promise<boolean>
 }

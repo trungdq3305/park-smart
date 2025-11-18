@@ -368,7 +368,7 @@ export class ParkingLotService implements IParkingLotService {
         // =================================================================
         // == BẮT ĐẦU LOGIC XỬ LÝ THEO LOẠI YÊU CẦU
         // =================================================================
-        if ((request.requestType as RequestType) === RequestType.CREATE) {
+        if (request.requestType === RequestType.CREATE) {
           // --- XỬ LÝ CHO YÊU CẦU TẠO MỚI ---
           if (!request.payload) {
             throw new Error('Dữ liệu để tạo bãi đỗ xe không tồn tại')
@@ -445,6 +445,7 @@ export class ParkingLotService implements IParkingLotService {
           )
         } else {
           // Nếu có loại request không xác định, ném lỗi
+          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
           throw new Error(`Unknown request type: ${request.requestType}`)
         }
 
@@ -667,8 +668,17 @@ export class ParkingLotService implements IParkingLotService {
     return parkingLots.map((item) => this.returnParkingLotResponseDto(item))
   }
 
-  async getAllRequest(): Promise<ParkingLotRequestResponseDto[]> {
-    const requests = await this.parkingLotRequestRepository.findAllRequests()
+  async getAllRequest(
+    status: string,
+    type: string,
+  ): Promise<ParkingLotRequestResponseDto[]> {
+    const requests = await this.parkingLotRequestRepository.findAllRequests(
+      status,
+      type,
+    )
+    if (requests.length === 0) {
+      throw new NotFoundException('Không tìm thấy yêu cầu bãi đỗ xe nào')
+    }
     return requests.map((item) => this.returnParkingLotRequestResponseDto(item))
   }
 
