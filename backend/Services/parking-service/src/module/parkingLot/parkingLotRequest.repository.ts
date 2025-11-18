@@ -122,10 +122,16 @@ export class ParkingLotRequestRepository
       .exec()
   }
 
-  async findAllRequests(): Promise<any[]> {
+  async findAllRequests(status: string, type: string): Promise<any[]> {
     const requests = await this.parkingLotRequestModel.aggregate([
       // STAGE 0: Chuyển đổi addressId từ String sang ObjectId
       // Thêm một trường tạm thời để chứa ObjectId đã được chuyển đổi
+      {
+        $match: {
+          status: status,
+          requestType: type,
+        },
+      },
       {
         $addFields: {
           convertedAddressId: { $toObjectId: '$payload.addressId' },
