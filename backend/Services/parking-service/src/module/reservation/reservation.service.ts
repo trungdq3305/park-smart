@@ -640,8 +640,15 @@ export class ReservationService implements IReservationService {
 
     // 2. Xác định khoảng thời gian (00:00 -> 23:59 của ngày được chọn)
     const startOfDay = new Date(dateStr)
+
     if (isNaN(startOfDay.getTime())) {
       throw new BadRequestException('Ngày không hợp lệ (Format: YYYY-MM-DD).')
+    }
+
+    if (startOfDay < new Date(new Date().toDateString())) {
+      throw new BadRequestException(
+        'Không thể kiểm tra tình trạng đặt chỗ cho ngày đã qua.',
+      )
     }
     // Reset về đầu ngày (theo giờ Local/Server)
     startOfDay.setHours(0, 0, 0, 0)
@@ -671,7 +678,7 @@ export class ReservationService implements IReservationService {
     // Lặp 24 giờ trong ngày
     for (let i = 0; i < 24; i++) {
       // Lấy số lượng đã đặt (nếu không có trong DB nghĩa là 0)
-      const bookedCount = inventoryLookup.get(i) || 0
+      const bookedCount = inventoryLookup.get(i) ?? 0
 
       // Tính toán số suất còn lại
       const remaining = Math.max(0, bookableCapacityRule - bookedCount)
