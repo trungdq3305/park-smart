@@ -16,6 +16,7 @@ import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto, ParkingLotIdDto } from 'src/common/dto/params.dto'
 
 import { IAddressRepository } from '../address/interfaces/iaddress.repository'
+import { IParkingLotSessionRepository } from '../parkingLotSession/interfaces/iparkingLotSession.repository'
 import {
   IParkingSpaceRepository,
   ParkingSpaceCreationAttributes,
@@ -30,7 +31,6 @@ import {
   ParkingLotHistoryLogResponseDto,
   ParkingLotRequestResponseDto,
   ParkingLotResponseDto,
-  ParkingLotSpotsUpdateDto,
   ReviewRequestDto,
 } from './dto/parkingLot.dto'
 import { RequestStatus, RequestType } from './enums/parkingLot.enum'
@@ -60,6 +60,8 @@ export class ParkingLotService implements IParkingLotService {
     private readonly parkingLotRequestRepository: IParkingLotRequestRepository,
     private readonly parkingLotGateway: ParkingLotGateway,
     @InjectConnection() private readonly connection: Connection,
+    @Inject(IParkingLotSessionRepository)
+    private readonly sessionRepository: IParkingLotSessionRepository,
   ) {}
 
   private returnParkingLotRequestResponseDto(
@@ -423,7 +425,7 @@ export class ParkingLotService implements IParkingLotService {
           }
 
           await this._createParkingSpaces(updatedParkingLot, session)
-        } else if (request.requestType === RequestType[RequestType.DELETE]) {
+        } else {
           if (!request.parkingLotId) {
             throw new Error('Yêu cầu không liên kết với bãi đỗ xe nào')
           }
@@ -443,10 +445,6 @@ export class ParkingLotService implements IParkingLotService {
             parkingLotId_for_log,
             session,
           )
-        } else {
-          // Nếu có loại request không xác định, ném lỗi
-          // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-          throw new Error(`Unknown request type: ${request.requestType}`)
         }
 
         // =================================================================
@@ -623,38 +621,70 @@ export class ParkingLotService implements IParkingLotService {
     parkingLotId: string,
     change: number,
   ): Promise<boolean> {
-    // 1. Cập nhật DB và lấy về document mới (chỉ 1 lần gọi)
-    const updatedParkingLot =
-      await this.parkingLotRepository.updateAvailableSpots(parkingLotId, change)
-
-    if (!updatedParkingLot) {
-      throw new ConflictException('Bãi đỗ xe đã hết chỗ hoặc không tồn tại.')
-    }
-
-    // 2. LẤY THÔNG TIN ADDRESS ĐỂ XÁC ĐỊNH VỊ TRÍ
-    const address = await this.addressRepository.findAddressById(
-      updatedParkingLot.addressId,
+    // ---------------------------------------------------------
+    // BƯỚC 1: CẬP NHẬT VẬT LÝ (ATOMIC WRITE)
+    // ---------------------------------------------------------
+    // Gọi repository để $inc availableSpots.
+    // Hành động này phải chạy trước để đảm bảo dữ liệu DB luôn đúng.
+    const updatedLot = await this.parkingLotRepository.updateAvailableSpots(
+      parkingLotId,
+      change,
     )
 
-    // Nếu không có address thì không thể xác định room, có thể bỏ qua hoặc báo lỗi
-    if (!address) {
-      console.error(`Không tìm thấy Address cho ParkingLot ID: ${parkingLotId}`)
-      return !!updatedParkingLot
+    if (!updatedLot) {
+      // (Log warning: Có thể bãi xe bị xóa hoặc ID sai)
+      this.logger.warn(
+        `Không thể cập nhật availableSpots cho bãi ${parkingLotId}`,
+      )
+      return false
     }
 
-    // 3. Xác định roomName từ tọa độ của Address
-    const roomName = this.determineRoomForParkingLot()
+    // ---------------------------------------------------------
+    // BƯỚC 2: LẤY DỮ LIỆU TÍNH TOÁN (READ)
+    // ---------------------------------------------------------
+    // Chúng ta cần biết hiện tại có bao nhiêu xe vãng lai (Xô 3) đang ở trong bãi.
+    // (Không cần Transaction Session ở đây vì chúng ta chấp nhận "đọc dữ liệu mới nhất")
 
-    // 4. Chuẩn bị payload nhỏ gọn để gửi đi
-    const payload: ParkingLotSpotsUpdateDto = {
-      _id: updatedParkingLot._id,
-      availableSpots: updatedParkingLot.availableSpots,
+    // Tối ưu: Chạy song song (Promise.all) nếu cần lấy thêm dữ liệu khác
+    const currentWalkIns =
+      await this.sessionRepository.countActiveWalkInSessions(parkingLotId)
+
+    // ---------------------------------------------------------
+    // BƯỚC 3: TÍNH TOÁN CON SỐ "AN TOÀN" (SAFE DISPLAY)
+    // ---------------------------------------------------------
+    // Logic: Hiển thị = Min(Chỗ trống vật lý, Dư địa của Xô 3)
+
+    const physicalAvailable = updatedLot.availableSpots // (Ví dụ: 100)
+
+    // Dư địa Xô 3 = Tổng Xô 3 (50) - Đang dùng (10) = 40
+    const walkInLimitRemaining = updatedLot.walkInCapacity - currentWalkIns
+
+    // Con số hiển thị = Min(100, 40) = 40
+    // (Math.max(0, ...) để đảm bảo không bao giờ hiển thị số âm)
+    const displaySpots = Math.max(
+      0,
+      Math.min(physicalAvailable, walkInLimitRemaining),
+    )
+
+    // ---------------------------------------------------------
+    // BƯỚC 4: PHÁT SÓNG (BROADCAST)
+    // ---------------------------------------------------------
+
+    // Xác định Room (ví dụ: "parking_lot_ID")
+    const roomName = `parking_lot_${parkingLotId}`
+
+    // Payload gọn nhẹ
+    const payload = {
+      _id: parkingLotId,
+      availableSpots: displaySpots, // ⭐️ Gửi con số AN TOÀN
+      // (Tùy chọn: Gửi thêm physicalAvailable cho Dashboard Admin xem)
+      // realSpots: physicalAvailable
     }
 
-    // 5. Ra lệnh cho Gateway phát sóng vào đúng room
+    // Gọi Gateway để bắn tin
     this.parkingLotGateway.sendSpotsUpdate(roomName, payload)
 
-    return !!updatedParkingLot
+    return true
   }
 
   async findAllForOperator(
