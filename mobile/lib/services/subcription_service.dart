@@ -289,4 +289,53 @@ class SubscriptionService {
       rethrow;
     }
   }
+
+  /// Lấy tình trạng (số suất) Xô 1 (Thuê bao) cho 15 ngày tới
+  /// GET /subscriptions/availability/{parkingLotId}
+  static Future<Map<String, dynamic>> getSubscriptionAvailability({
+    required String parkingLotId,
+  }) async {
+    try {
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/availability/$parkingLotId',
+      );
+
+      print('📊 Getting subscription availability:');
+      print('  URL: $uri');
+      print('  Parking Lot ID: $parkingLotId');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully fetched subscription availability');
+        return responseData;
+      } else {
+        final errorBody = response.body;
+        print('❌ Error fetching subscription availability: $errorBody');
+        throw Exception(
+          'Failed to fetch subscription availability: ${response.statusCode} - $errorBody',
+        );
+      }
+    } catch (e) {
+      print('❌ Exception in getSubscriptionAvailability: $e');
+      rethrow;
+    }
+  }
 }
