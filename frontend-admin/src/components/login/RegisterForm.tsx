@@ -15,6 +15,7 @@ import {
   Space,
   Steps,
   Checkbox,
+  Modal,
 } from 'antd'
 import {
   UserOutlined,
@@ -29,11 +30,11 @@ import {
 import dayjs from 'dayjs'
 import { useRegisterMutation } from '../../features/auth/authApi'
 import { useGetWardQuery } from '../../features/operator/wardAPI'
-import { useCreateAddressMutation } from '../../features/operator/addressAPI'
-import { useCreateParkingLotMutation } from '../../features/operator/parkingLotAPI'
+import type { OperatorFullRegisterRequest } from '../../types/register.types'
+import LocationPickerMap from '../common/LocationPickerMap'
 import type { Ward } from '../../types/Ward'
 
-const { Title, Text } = Typography
+const { Title, Text, Paragraph } = Typography
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void
@@ -58,6 +59,13 @@ interface RegisterFormValues {
   totalLevel: number
   electricCarPercentage: number
   bussinessName: string
+  parkingLotName: string
+  latitude: number
+  longitude: number
+  bookableCapacity: number
+  leasedCapacity: number
+  walkInCapacity: number
+  bookingSlotDurationHours: number
 }
 
 const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
@@ -68,9 +76,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [isAgreeToP, setIsAgreeToP] = useState(false)
   const { data: wards, isLoading: isLoadingWards } = useGetWardQuery({})
   const wardData = (wards?.data?.[0] as Ward[]) || []
-  const [createAddress, { isLoading: isCreatingAddress }] = useCreateAddressMutation()
-  const [createParkingLot, { isLoading: isCreatingParkingLot }] = useCreateParkingLotMutation()
   const [formData, setFormData] = useState<Partial<RegisterFormValues>>({})
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false)
+  const [tempLocation, setTempLocation] = useState<{ lat: number; lng: number } | null>(null)
 
   const nextStep = async () => {
     try {
@@ -93,64 +101,97 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     form.setFieldsValue(formData)
   }
 
+  const openLocationPicker = () => {
+    const currentLat = form.getFieldValue('latitude')
+    const currentLng = form.getFieldValue('longitude')
+    if (typeof currentLat === 'number' && typeof currentLng === 'number') {
+      setTempLocation({ lat: currentLat, lng: currentLng })
+    } else {
+      setTempLocation(null)
+    }
+    setIsLocationModalOpen(true)
+  }
+
+  const handleLocationSelect = (coords: { lat: number; lng: number }) => {
+    setTempLocation(coords)
+  }
+
+  const handleLocationConfirm = () => {
+    if (tempLocation) {
+      form.setFieldsValue({
+        latitude: Number(tempLocation.lat.toFixed(6)),
+        longitude: Number(tempLocation.lng.toFixed(6)),
+      })
+    }
+    setIsLocationModalOpen(false)
+    setTempLocation(null)
+  }
+
+  const handleLocationCancel = () => {
+    setIsLocationModalOpen(false)
+    setTempLocation(null)
+  }
+
+  const currentLatitude = form.getFieldValue('latitude')
+  const currentLongitude = form.getFieldValue('longitude')
+  const formLocation =
+    typeof currentLatitude === 'number' && typeof currentLongitude === 'number'
+      ? { lat: currentLatitude, lng: currentLongitude }
+      : null
+  const mapLocation = tempLocation ?? formLocation
+
   const onFinish = async (values: RegisterFormValues) => {
     setLoading(true)
     const mergedValues = { ...formData, ...values } as RegisterFormValues
     try {
-      const registerData = {
-        email: mergedValues.email,
-        password: mergedValues.password,
-        paymentEmail: mergedValues.paymentEmail,
-        phoneNumber: mergedValues.phoneNumber,
-        fullName: mergedValues.fullName,
-        bussinessName: mergedValues.bussinessName,
-        isAgreeToP: mergedValues.isAgreeToP,
-      }
-      await register(registerData).unwrap()
-
-      const createdAddress = await createAddress({
-        wardId: mergedValues.wardId,
-        fullAddress: mergedValues.fullAddress,
-      }).unwrap()
-
-      const addressId = createdAddress?.data?.[0]?._id
-      if (!addressId) {
-        throw new Error('Không lấy được addressId từ API tạo địa chỉ')
-      }
-
       const is24Hours = Boolean(mergedValues.is24Hours)
-      const payload = {
-        addressId,
-        openTime: is24Hours
-          ? '00:00'
-          : mergedValues.openTime
-          ? mergedValues.openTime.format('HH:mm')
-          : null,
-        closeTime: is24Hours
-          ? '23:59'
-          : mergedValues.closeTime
-          ? mergedValues.closeTime.format('HH:mm')
-          : null,
-        is24Hours,
-        maxVehicleHeight:
-          mergedValues.maxVehicleHeight != null ? Number(mergedValues.maxVehicleHeight) : null,
-        maxVehicleWidth:
-          mergedValues.maxVehicleWidth != null ? Number(mergedValues.maxVehicleWidth) : null,
-        totalCapacityEachLevel:
-          mergedValues.totalCapacityEachLevel != null
-            ? Number(mergedValues.totalCapacityEachLevel)
+      const registerPayload: OperatorFullRegisterRequest = {
+        registerRequest: {
+          email: mergedValues.email,
+          password: mergedValues.password,
+          paymentEmail: mergedValues.paymentEmail,
+          phoneNumber: mergedValues.phoneNumber,
+          fullName: mergedValues.fullName,
+          bussinessName: mergedValues.bussinessName,
+          isAgreeToP: mergedValues.isAgreeToP,
+        },
+        addressRequest: {
+          wardId: mergedValues.wardId,
+          fullAddress: mergedValues.fullAddress,
+          latitude: mergedValues.latitude ?? null,
+          longitude: mergedValues.longitude ?? null,
+        },
+        parkingLotRequest: {
+          addressId: "null",
+          parkingLotOperatorId: "null",
+          name: mergedValues.parkingLotName || mergedValues.bussinessName,
+          totalCapacityEachLevel: Number(mergedValues.totalCapacityEachLevel ?? 0),
+          totalLevel: Number(mergedValues.totalLevel ?? 0),
+          effectiveDate: mergedValues.effectiveDate
+            ? mergedValues.effectiveDate.format('YYYY-MM-DD')
             : null,
-        totalLevel: mergedValues.totalLevel != null ? Number(mergedValues.totalLevel) : null,
-        electricCarPercentage:
-          mergedValues.electricCarPercentage != null
-            ? Number(mergedValues.electricCarPercentage)
+          bookableCapacity: Number(mergedValues.bookableCapacity ?? 0),
+          leasedCapacity: Number(mergedValues.leasedCapacity ?? 0),
+          walkInCapacity: Number(mergedValues.walkInCapacity ?? 0),
+          bookingSlotDurationHours: Number(mergedValues.bookingSlotDurationHours ?? 1),
+          is24Hours,
+          openTime: is24Hours
+            ? '00:00'
+            : mergedValues.openTime
+            ? mergedValues.openTime.format('HH:mm')
             : null,
-        effectiveDate: mergedValues.effectiveDate
-          ? mergedValues.effectiveDate.format('YYYY-MM-DD')
-          : null,
+          closeTime: is24Hours
+            ? '23:59'
+            : mergedValues.closeTime
+            ? mergedValues.closeTime.format('HH:mm')
+            : null,
+          maxVehicleHeight: Number(mergedValues.maxVehicleHeight ?? 0),
+          maxVehicleWidth: Number(mergedValues.maxVehicleWidth ?? 0),
+          electricCarPercentage: Number(mergedValues.electricCarPercentage ?? 0),
+        },
       }
 
-      await createParkingLot(payload).unwrap()
+      await register(registerPayload).unwrap()
 
       notification.success({
         message: 'Đăng ký thành công!',
@@ -167,26 +208,30 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
       setStep(1)
       setIsAgreeToP(false)
       setFormData({})
+      setTempLocation(null)
     } catch (error: unknown) {
       let errorMessage = 'Đã xảy ra lỗi không xác định'
 
       // Kiểm tra nếu error là một đối tượng
       if (error && typeof error === 'object') {
-        // Kiểm tra lỗi từ data.error (dựa trên ví dụ API)
-        if (
-          'data' in error &&
-          error.data &&
-          typeof error.data === 'object' &&
-          'error' in error.data
-        ) {
-          errorMessage = (error.data as { error: string }).error
-        }
-        // Kiểm tra lỗi từ message (nếu có)
-        else if ('message' in error && typeof error.message === 'string') {
+        if ('data' in error && error.data && typeof error.data === 'object') {
+          const errorData = error.data as {
+            message?: string
+            error?: string | string[]
+          }
+          const candidate =
+            typeof errorData.message === 'string' && errorData.message.trim().length > 0
+              ? errorData.message
+              : errorData.error
+
+          if (Array.isArray(candidate)) {
+            errorMessage = candidate.filter((msg) => typeof msg === 'string').join(', ') || errorMessage
+          } else if (typeof candidate === 'string' && candidate.trim().length > 0) {
+            errorMessage = candidate
+          }
+        } else if ('message' in error && typeof error.message === 'string') {
           errorMessage = error.message
-        }
-        // Kiểm tra lỗi từ meta.response.data (nếu lỗi từ Axios hoặc tương tự)
-        else if (
+        } else if (
           'meta' in error &&
           error.meta &&
           typeof error.meta === 'object' &&
@@ -195,10 +240,19 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           typeof error.meta.response === 'object' &&
           'data' in error.meta.response &&
           error.meta.response.data &&
-          typeof error.meta.response.data === 'object' &&
-          'error' in error.meta.response.data
+          typeof error.meta.response.data === 'object'
         ) {
-          errorMessage = (error.meta.response.data as { error: string }).error
+          const responseData = error.meta.response.data as { message?: string; error?: string | string[] }
+          const candidate =
+            typeof responseData.message === 'string' && responseData.message.trim().length > 0
+              ? responseData.message
+              : responseData.error
+
+          if (Array.isArray(candidate)) {
+            errorMessage = candidate.filter((msg) => typeof msg === 'string').join(', ') || errorMessage
+          } else if (typeof candidate === 'string' && candidate.trim().length > 0) {
+            errorMessage = candidate
+          }
         }
       }
 
@@ -213,7 +267,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   }
 
   return (
-    <div className="login-form-container">
+    <>
+      <div className="login-form-container">
       <Title level={2} className="brand-title">
         ParkSmart
       </Title>
@@ -403,6 +458,54 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                 </Form.Item>
               </Col>
               <Col span={24}>
+                <Form.Item
+                  label={
+                    <Space>
+                      <EnvironmentOutlined />
+                      <span>Tên bãi đỗ</span>
+                    </Space>
+                  }
+                  name="parkingLotName"
+                  rules={[{ required: true, message: 'Vui lòng nhập tên bãi đỗ xe' }]}
+                >
+                  <Input placeholder="VD: ParkSmart Lê Duẩn" />
+                </Form.Item>
+              </Col>
+              <Col span={24}>
+                <Button
+                  type="dashed"
+                  icon={<EnvironmentOutlined />}
+                  onClick={openLocationPicker}
+                  block
+                >
+                  Chọn vị trí trên bản đồ
+                </Button>
+                <Text type="secondary">
+                  Nhấn vào nút trên để mở bản đồ và chọn vị trí bãi đỗ xe.
+                </Text>
+                <div>
+                  {formLocation ? (
+                    <Text type="success">Đã lưu vị trí bãi đỗ.</Text>
+                  ) : (
+                    <Text type="danger">Chưa chọn vị trí.</Text>
+                  )}
+                </div>
+                <Form.Item
+                  name="latitude"
+                  hidden
+                  rules={[{ required: true, message: 'Vui lòng chọn vị trí trên bản đồ' }]}
+                >
+                  <Input type="hidden" />
+                </Form.Item>
+                <Form.Item
+                  name="longitude"
+                  hidden
+                  rules={[{ required: true, message: 'Vui lòng chọn vị trí trên bản đồ' }]}
+                >
+                  <Input type="hidden" />
+                </Form.Item>
+              </Col>
+              <Col span={24}>
                 <Form.Item label="Hoạt động 24/7" name="is24Hours" valuePropName="checked">
                   <Switch />
                 </Form.Item>
@@ -535,6 +638,47 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                 </Form.Item>
               </Col>
             </Row>
+            <Typography.Title level={5} style={{ marginBottom: 12, marginTop: 12 }}>
+              Phân bổ sức chứa & thời lượng đặt chỗ
+            </Typography.Title>
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Sức chứa dành cho booking (chỗ)"
+                  name="bookableCapacity"
+                  rules={[{ required: true, message: 'Nhập sức chứa booking' }]}
+                >
+                  <InputNumber min={0} className="w-100" placeholder="VD: 20" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Sức chứa cho thuê dài hạn (chỗ)"
+                  name="leasedCapacity"
+                  rules={[{ required: true, message: 'Nhập sức chứa thuê dài hạn' }]}
+                >
+                  <InputNumber min={0} className="w-100" placeholder="VD: 10" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Sức chứa khách vãng lai (chỗ)"
+                  name="walkInCapacity"
+                  rules={[{ required: true, message: 'Nhập sức chứa khách vãng lai' }]}
+                >
+                  <InputNumber min={0} className="w-100" placeholder="VD: 15" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="Thời lượng mỗi slot đặt chỗ (giờ)"
+                  name="bookingSlotDurationHours"
+                  rules={[{ required: true, message: 'Nhập thời lượng slot' }]}
+                >
+                  <InputNumber min={1} max={24} className="w-100" placeholder="VD: 1" />
+                </Form.Item>
+              </Col>
+            </Row>
             <Form.Item
               name="isAgreeToP"
               valuePropName="checked"
@@ -562,8 +706,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                 size="large"
                 className="login-button"
                 block
-                loading={loading || isCreatingAddress || isCreatingParkingLot}
-               disabled={!isAgreeToP}
+                loading={loading}
+                disabled={!isAgreeToP}
               >
                 Gửi yêu cầu tạo bãi đỗ
               </Button>
@@ -572,6 +716,23 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         )}
       </Form>
     </div>
+      <Modal
+        title="Chọn vị trí bãi đỗ"
+        open={isLocationModalOpen}
+        onOk={handleLocationConfirm}
+        onCancel={handleLocationCancel}
+        okText="Sử dụng vị trí này"
+        cancelText="Hủy"
+        width={760}
+        destroyOnHidden
+      >
+        <Paragraph type="secondary" style={{ marginBottom: 12 }}>
+          Nhấp vào vị trí trên bản đồ để đặt điểm đánh dấu. Bạn có thể thu phóng hoặc kéo bản đồ
+          để chọn chính xác vị trí bãi đỗ xe.
+        </Paragraph>
+        <LocationPickerMap value={mapLocation} onChange={handleLocationSelect} />
+      </Modal>
+    </>
   )
 }
 
