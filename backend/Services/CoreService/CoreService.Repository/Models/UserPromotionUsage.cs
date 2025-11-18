@@ -22,5 +22,16 @@ namespace CoreService.Repository.Models
         public string EntityId { get; set; }
 
         public DateTime UsedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+
+        [BsonRepresentation(BsonType.String)]
+        public UsageStatus Status { get; set; } = UsageStatus.Used;
+
+        public DateTime? RefundedAt { get; set; }
+    }
+    public enum UsageStatus
+    {
+        Used,
+        Refunded,
+        Cancelled
     }
 }

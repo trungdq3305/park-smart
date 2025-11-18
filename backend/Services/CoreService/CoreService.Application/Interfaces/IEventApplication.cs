@@ -15,6 +15,7 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<object>> DeleteAsync(string id, string actorAccountId, string actorRole);
         Task<ApiResponse<EventResponseDto>> GetByIdAsync(string id);
         Task<ApiResponse<List<EventResponseDto>>> GetAllAsync();
+        Task<ApiResponse<List<EventResponseDto>>> GetByAccIdAsync(string accid);
         Task<ApiResponse<List<EventResponseDto>>> GetUpcomingAsync();
     }
 }

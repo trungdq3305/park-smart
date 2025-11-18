@@ -20,5 +20,6 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<object>> UsePromotionAsync(PromotionCalculateRequestDto dto);
         Task<ApiResponse<PromotionCalculateResponseDto>> CalculateAsync(PromotionCalculateRequestDto dto);
         Task<ApiResponse<List<PromotionResponseDto>>> GetByOperatorIdAsync(string operatorId);
+        Task<ApiResponse<object>> RefundPromotionUsageAsync(string paymentId, string actorAccountId);
     }
 }

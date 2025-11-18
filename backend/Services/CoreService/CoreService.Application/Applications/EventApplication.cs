@@ -16,9 +16,11 @@ namespace CoreService.Application.Applications
     public class EventApplication : IEventApplication
     {
         private readonly IEventRepository _repo;
-        public EventApplication(IEventRepository repo)
+        private readonly IAccountApplication _accountApp;
+        public EventApplication(IEventRepository repo, IAccountApplication accountApp)
         {
             _repo = repo;
+            _accountApp = accountApp;
         }
 
         public async Task<ApiResponse<EventResponseDto>> CreateAsync(EventCreateDto dto, string actorAccountId, string actorRole)
@@ -96,7 +98,18 @@ namespace CoreService.Application.Applications
             var list = items.Select(Map).ToList();
             return new ApiResponse<List<EventResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
         }
-
+        public async Task<ApiResponse<List<EventResponseDto>>> GetByAccIdAsync(string accid)
+        {
+            
+            var items = await _repo.GetByCreatedByAsync(accid);
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
+            var list = items.Select(Map).ToList();
+            return new ApiResponse<List<EventResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
+        }
+        
         public async Task<ApiResponse<List<EventResponseDto>>> GetUpcomingAsync()
         {
             var items = await _repo.GetUpcomingEventsAsync();
