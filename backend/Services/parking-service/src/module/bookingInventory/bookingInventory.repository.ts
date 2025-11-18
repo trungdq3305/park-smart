@@ -109,4 +109,24 @@ export class BookingInventoryRepository implements IBookingInventoryRepository {
 
     return result.deletedCount // Trả về số lượng đã xóa
   }
+
+  async findInventoriesForAvailability(
+    parkingLotId: string,
+    startTime: Date, // 00:00
+    endTime: Date, // 23:59
+  ): Promise<Pick<BookingInventory, 'timeSlot' | 'bookedCount'>[]> {
+    const filter = {
+      parkingLotId: parkingLotId,
+      timeSlot: {
+        $gte: startTime,
+        $lt: endTime,
+      },
+    }
+
+    return this.bookingInventoryModel
+      .find(filter)
+      .select('timeSlot bookedCount') // ⭐️ Chỉ lấy 2 trường này để tối ưu
+      .lean() // Trả về JS object thuần túy
+      .exec()
+  }
 }

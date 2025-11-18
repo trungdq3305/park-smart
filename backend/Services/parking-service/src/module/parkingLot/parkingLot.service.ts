@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
   ConflictException,
@@ -31,6 +32,7 @@ import {
   ParkingLotHistoryLogResponseDto,
   ParkingLotRequestResponseDto,
   ParkingLotResponseDto,
+  ParkingLotSpotsUpdateDto,
   ReviewRequestDto,
 } from './dto/parkingLot.dto'
 import { RequestStatus, RequestType } from './enums/parkingLot.enum'
@@ -624,15 +626,12 @@ export class ParkingLotService implements IParkingLotService {
     // ---------------------------------------------------------
     // BƯỚC 1: CẬP NHẬT VẬT LÝ (ATOMIC WRITE)
     // ---------------------------------------------------------
-    // Gọi repository để $inc availableSpots.
-    // Hành động này phải chạy trước để đảm bảo dữ liệu DB luôn đúng.
     const updatedLot = await this.parkingLotRepository.updateAvailableSpots(
       parkingLotId,
       change,
     )
 
     if (!updatedLot) {
-      // (Log warning: Có thể bãi xe bị xóa hoặc ID sai)
       this.logger.warn(
         `Không thể cập nhật availableSpots cho bãi ${parkingLotId}`,
       )
@@ -640,48 +639,54 @@ export class ParkingLotService implements IParkingLotService {
     }
 
     // ---------------------------------------------------------
-    // BƯỚC 2: LẤY DỮ LIỆU TÍNH TOÁN (READ)
+    // BƯỚC 2: TÍNH TOÁN CON SỐ "AN TOÀN" (DISPLAY SPOTS)
     // ---------------------------------------------------------
-    // Chúng ta cần biết hiện tại có bao nhiêu xe vãng lai (Xô 3) đang ở trong bãi.
-    // (Không cần Transaction Session ở đây vì chúng ta chấp nhận "đọc dữ liệu mới nhất")
-
-    // Tối ưu: Chạy song song (Promise.all) nếu cần lấy thêm dữ liệu khác
+    // Lấy số xe vãng lai đang ở trong bãi
     const currentWalkIns =
       await this.sessionRepository.countActiveWalkInSessions(parkingLotId)
 
-    // ---------------------------------------------------------
-    // BƯỚC 3: TÍNH TOÁN CON SỐ "AN TOÀN" (SAFE DISPLAY)
-    // ---------------------------------------------------------
-    // Logic: Hiển thị = Min(Chỗ trống vật lý, Dư địa của Xô 3)
+    const physicalAvailable = updatedLot.availableSpots // Số thực tế
 
-    const physicalAvailable = updatedLot.availableSpots // (Ví dụ: 100)
-
-    // Dư địa Xô 3 = Tổng Xô 3 (50) - Đang dùng (10) = 40
+    // Dư địa Xô 3 = Tổng Xô 3 - Đang dùng
     const walkInLimitRemaining = updatedLot.walkInCapacity - currentWalkIns
 
-    // Con số hiển thị = Min(100, 40) = 40
-    // (Math.max(0, ...) để đảm bảo không bao giờ hiển thị số âm)
+    // Con số an toàn = Min(Vật lý, Dư địa Vãng lai)
     const displaySpots = Math.max(
       0,
       Math.min(physicalAvailable, walkInLimitRemaining),
     )
 
     // ---------------------------------------------------------
-    // BƯỚC 4: PHÁT SÓNG (BROADCAST)
+    // ⭐️ BƯỚC 3: LƯU CON SỐ AN TOÀN VÀO DB (CACHE CHO MAP VIEW)
     // ---------------------------------------------------------
-
-    // Xác định Room (ví dụ: "parking_lot_ID")
-    const roomName = `parking_lot_${parkingLotId}`
-
-    // Payload gọn nhẹ
-    const payload = {
-      _id: parkingLotId,
-      availableSpots: displaySpots, // ⭐️ Gửi con số AN TOÀN
-      // (Tùy chọn: Gửi thêm physicalAvailable cho Dashboard Admin xem)
-      // realSpots: physicalAvailable
+    // Bước này cực kỳ quan trọng để API "Get All Parking Lots" chạy nhanh.
+    // Bạn cần viết thêm hàm updateDisplaySpots trong Repository của ParkingLot.
+    try {
+      await this.parkingLotRepository.updateParkingLot(parkingLotId, {
+        displayAvailableSpots: displaySpots, // Lưu vào DB
+      })
+    } catch (error) {
+      this.logger.error(
+        `Lỗi cập nhật displayAvailableSpots cho bãi ${parkingLotId}: ${error.message}`,
+      )
+      // Không return false, vì logic chính đã xong, chỉ là lỗi cache
     }
 
-    // Gọi Gateway để bắn tin
+    // ---------------------------------------------------------
+    // BƯỚC 4: PHÁT SÓNG WEBSOCKET
+    // ---------------------------------------------------------
+    const roomName = `parking_lot_${parkingLotId}`
+
+    const payload: ParkingLotSpotsUpdateDto = {
+      _id: parkingLotId,
+      // Khách thấy số này (An toàn)
+      availableSpots: displaySpots,
+      // Admin thấy số này (Thực tế)
+      realAvailableSpots: physicalAvailable,
+      // Admin thấy số này (Dư địa)
+      walkInLimitRemaining: walkInLimitRemaining,
+    }
+
     this.parkingLotGateway.sendSpotsUpdate(roomName, payload)
 
     return true
