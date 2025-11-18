@@ -7,6 +7,7 @@ import '../../../widgets/booking/parking_lot_info_card.dart';
 import '../../../widgets/booking/electric_car_message.dart';
 import '../../../widgets/booking/pricing_table_card.dart';
 import '../../../widgets/booking/comments_section.dart';
+import '../../../widgets/booking/subscription_calendar.dart';
 import 'payment_checkout_screen.dart';
 import 'payment_result_screen.dart';
 
@@ -27,6 +28,7 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isLoadingSpaces = false;
   bool _isLoadingPricing = false;
   bool _isCreatingSubscription = false;
+  bool _isLoadingAvailability = false;
   List<Map<String, dynamic>> _parkingSpaces = [];
   List<Map<String, dynamic>> _pricingLinks = [];
   String? _selectedSpaceId;
@@ -34,6 +36,9 @@ class _BookingScreenState extends State<BookingScreen> {
   int _selectedLevel = 1;
   List<int> _availableLevels = [];
   bool _isSelectedSpaceElectric = false;
+  Map<String, dynamic> _availabilityData = {};
+  DateTime? _selectedStartDate;
+  bool _isPackageType = false;
 
   @override
   void initState() {
@@ -227,6 +232,17 @@ class _BookingScreenState extends State<BookingScreen> {
                   onPricingSelected: _onPricingSelected,
                 ),
 
+                // Calendar for package type subscriptions
+                if (_isPackageType && _selectedPricingPolicyId != null) ...[
+                  const SizedBox(height: 24),
+                  SubscriptionCalendar(
+                    availabilityData: _availabilityData,
+                    selectedDate: _selectedStartDate,
+                    onDateSelected: _onDateSelected,
+                    isLoading: _isLoadingAvailability,
+                  ),
+                ],
+
                 const SizedBox(height: 24),
 
                 // Electric car message
@@ -317,12 +333,99 @@ class _BookingScreenState extends State<BookingScreen> {
       // If clicking on already selected item, deselect it
       if (_selectedPricingPolicyId == pricingPolicyId) {
         _selectedPricingPolicyId = null;
+        _isPackageType = false;
+        _availabilityData = {};
+        _selectedStartDate = null;
         print('❌ Deselected pricing policy: $pricingPolicyId');
       } else {
         _selectedPricingPolicyId = pricingPolicyId;
         print('✅ Selected pricing policy: $pricingPolicyId');
+
+        // Check if this is a PACKAGE type
+        final pricingPolicy = link['pricingPolicyId'];
+        final basisId = pricingPolicy?['basisId'];
+        final basisName = basisId?['basisName'] ?? basisId?['name'] ?? '';
+
+        if (basisName == 'PACKAGE') {
+          _isPackageType = true;
+          _loadSubscriptionAvailability();
+        } else {
+          _isPackageType = false;
+          _availabilityData = {};
+          _selectedStartDate = null;
+        }
       }
     });
+  }
+
+  /// Load subscription availability for the selected parking lot
+  Future<void> _loadSubscriptionAvailability() async {
+    final parkingLotId = widget.parkingLot['_id'] ?? widget.parkingLot['id'];
+    if (parkingLotId == null) {
+      print('⚠️ Cannot load availability: Parking lot ID is null');
+      return;
+    }
+
+    setState(() {
+      _isLoadingAvailability = true;
+    });
+
+    try {
+      print(
+        '📊 Loading subscription availability for parking lot: $parkingLotId',
+      );
+
+      final response = await SubscriptionService.getSubscriptionAvailability(
+        parkingLotId: parkingLotId,
+      );
+
+      print('📡 Availability response: $response');
+
+      // Extract availability data from response
+      // Response structure: { "data": [{ "2025-11-18": {...}, ... }] }
+      dynamic data = response['data'];
+      Map<String, dynamic> availabilityMap = {};
+
+      if (data is List && data.isNotEmpty) {
+        // If data is a list, take the first item which should be a map
+        final firstItem = data[0];
+        if (firstItem is Map) {
+          availabilityMap = Map<String, dynamic>.from(firstItem);
+        }
+      } else if (data is Map) {
+        availabilityMap = Map<String, dynamic>.from(data);
+      }
+
+      print('✅ Parsed availability data: ${availabilityMap.keys.length} dates');
+
+      setState(() {
+        _availabilityData = availabilityMap;
+        _isLoadingAvailability = false;
+      });
+    } catch (e) {
+      print('❌ Error loading subscription availability: $e');
+      setState(() {
+        _isLoadingAvailability = false;
+        _availabilityData = {};
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải lịch: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Handle date selection from calendar
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      _selectedStartDate = date;
+    });
+    print('📅 Selected start date: $date');
   }
 
   /// Create subscription with selected pricing policy and payment
@@ -344,6 +447,17 @@ class _BookingScreenState extends State<BookingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Vui lòng chọn gói thuê bao'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Validate date selection for PACKAGE type
+    if (_isPackageType && _selectedStartDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn ngày bắt đầu cho gói thuê bao'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -486,11 +600,19 @@ class _BookingScreenState extends State<BookingScreen> {
       print('🔗 Checkout URL toString: ${checkoutUrl.toString()}');
 
       // Step 2: Create subscription
-      final now = DateTime.now();
+      // Use selected date for PACKAGE type, otherwise use today
+      DateTime startDateTime;
+      if (_isPackageType && _selectedStartDate != null) {
+        startDateTime = _selectedStartDate!;
+      } else {
+        final now = DateTime.now();
+        startDateTime = DateTime(now.year, now.month, now.day);
+      }
+
       final startDate = DateTime(
-        now.year,
-        now.month,
-        now.day,
+        startDateTime.year,
+        startDateTime.month,
+        startDateTime.day,
       ).toUtc().toIso8601String();
 
       print('📝 Creating subscription:');
