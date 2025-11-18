@@ -1,9 +1,13 @@
 ﻿using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.DashboardDtos;
+using CoreService.Application.DTOs.PaymentDtos;
+using CoreService.Application.DTOs.PaymentDtos.CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Application.Interfaces;
+using CoreService.Repository.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using static CoreService.Application.Applications.PaymentApp;
 
 namespace CoreService.API.Controllers
 {
@@ -31,29 +35,73 @@ namespace CoreService.API.Controllers
             // Luồng 1
             return Ok(await _accountApp.GetAllAsync(page, pageSize));
         }
+        [HttpGet("operator/{operatorId}/payments")]
+        [Authorize(Roles = "Operator,Admin")]
+        public async Task<IActionResult> GetOperatorPayments(
+    string operatorId,
+    [FromQuery] OperatorDashboardRequest request)
+        {
+            // Tùy chọn: nếu là Operator thì dùng operatorId từ token
+            // var currentUserId = User.FindFirst("id")?.Value;
+            // if (User.IsInRole("Operator") && currentUserId != operatorId)
+            //     return Forbid();
 
-        //[HttpGet("admin/saas-revenue/detail")]
-        //[Authorize(Roles = "Admin")]
-        //public async Task<IActionResult> GetSaasRevenueDetail([FromQuery] DateTime? from, [FromQuery] DateTime? to)
-        //{
-        //    // Luồng 2 (Cần triển khai GetSaasRevenueForAdminAsync trong PaymentApp)
-        //    var result = await _paymentApp.GetSaasRevenueForAdminAsync(from, to);
-        //    return Ok(new ApiResponse<IEnumerable<SaasRevenueDetailDto>>(result, true, "Thành công", StatusCodes.Status200OK));
-        //}
+            var paymentTypes = request.PaymentType != null
+        ? new[] { (PaymentType)Enum.Parse(typeof(PaymentType), request.PaymentType) }
+        : null;
 
-        //// --- OPERATOR DASHBOARD ---
+            // Sửa đổi kiểu trả về tại đây:
+            var records = await _paymentApp.GetOperatorPaymentsFilteredAsync(
+                operatorId,
+                paymentTypes,
+                request.Status,
+                request.FromDate,
+                request.ToDate);
 
-        //[HttpGet("operator/driver-revenue/detail")]
-        //[Authorize(Roles = "Operator")]
-        //public async Task<IActionResult> GetOperatorDriverRevenueDetail([FromQuery] DateTime? from, [FromQuery] DateTime? to)
-        //{
-        //    // Luồng 3
-        //    var operatorId = User.FindFirst("roleId")?.Value;
-        //    if (string.IsNullOrEmpty(operatorId)) return Forbid();
+            // Trả về DTO mới
+            return Ok(records);
+        }
 
-        //    // (Cần triển khai GetDriverRevenueForOperatorAsync trong PaymentApp)
-        //    var result = await _paymentApp.GetDriverRevenueForOperatorAsync(operatorId, from, to);
-        //    return Ok(new ApiResponse<IEnumerable<DriverRevenueDetailDto>>(result, true, "Thành công", StatusCodes.Status200OK));
-        //}
+        /// <summary>
+        /// Tổng hợp doanh thu và Refund của Operator
+        /// </summary>
+        [HttpGet("operator/{operatorId}/financial-totals")]
+        [Authorize(Roles = "Operator,Admin")]
+        public async Task<IActionResult> GetOperatorFinancialTotals(
+            string operatorId,
+            [FromQuery] OperatorDashboardRequest request)
+        {
+            // Chỉ tính các giao dịch Driver trả tiền cho Operator
+            var operatorTypes = new[] { PaymentType.Reservation, PaymentType.Subscription, PaymentType.ParkingLotSession };
+
+            var totals = await _paymentApp.GetPaymentTotalsAsync(
+                operatorId,
+                operatorTypes,
+                request.FromDate,
+                request.ToDate);
+
+            return Ok(totals);
+        }
+
+        /// <summary>
+        /// Thống kê số lượng giao dịch theo Status (PAID, PENDING, EXPIRED,...)
+        /// </summary>
+        [HttpGet("operator/{operatorId}/status-counts")]
+        [Authorize(Roles = "Operator,Admin")]
+        public async Task<IActionResult> GetOperatorPaymentStatusCounts(
+            string operatorId,
+            [FromQuery] OperatorDashboardRequest request)
+        {
+            // Chỉ tính các giao dịch Driver trả tiền cho Operator
+            var operatorTypes = new[] { PaymentType.Reservation, PaymentType.Subscription, PaymentType.ParkingLotSession };
+
+            var counts = await _paymentApp.GetPaymentCountByStatusAsync(
+                operatorId,
+                operatorTypes,
+                request.FromDate,
+                request.ToDate);
+
+            return Ok(counts);
+        }
     }
 }
