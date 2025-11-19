@@ -1,3 +1,4 @@
+import type { ClientSession } from 'mongoose'
 import type { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import type { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import type { IdDto } from 'src/common/dto/params.dto'
@@ -17,6 +18,7 @@ export interface IPackageRateService {
   createPackageRate(
     createDto: CreatePackageRateDto,
     userId: string,
+    externalSession?: ClientSession,
   ): Promise<PackageRateResponseDto>
 
   /**
