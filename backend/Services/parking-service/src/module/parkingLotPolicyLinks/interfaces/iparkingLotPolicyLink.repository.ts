@@ -1,9 +1,6 @@
 import type { ClientSession } from 'mongoose' // <-- Thêm session
 
-import type {
-  CreateParkingLotPolicyLinkDto,
-  UpdateParkingLotPolicyLinkDto,
-} from '../dto/parkingLotPolicyLink.dto'
+import type { UpdateParkingLotPolicyLinkDto } from '../dto/parkingLotPolicyLink.dto'
 import type { ParkingLotPolicyLink } from '../schemas/parkingLotPolicyLink.schema'
 
 export interface IParkingLotPolicyLinkRepository {
@@ -11,7 +8,7 @@ export interface IParkingLotPolicyLinkRepository {
    * Tạo một liên kết mới.
    */
   createLink(
-    linkDto: CreateParkingLotPolicyLinkDto,
+    linkDto: Partial<ParkingLotPolicyLink>,
     userId: string,
     session?: ClientSession, // <-- Nên có session
   ): Promise<ParkingLotPolicyLink | null>

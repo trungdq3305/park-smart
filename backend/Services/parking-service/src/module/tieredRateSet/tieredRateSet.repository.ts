@@ -48,14 +48,18 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
   async createSet(
     dto: CreateTieredRateSetDto,
     userId: string,
+    session: ClientSession,
   ): Promise<TieredRateSet | null> {
     const createdSet = new this.tieredRateSetModel({
       ...dto,
       createdBy: userId,
     })
-    await createdSet.save()
-    const result = await this.tieredRateSetModel.findById(createdSet._id).exec()
-    return result
+
+    // Hàm save sẽ tự động cập nhật lại object createdSet nếu có thay đổi
+    await createdSet.save({ session })
+
+    // ✅ Trả về luôn, không cần query lại
+    return createdSet
   }
 
   async findAllSetsByCreator(

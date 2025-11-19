@@ -16,6 +16,7 @@ export interface ITieredRateSetRepository {
   createSet(
     dto: CreateTieredRateSetDto,
     userId: string,
+    session: ClientSession,
   ): Promise<TieredRateSet | null>
 
   /**

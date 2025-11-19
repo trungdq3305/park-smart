@@ -5,15 +5,17 @@ import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import {
   IsDateString,
+  IsDefined,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   Min,
+  ValidateNested,
 } from 'class-validator'
 import { IsAfterNow } from 'src/common/decorators/isAfterNow.decorator'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
-
+import { CreatePricingPolicyDto } from 'src/module/pricingPolicy/dto/pricingPolicy.dto'
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies ---
 // -----------------------------------------------------------------
@@ -28,12 +30,13 @@ export class CreateParkingLotPolicyLinkDto {
   parkingLotId: string
 
   @ApiProperty({
-    description: 'ID của chính sách giá (PricingPolicy)',
-    example: '68e51c5f4745c81c82b61834',
+    description: 'Chính sách giá áp dụng (PricingPolicy)',
+    example: CreatePricingPolicyDto,
   })
-  @IsNotEmpty({ message: 'pricingPolicyId không được để trống' })
-  @IsMongoId({ message: 'pricingPolicyId phải là một MongoID' })
-  pricingPolicyId: string
+  @IsDefined({ message: 'Thông tin chính sách giá không được để trống' }) // ✅ 1. Giữ lại trường này
+  @ValidateNested()
+  @Type(() => CreatePricingPolicyDto)
+  pricingPolicyId: CreatePricingPolicyDto
 
   @ApiPropertyOptional({
     description: 'Độ ưu tiên (số nhỏ hơn ưu tiên cao hơn)',

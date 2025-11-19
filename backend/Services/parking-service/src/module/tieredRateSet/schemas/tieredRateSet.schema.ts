@@ -35,9 +35,6 @@ export class TieredRateSet extends BaseEntity {
     default: [], // Đảm bảo luôn là một mảng
   })
   tiers: Tier[] // Mảng chứa các bậc thang giá
-
-  @Prop({ required: true, default: false, type: Boolean })
-  isUsed: boolean
 }
 
 export const TieredRateSetSchema = SchemaFactory.createForClass(TieredRateSet)

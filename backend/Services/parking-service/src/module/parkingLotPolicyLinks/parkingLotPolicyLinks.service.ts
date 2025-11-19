@@ -14,6 +14,7 @@ import { IdDto } from 'src/common/dto/params.dto'
 
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
 import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
+import { IPricingPolicyService } from '../pricingPolicy/interfaces/ipricingPolicy.service'
 import {
   CreateParkingLotPolicyLinkDto,
   ParkingLotPolicyLinkResponseDto,
@@ -34,7 +35,10 @@ export class ParkingLotPolicyLinksService
     private readonly pricingPolicyRepository: IPricingPolicyRepository,
     @Inject(IParkingLotRepository)
     private readonly parkingLotRepository: IParkingLotRepository,
-    @InjectConnection() private readonly connection: Connection,
+    @Inject(IPricingPolicyService)
+    private readonly pricingPolicyService: IPricingPolicyService,
+    @InjectConnection()
+    private readonly connection: Connection,
   ) {}
 
   private responseDto(
@@ -62,17 +66,19 @@ export class ParkingLotPolicyLinksService
 
   private async checkExist(
     parkingLotId: string,
-    policyId: string,
+    pricingPolicyId: string,
   ): Promise<void> {
     const existParkingLot =
       await this.parkingLotRepository.findParkingLotById(parkingLotId)
+
     if (!existParkingLot) {
       throw new NotFoundException('Bãi xe không tồn tại')
     }
-    const existPolicy =
-      await this.pricingPolicyRepository.findPolicyById(policyId)
-    if (!existPolicy) {
-      throw new NotFoundException('Chính sách không tồn tại')
+    const existPricingPolicy =
+      await this.pricingPolicyRepository.findPolicyById(pricingPolicyId)
+
+    if (!existPricingPolicy) {
+      throw new NotFoundException('Chính sách giá không tồn tại')
     }
   }
 
@@ -80,13 +86,26 @@ export class ParkingLotPolicyLinksService
     createDto: CreateParkingLotPolicyLinkDto,
     userId: string,
   ): Promise<ParkingLotPolicyLinkResponseDto> {
-    await this.checkExist(createDto.parkingLotId, createDto.pricingPolicyId)
-    this.checkTime(new Date(createDto.startDate), new Date(createDto.endDate))
     const session = await this.connection.startSession()
     session.startTransaction()
     try {
+      const policyId = await this.pricingPolicyService.createPolicy(
+        createDto.pricingPolicyId,
+        userId,
+        session,
+      )
+
+      const dataSend: Partial<ParkingLotPolicyLink> = {
+        parkingLotId: createDto.parkingLotId,
+        pricingPolicyId: policyId._id,
+        startDate: new Date(createDto.startDate),
+        endDate: createDto.endDate ? new Date(createDto.endDate) : undefined,
+      }
+
+      await this.checkExist(createDto.parkingLotId, policyId._id)
+      this.checkTime(new Date(createDto.startDate), new Date(createDto.endDate))
       const newLink = await this.parkingLotPolicyLinksRepository.createLink(
-        createDto,
+        dataSend,
         userId,
         session,
       )
