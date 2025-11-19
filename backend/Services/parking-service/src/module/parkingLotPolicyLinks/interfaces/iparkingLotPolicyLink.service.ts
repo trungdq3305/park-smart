@@ -43,10 +43,12 @@ export interface IParkingLotPolicyLinkService {
    * (Cho Admin) Lấy tất cả các liên kết (kể cả cũ/hết hạn) của 1 bãi xe.
    * @param parkingLotId ID của bãi xe.
    * @param paginationQuery Tùy chọn phân trang (page, pageSize).
+   * @param isDeleted Có lấy các liên kết đã xóa mềm hay không.
    */
   findAllLinksByParkingLot(
     parkingLotId: string,
     paginationQuery: PaginationQueryDto,
+    isDeleted: boolean,
   ): Promise<{
     data: ParkingLotPolicyLinkResponseDto[]
     pagination: PaginationDto

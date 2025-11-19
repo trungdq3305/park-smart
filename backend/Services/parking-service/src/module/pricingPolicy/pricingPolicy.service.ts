@@ -38,6 +38,48 @@ export class PricingPolicyService implements IPricingPolicyService {
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
+  async softDeletePolicyWithCascade(
+    policyId: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<void> {
+    // 1. Tìm Policy để lấy ID của các RateSets con
+    const policy = await this.pricingPolicyRepository.findPolicyById(policyId) // Bạn cần đảm bảo repo có hàm findById
+
+    if (!policy) {
+      // Nếu không tìm thấy policy thì thôi, không cần lỗi, coi như đã xóa
+      return
+    }
+
+    // 2. Xóa TieredRateSet (nếu có)
+    if (policy.tieredRateSetId) {
+      await this.tieredRateSetService.softDelete(
+        // Giả sử bạn đã có hàm softDelete bên service này
+        policy.tieredRateSetId,
+        userId,
+        session, // Truyền session
+      )
+    }
+
+    // 3. Xóa PackageRate (nếu có)
+    if (policy.packageRateId) {
+      await this.packageRateService.softDelete(
+        // Giả sử bạn đã có hàm softDelete bên service này
+        policy.packageRateId,
+        userId,
+        session, // Truyền session
+      )
+    }
+
+    // 4. Xóa chính Policy
+    await this.pricingPolicyRepository.softDeletePolicy(
+      // Hàm softDelete của repo policy
+      policyId,
+      userId,
+      session,
+    )
+  }
+
   private returnToPricingPolicyResponseDto(data: PricingPolicy) {
     return plainToInstance(PricingPolicyResponseDto, data, {
       excludeExtraneousValues: true,

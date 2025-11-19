@@ -163,10 +163,15 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     return data
   }
 
-  async softDeletePolicy(id: string, userId: string): Promise<boolean> {
+  async softDeletePolicy(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean> {
     const result = await this.pricingPolicyModel.updateOne(
       { _id: id, createdBy: userId, deletedAt: null },
       { $set: { deletedAt: new Date(), deletedBy: userId } },
+      { session: session ?? undefined },
     )
     return result.modifiedCount > 0
   }

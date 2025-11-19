@@ -113,10 +113,15 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
       .exec()
   }
 
-  async softDeleteSet(id: string, userId: string): Promise<boolean> {
+  async softDeleteSet(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean> {
     const data = await this.tieredRateSetModel.updateOne(
       { _id: id, createdBy: userId, deletedAt: null },
       { $set: { deletedAt: new Date(), deletedBy: userId } },
+      { session: session ?? undefined },
     )
     return data.modifiedCount > 0
   }

@@ -45,7 +45,11 @@ export interface IPricingPolicyRepository {
    * (Lưu ý: Service sẽ quyết định logic xóa, thường là vô hiệu hóa link thay vì xóa policy).
    * @param id ID của chính sách giá cần xóa.
    */
-  softDeletePolicy(id: string, userId: string): Promise<boolean>
+  softDeletePolicy(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean>
   /**
    * Đếm số lượng chính sách giá (policies) KHÁC đang sử dụng một gói giá (package rate) cụ thể.
    *

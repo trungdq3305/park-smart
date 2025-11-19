@@ -56,6 +56,12 @@ export interface IPricingPolicyService {
   findAllPoliciesForAdmin(
     paginationQuery: PaginationQueryDto,
   ): Promise<{ data: PricingPolicyResponseDto[]; pagination: PaginationDto }>
+
+  softDeletePolicyWithCascade(
+    policyId: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<void>
 }
 
 export const IPricingPolicyService = Symbol('IPricingPolicyService')

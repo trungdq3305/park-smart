@@ -156,6 +156,7 @@ export class ParkingLotPolicyLinksService
   async findAllLinksByParkingLot(
     parkingLotId: string,
     paginationQuery: PaginationQueryDto,
+    isDeleted: boolean,
   ): Promise<{
     data: ParkingLotPolicyLinkResponseDto[]
     pagination: PaginationDto
@@ -166,6 +167,7 @@ export class ParkingLotPolicyLinksService
         parkingLotId,
         page,
         pageSize,
+        isDeleted,
       )
     return {
       data: data.map((link) => this.responseDto(link)),
@@ -201,6 +203,16 @@ export class ParkingLotPolicyLinksService
     const session = await this.connection.startSession()
     session.startTransaction()
     try {
+      const policyLink =
+        await this.parkingLotPolicyLinksRepository.findLinkById(id.id)
+      if (!policyLink) {
+        throw new NotFoundException('Liên kết chính sách bãi xe không tồn tại')
+      }
+      await this.pricingPolicyService.softDeletePolicyWithCascade(
+        policyLink.pricingPolicyId,
+        userId,
+        session,
+      )
       const deleteResult =
         await this.parkingLotPolicyLinksRepository.softDeleteLink(
           id.id,

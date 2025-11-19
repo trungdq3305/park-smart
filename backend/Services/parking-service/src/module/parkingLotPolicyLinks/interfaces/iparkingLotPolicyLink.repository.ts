@@ -25,6 +25,7 @@ export interface IParkingLotPolicyLinkRepository {
     parkingLotId: string,
     page: number,
     pageSize: number,
+    isDeleted: boolean,
   ): Promise<{ data: ParkingLotPolicyLink[]; total: number }>
 
   /**

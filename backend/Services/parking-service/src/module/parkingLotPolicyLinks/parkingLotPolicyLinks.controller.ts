@@ -122,7 +122,8 @@ export class ParkingLotPolicyLinkController {
   @Roles(RoleEnum.OPERATOR, RoleEnum.ADMIN) // Dành cho Operator/Admin quản lý
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Lấy tất cả liên kết (cũ và mới) của 1 bãi xe (cho Admin)', // <-- Thay đổi
+    summary:
+      'Lấy tất cả liên kết (cũ và mới) của 1 bãi xe (cho Admin và Operator)', // <-- Thay đổi
   })
   @ApiParam({
     name: 'parkingLotId',
@@ -136,15 +137,23 @@ export class ParkingLotPolicyLinkController {
   })
   @ApiQuery({ name: 'page', required: true, type: Number })
   @ApiQuery({ name: 'pageSize', required: true, type: Number })
+  @ApiQuery({
+    name: 'isDeleted',
+    required: true,
+    type: Boolean,
+    example: false,
+  }) // <-- Thêm isDeleted
   async findAllLinksByParkingLot(
     @Param('parkingLotId') parkingLotId: string, // <-- Thay đổi
     @Query() paginationQuery: PaginationQueryDto,
+    @Query('isDeleted') isDeleted: boolean,
   ): Promise<PaginatedResponseDto<ParkingLotPolicyLinkResponseDto>> {
     // <-- Thay đổi
     const result = await this.linkService.findAllLinksByParkingLot(
       // <-- Thay đổi
       parkingLotId,
       paginationQuery,
+      isDeleted,
     )
     return {
       data: result.data,

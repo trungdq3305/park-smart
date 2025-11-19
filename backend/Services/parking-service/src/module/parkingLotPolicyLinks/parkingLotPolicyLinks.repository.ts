@@ -39,17 +39,33 @@ export class ParkingLotPolicyLinksRepository
     parkingLotId: string,
     page: number,
     pageSize: number,
+    isDeleted: boolean,
   ): Promise<{ data: ParkingLotPolicyLink[]; total: number }> {
     const limit = pageSize
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.parkingLotPolicyLinkModel
-        .find({ parkingLotId })
+        .find({ parkingLotId, deletedAt: isDeleted ? { $ne: null } : null })
+        .populate({
+          path: 'pricingPolicyId', // ⭐️ Populate chính sách giá
+          populate: [
+            { path: 'basisId' }, // Populate luôn cả basis
+            // (Populate thêm packageRateId, tieredRateSetId nếu cần)
+            { path: 'packageRateId' },
+            { path: 'tieredRateSetId' },
+          ],
+        })
+        .sort({ createdAt: -1 }) // Mới nhất trước
         .skip(skip)
         .limit(limit)
         .lean()
         .exec(),
-      this.parkingLotPolicyLinkModel.countDocuments({ parkingLotId }).exec(),
+      this.parkingLotPolicyLinkModel
+        .countDocuments({
+          parkingLotId,
+          deletedAt: isDeleted ? { $ne: null } : null,
+        })
+        .exec(),
     ])
     return { data, total }
   }
@@ -110,7 +126,11 @@ export class ParkingLotPolicyLinksRepository
       .findByIdAndUpdate(
         id,
         {
-          $set: { deletedAt: new Date(), deletedBy: userId },
+          $set: {
+            deletedAt: new Date(),
+            deletedBy: userId,
+            endDate: new Date(),
+          },
         },
         session ? { session } : {},
       )
