@@ -117,6 +117,12 @@ export interface IPricingPolicyRepository {
     unit: string
     durationAmount: number
   } | null>
+
+  /**
+   * Tìm một chính sách giá theo ID, dùng để kiểm tra gia hạn thuê bao.
+   * @param policyId ID của chính sách giá.
+   */
+  findPolicyByIdForCheckRenew(policyId: string): Promise<PricingPolicy | null>
 }
 
 export const IPricingPolicyRepository = Symbol('IPricingPolicyRepository')
