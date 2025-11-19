@@ -84,6 +84,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     lat: { min: 10.35, max: 11.25 },
     lng: { min: 106.3, max: 107.2 },
   }
+  
   const HO_CHI_MINH_BOUNDS_RECT: [[number, number], [number, number]] = [
     [HO_CHI_MINH_BOUNDS.lat.min, HO_CHI_MINH_BOUNDS.lng.min],
     [HO_CHI_MINH_BOUNDS.lat.max, HO_CHI_MINH_BOUNDS.lng.max],
