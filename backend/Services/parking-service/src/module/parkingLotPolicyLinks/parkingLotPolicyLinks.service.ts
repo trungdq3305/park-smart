@@ -64,21 +64,12 @@ export class ParkingLotPolicyLinksService
     }
   }
 
-  private async checkExist(
-    parkingLotId: string,
-    pricingPolicyId: string,
-  ): Promise<void> {
+  private async checkExist(parkingLotId: string): Promise<void> {
     const existParkingLot =
       await this.parkingLotRepository.findParkingLotById(parkingLotId)
 
     if (!existParkingLot) {
       throw new NotFoundException('Bãi xe không tồn tại')
-    }
-    const existPricingPolicy =
-      await this.pricingPolicyRepository.findPolicyById(pricingPolicyId)
-
-    if (!existPricingPolicy) {
-      throw new NotFoundException('Chính sách giá không tồn tại')
     }
   }
 
@@ -102,7 +93,7 @@ export class ParkingLotPolicyLinksService
         endDate: createDto.endDate ? new Date(createDto.endDate) : undefined,
       }
 
-      await this.checkExist(createDto.parkingLotId, policyId._id)
+      await this.checkExist(createDto.parkingLotId)
       this.checkTime(new Date(createDto.startDate), new Date(createDto.endDate))
       const newLink = await this.parkingLotPolicyLinksRepository.createLink(
         dataSend,

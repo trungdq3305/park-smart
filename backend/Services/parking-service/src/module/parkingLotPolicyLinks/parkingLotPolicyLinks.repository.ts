@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession, Model } from 'mongoose'
 
-import {
-  CreateParkingLotPolicyLinkDto,
-  UpdateParkingLotPolicyLinkDto,
-} from './dto/parkingLotPolicyLink.dto'
+import { UpdateParkingLotPolicyLinkDto } from './dto/parkingLotPolicyLink.dto'
 import { IParkingLotPolicyLinkRepository } from './interfaces/iparkingLotPolicyLink.repository'
 import { ParkingLotPolicyLink } from './schemas/parkingLotPolicyLink.schema'
 

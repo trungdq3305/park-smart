@@ -108,13 +108,6 @@ export class PackageRateService implements IPackageRateService {
     }
 
     try {
-      const isNameConflict = await this.checkNameConflict(
-        createDto.name,
-        userId,
-      )
-      if (isNameConflict) {
-        throw new ConflictException('Tên gói cước đã tồn tại')
-      }
 
       // 2. Truyền session vào Repository
       const data = await this.packageRateRepository.createPackageRate(
