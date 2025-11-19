@@ -194,3 +194,8 @@ export class SubscriptionIdResponseDto {
   @Transform(({ obj }) => obj._id.toString())
   _id: string
 }
+
+export class SubscriptionRenewalEligibilityResponseDto {
+  canRenew: boolean
+  message?: string
+}

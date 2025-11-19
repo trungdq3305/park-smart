@@ -72,6 +72,12 @@ export interface ITieredRateSetService {
   findAllSetsForAdmin(
     paginationQuery: PaginationQueryDto,
   ): Promise<{ data: TieredRateSetResponseDto[]; pagination: PaginationDto }>
+
+  softDelete(
+    id: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<boolean>
 }
 
 export const ITieredRateSetService = Symbol('ITieredRateSetService')

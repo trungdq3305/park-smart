@@ -62,20 +62,23 @@ export class CreateParkingLotPolicyLinkDto {
   })
   @IsAfterNow({ message: 'Ngày bắt đầu phải là tương lai.' })
   startDate: string
-
-  @ApiProperty({
-    description: 'Ngày kết thúc hiệu lực (ISO 8601)',
-    example: '2026-11-20T00:00:00.000Z',
-  })
-  @IsOptional()
-  @IsDateString({}, { message: 'endDate phải là định dạng ngày tháng hợp lệ' })
-  endDate: string
 }
 
 // Sử dụng PartialType để tạo DTO Cập nhật, tất cả các trường đều là tùy chọn
 export class UpdateParkingLotPolicyLinkDto extends PartialType(
   CreateParkingLotPolicyLinkDto,
 ) {}
+
+export class UpdateLinkEndDateDto {
+  @ApiProperty({
+    description: 'Ngày kết thúc hiệu lực (ISO 8601)',
+    example: '2025-12-31T23:59:59.000Z',
+  })
+  @IsNotEmpty({ message: 'endDate không được để trống' })
+  @IsDateString({}, { message: 'endDate phải là định dạng ngày tháng hợp lệ' })
+  @IsAfterNow({ message: 'Ngày kết thúc phải là tương lai.' })
+  endDate: string
+}
 
 // -----------------------------------------------------------------
 // --- DTO for Responses ---

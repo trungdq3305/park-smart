@@ -71,6 +71,12 @@ export interface IPackageRateService {
    * @returns Danh sách các gói giá.
    */
   findAllEnumPackageRates(): Promise<any[]>
+
+  softDelete(
+    id: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<boolean>
 }
 
 export const IPackageRateService = Symbol('IPackageRateService')
