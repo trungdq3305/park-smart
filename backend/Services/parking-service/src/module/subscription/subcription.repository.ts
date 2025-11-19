@@ -206,7 +206,12 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     return this.subscriptionModel
       .countDocuments({
         parkingLotId,
-        status: SubscriptionStatusEnum.ACTIVE,
+        status: {
+          $in: [
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.PENDING_PAYMENT, // ✅ Thêm dòng này
+          ],
+        },
         deletedAt: null,
         startDate: { $lte: requestedDate },
         endDate: { $gte: requestedDate },

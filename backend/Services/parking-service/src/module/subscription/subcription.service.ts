@@ -32,6 +32,7 @@ import {
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
   SubscriptionLogDto,
+  SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto'
 import {
@@ -775,6 +776,100 @@ export class SubscriptionService implements ISubscriptionService {
         `[CronJob Error] Lỗi khi gửi thông báo hết hạn: ${error.message}`,
         error.stack,
       )
+    }
+  }
+
+  async checkRenewalEligibility(
+    id: string,
+    userId: string,
+  ): Promise<SubscriptionRenewalEligibilityResponseDto> {
+    // 1. Tìm subscription
+    const subscription = await this.subscriptionRepository.findSubscriptionById(
+      id,
+      userId,
+    )
+
+    if (!subscription) {
+      throw new NotFoundException('Không tìm thấy gói thuê bao.')
+    }
+
+    if (
+      subscription.status === SubscriptionStatusEnum.CANCELLED ||
+      subscription.status ===
+        SubscriptionStatusEnum.CANCELLED_DUE_TO_NON_PAYMENT
+    ) {
+      throw new BadRequestException(
+        'Gói thuê bao này đã bị hủy hoặc không thanh toán. Không thể gia hạn.',
+      )
+    }
+
+    // --- THAY ĐỔI TỪ ĐÂY ---
+
+    // 2. Xác định thời điểm cần kiểm tra Slot (Critical Time)
+    let dateToCheck: Date
+    const now = new Date()
+
+    // Nếu đang Active và hạn chưa hết: Ta cần kiểm tra slot cho TƯƠNG LAI (ngay sau khi hết hạn)
+    if (
+      subscription.status === SubscriptionStatusEnum.ACTIVE &&
+      new Date(subscription.endDate) > now
+    ) {
+      // Logic: Bạn đang ngồi đây, nhưng 3 ngày nữa bạn hết hạn.
+      // Ta cần kiểm tra xem "3 ngày nữa" bãi xe có full không?
+      dateToCheck = new Date(subscription.endDate)
+      // Nhích thêm 1 giây hoặc 1 phút để đảm bảo nó nhảy sang chu kỳ mới
+      dateToCheck.setMinutes(dateToCheck.getMinutes() + 1)
+    } else {
+      // Nếu đã Expired (hoặc Active nhưng đã quá hạn): Kiểm tra ngay bây giờ
+      dateToCheck = now
+    }
+
+    // 3. Lấy quy định sức chứa
+    const leasedCapacityRule =
+      await this.parkingLotRepository.getLeasedCapacityRule(
+        subscription.parkingLotId,
+      )
+
+    // 4. Đếm số lượng xe sẽ Active tại thời điểm `dateToCheck`
+    const activeCountAtCriticalTime =
+      await this.subscriptionRepository.countActiveOnDateByParkingLot(
+        subscription.parkingLotId,
+        dateToCheck,
+        id, // Vẫn loại trừ chính nó (để tránh tự mình chặn mình nếu logic query có overlap)
+      )
+
+    // 5. So sánh và Quyết định
+    if (activeCountAtCriticalTime >= leasedCapacityRule) {
+      // Phân biệt thông báo lỗi cho rõ ràng
+      const isFutureConflict = dateToCheck > now
+      const errorMessage = isFutureConflict
+        ? 'Rất tiếc, vào thời điểm gói hiện tại của bạn kết thúc, bãi xe đã kín chỗ (do có người đặt trước).'
+        : 'Bãi xe hiện đã hết suất thuê bao. Không thể gia hạn lại gói đã hết hạn.'
+
+      throw new ConflictException(errorMessage)
+    }
+
+    const pricingPolicy =
+      await this.pricingPolicyRepository.findPolicyByIdForCheckRenew(
+        subscription.pricingPolicyId,
+      )
+
+    if (!pricingPolicy) {
+      // Trường hợp 1: ID không tồn tại trong hệ thống
+      throw new NotFoundException('Gói thuê bao không tồn tại.')
+    }
+
+    if (pricingPolicy.deletedAt) {
+      // Kiểm tra trường deletedAt
+      // Trường hợp 2: ID có tồn tại, nhưng đã bị xóa (Lỗi thời)
+      throw new ConflictException( // Dùng BadRequest hoặc Conflict hợp lý hơn NotFound
+        'Chính sách giá này đã ngừng hoạt động. Vui lòng đăng ký gói mới theo chính sách hiện hành.',
+      )
+    }
+
+    return {
+      canRenew: true,
+      message: 'Đủ điều kiện gia hạn.',
     }
   }
 }

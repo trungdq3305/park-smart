@@ -29,6 +29,14 @@ export class PackageRateService implements IPackageRateService {
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
+  softDelete(
+    id: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<boolean> {
+    return this.packageRateRepository.softDeletePackageRate(id, userId, session)
+  }
+
   private returnPackageRateResponseDto(
     packageRate: PackageRate,
   ): PackageRateResponseDto {
@@ -108,7 +116,6 @@ export class PackageRateService implements IPackageRateService {
     }
 
     try {
-
       // 2. Truyền session vào Repository
       const data = await this.packageRateRepository.createPackageRate(
         createDto,

@@ -8,6 +8,7 @@ import type {
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
   SubscriptionLogDto,
+  SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from '../dto/subscription.dto' // <-- Giả định đường dẫn DTO
 
@@ -125,7 +126,12 @@ export interface ISubscriptionService {
     paymentId: string,
   ): Promise<SubscriptionDetailResponseDto>
 
-  sendExpiringSubscriptionNotificationsJob(): Promise<void>;
+  sendExpiringSubscriptionNotificationsJob(): Promise<void>
+
+  checkRenewalEligibility(
+    id: string,
+    userId: string,
+  ): Promise<SubscriptionRenewalEligibilityResponseDto>
 }
 
 export const ISubscriptionService = Symbol('ISubscriptionService')

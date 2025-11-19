@@ -57,6 +57,7 @@ export interface ISubscriptionRepository {
    * Dùng để kiểm tra với `leasedCapacity` (Xô 1) trước khi bán gói mới.
    * @param parkingLotId ID của bãi đỗ xe.
    * @param requestedDate Ngày được yêu cầu (để kiểm tra tính hợp lệ của gói).
+   * @param subscriptionIdToExclude (Tùy chọn) ID của gói thuê bao để loại trừ khỏi đếm (dùng khi cập nhật).
    * @param session (Tùy chọn) Phiên làm việc của transaction (để đọc nhất quán).
    */
   countActiveOnDateByParkingLot(

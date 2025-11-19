@@ -29,6 +29,14 @@ export class TieredRateSetService implements ITieredRateSetService {
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
+  softDelete(
+    id: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<boolean> {
+    return this.tieredRateSetRepository.softDeleteSet(id, userId, session)
+  }
+
   private returnTieredRateSetResponseDto(
     tieredRateSet: TieredRateSet,
   ): TieredRateSetResponseDto {
