@@ -28,9 +28,6 @@ export class PackageRate extends BaseEntity {
   @Prop({ required: true, type: Number })
   price: number
 
-  @Prop({ type: Boolean })
-  isUsed: boolean
-
   @Prop({ type: String, required: true })
   name: string
 }

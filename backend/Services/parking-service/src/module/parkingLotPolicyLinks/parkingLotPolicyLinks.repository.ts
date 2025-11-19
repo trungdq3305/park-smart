@@ -19,7 +19,7 @@ export class ParkingLotPolicyLinksRepository
   ) {}
 
   createLink(
-    linkDto: CreateParkingLotPolicyLinkDto,
+    linkDto: Partial<ParkingLotPolicyLink>,
     userId: string,
     session?: ClientSession,
   ): Promise<ParkingLotPolicyLink | null> {
