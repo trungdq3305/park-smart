@@ -34,6 +34,7 @@ import { RolesGuard } from 'src/guard/role.guard'
 import {
   CreateParkingLotPolicyLinkDto,
   ParkingLotPolicyLinkResponseDto,
+  UpdateLinkEndDateDto,
   UpdateParkingLotPolicyLinkDto,
 } from './dto/parkingLotPolicyLink.dto' // <-- Thay đổi
 import { IParkingLotPolicyLinkService } from './interfaces/iparkingLotPolicyLink.service'
@@ -251,6 +252,44 @@ export class ParkingLotPolicyLinkController {
       data: [isDeleted],
       statusCode: HttpStatus.OK,
       message: 'Xóa liên kết thành công', // <-- Thay đổi
+      success: true,
+    }
+  }
+
+  @Patch(':id/schedule-end')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.OPERATOR)
+  @ApiOperation({ summary: 'Cập nhật ngày kết thúc (Lên lịch xóa)' })
+  @ApiBearerAuth()
+  @ApiParam({ name: 'id', description: 'ID của liên kết', type: 'string' })
+  @ApiBody({ type: UpdateLinkEndDateDto }) // DTO chỉ chứa endDate
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cập nhật ngày kết thúc thành công',
+    type: ApiResponseDto<boolean>,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy liên kết',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền cập nhật liên kết này',
+  })
+  async scheduleLinkExpiration(
+    @Param() id: IdDto,
+    @Body() body: UpdateLinkEndDateDto, // DTO chỉ chứa endDate
+    @GetCurrentUserId() userId: string,
+  ): Promise<ApiResponseDto<boolean>> {
+    const result = await this.linkService.updateEndDate(
+      id.id,
+      body.endDate,
+      userId,
+    )
+    return {
+      data: [result],
+      statusCode: HttpStatus.OK,
+      message: 'Cập nhật ngày kết thúc thành công',
       success: true,
     }
   }

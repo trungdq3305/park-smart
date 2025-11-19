@@ -71,6 +71,18 @@ export interface IParkingLotPolicyLinkService {
    * @param userId ID của người vận hành (để kiểm tra quyền).
    */
   softDeleteLink(id: IdDto, userId: string): Promise<boolean>
+
+  /**
+   * Cập nhật ngày kết thúc của một liên kết.
+   * @param linkId ID của liên kết.
+   * @param endDate Ngày kết thúc mới (ISO 8601).
+   * @param userId ID của người vận hành (để kiểm tra quyền).
+   */
+  updateEndDate(
+    linkId: string,
+    endDate: string,
+    userId: string,
+  ): Promise<boolean>
 }
 
 export const IParkingLotPolicyLinkService = Symbol(

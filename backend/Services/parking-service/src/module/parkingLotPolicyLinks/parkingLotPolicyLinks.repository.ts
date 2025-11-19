@@ -15,6 +15,36 @@ export class ParkingLotPolicyLinksRepository
     private readonly parkingLotPolicyLinkModel: Model<ParkingLotPolicyLink>,
   ) {}
 
+  findExpiredActiveLinks(currentTime: Date): Promise<ParkingLotPolicyLink[]> {
+    return this.parkingLotPolicyLinkModel
+      .find({
+        endDate: { $lte: currentTime }, // Ngày kết thúc nhỏ hơn hoặc bằng hiện tại
+        deletedAt: null,
+      })
+      .exec()
+  }
+
+  async updateEndDate(
+    linkId: string,
+    endDate: Date,
+    userId: string,
+  ): Promise<boolean> {
+    const data = await this.parkingLotPolicyLinkModel
+      .findByIdAndUpdate(
+        linkId,
+        {
+          $set: {
+            endDate: new Date(endDate),
+            updatedBy: userId,
+            updatedAt: new Date(),
+          },
+        },
+        {},
+      )
+      .exec()
+    return data ? true : false
+  }
+
   createLink(
     linkDto: Partial<ParkingLotPolicyLink>,
     userId: string,

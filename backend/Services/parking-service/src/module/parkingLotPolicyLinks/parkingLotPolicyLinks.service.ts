@@ -1,11 +1,14 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
+import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import { Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
@@ -13,7 +16,6 @@ import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
 
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
-import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 import { IPricingPolicyService } from '../pricingPolicy/interfaces/ipricingPolicy.service'
 import {
   CreateParkingLotPolicyLinkDto,
@@ -31,8 +33,6 @@ export class ParkingLotPolicyLinksService
   constructor(
     @Inject(IParkingLotPolicyLinkRepository)
     private readonly parkingLotPolicyLinksRepository: IParkingLotPolicyLinkRepository,
-    @Inject(IPricingPolicyRepository)
-    private readonly pricingPolicyRepository: IPricingPolicyRepository,
     @Inject(IParkingLotRepository)
     private readonly parkingLotRepository: IParkingLotRepository,
     @Inject(IPricingPolicyService)
@@ -40,6 +40,45 @@ export class ParkingLotPolicyLinksService
     @InjectConnection()
     private readonly connection: Connection,
   ) {}
+
+  private readonly logger = new Logger(ParkingLotPolicyLinksService.name)
+
+  async updateEndDate(
+    linkId: string,
+    endDate: string,
+    userId: string,
+  ): Promise<boolean> {
+    if (new Date(endDate) <= new Date()) {
+      throw new BadRequestException(
+        'Ngày kết thúc theo lịch phải ở tương lai. Nếu muốn xóa ngay hãy dùng API Delete.',
+      )
+    }
+
+    const existingLink =
+      await this.parkingLotPolicyLinksRepository.findLinkById(linkId)
+
+    if (!existingLink) {
+      throw new NotFoundException('Không tìm thấy liên kết chính sách bãi xe.')
+    }
+
+    const newEndDate = new Date(endDate)
+    newEndDate.setHours(0, 0, 0, 0)
+
+    if (existingLink.startDate >= newEndDate) {
+      throw new BadRequestException(
+        'Ngày kết thúc phải sau ngày bắt đầu của liên kết.',
+      )
+    }
+
+    const updated = await this.parkingLotPolicyLinksRepository.updateEndDate(
+      linkId,
+      newEndDate,
+      userId,
+    )
+    if (!updated) throw new NotFoundException('Không tìm thấy liên kết.')
+
+    return true
+  }
 
   private responseDto(
     parkingLotPolicyLink: ParkingLotPolicyLink,
@@ -51,17 +90,6 @@ export class ParkingLotPolicyLinksService
         excludeExtraneousValues: true,
       },
     )
-  }
-
-  private checkTime(startTime: Date, endTime?: Date): void {
-    if (!endTime) {
-      return
-    }
-    if (startTime >= endTime) {
-      throw new ConflictException(
-        'Thời gian bắt đầu phải nhỏ hơn thời gian kết thúc',
-      )
-    }
   }
 
   private async checkExist(parkingLotId: string): Promise<void> {
@@ -90,11 +118,9 @@ export class ParkingLotPolicyLinksService
         parkingLotId: createDto.parkingLotId,
         pricingPolicyId: policyId._id,
         startDate: new Date(createDto.startDate),
-        endDate: createDto.endDate ? new Date(createDto.endDate) : undefined,
       }
 
       await this.checkExist(createDto.parkingLotId)
-      this.checkTime(new Date(createDto.startDate), new Date(createDto.endDate))
       const newLink = await this.parkingLotPolicyLinksRepository.createLink(
         dataSend,
         userId,
@@ -231,6 +257,85 @@ export class ParkingLotPolicyLinksService
       throw error
     } finally {
       await session.endSession()
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async handleExpiredLinks(): Promise<void> {
+    this.logger.log(
+      '🕒 Bắt đầu xử lý các liên kết chính sách bãi xe hết hạn...',
+    )
+
+    try {
+      const now = new Date()
+      // 1. Lấy danh sách (Giả sử hàm này trả về mảng các Document đầy đủ)
+      const expiredLinks =
+        await this.parkingLotPolicyLinksRepository.findExpiredActiveLinks(now)
+
+      if (!expiredLinks.length) {
+        // this.logger.log('✅ Không có liên kết nào cần xóa.')
+        return
+      }
+
+      this.logger.log(
+        `🔎 Tìm thấy ${String(expiredLinks.length)} liên kết cần xử lý.`,
+      )
+
+      // 2. Duyệt từng phần tử
+      for (const link of expiredLinks) {
+        const session = await this.connection.startSession()
+        session.startTransaction()
+
+        try {
+          // --- BẮT ĐẦU LOGIC ---
+
+          // Kiểm tra xem link có pricingPolicyId không (tránh lỗi null/undefined)
+          if (link.pricingPolicyId) {
+            // Gọi hàm xóa cascade (Policy -> RateSets -> Policy)
+            // Lưu ý: Đảm bảo link.pricingPolicyId là string hoặc ObjectId string
+            await this.pricingPolicyService.softDeletePolicyWithCascade(
+              link.pricingPolicyId,
+              'SYSTEM_CRON',
+              session,
+            )
+          }
+
+          // Xóa Link
+          const deleteResult =
+            await this.parkingLotPolicyLinksRepository.softDeleteLink(
+              link._id,
+              'SYSTEM_CRON',
+              session,
+            )
+
+          if (!deleteResult) {
+            // Ném lỗi để nhảy xuống catch, rollback transaction này
+            throw new Error('Repository trả về false khi xóa link')
+          }
+
+          await session.commitTransaction()
+          this.logger.log(`✅ [SUCCESS] Đã xóa Link ID: ${link._id}`)
+
+          // --- KẾT THÚC LOGIC ---
+        } catch (error) {
+          // 3. QUAN TRỌNG: Xử lý lỗi cục bộ cho từng Link
+          await session.abortTransaction()
+
+          this.logger.error(
+            `❌ [FAILED] Lỗi khi xóa Link ID: ${link._id}. Tiếp tục sang link khác...`,
+            error.stack,
+          )
+          // KHÔNG throw error ở đây để vòng lặp for vẫn chạy tiếp các link sau
+        } finally {
+          await session.endSession()
+        }
+      }
+    } catch (error) {
+      // Đây là lỗi toàn cục (ví dụ: mất kết nối DB ngay từ đầu, lỗi code logic dòng 1...)
+      this.logger.error(
+        '🔥 Lỗi nghiêm trọng khi chạy Cron Job handleExpiredLinks:',
+        error,
+      )
     }
   }
 }

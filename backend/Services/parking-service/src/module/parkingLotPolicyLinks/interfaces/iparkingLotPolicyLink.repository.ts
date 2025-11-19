@@ -58,6 +58,24 @@ export interface IParkingLotPolicyLinkRepository {
     userId: string,
     session?: ClientSession, // <-- Nên có session
   ): Promise<boolean>
+
+  /**   * Cập nhật chỉ ngày kết thúc của một liên kết.
+   * (Dùng khi muốn gia hạn hoặc kết thúc sớm một liên kết).
+   * @param linkId ID của liên kết cần cập nhật.
+   * @param endDate Ngày kết thúc mới (null nếu muốn bỏ ngày kết thúc).
+   * @param userId ID của người vận hành (để kiểm tra quyền).
+   */
+  updateEndDate(
+    linkId: string,
+    endDate: Date,
+    userId: string,
+  ): Promise<boolean>
+
+  /**   * Tìm tất cả các liên kết đã hết hạn nhưng vẫn đang được đánh dấu là hoạt động.
+   * (Dùng để tự động vô hiệu hóa các liên kết này).
+   * @param currentTime Thời điểm hiện tại để so sánh với endDate.
+   */
+  findExpiredActiveLinks(currentTime: Date): Promise<ParkingLotPolicyLink[]>
 }
 
 export const IParkingLotPolicyLinkRepository = Symbol(
