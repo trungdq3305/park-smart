@@ -162,6 +162,10 @@ namespace CoreService.Application.Applications
                 if (existingphoneUser != null)
                     throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
 
+                var existingPaymentOperator = await _opRepo.GetByPaymentEmailAsync(registerReq.PaymentEmail); // Giả định có _opRepo.GetByPaymentEmailAsync
+                if (existingPaymentOperator != null)
+                    throw new ApiException("Payment Email đã được sử dụng bởi Operator khác", StatusCodes.Status400BadRequest);
+
                 if (registerReq.IsAgreeToP != true)
                     throw new ApiException("Vui lòng đồng ý Chính Sách & Điều Khoản", StatusCodes.Status400BadRequest);
 
