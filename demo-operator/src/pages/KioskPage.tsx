@@ -11,7 +11,6 @@ import {
   Layout,
   Typography,
   notification,
-  Badge,
   Space,
 } from "antd";
 import { io, Socket } from "socket.io-client";
@@ -26,7 +25,7 @@ import {
   EditOutlined,
 } from "@ant-design/icons";
 
-import Success from "../assets/ding_sound_effect-www_tiengdong_com.mp3";
+import Success from "../assets/success.mp3";
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
@@ -132,7 +131,7 @@ const KioskPage: React.FC = () => {
       });
       // Reset sau khi mở
       // setSnapshot(null); // Tùy chọn: có muốn xóa ảnh luôn không
-    } catch (e) {
+    } catch {
       notification.error({ message: "Lỗi kết nối Barie!" });
     }
   };
