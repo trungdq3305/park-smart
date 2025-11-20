@@ -65,11 +65,7 @@ export interface IParkingLotPolicyLinkRepository {
    * @param endDate Ngày kết thúc mới (null nếu muốn bỏ ngày kết thúc).
    * @param userId ID của người vận hành (để kiểm tra quyền).
    */
-  updateEndDate(
-    linkId: string,
-    endDate: Date,
-    userId: string,
-  ): Promise<boolean>
+  updateEndDate(linkId: string, endDate: Date, userId: string): Promise<boolean>
 
   /**   * Tìm tất cả các liên kết đã hết hạn nhưng vẫn đang được đánh dấu là hoạt động.
    * (Dùng để tự động vô hiệu hóa các liên kết này).
