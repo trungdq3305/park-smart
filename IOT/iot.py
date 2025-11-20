@@ -14,17 +14,21 @@ from pyzbar.pyzbar import decode, ZBarSymbol
 from flask import Flask, Response, request, jsonify
 from flask_socketio import SocketIO
 from flask_cors import CORS
-from flasgger import Swagger # ⭐️ 1. Import Flasgger
+from flasgger import Swagger
 
 # =============================
 # 1) CONFIG (CẤU HÌNH)
 # =============================
-# ... (Giữ nguyên phần config của bạn) ...
 YOLO_MODEL_PATH = 'lp_detect_v4.pt'
 OCR_MODEL_PATH = 'best_ocr_model.pth'
-ESP32_ENDPOINT = "http://10.20.30.42/open"
-QR_CAM_INDEX = "http://10.20.30.19:8081/video"
-PLATE_CAM_INDEX = "http://10.20.30.168:8080/video"
+
+# ⚠️ QUAN TRỌNG: IP của ESP32 (để Python gọi lệnh mở cổng)
+# Bạn hãy thay đúng IP mà ESP32 đang nhận (xem trên Serial Monitor của Arduino)
+ESP32_ENDPOINT = "http://10.20.30.52/open"  
+
+QR_CAM_INDEX = 0
+PLATE_CAM_INDEX = "http://10.20.30.7:8080/video"
+
 NESTJS_API_URL = "http://localhost:5000/api/parking-sessions/check-in" 
 PARKING_LOT_ID = "605e3f5f4f3e8c1d4c9f1e1a"
 IMG_HEIGHT = 64
@@ -33,9 +37,8 @@ CHAR_LIST = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 BLANK_IDX = len(CHAR_LIST)
 
 # =============================
-# 2) MÔ HÌNH OCR & HÀM HỖ TRỢ (GIỮ NGUYÊN)
+# 2) MÔ HÌNH OCR & HÀM HỖ TRỢ
 # =============================
-# ... (Giữ nguyên class CRNN và các hàm preprocess, decode, open_barrier) ...
 class CRNN(nn.Module):
     def __init__(self, num_classes: int):
         super().__init__()
@@ -95,12 +98,13 @@ def ctc_greedy_decode(logits_TNC: torch.Tensor) -> str:
 
 def open_barrier():
     """Gửi lệnh mở barie đến ESP32."""
-    print("===> Gửi lệnh MỞ đến Servo Controller... <===")
+    print(f"===> Gửi lệnh MỞ đến Servo Controller ({ESP32_ENDPOINT})... <===")
     try:
-        requests.get(ESP32_ENDPOINT, timeout=5)
-        print("Lệnh đã được gửi thành công.")
+        # Timeout ngắn để không treo server python nếu ESP32 mất kết nối
+        requests.get(ESP32_ENDPOINT, timeout=3)
+        print("✅ Lệnh đã được gửi thành công.")
     except requests.exceptions.RequestException as e:
-        print(f"LỖI: Không thể gửi lệnh đến ESP32: {e}")
+        print(f"❌ LỖI: Không thể gửi lệnh đến ESP32: {e}")
 
 # =============================
 # 3) KHỞI TẠO SERVER & MODEL
@@ -108,18 +112,16 @@ def open_barrier():
 app = Flask(__name__)
 CORS(app)
 
-# ⭐️ 2. Cấu hình Swagger
 app.config['SWAGGER'] = {
     'title': 'Python IOT Service API',
     'uiversion': 3,
     'description': 'API documentation for AI/IOT Service (Flask)',
     'version': '1.0.0'
 }
-swagger = Swagger(app) # Khởi tạo Swagger
+swagger = Swagger(app)
 
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# ... (Giữ nguyên phần load model) ...
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"--> Sử dụng thiết bị: {device}")
 
@@ -138,12 +140,14 @@ current_qr_frame = None
 lock = threading.Lock()
 
 # =============================
-# 4) LOGIC XỬ LÝ CAMERA (GIỮ NGUYÊN)
+# 4) LOGIC XỬ LÝ CAMERA
 # =============================
 def capture_full_scene():
+    """Chụp ảnh từ camera biển số để gửi làm bằng chứng"""
     cap = cv2.VideoCapture(PLATE_CAM_INDEX)
     if not cap.isOpened(): return None
-    time.sleep(0.5)
+    # Đọc vài frame để xả buffer, lấy ảnh mới nhất
+    for _ in range(2): cap.read()
     ret, frame = cap.read()
     cap.release()
     return frame if ret else None
@@ -169,6 +173,7 @@ def process_camera_loop():
 
         decoded_objects = decode(frame, symbols=[ZBarSymbol.QRCODE])
         
+        # Quét QR Code (Logic cũ của bạn)
         if decoded_objects and (time.time() - last_scan_time > 5):
             last_scan_time = time.time()
             
@@ -207,9 +212,10 @@ def process_camera_loop():
                 _, buffer = cv2.imencode('.jpg', full_scene_image)
                 scene_image_base64 = base64.b64encode(buffer).decode('utf-8')
             
-            print("--> Gửi dữ liệu lên Kiosk...")
+            print("--> Gửi dữ liệu QR lên Kiosk...")
             socketio.emit('scan_result', {
                 'identifier': identifier,
+                'type': 'QR_APP',
                 'plateNumber': plate_text,
                 'image': f"data:image/jpeg;base64,{scene_image_base64}" if scene_image_base64 else None
             })
@@ -219,6 +225,81 @@ def process_camera_loop():
 # =============================
 # 5) ROUTES FLASK & SWAGGER DOCS
 # =============================
+
+# --- API MỚI: XỬ LÝ NFC TỪ ESP32 ---
+@app.route('/nfc-scan', methods=['POST'])
+def nfc_scan():
+    """
+    API nhận mã thẻ NFC từ ESP32 gửi lên.
+    ---
+    tags:
+      - Hardware
+    description: Khi ESP32 đọc được thẻ, nó sẽ gọi API này. Server sẽ bắn SocketIO để Frontend hiển thị.
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - nfc_id
+          properties:
+            nfc_id:
+              type: string
+              example: "3A12B4C5"
+              description: UID của thẻ NFC
+    responses:
+      200:
+        description: Đã nhận và chuyển tiếp thành công
+    """
+    try:
+        data = request.json
+        nfc_id = data.get('nfc_id')
+        
+        if not nfc_id:
+            return jsonify({"status": "error", "message": "Missing nfc_id"}), 400
+            
+        print(f"--> [NFC] Nhận tín hiệu thẻ: {nfc_id}")
+        
+        # 1. Chụp ảnh biển số ngay lập tức để làm bằng chứng
+        full_scene_image = capture_full_scene()
+        plate_text = ""
+        scene_image_base64 = None
+        
+        if full_scene_image is not None:
+            # Thử nhận diện biển số luôn (để tiện cho bảo vệ đỡ phải nhập)
+            try:
+                detections = model_detector(full_scene_image, verbose=False)[0]
+                if len(detections.boxes) > 0:
+                    best_box = max(detections.boxes, key=lambda b: b.conf)
+                    x1, y1, x2, y2 = map(int, best_box.xyxy[0])
+                    plate_crop = full_scene_image[y1:y2, x1:x2]
+                    tensor = preprocess_for_ocr(plate_crop).to(device)
+                    logits = model_recognizer(tensor)
+                    plate_text = ctc_greedy_decode(logits)
+                    print(f"[NFC-OCR] Tự động nhận diện biển số: {plate_text}")
+            except Exception as e:
+                print(f"Lỗi OCR khi quét NFC: {e}")
+
+            _, buffer = cv2.imencode('.jpg', full_scene_image)
+            scene_image_base64 = base64.b64encode(buffer).decode('utf-8')
+
+        # 2. Bắn sự kiện sang React Frontend
+        socketio.emit('nfc_scanned', {
+            'identifier': nfc_id,         # Mã thẻ
+            'type': 'NFC_GUEST',          # Loại khách
+            'plateNumber': plate_text,    # Biển số (nếu OCR được)
+            'image': f"data:image/jpeg;base64,{scene_image_base64}" if scene_image_base64 else None,
+            'timestamp': time.time()
+        })
+        
+        return jsonify({"status": "success", "message": "NFC received"}), 200
+
+    except Exception as e:
+        print(f"Lỗi xử lý NFC: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+# --- CÁC API CŨ ---
 
 def generate_video():
     while True:
@@ -235,55 +316,33 @@ def generate_video():
 @app.route('/video_feed')
 def video_feed():
     """
-    Stream video MJPEG cho thẻ <img>.
+    Stream video MJPEG.
     ---
     tags:
       - Camera
-    description: Trả về luồng video multipart/x-mixed-replace để hiển thị trực tiếp trên trình duyệt.
-    responses:
-      200:
-        description: Luồng video đang chạy
     """
     return Response(generate_video(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/confirm-checkin', methods=['POST'])
 def confirm_checkin():
     """
-    API nhận lệnh Check-in từ Kiosk và chuyển tiếp lên NestJS.
+    API xác nhận mở cổng (Từ Kiosk).
     ---
     tags:
       - Operations
-    description: Kiosk gọi API này khi bảo vệ bấm nút 'Check-in' (hoặc 'Mở cổng'). Server Python sẽ đóng gói ảnh và gửi lên Backend NestJS.
-    consumes:
-      - application/json
     parameters:
       - name: body
         in: body
         required: true
         schema:
           type: object
-          required:
-            - plateNumber
           properties:
             plateNumber:
               type: string
-              description: Biển số xe (đã được xác nhận/sửa bởi bảo vệ)
-              example: "51A-123.45"
             identifier:
               type: string
-              description: Mã QR hoặc UUID (nếu có)
-              example: "5349b4ddd-27e6-4722-91b1-8d874514031e"
             image:
               type: string
-              description: Chuỗi Base64 của ảnh chụp (bao gồm header 'data:image/jpeg;base64,...')
-              example: "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
-    responses:
-      200:
-        description: Check-in thành công, Barie đã mở.
-      400:
-        description: Lỗi dữ liệu đầu vào.
-      500:
-        description: Lỗi server hoặc NestJS từ chối.
     """
     try:
         data = request.json
@@ -293,17 +352,13 @@ def confirm_checkin():
 
         print(f"--> Nhận lệnh Check-in từ Kiosk: Plate={plate_number}")
 
-        # 2. Chuẩn bị file ảnh TOÀN CẢNH để gửi NestJS
         files = {}
         if image_base64:
             if "base64," in image_base64:
                 image_base64 = image_base64.split("base64,")[1]
-            
             try:
                 image_bytes = base64.b64decode(image_base64)
-                files = {
-                    'file': ('snapshot.jpg', image_bytes, 'image/jpeg')
-                }
+                files = {'file': ('snapshot.jpg', image_bytes, 'image/jpeg')}
             except Exception as img_err:
                 print(f"Lỗi decode ảnh: {img_err}")
 
@@ -316,23 +371,20 @@ def confirm_checkin():
         if not payload['identifier']:
             del payload['identifier']
 
-        # 3. Gọi API NestJS (All-in-One)
+        # Gọi NestJS
         url = f"{NESTJS_API_URL}/{PARKING_LOT_ID}"
-        
-        # requests.post tự động set header multipart/form-data khi có 'files'
         response = requests.post(url, data=payload, files=files, timeout=10)
 
         if response.status_code == 201:
             print("===> NestJS OK! Mở Barie. <===")
-            open_barrier()
+            open_barrier() # Gọi ESP32 mở cổng
             return jsonify({"success": True, "message": "Check-in thành công!"}), 200
         else:
-            error_msg = "Lỗi không xác định từ Server"
+            error_msg = "Lỗi Server"
             try:
                 error_msg = response.json().get('message', error_msg)
             except:
                 error_msg = response.text
-            
             print(f"===> NestJS từ chối: {error_msg}")
             return jsonify({"success": False, "message": error_msg}), response.status_code
 
@@ -342,15 +394,7 @@ def confirm_checkin():
 
 @app.route('/')
 def index():
-    """
-    Trang chủ.
-    ---
-    tags:
-      - General
-    responses:
-      200:
-        description: Server đang chạy
-    """
+    """Home Page."""
     return "Python IOT Server is running! Go to /apidocs for Swagger UI."
 
 # =============================
@@ -361,6 +405,6 @@ if __name__ == '__main__':
     t.daemon = True
     t.start()
     
+    # ⚠️ HOST='0.0.0.0' LÀ BẮT BUỘC ĐỂ ESP32 GỌI ĐƯỢC VÀO
     print("--> Khởi động Web Server tại http://0.0.0.0:1836")
-    # Swagger UI sẽ có tại: http://localhost:1836/apidocs
     socketio.run(app, host='0.0.0.0', port=1836, allow_unsafe_werkzeug=True)
