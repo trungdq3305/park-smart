@@ -206,7 +206,6 @@ export class PricingPolicyService implements IPricingPolicyService {
       if (!externalSession) {
         await session.abortTransaction()
       }
-      console.log(error)
       if (
         error instanceof BadRequestException ||
         error instanceof NotFoundException ||
