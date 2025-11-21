@@ -11,6 +11,7 @@ import {
 import { InjectConnection } from '@nestjs/mongoose' // Import InjectConnection
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
+import { randomBytes } from 'crypto'
 import { ClientSession, Connection } from 'mongoose' // Import Connection
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
@@ -377,6 +378,7 @@ export class ParkingLotService implements IParkingLotService {
           if (!request.payload) {
             throw new Error('Dữ liệu để tạo bãi đỗ xe không tồn tại')
           }
+          const generatedKey = randomBytes(32).toString('hex')
           const newParkingLotData: Partial<ParkingLot> = {
             ...request.payload,
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
@@ -389,6 +391,7 @@ export class ParkingLotService implements IParkingLotService {
             totalCapacity:
               request.payload.totalCapacityEachLevel *
               request.payload.totalLevel,
+            secretKey: generatedKey,
           }
 
           const newParkingLot =
@@ -719,5 +722,20 @@ export class ParkingLotService implements IParkingLotService {
 
   hardDeleteRequestById(id: string): Promise<boolean> {
     return this.parkingLotRequestRepository.hardDeleteById(id)
+  }
+
+  async validateParkingKey(
+    parkingId: string,
+    secretKey: string,
+  ): Promise<boolean> {
+    const parkingLot =
+      await this.parkingLotRepository.findParkingLotById(parkingId)
+    if (!parkingLot) {
+      throw new NotFoundException('Bãi đỗ xe không tồn tại')
+    }
+    if (parkingLot.secretKey !== secretKey) {
+      return Promise.resolve(false)
+    }
+    return Promise.resolve(true)
   }
 }

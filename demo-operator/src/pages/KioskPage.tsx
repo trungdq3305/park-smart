@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useRef } from "react";
 import {
   Card,
@@ -11,7 +12,6 @@ import {
   Layout,
   Typography,
   notification,
-  Badge,
   Space,
 } from "antd";
 import { io, Socket } from "socket.io-client";
@@ -26,75 +26,90 @@ import {
   EditOutlined,
 } from "@ant-design/icons";
 
-import Success from "../assets/ding_sound_effect-www_tiengdong_com.mp3";
+import Success from "../assets/success.mp3";
+
 const { Header, Content } = Layout;
 const { Title } = Typography;
 
-// --- CẤU HÌNH ---
-const PYTHON_URL = "http://10.20.30.200:1836";
-const LIVE_STREAM_URL = `${PYTHON_URL}/video_feed`; // URL stream video MJPEG từ Python
+// 👉 CẬP NHẬT: URL Hostname
+const PYTHON_URL = "http://PhamVietHoang:1836";
+const LIVE_STREAM_URL = `${PYTHON_URL}/video_feed`;
 
-interface NfcSocketData {
+interface ScanData {
   identifier: string;
   plateNumber?: string;
   image?: string;
   timestamp?: number;
-  type?: string;
+  type?: string; // 'NFC' hoặc 'QR_APP'
 }
 
 const KioskPage: React.FC = () => {
-  // State kết nối
+  const [notificationForData, contextHolder] = notification.useNotification();
+  // State
   const [isConnected, setIsConnected] = useState<boolean>(false);
-
-  // State dữ liệu hiển thị
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [cardUid, setCardUid] = useState<string>("---");
-  const [plateNumber, setPlateNumber] = useState<string>(""); // State cho ô nhập biển số
+  const [plateNumber, setPlateNumber] = useState<string>("");
   const [timeIn, setTimeIn] = useState<string>("---");
   const [timeOut, setTimeOut] = useState<string>("---");
   const [customerType, setCustomerType] = useState<string>("Khách vãng lai");
   const [parkingFee, setParkingFee] = useState<number>(0);
 
   const socketRef = useRef<Socket | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Âm thanh
+  useEffect(() => {
+    audioRef.current = new Audio(Success);
+    audioRef.current.load();
+  }, []);
+
   const playBeep = () => {
-    const audio = new Audio(Success);
-    audio.play().catch(() => {});
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    }
   };
 
-  const handleNewScan = (data: NfcSocketData) => {
+  // Hàm xử lý chung cho cả QR và NFC
+  const handleNewScan = (data: ScanData) => {
+    playBeep();
+
     // 1. Cập nhật ảnh chụp
     if (data.image) setSnapshot(data.image);
 
-    // 2. Cập nhật thông tin thẻ
+    // 2. Cập nhật mã định danh (UID hoặc QR content)
     setCardUid(data.identifier);
 
-    // 3. Cập nhật biển số (Cho phép sửa sau này)
-    setPlateNumber(data.plateNumber || "KHONG_RO");
-
-    // 4. Giả lập logic tính toán thời gian (Vì đang bypass Backend)
-    const now = new Date();
-    setTimeOut(now.toLocaleString());
-
-    // Giả sử xe vào cách đây 2 tiếng để demo tính tiền
-    const mockTimeIn = new Date(now.getTime() - 2 * 60 * 60 * 1000);
-    setTimeIn(mockTimeIn.toLocaleString());
-
-    // 5. Giả lập tính tiền
-    setParkingFee(10000); // Ví dụ 10k
-
-    // Phân loại khách (Dựa vào độ dài UID hoặc logic Python gửi về)
-    if (data.identifier.length > 20) {
-      setCustomerType("Khách Vé Tháng / App");
-      setParkingFee(0); // Vé tháng miễn phí
+    // 3. Cập nhật biển số (nếu AI nhận diện được)
+    if (data.plateNumber) {
+      setPlateNumber(data.plateNumber);
     } else {
-      setCustomerType("Khách Vãng Lai (Thẻ)");
+      // Nếu không nhận diện được thì giữ nguyên hoặc báo không rõ,
+      // tránh ghi đè nếu đang nhập tay
+      if (!plateNumber) setPlateNumber("KHONG_RO");
     }
 
-    notification.info({
-      message: "Phát hiện xe",
-      description: `UID: ${data.identifier}`,
+    // 4. Logic giả lập tính tiền (Demo)
+    const now = new Date();
+    setTimeOut(now.toLocaleString());
+    const mockTimeIn = new Date(now.getTime() - 2 * 60 * 60 * 1000);
+    setTimeIn(mockTimeIn.toLocaleString());
+    setParkingFee(10000);
+
+    // Phân loại khách
+    if (data.type === "QR_APP") {
+      setCustomerType("Khách dùng App (QR)");
+    } else if (data.identifier.length > 20) {
+      setCustomerType("Vé Tháng");
+      setParkingFee(0);
+    } else {
+      setCustomerType("Khách Vãng Lai (NFC)");
+    }
+
+    notificationForData.info({
+      message: `Phát hiện xe (${data.type})`,
+      description: `ID: ${data.identifier} - Biển: ${data.plateNumber || "N/A"}`,
+      placement: "bottomRight",
     });
   };
 
@@ -103,18 +118,23 @@ const KioskPage: React.FC = () => {
 
     socketRef.current.on("connect", () => {
       setIsConnected(true);
-      notification.success({
+      notificationForData.success({
         message: "Hệ thống Online",
-        description: "Đã kết nối tới Camera & Đầu đọc thẻ",
+        description: "Đã kết nối tới Python Gateway",
       });
     });
 
     socketRef.current.on("disconnect", () => setIsConnected(false));
 
-    // LẮNG NGHE SỰ KIỆN QUÉT THẺ
-    socketRef.current.on("nfc_scanned", (data: NfcSocketData) => {
-      playBeep();
-      handleNewScan(data);
+    // 👉 LẮNG NGHE NFC (Từ ESP32 -> Python -> React)
+    socketRef.current.on("nfc_scanned", (data: ScanData) => {
+      handleNewScan({ ...data, type: "NFC" });
+    });
+
+    // 👉 LẮNG NGHE QR (Từ Webcam Python -> React)
+    socketRef.current.on("scan_result", (data: ScanData) => {
+      // QR thường quét liên tục, có thể cần debounce nếu muốn
+      handleNewScan({ ...data, type: "QR_APP" });
     });
 
     return () => {
@@ -122,24 +142,37 @@ const KioskPage: React.FC = () => {
     };
   }, []);
 
-  // Hàm gọi mở cổng
+  // Hàm mở cổng thủ công (Gọi API Python Local)
   const openBarrier = async () => {
     try {
-      await axios.get(`${PYTHON_URL}/open-barrier-command`);
-      notification.success({
-        message: "Đang mở cổng...",
-        description: `Đã xác nhận cho xe ${plateNumber} qua trạm.`,
+      // Gọi endpoint POST như yêu cầu của bạn
+      const response = await axios.post(`${PYTHON_URL}/confirm-checkin`, {
+        plateNumber: plateNumber, // Gửi kèm biển số nếu cần log
+        identifier: cardUid,
       });
-      // Reset sau khi mở
-      // setSnapshot(null); // Tùy chọn: có muốn xóa ảnh luôn không
-    } catch (e) {
-      notification.error({ message: "Lỗi kết nối Barie!" });
+
+      if (response.data.success) {
+        notificationForData.success({
+          message: "Thành công",
+          description: "Đang mở cổng...",
+        });
+      }
+    } catch (error: any) {
+      // Lấy thông báo lỗi từ Python gửi về
+      const errorMessage =
+        error.response?.data?.message || "Lỗi kết nối Barie!";
+      console.log(error.response?.data?.message);
+      notificationForData.error({
+        message: "Không thể mở cổng",
+        description: errorMessage,
+        duration: 3,
+      });
     }
   };
 
   return (
     <Layout style={{ height: "100vh", background: "#141414" }}>
-      {/* HEADER */}
+      {contextHolder}
       <Header
         style={{
           background: "#001529",
@@ -152,7 +185,7 @@ const KioskPage: React.FC = () => {
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <img src="/vite.svg" alt="Logo" style={{ height: 30 }} />
           <Title level={4} style={{ color: "white", margin: 0 }}>
-            HỆ THỐNG QUẢN LÝ BÃI XE THÔNG MINH
+            HỆ THỐNG QUẢN LÝ BÃI XE
           </Title>
         </div>
         <Space>
@@ -167,16 +200,14 @@ const KioskPage: React.FC = () => {
 
       <Content style={{ padding: "10px" }}>
         <Row gutter={[10, 10]} style={{ height: "100%" }}>
-          {/* CỘT TRÁI: KHUNG HÌNH CAMERA (Chiếm 70% chiều rộng) */}
           <Col
             span={16}
             style={{ display: "flex", flexDirection: "column", gap: 10 }}
           >
-            {/* 1. CAMERA TRỰC TIẾP (LIVE) */}
             <Card
               title={
                 <span>
-                  <VideoCameraOutlined /> Camera Giám Sát (Trực tiếp)
+                  <VideoCameraOutlined /> Camera Giám Sát
                 </span>
               }
               bordered={false}
@@ -189,7 +220,6 @@ const KioskPage: React.FC = () => {
                 alignItems: "center",
               }}
             >
-              {/* Dùng thẻ IMG để load stream MJPEG */}
               <img
                 src={LIVE_STREAM_URL}
                 alt="Live Feed"
@@ -204,11 +234,10 @@ const KioskPage: React.FC = () => {
               />
             </Card>
 
-            {/* 2. ẢNH CHỤP SỰ KIỆN (SNAPSHOT) */}
             <Card
               title={
                 <span>
-                  <CameraOutlined /> Ảnh Chụp Sự Kiện (Check-in/Check-out)
+                  <CameraOutlined /> Ảnh Chụp Sự Kiện
                 </span>
               }
               bordered={false}
@@ -237,7 +266,6 @@ const KioskPage: React.FC = () => {
             </Card>
           </Col>
 
-          {/* CỘT PHẢI: THÔNG TIN & ĐIỀU KHIỂN (Chiếm 30% chiều rộng) */}
           <Col span={8}>
             <Card
               title="THÔNG TIN GIAO DỊCH"
@@ -248,7 +276,6 @@ const KioskPage: React.FC = () => {
               }}
               bodyStyle={{ flex: 1, display: "flex", flexDirection: "column" }}
             >
-              {/* Thông tin biển số (Cho phép sửa) */}
               <div
                 style={{
                   marginBottom: 20,
@@ -258,7 +285,7 @@ const KioskPage: React.FC = () => {
                 }}
               >
                 <span style={{ color: "#888", fontSize: 12 }}>
-                  BIỂN SỐ XE (Nhận diện AI)
+                  BIỂN SỐ XE (AI)
                 </span>
                 <Input
                   value={plateNumber}
@@ -275,7 +302,6 @@ const KioskPage: React.FC = () => {
                 />
               </div>
 
-              {/* Thông tin chi tiết */}
               <Descriptions column={1} bordered size="small">
                 <Descriptions.Item label="Loại khách">
                   <Tag
@@ -286,7 +312,7 @@ const KioskPage: React.FC = () => {
                     {customerType}
                   </Tag>
                 </Descriptions.Item>
-                <Descriptions.Item label="Mã thẻ (UID)">
+                <Descriptions.Item label="Mã thẻ / QR">
                   <Space>
                     <ScanOutlined /> <b>{cardUid}</b>
                   </Space>
@@ -339,7 +365,6 @@ const KioskPage: React.FC = () => {
                 >
                   XÁC NHẬN & MỞ CỔNG
                 </Button>
-
                 <Button danger block style={{ marginTop: 10 }}>
                   HỦY BỎ / TỪ CHỐI
                 </Button>
