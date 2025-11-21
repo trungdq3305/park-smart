@@ -14,7 +14,9 @@ class SubscriptionRenewalFlow {
     final scaffoldMessenger = ScaffoldMessenger.of(context);
 
     final subscriptionIdRaw =
-        subscription['_id'] ?? subscription['id'] ?? subscription['subscriptionId'];
+        subscription['_id'] ??
+        subscription['id'] ??
+        subscription['subscriptionId'];
     if (subscriptionIdRaw == null) {
       scaffoldMessenger.showSnackBar(
         const SnackBar(
@@ -26,13 +28,34 @@ class SubscriptionRenewalFlow {
     }
     final subscriptionId = subscriptionIdRaw.toString();
 
-    final pricingPolicy = subscription['pricingPolicyId'];
-    final packageRate = pricingPolicy?['packageRateId'];
-    final entityId = pricingPolicy?['_id'] ?? pricingPolicy?['id'];
-    final amountValue = packageRate?['price'];
-    final operatorId = subscription['parkingLotOperatorId'] ??
+    Map<String, dynamic>? pricingPolicy = _ensureMap(
+      subscription['pricingPolicyId'] ?? subscription['pricingPolicy'],
+    );
+    Map<String, dynamic>? packageRate = _ensureMap(
+      pricingPolicy?['packageRateId'],
+    );
+    String? entityId = pricingPolicy?['_id'] ?? pricingPolicy?['id'];
+    dynamic amountValue =
+        packageRate?['price'] ??
+        pricingPolicy?['price'] ??
+        subscription['price'];
+    final operatorId =
+        subscription['parkingLotOperatorId'] ??
         subscription['operatorId'] ??
         subscription['parkingLotId']?['parkingLotOperatorId'];
+
+    if (entityId == null || amountValue == null) {
+      final detail = await _fetchSubscriptionDetail(subscription);
+      if (detail != null) {
+        pricingPolicy ??= _ensureMap(
+          detail['pricingPolicyId'] ?? detail['pricingPolicy'],
+        );
+        packageRate ??= _ensureMap(pricingPolicy?['packageRateId']);
+        entityId ??= pricingPolicy?['_id'] ?? pricingPolicy?['id'];
+        amountValue ??=
+            packageRate?['price'] ?? pricingPolicy?['price'] ?? detail['price'];
+      }
+    }
 
     if (entityId == null || amountValue == null) {
       scaffoldMessenger.showSnackBar(
@@ -109,8 +132,9 @@ class SubscriptionRenewalFlow {
                 if (finalPaymentId == null) {
                   scaffoldMessenger.showSnackBar(
                     const SnackBar(
-                      content:
-                          Text('Không nhận được mã thanh toán từ cổng thanh toán.'),
+                      content: Text(
+                        'Không nhận được mã thanh toán từ cổng thanh toán.',
+                      ),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -144,7 +168,9 @@ class SubscriptionRenewalFlow {
               } else {
                 scaffoldMessenger.showSnackBar(
                   const SnackBar(
-                    content: Text('Thanh toán gia hạn đã bị hủy hoặc thất bại.'),
+                    content: Text(
+                      'Thanh toán gia hạn đã bị hủy hoặc thất bại.',
+                    ),
                     backgroundColor: Colors.orange,
                   ),
                 );
@@ -169,5 +195,38 @@ class SubscriptionRenewalFlow {
       return false;
     }
   }
-}
 
+  static Map<String, dynamic>? _ensureMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) {
+      return Map<String, dynamic>.from(value);
+    }
+    return null;
+  }
+
+  static Future<Map<String, dynamic>?> _fetchSubscriptionDetail(
+    Map<String, dynamic> subscription,
+  ) async {
+    final identifier =
+        subscription['subscriptionIdentifier'] ?? subscription['identifier'];
+    if (identifier == null) {
+      return null;
+    }
+
+    try {
+      final response = await SubscriptionService.getSubscriptionByIdentifier(
+        identifier: identifier.toString(),
+      );
+      final data = response['data'];
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+      if (data is Map) {
+        return Map<String, dynamic>.from(data);
+      }
+    } catch (e) {
+      print('❌ Unable to fetch subscription detail for renewal: $e');
+    }
+    return null;
+  }
+}
