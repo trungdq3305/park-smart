@@ -11,6 +11,7 @@ import {
 import { InjectConnection } from '@nestjs/mongoose' // Import InjectConnection
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
+import { randomBytes } from 'crypto'
 import { ClientSession, Connection } from 'mongoose' // Import Connection
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
@@ -44,7 +45,6 @@ import { ParkingLotGateway } from './parkingLot.gateway'
 import { ParkingLot } from './schemas/parkingLot.schema'
 import { ParkingLotHistoryLog } from './schemas/parkingLotHistoryLog.schema'
 import { ParkingLotRequest } from './schemas/parkingLotRequest.schema'
-import { randomBytes } from 'crypto'
 @Injectable()
 export class ParkingLotService implements IParkingLotService {
   private readonly logger = new Logger(ParkingLotService.name)
