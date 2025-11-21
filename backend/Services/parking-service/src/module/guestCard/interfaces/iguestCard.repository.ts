@@ -61,12 +61,14 @@ export interface IGuestCardRepository {
    * @param parkingLotId ID của bãi xe.
    * @param page Số trang hiện tại.
    * @param pageSize Số lượng mục trên mỗi trang.
+   * @param status (Tùy chọn) Lọc theo trạng thái thẻ.
    * @returns Một đối tượng chứa danh sách thẻ (data) và tổng số lượng (total).
    */
   findAllGuestCardsByParkingLot(
     parkingLotId: string,
     page: number,
     pageSize: number,
+    status?: string,
   ): Promise<{ data: GuestCard[]; total: number }>
 
   /**
@@ -110,12 +112,14 @@ export interface IGuestCardRepository {
    * Cập nhật trạng thái của thẻ dựa trên ID.
    * @param id ID của thẻ.
    * @param status Trạng thái mới.
+   * @param userId ID của người dùng thực hiện cập nhật (để ghi log).
    * @param session Phiên làm việc (MongoDB session).
    * @returns Thẻ sau khi cập nhật, hoặc null nếu không tìm thấy.
    */
   updateStatusById(
     id: string,
     status: string,
+    userId: string,
     session?: ClientSession,
   ): Promise<GuestCard | null>
 }

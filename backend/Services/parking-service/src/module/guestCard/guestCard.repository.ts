@@ -28,6 +28,7 @@ export class GuestCardRepository implements IGuestCardRepository {
   updateStatusById(
     id: string,
     status: string,
+    userId: string,
     session?: ClientSession,
   ): Promise<GuestCard | null> {
     const options = session ? { session, new: true } : { new: true }
@@ -35,7 +36,7 @@ export class GuestCardRepository implements IGuestCardRepository {
       .findByIdAndUpdate(
         id,
         {
-          $set: { status },
+          $set: { status, updatedBy: userId, updatedAt: new Date() },
         },
         options,
       )
@@ -122,17 +123,20 @@ export class GuestCardRepository implements IGuestCardRepository {
     parkingLotId: string,
     page: number,
     pageSize: number,
+    status?: string,
   ): Promise<{ data: GuestCard[]; total: number }> {
     const skip = (page - 1) * pageSize
 
     const [data, total] = await Promise.all([
       this.guestCardModel
-        .find({ parkingLotId })
+        .find({ parkingLotId, ...(status ? { status } : {}) })
         .skip(skip)
         .limit(pageSize)
         .lean()
         .exec(),
-      this.guestCardModel.countDocuments({ parkingLotId }).exec(),
+      this.guestCardModel
+        .countDocuments({ parkingLotId, ...(status ? { status } : {}) })
+        .exec(),
     ])
     return { data, total }
   }

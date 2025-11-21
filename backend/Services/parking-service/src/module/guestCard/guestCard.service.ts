@@ -32,6 +32,22 @@ export class GuestCardService implements IGuestCardService {
     @InjectConnection() private readonly connection: Connection,
   ) {}
 
+  async updateGuestCardStatus(
+    id: string,
+    status: string,
+    userId: string,
+  ): Promise<GuestCardResponseDto> {
+    const data = await this.guestCardRepository.updateStatusById(
+      id,
+      status,
+      userId,
+    )
+    if (!data) {
+      throw new NotFoundException(`Không tìm thấy thẻ khách với ID: ${id}`)
+    }
+    return this.guestCardResponseDto(data)
+  }
+
   private guestCardResponseDto(guestCard: GuestCard): GuestCardResponseDto {
     return plainToInstance(GuestCardResponseDto, guestCard, {
       excludeExtraneousValues: true,
@@ -144,12 +160,14 @@ export class GuestCardService implements IGuestCardService {
     parkingLotId: string,
     page: number,
     pageSize: number,
+    status?: string,
   ): Promise<PaginatedResponseDto<GuestCardResponseDto>> {
     const { data, total } =
       await this.guestCardRepository.findAllGuestCardsByParkingLot(
         parkingLotId,
         page,
         pageSize,
+        status,
       )
     return {
       data: data.map((card) => this.guestCardResponseDto(card)),

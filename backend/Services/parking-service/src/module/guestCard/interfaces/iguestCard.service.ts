@@ -38,12 +38,14 @@ export interface IGuestCardService {
    * @param parkingLotId ID của bãi xe.
    * @param page Số trang hiện tại (mặc định 1).
    * @param pageSize Số lượng item trên mỗi trang (mặc định 10).
+   * @param status (Tùy chọn) Lọc theo trạng thái thẻ.
    * @returns Đối tượng chứa danh sách thẻ (data) và tổng số lượng (total).
    */
   findAllGuestCards(
     parkingLotId: string,
     page: number,
     pageSize: number,
+    status?: string,
   ): Promise<PaginatedResponseDto<GuestCardResponseDto>>
 
   /**
@@ -90,6 +92,19 @@ export interface IGuestCardService {
     id: string,
     userId: string, // 👈 Bổ sung userId để lưu vết
   ): Promise<boolean>
+
+  /**
+   * Cập nhật trạng thái của thẻ (Ví dụ: ACTIVE, INACTIVE).
+   * @param id ID của thẻ.
+   * @param status Trạng thái mới cần cập nhật.
+   * @param userId ID người dùng thực hiện cập nhật (để lưu log).
+   * @returns Thông tin thẻ sau khi cập nhật trạng thái.
+   */
+  updateGuestCardStatus(
+    id: string,
+    status: string,
+    userId: string,
+  ): Promise<GuestCardResponseDto>
 }
 
 // Symbol dùng cho Dependency Injection trong NestJS

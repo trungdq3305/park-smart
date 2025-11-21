@@ -1,6 +1,3 @@
- 
- 
- 
 import {
   Body,
   Controller,
@@ -41,6 +38,7 @@ import {
   GuestCardResponseDto,
   UpdateGuestCardDto,
 } from './dto/guestCard.dto'
+import { GuestCardStatus } from './enums/guestCard.enum'
 import { IGuestCardService } from './interfaces/iguestCard.service'
 
 @Controller('guest-cards')
@@ -140,9 +138,16 @@ export class GuestCardController {
     type: String,
     description: 'ID bãi xe cần lấy danh sách',
   })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: GuestCardStatus,
+    description: 'Lọc theo trạng thái thẻ',
+  })
   async getAllGuestCards(
     @Query() paginationQuery: PaginationQueryDto,
     @Query('parkingLotId') parkingLotId: string,
+    @Query('status') status?: GuestCardStatus,
   ): Promise<PaginatedResponseDto<GuestCardResponseDto>> {
     // Lưu ý: PaginationQueryDto của bạn thường có page/pageSize.
     // Nếu parkingLotId không nằm trong PaginationQueryDto, ta lấy riêng từ @Query
@@ -152,6 +157,7 @@ export class GuestCardController {
       parkingLotId,
       page,
       pageSize,
+      status,
     )
 
     return result
@@ -246,6 +252,40 @@ export class GuestCardController {
       data: [updatedCard],
       statusCode: HttpStatus.OK,
       message: 'Cập nhật thẻ thành công',
+      success: true,
+    }
+  }
+
+  @Patch(':id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.OPERATOR)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cập nhật trạng thái thẻ' })
+  @ApiParam({ name: 'id', description: 'ID của thẻ', type: 'string' })
+  @ApiQuery({
+    name: 'status',
+    required: true,
+    enum: GuestCardStatus,
+    description: 'Cập nhật theo trạng thái thẻ',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ApiResponseDto<GuestCardResponseDto>,
+  })
+  async updateGuestCardStatus(
+    @Param() params: IdDto,
+    @Query('status') status: string,
+    @GetCurrentUserId() userId: string,
+  ): Promise<ApiResponseDto<GuestCardResponseDto>> {
+    const updatedCard = await this.guestCardService.updateGuestCardStatus(
+      params.id,
+      status,
+      userId,
+    )
+    return {
+      data: [updatedCard],
+      statusCode: HttpStatus.OK,
+      message: 'Cập nhật trạng thái thẻ thành công',
       success: true,
     }
   }
