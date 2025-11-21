@@ -49,7 +49,7 @@ interface ListInactiveAccountResponse {
   }
   success: boolean
   message: string
-  isLoading :boolean
+  isLoading: boolean
 }
 
 const translateRoleName = (roleName: string) => {
@@ -86,29 +86,30 @@ const ManageAccountPage: React.FC = () => {
     pageSize,
   })
 
-  const { data: inactiveAccountData, isLoading: isInactiveAccountLoading } = useGetInactiveAccountQuery({
-    page: currentPage,
-    pageSize,
-  }) as { data: ListInactiveAccountResponse | undefined; isLoading: boolean }
+  const { data: inactiveAccountData, isLoading: isInactiveAccountLoading } =
+    useGetInactiveAccountQuery({
+      page: currentPage,
+      pageSize,
+    }) as { data: ListInactiveAccountResponse | undefined; isLoading: boolean }
 
   const [deleteAccount] = useDeleteAccountMutation()
   const [toggleAccountStatus] = useToggleAccountStatusMutation()
 
   const activeAccounts = data?.data?.pagedAccounts?.data || []
   const inActiveAccounts = inactiveAccountData?.data?.data || []
-  
+
   // Determine which accounts to display based on toggle state
   const accounts = showInactiveAccounts ? inActiveAccounts : activeAccounts
-  const totalItems = showInactiveAccounts 
-    ? (inactiveAccountData?.data?.totalItems || 0)
-    : (data?.data?.pagedAccounts?.totalItems || 0)
+  const totalItems = showInactiveAccounts
+    ? inactiveAccountData?.data?.totalItems || 0
+    : data?.data?.pagedAccounts?.totalItems || 0
   const totalPages = showInactiveAccounts
-    ? (inactiveAccountData?.data?.totalPages || 0)
+    ? inactiveAccountData?.data?.totalPages || 0
     : Math.ceil(totalItems / pageSize)
-  
+
   const totalAdmins = data?.data?.totalAdmins || 0
   const totalOperators = data?.data?.totalOperators || 0
-  const totalDrivers = data?.data?.totalDrivers || 0 
+  const totalDrivers = data?.data?.totalDrivers || 0
   // Functions to update URL parameters
   const updateSearchParams = (updates: Record<string, string | number | null>) => {
     const newSearchParams = new URLSearchParams(searchParams)

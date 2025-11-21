@@ -111,7 +111,8 @@ const CreateReport: React.FC = () => {
               Tạo báo cáo mới
             </Typography.Title>
             <Typography.Paragraph className="hero-subtitle">
-              Gửi báo cáo chi tiết về vấn đề, đề xuất hoặc phản hồi để Quản trị viên xem xét và xử lý
+              Gửi báo cáo chi tiết về vấn đề, đề xuất hoặc phản hồi để Quản trị viên xem xét và xử
+              lý
             </Typography.Paragraph>
           </Col>
           <Col flex="none">

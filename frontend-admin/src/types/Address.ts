@@ -1,4 +1,4 @@
-import type { Ward } from "./Ward"
+import type { Ward } from './Ward'
 
 export interface Address {
   _id: string

@@ -40,10 +40,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
   // Menu items aligned to Admin sidebar
   const menuItems = [
     {
-      key: '/operator/create-parking-lot-request',
+      key: '/operator/parking-lot',
       icon: <CarOutlined />,
-      label: 'Tạo yêu cầu bãi đỗ',
-      active: true,
+      label: 'Bãi đỗ xe',
     },
     {
       key: '/dashboard',

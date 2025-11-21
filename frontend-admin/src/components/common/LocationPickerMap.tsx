@@ -1,10 +1,6 @@
 import React from 'react'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
-import type {
-  LatLngBoundsExpression,
-  LatLngExpression,
-  LeafletMouseEvent,
-} from 'leaflet'
+import type { LatLngBoundsExpression, LatLngExpression, LeafletMouseEvent } from 'leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -49,7 +45,6 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ value, onChange, 
       maxBoundsViscosity={bounds ? 1 : undefined}
       style={{ height: 420, width: '100%', borderRadius: 12, overflow: 'hidden' }}
     >
-
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -61,4 +56,3 @@ const LocationPickerMap: React.FC<LocationPickerMapProps> = ({ value, onChange, 
 }
 
 export default LocationPickerMap
-

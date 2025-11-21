@@ -12,6 +12,8 @@ const CreateParkingLot = lazy(() => import('../pages/operator/create-parking-lot
 const ManageTermsPolicies = lazy(() => import('../pages/admin/terms-policies/ManageTermsPolicies'))
 const ManageReport = lazy(() => import('../pages/admin/manage-report/ManageReport'))
 const CreateReport = lazy(() => import('../pages/operator/create-report/CreateReport'))
+const ManageParkingLots = lazy(() => import('../pages/admin/manage-parking-lots/ManageParkingLots'))
+const OperatorParkingLot = lazy(() => import('../pages/operator/parking-lot/ParkingLot'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -45,6 +47,11 @@ const routes: LayoutRoute[] = [
         component: ManageReport,
         role: ['Admin'],
       },
+      {
+        path: '/admin/manage-parking-lots',
+        component: ManageParkingLots,
+        role: ['Admin'],
+      },
     ],
   },
   {
@@ -63,6 +70,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/create-report',
         component: CreateReport,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/parking-lot',
+        component: OperatorParkingLot,
         role: ['Operator'],
       },
     ],

@@ -1,5 +1,5 @@
 import { apiSlice } from '../../apis/apiSlice'
-import type { OperatorFullRegisterRequest } from '../../types/register.types';
+import type { OperatorFullRegisterRequest } from '../../types/register.types'
 import { login } from './authSlice'
 
 export const authAPI = apiSlice.injectEndpoints({

@@ -84,7 +84,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     lat: { min: 10.35, max: 11.25 },
     lng: { min: 106.3, max: 107.2 },
   }
-  
+
   const HO_CHI_MINH_BOUNDS_RECT: [[number, number], [number, number]] = [
     [HO_CHI_MINH_BOUNDS.lat.min, HO_CHI_MINH_BOUNDS.lng.min],
     [HO_CHI_MINH_BOUNDS.lat.max, HO_CHI_MINH_BOUNDS.lng.max],
@@ -186,8 +186,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           longitude: mergedValues.longitude ?? null,
         },
         parkingLotRequest: {
-          addressId: "null",
-          parkingLotOperatorId: "null",
+          addressId: 'null',
+          parkingLotOperatorId: 'null',
           name: mergedValues.parkingLotName || mergedValues.bussinessName,
           totalCapacityEachLevel: Number(mergedValues.totalCapacityEachLevel ?? 0),
           totalLevel: Number(mergedValues.totalLevel ?? 0),
@@ -202,13 +202,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           openTime: is24Hours
             ? '00:00'
             : mergedValues.openTime
-            ? mergedValues.openTime.format('HH:mm')
-            : null,
+              ? mergedValues.openTime.format('HH:mm')
+              : null,
           closeTime: is24Hours
             ? '23:59'
             : mergedValues.closeTime
-            ? mergedValues.closeTime.format('HH:mm')
-            : null,
+              ? mergedValues.closeTime.format('HH:mm')
+              : null,
           maxVehicleHeight: Number(mergedValues.maxVehicleHeight ?? 0),
           maxVehicleWidth: Number(mergedValues.maxVehicleWidth ?? 0),
           electricCarPercentage: Number(mergedValues.electricCarPercentage ?? 0),
@@ -249,7 +249,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
               : errorData.error
 
           if (Array.isArray(candidate)) {
-            errorMessage = candidate.filter((msg) => typeof msg === 'string').join(', ') || errorMessage
+            errorMessage =
+              candidate.filter((msg) => typeof msg === 'string').join(', ') || errorMessage
           } else if (typeof candidate === 'string' && candidate.trim().length > 0) {
             errorMessage = candidate
           }
@@ -266,14 +267,18 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           error.meta.response.data &&
           typeof error.meta.response.data === 'object'
         ) {
-          const responseData = error.meta.response.data as { message?: string; error?: string | string[] }
+          const responseData = error.meta.response.data as {
+            message?: string
+            error?: string | string[]
+          }
           const candidate =
             typeof responseData.message === 'string' && responseData.message.trim().length > 0
               ? responseData.message
               : responseData.error
 
           if (Array.isArray(candidate)) {
-            errorMessage = candidate.filter((msg) => typeof msg === 'string').join(', ') || errorMessage
+            errorMessage =
+              candidate.filter((msg) => typeof msg === 'string').join(', ') || errorMessage
           } else if (typeof candidate === 'string' && candidate.trim().length > 0) {
             errorMessage = candidate
           }
@@ -293,473 +298,495 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   return (
     <>
       <div className="login-form-container">
-      <Title level={2} className="brand-title">
-        ParkSmart
-      </Title>
-      <Title level={3} className="welcome-title">Tạo tài khoản chủ bãi đỗ xe</Title>
+        <Title level={2} className="brand-title">
+          ParkSmart
+        </Title>
+        <Title level={3} className="welcome-title">
+          Tạo tài khoản chủ bãi đỗ xe
+        </Title>
 
-      <Text className="signup-prompt">
-        Đã có tài khoản?
-        <span onClick={onSwitchToLogin} className="signup-link">
-          Đăng nhập tại đây
-        </span>
-      </Text>
+        <Text className="signup-prompt">
+          Đã có tài khoản?
+          <span onClick={onSwitchToLogin} className="signup-link">
+            Đăng nhập tại đây
+          </span>
+        </Text>
 
-      <Form
-        form={form}
-        name="register"
-        onFinish={onFinish}
-        layout="vertical"
-        className="login-form"
-        initialValues={{
-          is24Hours: true,
-          openTime: dayjs('08:00', 'HH:mm'),
-          closeTime: dayjs('17:00', 'HH:mm'),
-          isAgreeToP: false,
-        }}
-      >
-        <Steps
-          current={step - 1}
-          items={[{ title: 'Thông tin tài khoản' }, { title: 'Thông tin bãi đỗ' }]}
-          size="small"
-          style={{ marginBottom: 24 }}
-        />
-        {step === 1 && (
-          <>
-            <Form.Item
-              name="fullName"
-              rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}
-            >
-              <Input
-                prefix={<UserOutlined />}
-                placeholder="Họ và tên"
-                size="large"
-                className="login-input"
-              />
-            </Form.Item>
-            <Form.Item
-              name="email"
-              rules={[
-                { required: true, message: 'Vui lòng nhập email!' },
-                { type: 'email', message: 'Email không hợp lệ!' },
-              ]}
-            >
-              <Input
-                prefix={<UserOutlined />}
-                placeholder="Email"
-                size="large"
-                className="login-input"
-              />
-            </Form.Item>
-            <Form.Item
-              name="paymentEmail"
-              rules={[
-                { required: true, message: 'Vui lòng nhập email thanh toán!' },
-                { type: 'email', message: 'Email không hợp lệ!' },
-              ]}
-            >
-              <Input
-                prefix={<UserOutlined />}
-                placeholder="Email thanh toán"
-                size="large"
-                className="login-input"
-              />
-            </Form.Item>
-            <Form.Item
-              name="phoneNumber"
-              rules={[
-                { required: true, message: 'Vui lòng nhập số điện thoại!' },
-                {
-                  pattern: /^\d{10,11}$/,
-                  message: 'Số điện thoại không hợp lệ',
-                },
-              ]}
-            >
-              <Input
-                prefix={<PhoneOutlined />}
-                placeholder="Số điện thoại"
-                size="large"
-                className="login-input"
-              />
-            </Form.Item>
-            <Form.Item
-              name="bussinessName"
-              rules={[{ required: true, message: 'Vui lòng nhập tên doanh nghiệp!' }]}
-            >
-              <Input
-                prefix={<BankOutlined />}
-                placeholder="Tên doanh nghiệp"
-                size="large"
-                className="login-input"
-              />
-            </Form.Item>
-            <Form.Item
-              name="password"
-              rules={[
-                { required: true, message: 'Vui lòng nhập mật khẩu!' },
-                {
-                  pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-                  message:
-                    'Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt!',
-                },
-              ]}
-            >
-              <Input.Password
-                prefix={<LockOutlined />}
-                placeholder="Mật khẩu"
-                size="large"
-                className="login-input"
-              />
-            </Form.Item>
-            <Form.Item
-              name="confirmPassword"
-              dependencies={['password']}
-              rules={[
-                { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
-                ({ getFieldValue }) => ({
-                  validator(_, value) {
-                    if (!value || getFieldValue('password') === value) {
-                      return Promise.resolve()
-                    }
-                    return Promise.reject(new Error('Mật khẩu không khớp!'))
+        <Form
+          form={form}
+          name="register"
+          onFinish={onFinish}
+          layout="vertical"
+          className="login-form"
+          initialValues={{
+            is24Hours: true,
+            openTime: dayjs('08:00', 'HH:mm'),
+            closeTime: dayjs('17:00', 'HH:mm'),
+            isAgreeToP: false,
+          }}
+        >
+          <Steps
+            current={step - 1}
+            items={[{ title: 'Thông tin tài khoản' }, { title: 'Thông tin bãi đỗ' }]}
+            size="small"
+            style={{ marginBottom: 24 }}
+          />
+          {step === 1 && (
+            <>
+              <Form.Item
+                name="fullName"
+                rules={[{ required: true, message: 'Vui lòng nhập họ và tên!' }]}
+              >
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Họ và tên"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+              <Form.Item
+                name="email"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập email!' },
+                  { type: 'email', message: 'Email không hợp lệ!' },
+                ]}
+              >
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Email"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+              <Form.Item
+                name="paymentEmail"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập email thanh toán!' },
+                  { type: 'email', message: 'Email không hợp lệ!' },
+                ]}
+              >
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Email thanh toán"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+              <Form.Item
+                name="phoneNumber"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập số điện thoại!' },
+                  {
+                    pattern: /^\d{10,11}$/,
+                    message: 'Số điện thoại không hợp lệ',
                   },
-                }),
-              ]}
-            >
-              <Input.Password
-                prefix={<LockOutlined />}
-                placeholder="Xác nhận mật khẩu"
-                size="large"
-                className="login-input"
-              />
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" onClick={nextStep} size="large" className="login-button" block>
-                Tiếp tục
-              </Button>
-            </Form.Item>
-          </>
-        )}
-        {step === 2 && (
-          <>
-            <Row gutter={[16, 16]}>
-              <Col span={24}>
-                <Form.Item
-                  label={
-                    <Space>
-                      <EnvironmentOutlined />
-                      <span>Phường</span>
-                    </Space>
-                  }
-                  name="wardId"
-                  rules={[{ required: true, message: 'Vui lòng chọn phường' }]}
-                >
-                  <Select
-                    placeholder="Chọn phường"
-                    loading={isLoadingWards}
-                    showSearch
-                    optionFilterProp="label"
-                    options={wardData?.map((w: Ward) => ({
-                      key: w._id,
-                      label: w.wardName,
-                      value: w._id,
-                    }))}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={24}>
-                <Form.Item
-                  label={
-                    <Space>
-                      <EnvironmentOutlined />
-                      <span>Địa chỉ đầy đủ</span>
-                    </Space>
-                  }
-                  name="fullAddress"
-                  rules={[{ required: true, message: 'Vui lòng nhập địa chỉ' }]}
-                >
-                  <Input placeholder="VD: 29 Lê Duẩn, Phường Bến Nghé, Quận 1" />
-                </Form.Item>
-              </Col>
-              <Col span={24}>
-                <Form.Item
-                  label={
-                    <Space>
-                      <EnvironmentOutlined />
-                      <span>Tên bãi đỗ</span>
-                    </Space>
-                  }
-                  name="parkingLotName"
-                  rules={[{ required: true, message: 'Vui lòng nhập tên bãi đỗ xe' }]}
-                >
-                  <Input placeholder="VD: ParkSmart Lê Duẩn" />
-                </Form.Item>
-              </Col>
-              <Col span={24}>
+                ]}
+              >
+                <Input
+                  prefix={<PhoneOutlined />}
+                  placeholder="Số điện thoại"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+              <Form.Item
+                name="bussinessName"
+                rules={[{ required: true, message: 'Vui lòng nhập tên doanh nghiệp!' }]}
+              >
+                <Input
+                  prefix={<BankOutlined />}
+                  placeholder="Tên doanh nghiệp"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+              <Form.Item
+                name="password"
+                rules={[
+                  { required: true, message: 'Vui lòng nhập mật khẩu!' },
+                  {
+                    pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
+                    message:
+                      'Mật khẩu phải chứa ít nhất một chữ hoa, một chữ thường, một số và một ký tự đặc biệt!',
+                  },
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Mật khẩu"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+              <Form.Item
+                name="confirmPassword"
+                dependencies={['password']}
+                rules={[
+                  { required: true, message: 'Vui lòng xác nhận mật khẩu!' },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || getFieldValue('password') === value) {
+                        return Promise.resolve()
+                      }
+                      return Promise.reject(new Error('Mật khẩu không khớp!'))
+                    },
+                  }),
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Xác nhận mật khẩu"
+                  size="large"
+                  className="login-input"
+                />
+              </Form.Item>
+              <Form.Item>
                 <Button
-                  type="dashed"
-                  icon={<EnvironmentOutlined />}
-                  onClick={openLocationPicker}
+                  type="primary"
+                  onClick={nextStep}
+                  size="large"
+                  className="login-button"
                   block
                 >
-                  Chọn vị trí trên bản đồ
+                  Tiếp tục
                 </Button>
-                <Text type="secondary">
-                  Nhấn vào nút trên để mở bản đồ và chọn vị trí bãi đỗ xe.
-                </Text>
-                <div>
-                  {formLocation ? (
-                    <Text type="success">Đã lưu vị trí bãi đỗ.</Text>
-                  ) : (
-                    <Text type="danger">Chưa chọn vị trí.</Text>
-                  )}
-                </div>
-                <Form.Item
-                  name="latitude"
-                  hidden
-                  rules={[{ required: true, message: 'Vui lòng chọn vị trí trên bản đồ' }]}
-                >
-                  <Input type="hidden" />
-                </Form.Item>
-                <Form.Item
-                  name="longitude"
-                  hidden
-                  rules={[{ required: true, message: 'Vui lòng chọn vị trí trên bản đồ' }]}
-                >
-                  <Input type="hidden" />
-                </Form.Item>
-              </Col>
-              <Col span={24}>
-                <Form.Item label="Hoạt động 24/7" name="is24Hours" valuePropName="checked">
-                  <Switch />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Form.Item shouldUpdate noStyle>
-                  {() => (
-                    <Form.Item
-                      label={
-                        <Space>
-                          <ClockCircleOutlined />
-                          <span>Giờ mở cửa</span>
-                        </Space>
-                      }
-                      name="openTime"
-                      rules={
-                        form.getFieldValue('is24Hours')
-                          ? []
-                          : [{ required: true, message: 'Chọn giờ mở cửa' }]
-                      }
-                    >
-                      <TimePicker
-                        format="HH:mm"
-                        className="w-100"
-                        disabled={form.getFieldValue('is24Hours')}
-                        placeholder="Chọn giờ"
-                      />
-                    </Form.Item>
-                  )}
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item shouldUpdate noStyle>
-                  {() => (
-                    <Form.Item
-                      label={
-                        <Space>
-                          <ClockCircleOutlined />
-                          <span>Giờ đóng cửa</span>
-                        </Space>
-                      }
-                      name="closeTime"
-                      rules={
-                        form.getFieldValue('is24Hours')
-                          ? []
-                          : [{ required: true, message: 'Chọn giờ đóng cửa' }]
-                      }
-                    >
-                      <TimePicker
-                        format="HH:mm"
-                        className="w-100"
-                        disabled={form.getFieldValue('is24Hours')}
-                        placeholder="Chọn giờ"
-                      />
-                    </Form.Item>
-                  )}
-                </Form.Item>
-              </Col>
-              <Col span={24}>
-                <Form.Item
-                  label={
-                    <Space>
-                      <CalendarOutlined />
-                      <span>Ngày hiệu lực</span>
-                    </Space>
-                  }
-                  name="effectiveDate"
-                  rules={[
-                    { required: true, message: 'Chọn ngày hiệu lực' },
-                    {
-                      validator: (_, value) => {
-                        if (!value) return Promise.reject(new Error('Chọn ngày hiệu lực'))
-                        const diffDays = value.startOf('day').diff(dayjs().startOf('day'), 'day')
-                        return diffDays >= 1
-                          ? Promise.resolve()
-                          : Promise.reject(
-                              new Error('Ngày hiệu lực phải muộn hơn hiện tại ít nhất 1 ngày')
-                            )
+              </Form.Item>
+            </>
+          )}
+          {step === 2 && (
+            <>
+              <Row gutter={[16, 16]}>
+                <Col span={24}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <EnvironmentOutlined />
+                        <span>Phường</span>
+                      </Space>
+                    }
+                    name="wardId"
+                    rules={[{ required: true, message: 'Vui lòng chọn phường' }]}
+                  >
+                    <Select
+                      placeholder="Chọn phường"
+                      loading={isLoadingWards}
+                      showSearch
+                      optionFilterProp="label"
+                      options={wardData?.map((w: Ward) => ({
+                        key: w._id,
+                        label: w.wardName,
+                        value: w._id,
+                      }))}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <EnvironmentOutlined />
+                        <span>Địa chỉ đầy đủ</span>
+                      </Space>
+                    }
+                    name="fullAddress"
+                    rules={[{ required: true, message: 'Vui lòng nhập địa chỉ' }]}
+                  >
+                    <Input placeholder="VD: 29 Lê Duẩn, Phường Bến Nghé, Quận 1" />
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <EnvironmentOutlined />
+                        <span>Tên bãi đỗ</span>
+                      </Space>
+                    }
+                    name="parkingLotName"
+                    rules={[{ required: true, message: 'Vui lòng nhập tên bãi đỗ xe' }]}
+                  >
+                    <Input placeholder="VD: ParkSmart Lê Duẩn" />
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Button
+                    type="dashed"
+                    icon={<EnvironmentOutlined />}
+                    onClick={openLocationPicker}
+                    block
+                  >
+                    Chọn vị trí trên bản đồ
+                  </Button>
+                  <Text type="secondary">
+                    Nhấn vào nút trên để mở bản đồ và chọn vị trí bãi đỗ xe.
+                  </Text>
+                  <div>
+                    {formLocation ? (
+                      <Text type="success">Đã lưu vị trí bãi đỗ.</Text>
+                    ) : (
+                      <Text type="danger">Chưa chọn vị trí.</Text>
+                    )}
+                  </div>
+                  <Form.Item
+                    name="latitude"
+                    hidden
+                    rules={[{ required: true, message: 'Vui lòng chọn vị trí trên bản đồ' }]}
+                  >
+                    <Input type="hidden" />
+                  </Form.Item>
+                  <Form.Item
+                    name="longitude"
+                    hidden
+                    rules={[{ required: true, message: 'Vui lòng chọn vị trí trên bản đồ' }]}
+                  >
+                    <Input type="hidden" />
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item label="Hoạt động 24/7" name="is24Hours" valuePropName="checked">
+                    <Switch />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                  <Form.Item shouldUpdate noStyle>
+                    {() => (
+                      <Form.Item
+                        label={
+                          <Space>
+                            <ClockCircleOutlined />
+                            <span>Giờ mở cửa</span>
+                          </Space>
+                        }
+                        name="openTime"
+                        rules={
+                          form.getFieldValue('is24Hours')
+                            ? []
+                            : [{ required: true, message: 'Chọn giờ mở cửa' }]
+                        }
+                      >
+                        <TimePicker
+                          format="HH:mm"
+                          className="w-100"
+                          disabled={form.getFieldValue('is24Hours')}
+                          placeholder="Chọn giờ"
+                        />
+                      </Form.Item>
+                    )}
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item shouldUpdate noStyle>
+                    {() => (
+                      <Form.Item
+                        label={
+                          <Space>
+                            <ClockCircleOutlined />
+                            <span>Giờ đóng cửa</span>
+                          </Space>
+                        }
+                        name="closeTime"
+                        rules={
+                          form.getFieldValue('is24Hours')
+                            ? []
+                            : [{ required: true, message: 'Chọn giờ đóng cửa' }]
+                        }
+                      >
+                        <TimePicker
+                          format="HH:mm"
+                          className="w-100"
+                          disabled={form.getFieldValue('is24Hours')}
+                          placeholder="Chọn giờ"
+                        />
+                      </Form.Item>
+                    )}
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <CalendarOutlined />
+                        <span>Ngày hiệu lực</span>
+                      </Space>
+                    }
+                    name="effectiveDate"
+                    rules={[
+                      { required: true, message: 'Chọn ngày hiệu lực' },
+                      {
+                        validator: (_, value) => {
+                          if (!value) return Promise.reject(new Error('Chọn ngày hiệu lực'))
+                          const diffDays = value.startOf('day').diff(dayjs().startOf('day'), 'day')
+                          return diffDays >= 1
+                            ? Promise.resolve()
+                            : Promise.reject(
+                                new Error('Ngày hiệu lực phải muộn hơn hiện tại ít nhất 1 ngày')
+                              )
+                        },
                       },
-                    },
-                  ]}
-                >
-                <DatePicker
-                  format="YYYY-MM-DD"
-                  className="w-100"
-                  placeholder="Chọn ngày"
-                  disabledDate={(current) =>
-                    !!current && current.startOf('day').diff(dayjs().startOf('day'), 'day') < 1
-                  }
-                />
-                </Form.Item>
-              </Col>
-            </Row>
+                    ]}
+                  >
+                    <DatePicker
+                      format="YYYY-MM-DD"
+                      className="w-100"
+                      placeholder="Chọn ngày"
+                      disabledDate={(current) =>
+                        !!current && current.startOf('day').diff(dayjs().startOf('day'), 'day') < 1
+                      }
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
 
-            <Typography.Title level={5} style={{ marginBottom: 12 }}>
-              Quy mô & kích thước
-            </Typography.Title>
+              <Typography.Title level={5} style={{ marginBottom: 12 }}>
+                Quy mô & kích thước
+              </Typography.Title>
 
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Chiều cao xe tối đa (m)"
-                  name="maxVehicleHeight"
-                  rules={[{ required: true, message: 'Nhập chiều cao tối đa' }]}
-                >
-                  <InputNumber min={0} step={0.1} className="w-100" placeholder="VD: 2.5" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Chiều rộng xe tối đa (m)"
-                  name="maxVehicleWidth"
-                  rules={[{ required: true, message: 'Nhập chiều rộng tối đa' }]}
-                >
-                  <InputNumber min={0} step={0.1} className="w-100" placeholder="VD: 2" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Sức chứa mỗi tầng"
-                  name="totalCapacityEachLevel"
-                  rules={[{ required: true, message: 'Nhập sức chứa/tầng' }]}
-                >
-                  <InputNumber min={1} className="w-100" placeholder="VD: 50" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Tổng số tầng"
-                  name="totalLevel"
-                  rules={[{ required: true, message: 'Nhập số tầng' }]}
-                >
-                  <InputNumber min={1} className="w-100" placeholder="VD: 5" />
-                </Form.Item>
-              </Col>
-              <Col span={24}>
-                <Form.Item
-                  label={
-                    <Space>
-                      <ThunderboltOutlined />
-                      <span>% chỗ cho xe điện</span>
-                    </Space>
-                  }
-                  name="electricCarPercentage"
-                  rules={[{ required: true, message: 'Nhập phần trăm' }]}
-                >
-                  <InputNumber min={0} max={100} step={1} className="w-100" placeholder="VD: 20" />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Typography.Title level={5} style={{ marginBottom: 12, marginTop: 12 }}>
-              Phân bổ sức chứa & thời lượng đặt chỗ
-            </Typography.Title>
-            <Row gutter={[16, 16]}>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Sức chứa dành cho booking (chỗ)"
-                  name="bookableCapacity"
-                  rules={[{ required: true, message: 'Nhập sức chứa booking' }]}
-                >
-                  <InputNumber min={0} className="w-100" placeholder="VD: 20" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Sức chứa cho thuê dài hạn (chỗ)"
-                  name="leasedCapacity"
-                  rules={[{ required: true, message: 'Nhập sức chứa thuê dài hạn' }]}
-                >
-                  <InputNumber min={0} className="w-100" placeholder="VD: 10" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Sức chứa khách vãng lai (chỗ)"
-                  name="walkInCapacity"
-                  rules={[{ required: true, message: 'Nhập sức chứa khách vãng lai' }]}
-                >
-                  <InputNumber min={0} className="w-100" placeholder="VD: 15" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="Thời lượng mỗi slot đặt chỗ (giờ)"
-                  name="bookingSlotDurationHours"
-                  rules={[{ required: true, message: 'Nhập thời lượng slot' }]}
-                >
-                  <InputNumber min={1} max={24} className="w-100" placeholder="VD: 1" />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Form.Item
-              name="isAgreeToP"
-              valuePropName="checked"
-              rules={[
-                {
-                  validator: (_, value) =>
-                    value ? Promise.resolve() : Promise.reject(new Error('Bạn cần đồng ý với điều khoản')),
-                },
-              ]}
-            >
-              <Checkbox onChange={(e) => setIsAgreeToP(e.target.checked)}>
-                Tôi đã đọc và đồng ý với Chính sách & Điều khoản
-              </Checkbox>
-            </Form.Item>
-            <Form.Item>
-              <Button type="primary" onClick={prevStep} size="large" className="login-button" block>
-                Quay lại
-              </Button>
-            </Form.Item>
-
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="large"
-                className="login-button"
-                block
-                loading={loading}
-                disabled={!isAgreeToP}
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Chiều cao xe tối đa (m)"
+                    name="maxVehicleHeight"
+                    rules={[{ required: true, message: 'Nhập chiều cao tối đa' }]}
+                  >
+                    <InputNumber min={0} step={0.1} className="w-100" placeholder="VD: 2.5" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Chiều rộng xe tối đa (m)"
+                    name="maxVehicleWidth"
+                    rules={[{ required: true, message: 'Nhập chiều rộng tối đa' }]}
+                  >
+                    <InputNumber min={0} step={0.1} className="w-100" placeholder="VD: 2" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Sức chứa mỗi tầng"
+                    name="totalCapacityEachLevel"
+                    rules={[{ required: true, message: 'Nhập sức chứa/tầng' }]}
+                  >
+                    <InputNumber min={1} className="w-100" placeholder="VD: 50" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Tổng số tầng"
+                    name="totalLevel"
+                    rules={[{ required: true, message: 'Nhập số tầng' }]}
+                  >
+                    <InputNumber min={1} className="w-100" placeholder="VD: 5" />
+                  </Form.Item>
+                </Col>
+                <Col span={24}>
+                  <Form.Item
+                    label={
+                      <Space>
+                        <ThunderboltOutlined />
+                        <span>% chỗ cho xe điện</span>
+                      </Space>
+                    }
+                    name="electricCarPercentage"
+                    rules={[{ required: true, message: 'Nhập phần trăm' }]}
+                  >
+                    <InputNumber
+                      min={0}
+                      max={100}
+                      step={1}
+                      className="w-100"
+                      placeholder="VD: 20"
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Typography.Title level={5} style={{ marginBottom: 12, marginTop: 12 }}>
+                Phân bổ sức chứa & thời lượng đặt chỗ
+              </Typography.Title>
+              <Row gutter={[16, 16]}>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Sức chứa dành cho booking (chỗ)"
+                    name="bookableCapacity"
+                    rules={[{ required: true, message: 'Nhập sức chứa booking' }]}
+                  >
+                    <InputNumber min={0} className="w-100" placeholder="VD: 20" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Sức chứa cho thuê dài hạn (chỗ)"
+                    name="leasedCapacity"
+                    rules={[{ required: true, message: 'Nhập sức chứa thuê dài hạn' }]}
+                  >
+                    <InputNumber min={0} className="w-100" placeholder="VD: 10" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Sức chứa khách vãng lai (chỗ)"
+                    name="walkInCapacity"
+                    rules={[{ required: true, message: 'Nhập sức chứa khách vãng lai' }]}
+                  >
+                    <InputNumber min={0} className="w-100" placeholder="VD: 15" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} md={12}>
+                  <Form.Item
+                    label="Thời lượng mỗi slot đặt chỗ (giờ)"
+                    name="bookingSlotDurationHours"
+                    rules={[{ required: true, message: 'Nhập thời lượng slot' }]}
+                  >
+                    <InputNumber min={1} max={24} className="w-100" placeholder="VD: 1" />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item
+                name="isAgreeToP"
+                valuePropName="checked"
+                rules={[
+                  {
+                    validator: (_, value) =>
+                      value
+                        ? Promise.resolve()
+                        : Promise.reject(new Error('Bạn cần đồng ý với điều khoản')),
+                  },
+                ]}
               >
-                Gửi yêu cầu tạo bãi đỗ
-              </Button>
-            </Form.Item>
-          </>
-        )}
-      </Form>
-    </div>
+                <Checkbox onChange={(e) => setIsAgreeToP(e.target.checked)}>
+                  Tôi đã đọc và đồng ý với Chính sách & Điều khoản
+                </Checkbox>
+              </Form.Item>
+              <Form.Item>
+                <Button
+                  type="primary"
+                  onClick={prevStep}
+                  size="large"
+                  className="login-button"
+                  block
+                >
+                  Quay lại
+                </Button>
+              </Form.Item>
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
+                  className="login-button"
+                  block
+                  loading={loading}
+                  disabled={!isAgreeToP}
+                >
+                  Gửi yêu cầu tạo bãi đỗ
+                </Button>
+              </Form.Item>
+            </>
+          )}
+        </Form>
+      </div>
       <Modal
         title="Chọn vị trí bãi đỗ"
         open={isLocationModalOpen}
@@ -771,8 +798,8 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
         destroyOnHidden
       >
         <Paragraph type="secondary" style={{ marginBottom: 12 }}>
-          Nhấp vào vị trí trên bản đồ để đặt điểm đánh dấu. Bạn có thể thu phóng hoặc kéo bản đồ
-          để chọn chính xác vị trí bãi đỗ xe.
+          Nhấp vào vị trí trên bản đồ để đặt điểm đánh dấu. Bạn có thể thu phóng hoặc kéo bản đồ để
+          chọn chính xác vị trí bãi đỗ xe.
         </Paragraph>
         <LocationPickerMap
           value={mapLocation}

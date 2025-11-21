@@ -52,11 +52,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Bảng điều khiển',
     },
     {
-      key: '/parking-lots',
+      key: '/admin/manage-parking-lots',
       icon: <EnvironmentOutlined />,
       label: 'Bãi đỗ xe',
-      badge: '12/15',
-      active: true,
     },
     {
       key: '/analytics',

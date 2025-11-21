@@ -98,7 +98,9 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                 {account.operatorDetail.taxCode ? account.operatorDetail.taxCode : 'Không có'}
               </Descriptions.Item>
               <Descriptions.Item label="Email thanh toán">
-                {account.operatorDetail.paymentEmail ? account.operatorDetail.paymentEmail : 'Không có'}
+                {account.operatorDetail.paymentEmail
+                  ? account.operatorDetail.paymentEmail
+                  : 'Không có'}
               </Descriptions.Item>
               <Descriptions.Item label="Xác thực">
                 <Tag color={account.operatorDetail.isVerified ? 'green' : 'red'}>
@@ -106,7 +108,11 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Duyệt tài khoản">
-                <Button type="primary" onClick={handleConfirmOperator} loading={isConfirmingOperator}>
+                <Button
+                  type="primary"
+                  onClick={handleConfirmOperator}
+                  loading={isConfirmingOperator}
+                >
                   {isConfirmingOperator ? 'Đang duyệt...' : 'Duyệt'}
                 </Button>
               </Descriptions.Item>
