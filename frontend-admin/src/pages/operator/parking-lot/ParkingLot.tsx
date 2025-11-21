@@ -1,15 +1,20 @@
 import { useMemo } from 'react'
 import { Card, Col, Empty, Row, Skeleton, Tag, Typography } from 'antd'
 import { skipToken } from '@reduxjs/toolkit/query'
-import { CarOutlined, CheckCircleOutlined, ThunderboltOutlined, UserOutlined } from '@ant-design/icons'
+import {
+  CarOutlined,
+  CheckCircleOutlined,
+  ThunderboltOutlined,
+  UserOutlined,
+} from '@ant-design/icons'
 import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parkingLotAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
-import type { PricingPolicy } from '../../../types/PricingPolicy'
 import type { Pagination } from '../../../types/Pagination'
 import { useGetPricingPoliciesOperatorQuery } from '../../../features/operator/pricingPolicyAPI'
 import ParkingLotDetails from './components/ParkingLotDetails'
 import StatCard from './components/StatCard'
+import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 
 const { Title, Text } = Typography
 
@@ -18,16 +23,6 @@ interface ParkingLotsListResponse {
     data: ParkingLot[]
   }
   isLoading: boolean
-}
-
-interface PricingPolicyLink {
-  _id: string
-  parkingLotId: { _id: string }
-  pricingPolicyId: PricingPolicy
-  priority: number
-  startDate: string
-  createdAt: string
-  updatedAt: string | null
 }
 
 interface PricingPoliciesListResponse {
@@ -53,7 +48,7 @@ const OperatorParkingLot: React.FC = () => {
         : skipToken
     )
   const pricingPolicies = pricingPoliciesData?.data ?? []
-  
+
   console.log(pricingPolicies)
 
   const summary = useMemo(() => {
@@ -170,107 +165,106 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({ policies, loading
               )
             )
             .map((link) => {
-            const policy = link.pricingPolicyId
-            const isPackage = policy.basisId?.basisName === 'PACKAGE'
-            const isTiered = policy.basisId?.basisName === 'TIERED'
-            return (
-              <Col xs={24} md={12} key={link._id}>
-                <Card className="policy-card">
-                  <div className="policy-card__header">
-                    <Text className="policy-card__name">{policy.name}</Text>
-                    <Tag color="blue">Ưu tiên {link.priority}</Tag>
-                  </div>
-
-                  <div className="policy-card__meta">
-                    <div>
-                      <Text type="secondary">Giá mỗi giờ</Text>
-                      <div className="policy-card__meta-value">
-                        {policy.pricePerHour != null
-                          ? `${policy.pricePerHour.toLocaleString()} đ`
-                          : '—'}
-                      </div>
+              const policy = link.pricingPolicyId
+              const isPackage = policy.basisId?.basisName === 'PACKAGE'
+              const isTiered = policy.basisId?.basisName === 'TIERED'
+              return (
+                <Col xs={24} md={12} key={link._id}>
+                  <Card className="policy-card">
+                    <div className="policy-card__header">
+                      <Text className="policy-card__name">{policy.name}</Text>
+                      <Tag color="blue">Ưu tiên {link.priority}</Tag>
                     </div>
-                    <div>
-                      <Text type="secondary">Giá cố định</Text>
-                      <div className="policy-card__meta-value">
-                        {policy.fixedPrice != null
-                          ? `${policy.fixedPrice.toLocaleString()} đ`
-                          : '—'}
-                      </div>
-                    </div>
-                    <div>
-                      <Text type="secondary">Ngày áp dụng</Text>
-                      <div className="policy-card__meta-value">
-                        {new Date(link.startDate).toLocaleDateString('vi-VN')}
-                      </div>
-                    </div>
-                  </div>
 
-                  <Text type="secondary">Loại chính sách</Text>
-                  <Text className="policy-card__description">
-                    {policy.basisId?.basisName || 'Không xác định'} -
-                    {policy.basisId?.description || 'Không có mô tả'}
-                  </Text>
-
-                  {isPackage && policy.packageRateId && (
-                    <div className="policy-card__section">
-                      <Text type="secondary">Gói cố định</Text>
-                      <div className="policy-card__package">
-                        <div>
-                          <Text type="secondary">Tên gói</Text>
-                          <div className="policy-card__meta-value">
-                            {policy.packageRateId.name}
-                          </div>
+                    <div className="policy-card__meta">
+                      <div>
+                        <Text type="secondary">Giá mỗi giờ</Text>
+                        <div className="policy-card__meta-value">
+                          {policy.pricePerHour != null
+                            ? `${policy.pricePerHour.toLocaleString()} đ`
+                            : '—'}
                         </div>
-                        <div>
-                          <Text type="secondary">Giá gói</Text>
-                          <div className="policy-card__meta-value">
-                            {policy.packageRateId.price.toLocaleString()} đ
-                          </div>
+                      </div>
+                      <div>
+                        <Text type="secondary">Giá cố định</Text>
+                        <div className="policy-card__meta-value">
+                          {policy.fixedPrice != null
+                            ? `${policy.fixedPrice.toLocaleString()} đ`
+                            : '—'}
                         </div>
-                        <div>
-                          <Text type="secondary">Thời lượng</Text>
-                          <div className="policy-card__meta-value">
-                            {policy.packageRateId.durationAmount} {policy.packageRateId.unit}
-                          </div>
+                      </div>
+                      <div>
+                        <Text type="secondary">Ngày áp dụng</Text>
+                        <div className="policy-card__meta-value">
+                          {new Date(link.startDate).toLocaleDateString('vi-VN')}
                         </div>
                       </div>
                     </div>
-                  )}
 
-                  {isTiered && policy.tieredRateSetId && (
-                    <div className="policy-card__section">
-                      <Text type="secondary">Bảng giá theo khung giờ</Text>
-                      <div className="policy-card__tiers">
-                        <Text strong>{policy.tieredRateSetId.name}</Text>
-                        {policy.tieredRateSetId.tiers.map((tier, index) => (
-                          <div className="policy-card__tier-row" key={index}>
-                            <span>
-                              {tier.fromHour} - {tier.toHour ?? '∞'}
-                            </span>
-                            <span>{tier.price.toLocaleString()} đ</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="policy-card__footer">
-                    <Text type="secondary">
-                      Tạo lúc:{' '}
-                      {link.createdAt ? new Date(link.createdAt).toLocaleString('vi-VN') : '—'}
+                    <Text type="secondary">Loại chính sách</Text>
+                    <Text className="policy-card__description">
+                      {policy.basisId?.basisName || 'Không xác định'} -
+                      {policy.basisId?.description || 'Không có mô tả'}
                     </Text>
-                    {link.updatedAt && (
-                      <Text type="secondary">
-                        Cập nhật:{' '}
-                        {new Date(link.updatedAt).toLocaleString('vi-VN')}
-                      </Text>
+
+                    {isPackage && policy.packageRateId && (
+                      <div className="policy-card__section">
+                        <Text type="secondary">Gói cố định</Text>
+                        <div className="policy-card__package">
+                          <div>
+                            <Text type="secondary">Tên gói</Text>
+                            <div className="policy-card__meta-value">
+                              {policy.packageRateId.name}
+                            </div>
+                          </div>
+                          <div>
+                            <Text type="secondary">Giá gói</Text>
+                            <div className="policy-card__meta-value">
+                              {policy.packageRateId.price.toLocaleString()} đ
+                            </div>
+                          </div>
+                          <div>
+                            <Text type="secondary">Thời lượng</Text>
+                            <div className="policy-card__meta-value">
+                              {policy.packageRateId.durationAmount} {policy.packageRateId.unit}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     )}
-                  </div>
-                </Card>
-              </Col>
-            )
-          })}
+
+                    {isTiered && policy.tieredRateSetId && (
+                      <div className="policy-card__section">
+                        <Text type="secondary">Bảng giá theo khung giờ</Text>
+                        <div className="policy-card__tiers">
+                          <Text strong>{policy.tieredRateSetId.name}</Text>
+                          {policy.tieredRateSetId.tiers.map((tier, index) => (
+                            <div className="policy-card__tier-row" key={index}>
+                              <span>
+                                {tier.fromHour} - {tier.toHour ?? '∞'}
+                              </span>
+                              <span>{tier.price.toLocaleString()} đ</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="policy-card__footer">
+                      <Text type="secondary">
+                        Tạo lúc:{' '}
+                        {link.createdAt ? new Date(link.createdAt).toLocaleString('vi-VN') : '—'}
+                      </Text>
+                      {link.updatedAt && (
+                        <Text type="secondary">
+                          Cập nhật: {new Date(link.updatedAt).toLocaleString('vi-VN')}
+                        </Text>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              )
+            })}
         </Row>
       )}
     </Card>

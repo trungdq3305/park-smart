@@ -51,7 +51,8 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
               <Col span={12}>
                 <Text type="secondary">Kinh độ / Vĩ độ</Text>
                 <div className="area-card__text compact">
-                  {lot.addressId?.latitude?.toFixed(4) ?? '—'} / {lot.addressId?.longitude?.toFixed(4) ?? '—'}
+                  {lot.addressId?.latitude?.toFixed(4) ?? '—'} /{' '}
+                  {lot.addressId?.longitude?.toFixed(4) ?? '—'}
                 </div>
               </Col>
             </Row>
@@ -108,4 +109,3 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
 }
 
 export default ParkingLotDetails
-
