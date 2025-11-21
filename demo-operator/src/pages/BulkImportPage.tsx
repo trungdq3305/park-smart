@@ -21,10 +21,11 @@ import {
 import { io, Socket } from "socket.io-client";
 import axios from "axios";
 
-// Đảm bảo đường dẫn file này đúng trong dự án của bạn
+// Import file âm thanh
 import Success from "../assets/success.mp3";
 
-const PYTHON_SOCKET = "http://10.20.30.200:1836";
+// 👉 CẬP NHẬT: Dùng Hostname thay vì IP cứng
+const PYTHON_SOCKET_URL = "http://PhamVietHoang:1836";
 const NEST_API = "http://localhost:5000/api/guest-cards";
 
 interface ScannedCardItem {
@@ -53,29 +54,27 @@ const BulkImportPage: React.FC = () => {
   const scannedCardsRef = useRef<ScannedCardItem[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Notification Hook (Khắc phục lỗi không hiện thông báo)
+  // Notification Hook
   const [api, contextHolder] = antdNotification.useNotification();
 
-  // Đồng bộ Ref để Socket luôn thấy dữ liệu mới nhất
+  // Đồng bộ Ref
   useEffect(() => {
     scannedCardsRef.current = scannedCards;
   }, [scannedCards]);
 
-  // Khởi tạo Audio 1 lần duy nhất
+  // Khởi tạo Audio
   useEffect(() => {
     audioRef.current = new Audio(Success);
-    audioRef.current.load(); // Tải trước
+    audioRef.current.load();
   }, []);
 
-  // --- HÀM MỞ KHÓA ÂM THANH (Chạy khi bấm nút trên Modal) ---
+  // --- HÀM MỞ KHÓA ÂM THANH ---
   const enableAudio = () => {
     if (audioRef.current) {
-      // Phát thử 1 đoạn cực ngắn để trình duyệt ghi nhận tương tác
       audioRef.current.volume = 0.1;
       audioRef.current
         .play()
         .then(() => {
-          // Ngay lập tức dừng và reset volume
           audioRef.current!.pause();
           audioRef.current!.currentTime = 0;
           audioRef.current!.volume = 1.0;
@@ -86,7 +85,6 @@ const BulkImportPage: React.FC = () => {
         })
         .catch((e) => {
           console.error("Lỗi mở khóa audio:", e);
-          // Vẫn cho đóng modal nhưng cảnh báo
           setShowWelcomeModal(false);
           api.warning({
             message: "Chưa mở khóa được âm thanh (Trình duyệt chặn)",
@@ -105,17 +103,17 @@ const BulkImportPage: React.FC = () => {
   };
 
   useEffect(() => {
-    socketRef.current = io(PYTHON_SOCKET, { transports: ["websocket"] });
+    // Kết nối Socket tới Python
+    socketRef.current = io(PYTHON_SOCKET_URL, { transports: ["websocket"] });
 
     socketRef.current.on("connect", () => setIsConnected(true));
     socketRef.current.on("disconnect", () => setIsConnected(false));
 
+    // Lắng nghe sự kiện từ Python (ESP32 gửi lên Python -> Python bắn ra đây)
     socketRef.current.on("nfc_scanned", (data: SocketNfcData) => {
       const uid = data.identifier;
 
-      // 1. Phát âm thanh
-
-      // 2. Kiểm tra trùng lặp bằng Ref
+      // 1. Kiểm tra trùng
       const isDuplicate = scannedCardsRef.current.some((c) => c.nfcUid === uid);
 
       if (isDuplicate) {
@@ -126,18 +124,15 @@ const BulkImportPage: React.FC = () => {
           duration: 2,
         });
         return;
-      } else {
-        playBeep();
       }
 
-      // --- SỬA ĐỔI: TÍNH TOÁN VÀ THÔNG BÁO RA NGOÀI ---
+      // 2. Nếu không trùng thì Beep và Thêm
+      playBeep();
 
-      // a. Tính toán dữ liệu mới dựa trên Ref
       const currentLength = scannedCardsRef.current.length;
       const newIndex = currentLength + counter;
       const codeName = `${prefix}_${String(newIndex).padStart(3, "0")}`;
 
-      // b. Hiện thông báo (Chỉ chạy 1 lần tại đây)
       api.success({
         message: "Đã quét thẻ mới",
         description: `${codeName}`,
@@ -145,7 +140,6 @@ const BulkImportPage: React.FC = () => {
         duration: 1.5,
       });
 
-      // c. Cập nhật State (Chỉ làm nhiệm vụ update dữ liệu)
       setScannedCards((prev) => {
         return [{ nfcUid: uid, code: codeName }, ...prev];
       });
@@ -154,8 +148,7 @@ const BulkImportPage: React.FC = () => {
     return () => {
       socketRef.current?.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prefix, counter, api, isAudioEnabled]); // Thêm các dependencies cần thiết
+  }, [prefix, counter, api, isAudioEnabled]);
 
   const handleSave = async () => {
     if (scannedCards.length === 0) return;
@@ -200,10 +193,8 @@ const BulkImportPage: React.FC = () => {
 
   return (
     <div style={{ padding: 20, background: "#f0f2f5", minHeight: "100vh" }}>
-      {/* Context Holder cho Notification */}
       {contextHolder}
 
-      {/* MODAL BẮT BUỘC ĐỂ KÍCH HOẠT ÂM THANH */}
       <Modal
         title="Sẵn sàng kết nối"
         open={showWelcomeModal}

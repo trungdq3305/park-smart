@@ -74,6 +74,9 @@ export class ParkingLot extends BaseEntity {
 
   @Prop({ default: 0, index: true })
   displayAvailableSpots: number
+
+  @Prop({ required: true, type: String, unique: true })
+  secretKey: string
 }
 
 export const ParkingLotSchema = SchemaFactory.createForClass(ParkingLot)
