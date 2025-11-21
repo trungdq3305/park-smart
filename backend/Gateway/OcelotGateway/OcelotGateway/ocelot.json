@@ -492,6 +492,18 @@
       "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
     {
+      "DownstreamPathTemplate": "/guest-cards/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/guest-cards/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
+    },
+    {
       "DownstreamPathTemplate": "/reservations/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

@@ -118,6 +118,8 @@ export interface IParkingLotService {
   ): Promise<ParkingLotRequestResponseDto[]>
 
   hardDeleteRequestById(id: string): Promise<boolean>
+
+  validateParkingKey(parkingId: string, secretKey: string): Promise<boolean>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')
