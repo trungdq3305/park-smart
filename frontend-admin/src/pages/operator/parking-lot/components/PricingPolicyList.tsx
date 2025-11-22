@@ -1,5 +1,5 @@
 import { Card, Col, Empty, Row, Skeleton, Switch, Tag, Typography, Button } from 'antd'
-import { CloseCircleOutlined, PlusOutlined } from '@ant-design/icons'
+import { CloseCircleOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons'
 import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
 import '../ParkingLot.css'
 
@@ -11,6 +11,7 @@ interface PricingPolicyListProps {
   isDeleted: boolean
   onIsDeletedChange: (isDeleted: boolean) => void
   onOpenCreateModal?: () => void
+  onOpenEditModal?: (policy: PricingPolicyLink) => void
 }
 
 const getPriorityColor = (priority: number): string | undefined => {
@@ -29,6 +30,7 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
   isDeleted,
   onIsDeletedChange,
   onOpenCreateModal,
+  onOpenEditModal,
 }) => {
   return (
     <Card className="policy-card-list">
@@ -171,15 +173,29 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
                     )}
 
                     <div className="policy-card__footer">
-                      <Text type="secondary">
-                        Tạo lúc:{' '}
-                        {link.createdAt ? new Date(link.createdAt).toLocaleString('vi-VN') : '—'}
-                      </Text>
-                      {link.updatedAt && (
-                        <Text type="secondary">
-                          Cập nhật: {new Date(link.updatedAt).toLocaleString('vi-VN')}
-                        </Text>
-                      )}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <Text type="secondary">
+                            Tạo lúc:{' '}
+                            {link.createdAt ? new Date(link.createdAt).toLocaleString('vi-VN') : '—'}
+                          </Text>
+                          {link.updatedAt && (
+                            <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
+                              Cập nhật: {new Date(link.updatedAt).toLocaleString('vi-VN')}
+                            </Text>
+                          )}
+                        </div>
+                        {!isDisabled && onOpenEditModal && (
+                          <Button
+                            type="primary"
+                            icon={<EditOutlined />}
+                            onClick={() => onOpenEditModal(link)}
+                            size="small"
+                          >
+                            Chỉnh sửa
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </Card>
                 </Col>

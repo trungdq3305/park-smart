@@ -20,7 +20,19 @@ export const pricingPolicyAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['pricingPolicy'],
     }),
+    deletePricingPolicyLink: builder.mutation({
+      query: (id) => ({
+        url: `/parking/parking-lot-links/${id}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['pricingPolicy'],
+    }),
   }),
 })
 
-export const { useGetPricingPoliciesOperatorQuery, useCreatePricingPolicyLinkMutation } = pricingPolicyAPI
+export const {
+  useGetPricingPoliciesOperatorQuery,
+  useCreatePricingPolicyLinkMutation,
+  useDeletePricingPolicyLinkMutation,
+} = pricingPolicyAPI

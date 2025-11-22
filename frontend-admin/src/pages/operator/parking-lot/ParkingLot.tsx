@@ -11,7 +11,11 @@ import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parki
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
-import { useCreatePricingPolicyLinkMutation, useGetPricingPoliciesOperatorQuery } from '../../../features/operator/pricingPolicyAPI'
+import {
+  useCreatePricingPolicyLinkMutation,
+  useGetPricingPoliciesOperatorQuery,
+  useDeletePricingPolicyLinkMutation,
+} from '../../../features/operator/pricingPolicyAPI'
 import ParkingLotDetails from './components/ParkingLotDetails'
 import StatCard from './components/StatCard'
 import PricingPolicyList from './components/PricingPolicyList'
@@ -47,6 +51,8 @@ const OperatorParkingLot: React.FC = () => {
   const [isDeleted, setIsDeleted] = useState(false)
   const [isSwitchLoading, setIsSwitchLoading] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedPolicyForEdit, setSelectedPolicyForEdit] = useState<PricingPolicyLink | null>(null)
 
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const parkingLot = data?.data?.[0] ?? null
@@ -65,6 +71,7 @@ const OperatorParkingLot: React.FC = () => {
   const basis = basisData?.data ?? []
 
   const [createPricingPolicyLink, { isLoading: isCreatePricingLoading }] = useCreatePricingPolicyLinkMutation()
+  const [deletePricingPolicyLink, { isLoading: isDeletePricingLoading }] = useDeletePricingPolicyLinkMutation()
 
   const pricingPolicies = pricingPoliciesData?.data ?? []
 
@@ -88,6 +95,29 @@ const OperatorParkingLot: React.FC = () => {
     } catch (error: any) {
       message.error(error?.data?.message || 'Tạo chính sách giá thất bại')
     }
+  }
+
+  const handleEditPricingPolicy = async (values: any) => {
+    try {
+      // Tạo mới pricing policy với dữ liệu đã chỉnh sửa
+      await createPricingPolicyLink(values).unwrap()
+      
+      // Tự động disable pricing policy cũ bằng cách delete
+      if (selectedPolicyForEdit?._id) {
+        await deletePricingPolicyLink(selectedPolicyForEdit._id).unwrap()
+      }
+      
+      message.success('Cập nhật chính sách giá thành công')
+      setIsEditModalOpen(false)
+      setSelectedPolicyForEdit(null)
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Cập nhật chính sách giá thất bại')
+    }
+  }
+
+  const handleOpenEditModal = (policy: PricingPolicyLink) => {
+    setSelectedPolicyForEdit(policy)
+    setIsEditModalOpen(true)
   }
 
 
@@ -177,6 +207,7 @@ const OperatorParkingLot: React.FC = () => {
             isDeleted={isDeleted}
             onIsDeletedChange={handleIsDeletedChange}
             onOpenCreateModal={() => setIsCreateModalOpen(true)}
+            onOpenEditModal={handleOpenEditModal}
           />
           <CreatePricingPolicyModal
             open={isCreateModalOpen}
@@ -185,6 +216,19 @@ const OperatorParkingLot: React.FC = () => {
             parkingLotId={parkingLot._id}
             basisList={basis}
             loading={isCreatePricingLoading}
+          />
+          <CreatePricingPolicyModal
+            open={isEditModalOpen}
+            onCancel={() => {
+              setIsEditModalOpen(false)
+              setSelectedPolicyForEdit(null)
+            }}
+            onSubmit={handleEditPricingPolicy}
+            parkingLotId={parkingLot._id}
+            basisList={basis}
+            loading={isCreatePricingLoading || isDeletePricingLoading}
+            initialData={selectedPolicyForEdit}
+            isEditMode={true}
           />
         </>
       )}

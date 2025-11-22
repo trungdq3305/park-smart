@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Modal, Form, Input, InputNumber, Select, DatePicker, TimePicker, Button, Space } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { Basis } from '../../../../types/Basis'
+import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
 import dayjs from 'dayjs'
 
 interface CreatePricingPolicyModalProps {
@@ -11,6 +12,8 @@ interface CreatePricingPolicyModalProps {
   parkingLotId: string
   basisList: Basis[]
   loading?: boolean
+  initialData?: PricingPolicyLink | null
+  isEditMode?: boolean
 }
 
 const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
@@ -20,16 +23,59 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
   parkingLotId,
   basisList,
   loading = false,
+  initialData = null,
+  isEditMode = false,
 }) => {
   const [form] = Form.useForm()
   const [selectedBasis, setSelectedBasis] = useState<Basis | null>(null)
 
   useEffect(() => {
     if (open) {
-      form.resetFields()
-      setSelectedBasis(null)
+      if (isEditMode && initialData) {
+        const policy = initialData.pricingPolicyId
+        const basis = policy.basisId
+        
+        // Set basis first
+        setSelectedBasis(basis)
+        
+        // Prepare form values
+        const formValues: any = {
+          basisId: basis._id,
+          name: policy.name,
+          priority: initialData.priority,
+          startDate: dayjs(initialData.startDate),
+        }
+
+        // Set fields based on basis type
+        if (basis.basisName === 'TIERED' && policy.tieredRateSetId) {
+          formValues.tieredRateSet = {
+            name: policy.tieredRateSetId.name,
+            tiers: policy.tieredRateSetId.tiers.map((tier) => ({
+              fromHour: tier.fromHour ? dayjs(`2000-01-01 ${tier.fromHour}`, 'YYYY-MM-DD HH:mm') : null,
+              toHour: tier.toHour ? dayjs(`2000-01-01 ${tier.toHour}`, 'YYYY-MM-DD HH:mm') : null,
+              price: tier.price,
+            })),
+          }
+        } else if (basis.basisName === 'PACKAGE' && policy.packageRateId) {
+          formValues.packageRate = {
+            name: policy.packageRateId.name,
+            price: policy.packageRateId.price,
+            durationAmount: policy.packageRateId.durationAmount,
+            unit: policy.packageRateId.unit,
+          }
+        } else if (basis.basisName === 'HOURLY') {
+          formValues.pricePerHour = policy.pricePerHour
+        } else if (basis.basisName === 'FIXED') {
+          formValues.fixedPrice = policy.fixedPrice
+        }
+
+        form.setFieldsValue(formValues)
+      } else {
+        form.resetFields()
+        setSelectedBasis(null)
+      }
     }
-  }, [open, form])
+  }, [open, form, isEditMode, initialData])
 
   const handleBasisChange = (basisId: string) => {
     const basis = basisList.find((b) => b._id === basisId)
@@ -101,7 +147,7 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
 
   return (
     <Modal
-      title="Tạo mới chính sách giá"
+      title={isEditMode ? 'Chỉnh sửa chính sách giá' : 'Tạo mới chính sách giá'}
       open={open}
       onCancel={onCancel}
       width={800}
@@ -110,7 +156,7 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
           Hủy
         </Button>,
         <Button key="submit" type="primary" onClick={handleSubmit} loading={loading}>
-          Tạo mới
+          {isEditMode ? 'Cập nhật' : 'Tạo mới'}
         </Button>,
       ]}
     >
@@ -157,12 +203,33 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
         <Form.Item
           name="startDate"
           label="Ngày bắt đầu áp dụng"
-          rules={[{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }]}
+          rules={[
+            { required: true, message: 'Vui lòng chọn ngày bắt đầu' },
+            {
+              validator: (_, value) => {
+                if (!value) {
+                  return Promise.resolve()
+                }
+                const minDate = dayjs().add(7, 'day').startOf('day')
+                const selectedDate = dayjs(value).startOf('day')
+                if (selectedDate.isBefore(minDate)) {
+                  return Promise.reject(
+                    new Error('Ngày bắt đầu phải sau ngày hiện tại ít nhất 7 ngày')
+                  )
+                }
+                return Promise.resolve()
+              },
+            },
+          ]}
         >
           <DatePicker
             style={{ width: '100%' }}
             format="DD/MM/YYYY"
             placeholder="Chọn ngày bắt đầu"
+            disabledDate={(current) => {
+              // Disable tất cả các ngày trước ngày hiện tại + 7 ngày
+              return current && current.isBefore(dayjs().add(7, 'day').startOf('day'))
+            }}
           />
         </Form.Item>
 
