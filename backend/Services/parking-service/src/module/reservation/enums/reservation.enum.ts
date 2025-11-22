@@ -19,6 +19,11 @@ export enum ReservationStatusEnum {
   CHECKED_IN = 'CHECKED_IN',
 
   /**
+   * Người dùng đã check-out (rời bãi).
+   */
+  CHECKED_OUT = 'CHECKED_OUT',
+
+  /**
    * Người dùng chủ động hủy (trước thời hạn).
    */
   CANCELLED_BY_USER = 'CANCELLED_BY_USER',

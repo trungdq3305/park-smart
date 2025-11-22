@@ -24,9 +24,13 @@ import axios from "axios";
 // Import file âm thanh
 import Success from "../assets/success.mp3";
 
-// 👉 CẬP NHẬT: Dùng Hostname thay vì IP cứng
+// Cấu hình
 const PYTHON_SOCKET_URL = "http://PhamVietHoang:1836";
-const NEST_API = "http://localhost:5000/api/guest-cards";
+const NEST_API = "http://localhost:5000/guest-cards";
+// 👇 ID Bãi xe hiện tại (Lấy từ User login trong thực tế)
+const CURRENT_PARKING_ID = "6910bdd67ed4c382df23de4e";
+const AUTH_TOKEN =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YmYxYmRlNjM1NDdkYWY1OTY2NzdmZSIsImVtYWlsIjoib3BlcmF0b3JAZXhhbXBsZS5jb20iLCJwaG9uZU51bWJlciI6IjA2MzQ2MzQ4NTkiLCJyb2xlIjoiT3BlcmF0b3IiLCJvcGVyYXRvcklkIjoiNjhiZjFiZGU2MzU0N2RhZjU5NjY3N2ZmIiwiZnVsbE5hbWUiOiJzdHJpbmciLCJidXNzaW5lc3NOYW1lIjoiRU1PIENvbXAiLCJwYXltZW50RW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiZXhwIjoxNzY0NDE3Njc4LCJpc3MiOiJDb3JlU2VydmljZSIsImF1ZCI6IkFsbFNlcnZpY2VzIn0.aclveCCSjW2UOUKtoPph6K1VdGA86tDYXbHX9eNvYEA";
 
 interface ScannedCardItem {
   nfcUid: string;
@@ -109,11 +113,11 @@ const BulkImportPage: React.FC = () => {
     socketRef.current.on("connect", () => setIsConnected(true));
     socketRef.current.on("disconnect", () => setIsConnected(false));
 
-    // Lắng nghe sự kiện từ Python (ESP32 gửi lên Python -> Python bắn ra đây)
+    // Lắng nghe sự kiện từ Python
     socketRef.current.on("nfc_scanned", (data: SocketNfcData) => {
       const uid = data.identifier;
 
-      // 1. Kiểm tra trùng
+      // 1. Kiểm tra trùng trong danh sách đang quét (Client side)
       const isDuplicate = scannedCardsRef.current.some((c) => c.nfcUid === uid);
 
       if (isDuplicate) {
@@ -150,16 +154,46 @@ const BulkImportPage: React.FC = () => {
     };
   }, [prefix, counter, api, isAudioEnabled]);
 
+  // --- SỬA LOGIC LƯU THEO DTO MỚI ---
   const handleSave = async () => {
     if (scannedCards.length === 0) return;
     try {
-      await axios.post(`${NEST_API}/bulk`, { cards: scannedCards });
-      api.success({ message: "Đã lưu vào kho thành công!" });
+      // Payload đúng chuẩn BulkCreateGuestCardsDto
+      const payload = {
+        parkingLotId: CURRENT_PARKING_ID,
+        cards: scannedCards.map((item) => ({
+          nfcUid: item.nfcUid,
+          code: item.code,
+        })),
+      };
+
+      const response = await axios.post(`${NEST_API}/bulk`, payload, {
+        headers: { Authorization: `Bearer ${AUTH_TOKEN}` },
+      });
+
+      // Xử lý kết quả trả về (Partial Success)
+      // API trả về ApiResponseDto<BulkImportResultDto> -> data là mảng
+      const result = response.data.data[0];
+
+      if (result.failureCount > 0) {
+        // Có lỗi xảy ra với một số thẻ
+        api.warning({
+          message: `Hoàn tất một phần`,
+          description: `Thành công: ${result.successCount}. Thất bại: ${result.failureCount}. Xem console để biết chi tiết lỗi.`,
+          duration: 5,
+        });
+        console.table(result.failures); // In danh sách lỗi ra console cho dev xem
+      } else {
+        api.success({
+          message: `Nhập kho thành công toàn bộ ${result.successCount} thẻ!`,
+        });
+      }
+
       setScannedCards([]);
     } catch (err: any) {
       api.error({
-        message: "Lỗi lưu thẻ",
-        description: err.message || "Lỗi không xác định",
+        message: "Lỗi hệ thống",
+        description: err.response?.data?.message || "Không thể kết nối Server",
       });
     }
   };

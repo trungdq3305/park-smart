@@ -71,23 +71,7 @@ export class ParkingLotSessionController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Dữ liệu check-in và file ảnh',
-    schema: {
-      type: 'object',
-      properties: {
-        plateNumber: { type: 'string', example: '51A-123.45' },
-        identifier: {
-          type: 'string',
-          example: 'uuid-v4...',
-          description: 'Mã QR (nếu có)',
-        },
-        description: { type: 'string' },
-        file: {
-          type: 'string',
-          format: 'binary',
-          description: 'Ảnh chụp biển số (tùy chọn)',
-        },
-      },
-    },
+    type: CheckInDto,
   })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -144,13 +128,29 @@ export class ParkingLotSessionController {
     schema: {
       type: 'object',
       properties: {
-        plateNumber: {
+        uidCard: {
           type: 'string',
-          example: '51A-123.45',
-          description: 'Biển số xe đang ra',
+          example: 'UID_abc123',
+          description: 'UID của thẻ NFC (nếu có)',
+        },
+        identifier: {
+          type: 'string',
+          example: 'ID_abc123',
+          description: 'Mã định danh khác (nếu có)',
         },
       },
-      required: ['plateNumber'],
+    },
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        pricingPolicyId: {
+          type: 'string',
+          example: 'POLICY_abc...',
+          description: 'ID của chính sách giá đã áp dụng (nếu cần)',
+        },
+      },
     },
   })
   @ApiResponse({
@@ -158,13 +158,17 @@ export class ParkingLotSessionController {
     description: 'Tính phí thành công',
     // type: ApiResponseDto<CheckoutFeeResponseDto>, // (Bạn nên tạo DTO này)
   })
-  async calculateWalkInCheckoutFee(
+  async calculateCheckoutFee(
     @Param('parkingLotId') parkingLotId: string,
-    @Body('plateNumber') plateNumber: string,
+    @Body('pricingPolicyId') pricingPolicyId: string,
+    @Body('uidCard') uidCard?: string,
+    @Body('identifier') identifier?: string,
   ): Promise<ApiResponseDto<any>> {
-    const feeDetails = await this.sessionService.calculateWalkInCheckoutFee(
-      plateNumber,
+    const feeDetails = await this.sessionService.calculateCheckoutFee(
       parkingLotId,
+      pricingPolicyId,
+      uidCard,
+      identifier,
     )
 
     return {
@@ -197,6 +201,18 @@ export class ParkingLotSessionController {
       },
     },
   })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        pricingPolicyId: {
+          type: 'string',
+          example: 'POLICY_abc...',
+          description: 'ID của chính sách giá đã áp dụng (nếu cần)',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Check-out thành công. Barie mở.',
@@ -204,11 +220,15 @@ export class ParkingLotSessionController {
   })
   async confirmWalkInCheckout(
     @Param('sessionId') sessionId: string,
-    @Body('paymentId') paymentId: string,
+    @GetCurrentUserId() userId: string,
+    @Body('paymentId') paymentId?: string,
+    @Body('pricingPolicyId') pricingPolicyId?: string,
   ): Promise<ApiResponseDto<boolean>> {
-    const success = await this.sessionService.confirmWalkInCheckout(
+    const success = await this.sessionService.confirmCheckout(
       sessionId,
+      userId,
       paymentId,
+      pricingPolicyId,
     )
 
     return {
@@ -299,6 +319,42 @@ export class ParkingLotSessionController {
       statusCode: HttpStatus.OK,
       message: 'Lấy chi tiết phiên thành công',
       success: true,
+    }
+  }
+
+  @Get('status/check')
+  @ApiOperation({
+    summary: 'Kiểm tra trạng thái xe (Để biết là Check-in hay Check-out)',
+  })
+  @ApiQuery({
+    name: 'identifier',
+    required: true,
+    description: 'NFC UID hoặc QR Identifier',
+  })
+  @ApiQuery({ name: 'parkingLotId', required: true })
+  async checkSessionStatus(
+    @Query('identifier') identifier: string,
+    @Query('parkingLotId') parkingLotId: string,
+  ) {
+    // Gọi Service kiểm tra xem có session nào đang ACTIVE không
+    // Bạn cần viết hàm này trong Service, tái sử dụng logic findActiveSessionByNfc/Plate
+    const session = await this.sessionService.findActiveSession(
+      identifier,
+      parkingLotId,
+    )
+
+    if (session) {
+      return {
+        state: 'INSIDE',
+        message: 'Xe đang trong bãi -> Chuyển sang Check-out',
+        session: session, // Trả về thông tin lúc vào để hiện ảnh đối chiếu
+      }
+    } else {
+      return {
+        state: 'OUTSIDE',
+        message: 'Xe đang ở ngoài -> Chuyển sang Check-in',
+        session: null,
+      }
     }
   }
 }

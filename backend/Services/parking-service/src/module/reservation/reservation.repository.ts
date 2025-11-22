@@ -130,6 +130,14 @@ export class ReservationRepository implements IReservationRepository {
     return Promise.all([
       this.reservationModel
         .find({ createdBy: userId })
+        .populate({
+          path: 'parkingLotId',
+          select: 'name',
+        })
+        .populate({
+          path: 'pricingPolicyId',
+          select: 'name',
+        })
         .sort({ createdAt: -1 }) // Mới nhất trước
         .skip(skip)
         .limit(pageSize)
