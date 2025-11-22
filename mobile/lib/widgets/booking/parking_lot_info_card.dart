@@ -159,30 +159,6 @@ class ParkingLotInfoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-
-          // Parking lot status
-          Row(
-            children: [
-              Icon(
-                Icons.verified,
-                color: parkingLotStatus == 'Đã duyệt'
-                    ? Colors.green
-                    : Colors.orange,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Trạng thái: $parkingLotStatus',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: parkingLotStatus == 'Đã duyệt'
-                      ? Colors.green.shade700
-                      : Colors.orange.shade700,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

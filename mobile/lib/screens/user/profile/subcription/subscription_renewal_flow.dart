@@ -207,17 +207,30 @@ class SubscriptionRenewalFlow {
   static Future<Map<String, dynamic>?> _fetchSubscriptionDetail(
     Map<String, dynamic> subscription,
   ) async {
-    final identifier =
-        subscription['subscriptionIdentifier'] ?? subscription['identifier'];
-    if (identifier == null) {
+    final subscriptionIdRaw =
+        subscription['_id'] ??
+        subscription['id'] ??
+        subscription['subscriptionId'];
+    if (subscriptionIdRaw == null) {
       return null;
     }
 
     try {
-      final response = await SubscriptionService.getSubscriptionByIdentifier(
-        identifier: identifier.toString(),
+      // Use getSubscriptionById instead of getSubscriptionByIdentifier
+      // because identifier may not be valid for RENEWAL status subscriptions
+      final response = await SubscriptionService.getSubscriptionById(
+        subscriptionId: subscriptionIdRaw.toString(),
       );
       final data = response['data'];
+      if (data is List && data.isNotEmpty) {
+        final firstItem = data.first;
+        if (firstItem is Map<String, dynamic>) {
+          return firstItem;
+        }
+        if (firstItem is Map) {
+          return Map<String, dynamic>.from(firstItem);
+        }
+      }
       if (data is Map<String, dynamic>) {
         return data;
       }

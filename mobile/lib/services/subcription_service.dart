@@ -242,6 +242,55 @@ class SubscriptionService {
     }
   }
 
+  /// Lấy thông tin chi tiết gói thuê bao theo ID
+  /// GET /subscriptions/{id}
+  static Future<Map<String, dynamic>> getSubscriptionById({
+    required String subscriptionId,
+  }) async {
+    try {
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/$subscriptionId',
+      );
+
+      print('🔍 Getting subscription by ID:');
+      print('  URL: $uri');
+      print('  Subscription ID: $subscriptionId');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully fetched subscription by ID');
+        return responseData;
+      } else {
+        final errorBody = response.body;
+        print('❌ Error fetching subscription by ID: $errorBody');
+        throw Exception(
+          'Failed to fetch subscription by ID: ${response.statusCode} - $errorBody',
+        );
+      }
+    } catch (e) {
+      print('❌ Exception in getSubscriptionById: $e');
+      rethrow;
+    }
+  }
+
   /// Lấy thông tin gói bằng mã QR (cho Barie/Scanner)
   /// GET /subscriptions/identifier/{identifier}
   static Future<Map<String, dynamic>> getSubscriptionByIdentifier({
