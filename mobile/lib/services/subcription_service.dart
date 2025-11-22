@@ -139,6 +139,55 @@ class SubscriptionService {
     }
   }
 
+  /// Kiểm tra điều kiện gia hạn (Pre-check trước khi thanh toán)
+  /// GET /subscriptions/{id}/renewal-eligibility
+  static Future<Map<String, dynamic>> checkRenewalEligibility({
+    required String subscriptionId,
+  }) async {
+    try {
+      String? token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/$subscriptionId/renewal-eligibility',
+      );
+
+      print('🔍 Checking renewal eligibility:');
+      print('  URL: $uri');
+      print('  Subscription ID: $subscriptionId');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully checked renewal eligibility');
+        return responseData;
+      } else {
+        final errorBody = response.body;
+        print('❌ Error checking renewal eligibility: $errorBody');
+        throw Exception(
+          'Failed to check renewal eligibility: ${response.statusCode} - $errorBody',
+        );
+      }
+    } catch (e) {
+      print('❌ Exception in checkRenewalEligibility: $e');
+      rethrow;
+    }
+  }
+
   /// Gia hạn một gói thuê bao (do người dùng chủ động)
   /// POST /subscriptions/{id}/renew
   static Future<Map<String, dynamic>> renewSubscription({
@@ -253,9 +302,7 @@ class SubscriptionService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse(
-        '$baseUrl/parking/subscriptions/$subscriptionId',
-      );
+      final uri = Uri.parse('$baseUrl/parking/subscriptions/$subscriptionId');
 
       print('🔍 Getting subscription by ID:');
       print('  URL: $uri');

@@ -81,6 +81,24 @@ class SubscriptionRenewalFlow {
       return false;
     }
 
+    // Kiểm tra điều kiện gia hạn trước khi tạo payment
+    try {
+      await SubscriptionService.checkRenewalEligibility(
+        subscriptionId: subscriptionId,
+      );
+      print('✅ Renewal eligibility check passed');
+    } catch (e) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            'Không thể gia hạn gói thuê bao: ${_extractErrorMessage(e)}',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+
     try {
       final paymentResponse = await PaymentService.createPayment(
         entityId: entityId,
