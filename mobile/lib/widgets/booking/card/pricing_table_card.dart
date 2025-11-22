@@ -447,14 +447,9 @@ class _PricingTableCardState extends State<PricingTableCard> {
 
             return InkWell(
               onTap: () {
-                if (isTiered && tiers != null && tiers.isNotEmpty) {
-                  // Show tiers dialog for TIERED pricing
-                  _showTiersDialog(context, policyName, tiers);
-                } else if (widget.onPricingSelected != null) {
-                  // Normal selection for PACKAGE pricing
-                  if (pricingPolicyId != null) {
-                    widget.onPricingSelected!(pricingPolicyId, link);
-                  }
+                // Select pricing policy when clicking on card
+                if (widget.onPricingSelected != null && pricingPolicyId != null) {
+                  widget.onPricingSelected!(pricingPolicyId, link);
                 }
               },
               borderRadius: BorderRadius.circular(8),
@@ -560,38 +555,45 @@ class _PricingTableCardState extends State<PricingTableCard> {
                           ),
                         ],
                         if (isTiered && tiers != null && tiers.isNotEmpty) ...[
-                          // Show "Xem bảng giá" for TIERED
+                          // Show "Xem bảng giá" button for TIERED
                           Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade50,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: Colors.blue.shade200,
+                              InkWell(
+                                onTap: () {
+                                  // Show tiers dialog when clicking "Xem bảng giá"
+                                  _showTiersDialog(context, policyName, tiers);
+                                },
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
                                   ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.info_outline,
-                                      size: 16,
-                                      color: Colors.blue.shade700,
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: Colors.blue.shade200,
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      'Xem bảng giá',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline,
+                                        size: 16,
                                         color: Colors.blue.shade700,
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Xem bảng giá',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blue.shade700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                               if (isSelected) ...[

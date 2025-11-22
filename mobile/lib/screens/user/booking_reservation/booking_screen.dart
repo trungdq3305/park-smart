@@ -151,6 +151,8 @@ class _BookingScreenState extends State<BookingScreen> {
                     ReservationTimeSelector(
                       userExpectedTime: _userExpectedTime,
                       estimatedEndTime: _estimatedEndTime,
+                      selectedDate: _selectedStartDate,
+                      tieredRateSetId: _getTieredRateSetId(),
                       onStartTimeSelected: (time) {
                         setState(() {
                           _userExpectedTime = time;
@@ -377,6 +379,26 @@ class _BookingScreenState extends State<BookingScreen> {
     print('📅 Selected start date: $date');
   }
 
+  /// Get tieredRateSetId from selected pricing policy
+  dynamic _getTieredRateSetId() {
+    if (_selectedPricingPolicyId == null) {
+      return null;
+    }
+
+    final selectedLink = _pricingLinks.firstWhere((link) {
+      final pricingPolicy = link['pricingPolicyId'];
+      final pricingPolicyId = pricingPolicy?['_id'] ?? pricingPolicy?['id'];
+      return pricingPolicyId == _selectedPricingPolicyId;
+    }, orElse: () => <String, dynamic>{});
+
+    if (selectedLink.isEmpty) {
+      return null;
+    }
+
+    final pricingPolicy = selectedLink['pricingPolicyId'];
+    return pricingPolicy?['tieredRateSetId'];
+  }
+
   /// Handle create reservation
   Future<void> _handleCreateReservation() async {
     final parkingLotId = widget.parkingLot['_id'] ?? widget.parkingLot['id'];
@@ -420,6 +442,23 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    // Find the selected pricing link
+    final selectedLink = _pricingLinks.firstWhere((link) {
+      final pricingPolicy = link['pricingPolicyId'];
+      final pricingPolicyId = pricingPolicy?['_id'] ?? pricingPolicy?['id'];
+      return pricingPolicyId == _selectedPricingPolicyId;
+    }, orElse: () => <String, dynamic>{});
+
+    if (selectedLink.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy thông tin bảng giá đã chọn'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isCreating = true;
     });
@@ -431,6 +470,8 @@ class _BookingScreenState extends State<BookingScreen> {
       selectedDate: _selectedStartDate!,
       userExpectedTime: _userExpectedTime!,
       estimatedEndTime: _estimatedEndTime!,
+      selectedLink: selectedLink,
+      parkingLot: widget.parkingLot,
     );
 
     if (mounted) {
