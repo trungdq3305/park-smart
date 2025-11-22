@@ -21,14 +21,13 @@ import {
 import { io, Socket } from 'socket.io-client'
 import axios from 'axios'
 import Success from '../../../assets/success.mp3'
-
+import Cookies from 'js-cookie'
 // ==================== CONSTANTS ====================
 const CONFIG = {
   PYTHON_SOCKET_URL: 'http://PhamVietHoang:1836',
-  NEST_API: 'http://localhost:5000/guest-cards',
-  CURRENT_PARKING_ID: '6910bdd67ed4c382df23de4e',
-  AUTH_TOKEN:
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YmYxYmRlNjM1NDdkYWY1OTY2NzdmZSIsImVtYWlsIjoib3BlcmF0b3JAZXhhbXBsZS5jb20iLCJwaG9uZU51bWJlciI6IjA2MzQ2MzQ4NTkiLCJyb2xlIjoiT3BlcmF0b3IiLCJvcGVyYXRvcklkIjoiNjhiZjFiZGU2MzU0N2RhZjU5NjY3N2ZmIiwiZnVsbE5hbWUiOiJzdHJpbmciLCJidXNzaW5lc3NOYW1lIjoiRU1PIENvbXAiLCJwYXltZW50RW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiZXhwIjoxNzY0NDE3Njc4LCJpc3MiOiJDb3JlU2VydmljZSIsImF1ZCI6IkFsbFNlcnZpY2VzIn0.aclveCCSjW2UOUKtoPph6K1VdGA86tDYXbHX9eNvYEA',
+  NEST_API: import.meta.env.VITE_API_ENDPOINT || 'http://localhost:5000/guest-cards',
+  CURRENT_PARKING_ID: Cookies.get('parkingLotId') || '',
+  AUTH_TOKEN: Cookies.get('userToken') || '',
 } as const
 
 const DEFAULT_VALUES = {
