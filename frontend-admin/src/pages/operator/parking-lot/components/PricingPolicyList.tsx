@@ -1,5 +1,5 @@
-import { Card, Col, Empty, Row, Skeleton, Switch, Tag, Typography } from 'antd'
-import { CloseCircleOutlined } from '@ant-design/icons'
+import { Card, Col, Empty, Row, Skeleton, Switch, Tag, Typography, Button } from 'antd'
+import { CloseCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
 import '../ParkingLot.css'
 
@@ -10,6 +10,7 @@ interface PricingPolicyListProps {
   loading: boolean
   isDeleted: boolean
   onIsDeletedChange: (isDeleted: boolean) => void
+  onOpenCreateModal?: () => void
 }
 
 const getPriorityColor = (priority: number): string | undefined => {
@@ -27,6 +28,7 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
   loading,
   isDeleted,
   onIsDeletedChange,
+  onOpenCreateModal,
 }) => {
   return (
     <Card className="policy-card-list">
@@ -35,6 +37,16 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
           Chính sách giá
         </Title>
         <div className="policy-card-list__controls">
+          {onOpenCreateModal && (
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={onOpenCreateModal}
+              style={{ marginRight: 16 }}
+            >
+              Tạo mới
+            </Button>
+          )}
           <div>
             <Text type="secondary" style={{ marginRight: 8 }}>
               Hiển thị đã xóa:

@@ -15,7 +15,11 @@ import { useCreatePricingPolicyLinkMutation, useGetPricingPoliciesOperatorQuery 
 import ParkingLotDetails from './components/ParkingLotDetails'
 import StatCard from './components/StatCard'
 import PricingPolicyList from './components/PricingPolicyList'
+import CreatePricingPolicyModal from './components/CreatePricingPolicyModal'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
+import type { Basis } from '../../../types/Basis'
+import { useGetBasisQuery } from '../../../features/operator/basisAPI'
+import { message } from 'antd'
 
 const { Title, Text } = Typography
 
@@ -33,10 +37,16 @@ interface PricingPoliciesListResponse {
   }
   isLoading: boolean
 }
-
+interface BasisListResponse {
+  data: {
+    data: Basis[]
+  }
+  isLoading: boolean
+}
 const OperatorParkingLot: React.FC = () => {
   const [isDeleted, setIsDeleted] = useState(false)
   const [isSwitchLoading, setIsSwitchLoading] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const parkingLot = data?.data?.[0] ?? null
@@ -51,8 +61,11 @@ const OperatorParkingLot: React.FC = () => {
           }
         : skipToken
     )
+  const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
+  const basis = basisData?.data ?? []
+
   const [createPricingPolicyLink, { isLoading: isCreatePricingLoading }] = useCreatePricingPolicyLinkMutation()
-  
+
   const pricingPolicies = pricingPoliciesData?.data ?? []
 
   const handleIsDeletedChange = (newValue: boolean) => {
@@ -65,6 +78,16 @@ const OperatorParkingLot: React.FC = () => {
         setIsSwitchLoading(false)
       }, 300)
     }, 500)
+  }
+
+  const handleCreatePricingPolicy = async (values: any) => {
+    try {
+      await createPricingPolicyLink(values).unwrap()
+      message.success('Tạo chính sách giá thành công')
+      setIsCreateModalOpen(false)
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Tạo chính sách giá thất bại')
+    }
   }
 
 
@@ -153,6 +176,15 @@ const OperatorParkingLot: React.FC = () => {
             loading={isPricingLoading || isSwitchLoading}
             isDeleted={isDeleted}
             onIsDeletedChange={handleIsDeletedChange}
+            onOpenCreateModal={() => setIsCreateModalOpen(true)}
+          />
+          <CreatePricingPolicyModal
+            open={isCreateModalOpen}
+            onCancel={() => setIsCreateModalOpen(false)}
+            onSubmit={handleCreatePricingPolicy}
+            parkingLotId={parkingLot._id}
+            basisList={basis}
+            loading={isCreatePricingLoading}
           />
         </>
       )}
