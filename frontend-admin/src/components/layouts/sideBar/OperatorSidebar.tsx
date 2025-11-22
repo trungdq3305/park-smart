@@ -92,9 +92,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Lịch sử',
     },
     {
-      key: '/security',
+      key: '/operator/import-card',
       icon: <SafetyOutlined />,
-      label: 'Bảo mật',
+      label: 'Thêm thẻ',
     },
   ]
 
