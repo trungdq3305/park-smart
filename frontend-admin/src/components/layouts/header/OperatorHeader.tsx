@@ -13,17 +13,17 @@ interface OperatorHeaderProps {
 }
 
 const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
-  const fullName = getUserFullName('Admin User')
+  const fullName = getUserFullName('Chủ bãi xe')
   const logout = useLogout()
   const userMenuItems = [
     {
       key: '1',
-      label: 'Profile',
+      label: 'Hồ sơ cá nhân',
       icon: <UserOutlined />,
     },
     {
       key: '2',
-      label: 'Settings',
+      label: 'Cài đặt',
       icon: <SettingOutlined />,
     },
     {
@@ -31,7 +31,7 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
     },
     {
       key: '3',
-      label: 'Logout',
+      label: 'Đăng xuất',
       icon: <LogoutOutlined />,
       danger: true,
       onClick: () => {
@@ -55,8 +55,8 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
       <div className="header-left">
         <h3>
           {isMobile
-            ? `Welcome, ${fullName.split(' ')[0]}!`
-            : `Welcome back, ${fullName}, let's manage your parking lots !`}
+            ? `Xin chào, ${fullName.split(' ')[0]}!`
+            : `Chào mừng quay lại, ${fullName}! Hãy quản lý bãi đỗ của bạn nhé.`}
         </h3>
       </div>
 
