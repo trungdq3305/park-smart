@@ -81,4 +81,3 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ currentUrl, onSave }) => 
 }
 
 export default SettingsModal
-

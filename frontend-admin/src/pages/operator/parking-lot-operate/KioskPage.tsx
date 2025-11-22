@@ -245,10 +245,12 @@ const KioskPage: React.FC = () => {
             <CarOutlined />
           </div>
           <div>
-            <Title level={3} className="kiosk-header-title" style={{color: 'white'}}>
+            <Title level={3} className="kiosk-header-title" style={{ color: 'white' }}>
               HỆ THỐNG KIỂM SOÁT BÃI ĐỖ XE
             </Title>
-            <Text className="kiosk-header-subtitle" style={{color: 'white'}}>Kiosk Bảo Vệ - Cổng Số 1</Text>
+            <Text className="kiosk-header-subtitle" style={{ color: 'white' }}>
+              Kiosk Bảo Vệ - Cổng Số 1
+            </Text>
           </div>
         </div>
         <Space size="large">
@@ -302,7 +304,8 @@ const KioskPage: React.FC = () => {
                   target.style.display = 'none'
                   const parent = target.parentElement
                   if (parent) {
-                    parent.innerHTML = '<div style="color: #666; font-size: 16px;">Đang kết nối camera...</div>'
+                    parent.innerHTML =
+                      '<div style="color: #666; font-size: 16px;">Đang kết nối camera...</div>'
                   }
                 }}
               />
@@ -336,7 +339,7 @@ const KioskPage: React.FC = () => {
               ) : (
                 <div className="kiosk-snapshot-placeholder">
                   <CameraOutlined className="kiosk-snapshot-placeholder-icon" />
-                  <Text style={{color: 'white'}}>Chờ tín hiệu quét thẻ...</Text>
+                  <Text style={{ color: 'white' }}>Chờ tín hiệu quét thẻ...</Text>
                 </div>
               )}
             </Card>
@@ -345,7 +348,11 @@ const KioskPage: React.FC = () => {
           {/* Cột phải: Thông tin & Hành động */}
           <Col span={8}>
             <Card
-              title={<Text strong className="kiosk-transaction-title">THÔNG TIN GIAO DỊCH</Text>}
+              title={
+                <Text strong className="kiosk-transaction-title">
+                  THÔNG TIN GIAO DỊCH
+                </Text>
+              }
               className="kiosk-transaction-card"
               styles={{
                 body: {
@@ -363,7 +370,10 @@ const KioskPage: React.FC = () => {
                   {mode === 'CHECK_OUT' && <LogoutOutlined />}
                   {mode === 'IDLE' && <ScanOutlined />}
                 </div>
-                <Title level={3} className={`kiosk-status-title ${mode.toLowerCase().replace('_', '-')}`}>
+                <Title
+                  level={3}
+                  className={`kiosk-status-title ${mode.toLowerCase().replace('_', '-')}`}
+                >
                   {message}
                 </Title>
               </div>
