@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Card, Col, Empty, Row, Skeleton, Typography } from 'antd'
 import { skipToken } from '@reduxjs/toolkit/query'
 import {
@@ -24,6 +24,7 @@ import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 import type { Basis } from '../../../types/Basis'
 import { useGetBasisQuery } from '../../../features/operator/basisAPI'
 import { message } from 'antd'
+import Cookies from 'js-cookie'
 
 const { Title, Text } = Typography
 
@@ -133,7 +134,6 @@ const OperatorParkingLot: React.FC = () => {
         occupancyRate: 0,
       }
     }
-
     const totalCapacity = parkingLot.totalCapacityEachLevel * parkingLot.totalLevel
     const availableSpots = parkingLot.availableSpots
     const totalBookable = parkingLot.bookableCapacity
@@ -149,6 +149,12 @@ const OperatorParkingLot: React.FC = () => {
       totalLeased,
       totalWalkIn,
       occupancyRate,
+    }
+  }, [parkingLot])
+
+  useEffect(() => {
+    if (!Cookies.get('parkingLotId') && parkingLot?._id) {
+      Cookies.set('parkingLotId', parkingLot._id)
     }
   }, [parkingLot])
 

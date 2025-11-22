@@ -36,12 +36,12 @@ import Success from '../../../assets/success.mp3'
 import { useLocalGateway } from '../../../hooks/useLocalGateway'
 import SettingsModal from '../../../components/SettingsModal'
 import './KioskPage.css'
-
+import Cookies from 'js-cookie'
 const { Title, Text } = Typography
 
 // 👇 Cấu hình URL API NestJS (Thay đổi theo môi trường của bạn)
-const NEST_API_BASE = 'http://localhost:5000'
-const CURRENT_PARKING_ID = '6910bdd67ed4c382df23de4e' // ID bãi xe hiện tại
+const NEST_API_BASE = import.meta.env.VITE_API_ENDPOINT || 'http://localhost:5000'
+const CURRENT_PARKING_ID = Cookies.get('parkingLotId') || '' // ID bãi xe hiện tại
 
 interface ScanData {
   identifier: string
@@ -103,7 +103,7 @@ const KioskPage: React.FC = () => {
     try {
       // 2. GỌI API STATUS CHECK (Hàm bạn vừa hỏi)
       // Để biết xe này đang ở Ngoài (cần vào) hay Trong (cần ra)
-      const statusRes = await axios.get(`${NEST_API_BASE}/parking-sessions/status/check`, {
+      const statusRes = await axios.get(`${NEST_API_BASE}/parking/parking-sessions/status/check`, {
         params: {
           identifier: data.identifier,
           parkingLotId: CURRENT_PARKING_ID,
@@ -193,7 +193,7 @@ const KioskPage: React.FC = () => {
     try {
       if (mode === 'CHECK_IN') {
         // Gọi API Check-in
-        await axios.post(`${NEST_API_BASE}/parking-lot-sessions/check-in/${CURRENT_PARKING_ID}`, {
+        await axios.post(`${NEST_API_BASE}/parking/parking-lot-sessions/check-in/${CURRENT_PARKING_ID}`, {
           plateNumber: plateNumber,
           identifier: cardUid,
         })
@@ -202,7 +202,7 @@ const KioskPage: React.FC = () => {
         // Gọi API Confirm Check-out
         if (!sessionData) return
 
-        await axios.post(`${NEST_API_BASE}/parking-lot-sessions/checkout/confirm`, {
+        await axios.post(`${NEST_API_BASE}/parking/parking-lot-sessions/checkout/confirm`, {
           sessionId: sessionData.sessionId,
           paymentId: undefined, // Tiền mặt
           pricingPolicyId: sessionData.pricingPolicyId,
@@ -245,10 +245,12 @@ const KioskPage: React.FC = () => {
             <CarOutlined />
           </div>
           <div>
-            <Title level={3} className="kiosk-header-title" style={{color: 'white'}}>
+            <Title level={3} className="kiosk-header-title" style={{ color: 'white' }}>
               HỆ THỐNG KIỂM SOÁT BÃI ĐỖ XE
             </Title>
-            <Text className="kiosk-header-subtitle" style={{color: 'white'}}>Kiosk Bảo Vệ - Cổng Số 1</Text>
+            <Text className="kiosk-header-subtitle" style={{ color: 'white' }}>
+              Kiosk Bảo Vệ - Cổng Số 1
+            </Text>
           </div>
         </div>
         <Space size="large">
@@ -302,7 +304,8 @@ const KioskPage: React.FC = () => {
                   target.style.display = 'none'
                   const parent = target.parentElement
                   if (parent) {
-                    parent.innerHTML = '<div style="color: #666; font-size: 16px;">Đang kết nối camera...</div>'
+                    parent.innerHTML =
+                      '<div style="color: #666; font-size: 16px;">Đang kết nối camera...</div>'
                   }
                 }}
               />
@@ -336,7 +339,7 @@ const KioskPage: React.FC = () => {
               ) : (
                 <div className="kiosk-snapshot-placeholder">
                   <CameraOutlined className="kiosk-snapshot-placeholder-icon" />
-                  <Text style={{color: 'white'}}>Chờ tín hiệu quét thẻ...</Text>
+                  <Text style={{ color: 'white' }}>Chờ tín hiệu quét thẻ...</Text>
                 </div>
               )}
             </Card>
@@ -345,7 +348,11 @@ const KioskPage: React.FC = () => {
           {/* Cột phải: Thông tin & Hành động */}
           <Col span={8}>
             <Card
-              title={<Text strong className="kiosk-transaction-title">THÔNG TIN GIAO DỊCH</Text>}
+              title={
+                <Text strong className="kiosk-transaction-title">
+                  THÔNG TIN GIAO DỊCH
+                </Text>
+              }
               className="kiosk-transaction-card"
               styles={{
                 body: {
@@ -363,7 +370,10 @@ const KioskPage: React.FC = () => {
                   {mode === 'CHECK_OUT' && <LogoutOutlined />}
                   {mode === 'IDLE' && <ScanOutlined />}
                 </div>
-                <Title level={3} className={`kiosk-status-title ${mode.toLowerCase().replace('_', '-')}`}>
+                <Title
+                  level={3}
+                  className={`kiosk-status-title ${mode.toLowerCase().replace('_', '-')}`}
+                >
                   {message}
                 </Title>
               </div>
