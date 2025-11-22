@@ -1,0 +1,273 @@
+.page-header__title {
+  margin-bottom: 0.4vh;
+}
+
+.area-card--single,
+.area-card--empty {
+  margin-top: 2.4vh;
+}
+
+.area-card__content {
+  width: 100%;
+}
+
+.area-card__title {
+  margin: 0 !important;
+}
+
+.area-card__map-button {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.2vh;
+}
+.parking-lot-page {
+  padding: 2.4vh;
+  background: #f7f9fb;
+  min-height: 100%;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.6vh;
+  margin-bottom: 2.4vh;
+}
+
+.overview-grid .stat-card {
+  border-radius: 1.6vh;
+  box-shadow: 0 0.8vh 2.4vh rgba(15, 23, 42, 0.08);
+  background: #fff;
+  min-height: 12vh;
+}
+
+.stat-card__icon {
+  width: 4.8vh;
+  height: 4.8vh;
+  border-radius: 1.4vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(130deg, #e0f2ff, #f4f9ff);
+  font-size: 2.4vh;
+  color: #1677ff;
+}
+
+.stat-card__value {
+  font-size: 2.8vh;
+  font-weight: 600;
+  margin-top: 0.4vh;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.stat-card__suffix {
+  font-size: 1.6vh;
+  margin-left: 0.4vh;
+  color: #94a3b8;
+}
+
+.area-card {
+  border-radius: 2vh !important;
+  box-shadow: 0 1.6vh 4vh rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+
+.area-card__media {
+  position: relative;
+  border-radius: 1.6vh;
+  overflow: hidden;
+  height: 26vh;
+  background: #000;
+}
+
+.area-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.area-card__status {
+  position: absolute;
+  top: 1.6vh;
+  left: 1.6vh;
+  border-radius: 999px;
+  padding: 0.4vh 1.6vh;
+  font-weight: 600;
+}
+
+.area-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.6vh;
+  flex-wrap: wrap;
+}
+
+.area-card__text {
+  font-size: 1.5vh;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.8vh;
+  font-weight: 500;
+}
+
+.area-card__text.compact {
+  gap: 0.4vh;
+}
+
+.area-card__progress {
+  padding: 1.6vh;
+  border-radius: 1.6vh;
+  background: #f8fbff;
+  border: 1px solid #edf2ff;
+}
+
+.area-card__progress-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8vh;
+  font-weight: 600;
+}
+
+.area-card__progress-foot {
+  margin-top: 0.8vh;
+  color: #475569;
+  font-weight: 500;
+}
+
+.capacity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.2vh;
+}
+
+.capacity-card {
+  padding: 1.2vh;
+  border-radius: 1.4vh;
+  background: #ffffff;
+  border: 1px solid #edf2ff;
+  text-align: center;
+  box-shadow: 0 0.6vh 1.8vh rgba(15, 23, 42, 0.06);
+}
+
+.capacity-card strong {
+  display: block;
+  margin-top: 0.4vh;
+  font-size: 2vh;
+  color: #0f172a;
+}
+
+.area-card__actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 1.2vh;
+  flex-wrap: wrap;
+}
+
+.policy-card-list {
+  margin-top: 2.4vh;
+  border-radius: 2vh;
+  box-shadow: 0 1.2vh 3vh rgba(15, 23, 42, 0.08);
+}
+
+.policy-card-list__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.6vh;
+}
+
+.policy-card-list__title {
+  margin: 0 ;
+}
+
+.policy-card {
+  border-radius: 1.6vh ;
+  box-shadow: 0 1vh 2.4vh rgba(15, 23, 42, 0.06);
+}
+
+.policy-card--disabled {
+  opacity: 0.7;
+  border: 2px solid #ff4d4f ;
+  background-color: #fff5f5;
+}
+
+.policy-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1vh;
+}
+
+.policy-card__name {
+  font-size: 2vh;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.policy-card__meta {
+  display: flex;
+  gap: 2vh;
+  margin: 1vh 0 1.6vh;
+  flex-wrap: wrap;
+}
+
+.policy-card__meta-value {
+  font-size: 2vh;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.policy-card__description {
+  display: block;
+  margin-top: 0.4vh;
+  color: #475569;
+}
+
+.policy-card__section {
+  margin-top: 1.6vh;
+}
+
+.policy-card__package {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.6vh;
+  margin-top: 0.8vh;
+}
+
+.policy-card__tiers {
+  margin-top: 0.8vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+}
+
+.policy-card__tier-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.6vh;
+}
+
+.policy-card__footer {
+  margin-top: 1.6vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2vh;
+}
+
+@media (max-width: 768px) {
+  .stat-card__value {
+    font-size: 2.2vh;
+  }
+
+  .area-card__media {
+    height: 20vh;
+  }
+
+  .capacity-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

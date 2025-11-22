@@ -77,7 +77,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
       }
 
       notification.error({
-        message: 'Đăng ký thất bại',
+        message: 'Đăng nhập thất bại',
         description: errorMessage,
         duration: 4.5,
       })
@@ -92,40 +92,37 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         ParkSmart
       </Title>
       <Title level={3} className="welcome-title">
-        Welcome Back!
+        Chào mừng quay lại!
       </Title>
 
       <Text className="signup-prompt">
-        Want to be an operator?{' '}
+        Muốn trở thành chủ bãi đỗ xe?{' '}
         <span onClick={onSwitchToRegister} className="signup-link">
-          Create an operator account now,
+          Tạo tài khoản chủ bãi đỗ xe ngay,
         </span>{' '}
-        it's FREE! Takes less than a minute.
+        Hoàn toàn miễn phí và chỉ mất dưới 1 phút.
       </Text>
 
       <Form form={form} name="login" onFinish={onFinish} layout="vertical" className="login-form">
         <Form.Item
           name="email"
           rules={[
-            { required: true, message: 'Please input your email!' },
-            { type: 'email', message: 'Please enter a valid email!' },
+            { required: true, message: 'Vui lòng nhập email!' },
+            { type: 'email', message: 'Email không hợp lệ!' },
           ]}
         >
           <Input
             prefix={<UserOutlined />}
-            placeholder="Email"
+            placeholder="Email đăng nhập"
             size="large"
             className="login-input"
           />
         </Form.Item>
 
-        <Form.Item
-          name="password"
-          rules={[{ required: true, message: 'Please input your password!' }]}
-        >
+        <Form.Item name="password" rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}>
           <Input.Password
             prefix={<LockOutlined />}
-            placeholder="Password"
+            placeholder="Mật khẩu"
             size="large"
             className="login-input"
           />
@@ -140,7 +137,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             className="login-button"
             block
           >
-            Login Now
+            Đăng nhập ngay
           </Button>
         </Form.Item>
       </Form>
