@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { Card, Col, Empty, Row, Skeleton, Tag, Typography } from 'antd'
+import { useMemo, useState } from 'react'
+import { Card, Col, Empty, Row, Skeleton, Switch, Tag, Typography } from 'antd'
 import { skipToken } from '@reduxjs/toolkit/query'
 import {
   CarOutlined,
@@ -34,6 +34,10 @@ interface PricingPoliciesListResponse {
 }
 
 const OperatorParkingLot: React.FC = () => {
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [isDeleted, setIsDeleted] = useState(false)
+
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const parkingLot = data?.data?.[0] ?? null
   const { data: pricingPoliciesData, isLoading: isPricingLoading } =
@@ -41,15 +45,14 @@ const OperatorParkingLot: React.FC = () => {
       parkingLot?._id
         ? {
             parkingLotId: parkingLot._id,
-            page: 1,
-            pageSize: 10,
-            isDeleted: false,
+            page,
+            pageSize,
+            isDeleted,
           }
         : skipToken
     )
   const pricingPolicies = pricingPoliciesData?.data ?? []
 
-  console.log(pricingPolicies)
 
   const summary = useMemo(() => {
     if (!parkingLot) {
@@ -131,7 +134,12 @@ const OperatorParkingLot: React.FC = () => {
       ) : (
         <>
           <ParkingLotDetails lot={parkingLot} />
-          <PricingPolicyList policies={pricingPolicies} loading={isPricingLoading} />
+          <PricingPolicyList
+            policies={pricingPolicies}
+            loading={isPricingLoading}
+            isDeleted={isDeleted}
+            onIsDeletedChange={setIsDeleted}
+          />
         </>
       )}
     </div>
@@ -141,15 +149,30 @@ const OperatorParkingLot: React.FC = () => {
 interface PricingPolicyListProps {
   policies: PricingPolicyLink[]
   loading: boolean
+  isDeleted: boolean
+  onIsDeletedChange: (isDeleted: boolean) => void
 }
 
-const PricingPolicyList: React.FC<PricingPolicyListProps> = ({ policies, loading }) => {
+const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
+  policies,
+  loading,
+  isDeleted,
+  onIsDeletedChange,
+}) => {
   return (
     <Card className="policy-card-list">
       <div className="policy-card-list__header">
         <Title level={4} className="policy-card-list__title">
           Chính sách giá
         </Title>
+        <div className="policy-card-list__controls">
+          <div>
+            <Text type="secondary" style={{ marginRight: 8 }}>
+              Hiển thị đã xóa:
+            </Text>
+            <Switch checked={isDeleted} onChange={onIsDeletedChange} />
+          </div>
+        </div>
       </div>
       {loading ? (
         <Skeleton active />
