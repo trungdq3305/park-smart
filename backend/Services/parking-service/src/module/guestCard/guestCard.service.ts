@@ -19,7 +19,6 @@ import {
   GuestCardResponseDto,
   UpdateGuestCardDto,
 } from './dto/guestCard.dto'
-import { GuestCardStatus } from './enums/guestCard.enum'
 import { MongoWriteError } from './guestCard.repository'
 import { IGuestCardRepository } from './interfaces/iguestCard.repository'
 import { IGuestCardService } from './interfaces/iguestCard.service'
@@ -126,20 +125,20 @@ export class GuestCardService implements IGuestCardService {
     const failures = safeErrors.map((err: MongoWriteError) => {
       // err.op chứa dữ liệu gốc bị lỗi
       // err.code = 11000 là lỗi trùng lặp
-      const failedItem = err.op || {}
+      const failedItem = err.op
       let reason = 'Lỗi không xác định'
 
       if (err.code === 11000) {
         // Phân tích xem trùng field nào (nfcUid hay code) dựa vào message lỗi
-        if (err.errmsg?.includes('nfcUid')) {
+        if (err.errmsg.includes('nfcUid')) {
           reason = `Trùng mã chip NFC (${failedItem.nfcUid ?? 'N/A'})`
-        } else if (err.errmsg?.includes('code')) {
+        } else if (err.errmsg.includes('code')) {
           reason = `Trùng mã định danh (${failedItem.code ?? 'N/A'})`
         } else {
           reason = 'Dữ liệu đã tồn tại (Trùng lặp)'
         }
       } else {
-        reason = err.errmsg ?? 'Lỗi lưu trữ'
+        reason = err.errmsg
       }
 
       return {
