@@ -240,9 +240,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       return _buildErrorState();
     }
 
-    return _reservations.isEmpty
-        ? _buildEmptyState()
-        : _buildReservationList();
+    return _reservations.isEmpty ? _buildEmptyState() : _buildReservationList();
   }
 
   Widget _buildErrorState() {
@@ -392,9 +390,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final parkingLot = reservation['parkingLotId'];
     final pricingPolicy = reservation['pricingPolicyId'];
     final userExpectedTime = reservation['userExpectedTime'];
-    final inventoryTimeSlot = reservation['inventoryTimeSlot'];
     final prepaidAmount = reservation['prepaidAmount'] as int?;
-    final reservationIdentifier = reservation['reservationIdentifier'];
 
     final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
@@ -704,10 +700,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     _showQRCodePopup(reservation, identifier);
   }
 
-  void _showQRCodePopup(
-    Map<String, dynamic> reservation,
-    String identifier,
-  ) {
+  void _showQRCodePopup(Map<String, dynamic> reservation, String identifier) {
     final parkingLot = reservation['parkingLotId'];
     final pricingPolicy = reservation['pricingPolicyId'];
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
@@ -985,7 +978,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                                             size: 20,
                                           ),
                                           const SizedBox(width: 8),
-                                          const Text('Đã sao chép mã định danh'),
+                                          const Text(
+                                            'Đã sao chép mã định danh',
+                                          ),
                                         ],
                                       ),
                                       backgroundColor: Colors.green.shade600,
@@ -1083,4 +1078,3 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     );
   }
 }
-
