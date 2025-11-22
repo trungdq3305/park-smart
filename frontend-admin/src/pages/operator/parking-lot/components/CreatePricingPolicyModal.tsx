@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Modal, Form, Input, InputNumber, Select, DatePicker, Button, Space } from 'antd'
+import { Modal, Form, Input, InputNumber, Select, DatePicker, TimePicker, Button, Space } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { Basis } from '../../../../types/Basis'
 import dayjs from 'dayjs'
@@ -65,9 +65,16 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
 
       // Add fields based on basis type
       if (selectedBasis?.basisName === 'TIERED') {
+        // Convert dayjs objects to HH:mm format for tiers
+        const formattedTiers = (values.tieredRateSet?.tiers || []).map((tier: any) => ({
+          fromHour: tier.fromHour ? dayjs(tier.fromHour).format('HH:mm') : '',
+          toHour: tier.toHour ? dayjs(tier.toHour).format('HH:mm') : null,
+          price: tier.price || 0,
+        }))
+        
         requestBody.pricingPolicyId.tieredRateSet = {
           name: values.tieredRateSet?.name || '',
-          tiers: values.tieredRateSet?.tiers || [],
+          tiers: formattedTiers,
         }
       } else if (selectedBasis?.basisName === 'PACKAGE') {
         requestBody.pricingPolicyId.packageRate = {
@@ -194,14 +201,25 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
                       <Form.Item
                         {...restField}
                         name={[name, 'fromHour']}
-                        rules={[{ required: true, message: 'Nhập giờ bắt đầu' }]}
+                        rules={[{ required: true, message: 'Chọn giờ bắt đầu' }]}
                       >
-                        <Input placeholder="Từ giờ (HH:mm)" style={{ width: 120 }} />
+                        <TimePicker
+                          format="HH:mm"
+                          placeholder="Từ giờ"
+                          style={{ width: 120 }}
+                          minuteStep={15}
+                        />
                       </Form.Item>
                       <Form.Item
                         {...restField}
-                        name={[name, 'toHour']}                      >
-                        <Input placeholder="Đến giờ (HH:mm)" style={{ width: 120 }} />
+                        name={[name, 'toHour']}
+                      >
+                        <TimePicker
+                          format="HH:mm"
+                          placeholder="Đến giờ (tùy chọn)"
+                          style={{ width: 120 }}
+                          minuteStep={15}
+                        />
                       </Form.Item>
                       <Form.Item
                         {...restField}
