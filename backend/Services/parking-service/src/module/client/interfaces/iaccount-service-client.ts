@@ -19,8 +19,8 @@ export interface IAccountServiceClient {
    */
   getPaymentStatusByPaymentId(
     paymentId: string,
-    userId: string,
-    status: string,
+    userId?: string,
+    status?: string,
   ): Promise<boolean>
 
   /**

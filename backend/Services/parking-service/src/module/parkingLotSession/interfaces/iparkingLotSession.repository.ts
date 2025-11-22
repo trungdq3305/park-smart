@@ -19,11 +19,11 @@ export interface IParkingLotSessionRepository {
   /**
    * (Check-out) Tìm phiên (session) đang 'ACTIVE' bằng biển số xe.
    * Dùng để xử lý khi xe ra khỏi bãi.
-   * @param plateNumber Biển số xe.
+   * @param uidCard UID của thẻ NFC.
    * @param parkingLotId ID của bãi đỗ xe (tùy chọn, để tăng tốc độ).
    */
-  findActiveSessionByPlate(
-    plateNumber: string,
+  findActiveSessionByUidCard(
+    uidCard: string,
     parkingLotId?: string,
   ): Promise<ParkingLotSession[] | null>
 
@@ -98,6 +98,11 @@ export interface IParkingLotSessionRepository {
     endTime?: Date,
     session?: ClientSession,
   ): Promise<{ data: ParkingLotSession[]; total: number }>
+
+  findById(
+    sessionId: string,
+    session?: ClientSession,
+  ): Promise<ParkingLotSession | null>
 }
 
 export const IParkingLotSessionRepository = Symbol(

@@ -2,7 +2,6 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose'
 import mongoose, { HydratedDocument } from 'mongoose'
 import { BaseEntity } from 'src/common/schema/baseEntity.schema'
 
-// 1. Import các Enum mới
 import {
   ParkingSessionStatusEnum,
   PaymentStatusEnum,
@@ -10,62 +9,70 @@ import {
 
 export type ParkingLotSessionDocument = HydratedDocument<ParkingLotSession>
 
-/**
- * Ghi lại lịch sử (log) của TẤT CẢ các xe ra/vào bãi (Xô 1, 2, và 3).
- * Dùng để quản lý 'availableSpots' và 'walkInCapacity' (Xô 3).
- */
-@Schema() // Không cần timestamps, vì đã có BaseEntity
+@Schema()
 export class ParkingLotSession extends BaseEntity {
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     default: () => new mongoose.Types.ObjectId(),
   })
-  _id: string // Theo yêu cầu của bạn
+  _id: string
 
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ParkingLot', // Khớp với 'parkingLotid'
+    ref: 'ParkingLot',
     index: true,
   })
   parkingLotId: string
 
-  // --- Liên kết Xô (Rất quan trọng) ---
+  // --- CÁC XÔ (BUCKETS) ---
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Reservation', // (Xô 2) Khớp với 'reservationid'
+    ref: 'Reservation',
     default: null,
     index: true,
   })
-  reservationId: string
+  reservationId?: string
 
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Subscription', // (Xô 1) Bổ sung
+    ref: 'Subscription',
     default: null,
     index: true,
   })
-  subscriptionId: string
-  // (Nếu cả 2 đều null -> đây là Xô 3 Vãng lai)
+  subscriptionId?: string
 
+  // ⭐️ BỔ SUNG 1: Liên kết thẻ vật lý (Quan trọng cho Xô 1 & 3)
   @Prop({
-    required: true,
-    type: String, // Khớp với 'plateNumber'
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'GuestCard',
+    default: null,
     index: true,
   })
-  plateNumber: string // Biển số xe thực tế lúc check-in
+  guestCardId?: string
+
+  // ⭐️ BỔ SUNG 2: Lưu Snapshot UID thẻ lúc quẹt (Để tra cứu nhanh mà không cần populate)
+  @Prop({ type: String, index: true })
+  nfcUid?: string
 
   @Prop({
     required: true,
-    type: Date, // Khớp với 'goInAt'
+    type: String,
+    index: true,
   })
-  checkInTime: Date // Thời gian THỰC TẾ xe vào
+  plateNumber: string // Biển số xe vào
+
+  @Prop({
+    required: true,
+    type: Date,
+  })
+  checkInTime: Date
 
   @Prop({
     type: Date,
-    default: null, // Khớp với 'goOutAt'
+    default: null,
   })
-  checkOutTime: Date // Thời gian THỰC TẾ xe ra (null = đang đỗ)
+  checkOutTime?: Date
 
   @Prop({
     required: true,
@@ -73,26 +80,43 @@ export class ParkingLotSession extends BaseEntity {
     enum: Object.values(ParkingSessionStatusEnum),
     default: ParkingSessionStatusEnum.ACTIVE,
   })
-  status: ParkingSessionStatusEnum // Bổ sung (Trạng thái vật lý)
+  status: ParkingSessionStatusEnum
 
   @Prop({
     required: true,
     type: String,
     enum: Object.values(PaymentStatusEnum),
+    default: PaymentStatusEnum.PENDING, // Mặc định là chưa thanh toán
   })
-  paymentStatus: PaymentStatusEnum // Bổ sung (Trạng thái thanh toán)
+  paymentStatus: PaymentStatusEnum
 
   @Prop({
     type: Number,
-    default: 0, // Khớp với 'amountPaid'
+    default: 0,
   })
-  amountPaid: number // Tiền đã trả (cho Xô 3 hoặc phụ thu Xô 2)
+  amountPaid: number
+
+  @Prop({
+    type: String,
+    default: null,
+    unique: true,
+    sparse: true,
+  })
+  paymentId?: string // ID thanh toán từ hệ thống bên ngoài (.NET) (nếu có)
+
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PricingPolicy',
+    default: null,
+    index: true,
+  })
+  pricingPolicyId?: string
 }
 
 export const ParkingLotSessionSchema =
   SchemaFactory.createForClass(ParkingLotSession)
 
-// Index để tìm nhanh các phiên đang ACTIVE của 1 bãi xe
+// Index phức hợp
 ParkingLotSessionSchema.index({ parkingLotId: 1, status: 1 })
-// Index để tìm nhanh xe bằng biển số
 ParkingLotSessionSchema.index({ plateNumber: 1, status: 1 })
+ParkingLotSessionSchema.index({ nfcUid: 1, status: 1 }) // Tìm session theo thẻ

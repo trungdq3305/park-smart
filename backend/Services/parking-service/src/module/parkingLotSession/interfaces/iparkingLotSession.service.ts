@@ -35,21 +35,33 @@ export interface IParkingLotSessionService {
    * 4. Tính toán tổng tiền (amount) (dùng logic Lũy kế Bậc thang nếu là TIERED).
    * 5. Trả về thông tin (số tiền, paymentId...) để Kiosk/Frontend gọi .NET service.
    * )
-   * @param plateNumber Biển số xe đang ra.
    * @param parkingLotId ID của bãi xe (để tăng tốc độ tìm).
+   * @param uidCard UID của thẻ NFC (để tìm phiên đỗ xe).
    */
-  calculateWalkInCheckoutFee(
-    plateNumber: string,
+  calculateCheckoutFee(
     parkingLotId: string,
-  ): Promise<any> // ⭐️ (Trả về DTO Chi phí)
+    pricingPolicyId: string,
+    uidCard?: string,
+    identifier?: string,
+  ): Promise<{
+    amount: number
+    sessionId: string
+    message?: string
+  }> // ⭐️ (Trả về DTO Chi phí)
 
   /**
    * (Check-out Xô 3 - Bước 2) Xác nhận thanh toán và đóng phiên.
    * (Được gọi sau khi Kiosk/Frontend xác nhận .NET service đã thanh toán).
    * @param sessionId ID của phiên (session) cần đóng.
    * @param paymentId ID thanh toán (bằng chứng) từ .NET.
+   * @param pricingPolicyId (Tùy chọn) ID của chính sách giá đã áp dụng.
    */
-  confirmWalkInCheckout(sessionId: string, paymentId: string): Promise<boolean>
+  confirmCheckout(
+    sessionId: string,
+    userId: string,
+    paymentId?: string,
+    pricingPolicyId?: string,
+  ): Promise<boolean>
 
   /**
    * (Lịch sử) Lấy tất cả các phiên đỗ xe của một người dùng (có phân trang).
@@ -85,6 +97,12 @@ export interface IParkingLotSessionService {
   getSessionDetailsWithImages(
     sessionId: string,
   ): Promise<ParkingLotSessionResponseDto & { images: any[] }> // (Trả về DTO gộp)
+
+  findActiveSession(
+    parkingLotId: string,
+    identifier?: string,
+    nfcUid?: string,
+  ): Promise<boolean>
 }
 
 export const IParkingLotSessionService = Symbol('IParkingLotSessionService')

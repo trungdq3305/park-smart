@@ -41,6 +41,21 @@ export class CheckInDto {
   @IsOptional()
   @IsString()
   description?: string
+
+  @ApiPropertyOptional({
+    description: 'UID của thẻ NFC (nếu quét được).',
+    example: '04A224B67C5280',
+  })
+  @IsOptional()
+  @IsString()
+  nfcUid?: string // UID thẻ NFC nếu có quét được
+
+  @ApiProperty({
+    description: 'File ảnh chụp biển số xe (Snapshot)',
+    type: 'string',
+    format: 'binary', // 👈 Quan trọng: Đánh dấu là file binary
+  })
+  file: any
 }
 
 export class CreateParkingSessionDto {

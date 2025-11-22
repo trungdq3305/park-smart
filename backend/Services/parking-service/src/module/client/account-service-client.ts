@@ -17,6 +17,7 @@ import {
 import { ConfigService } from '@nestjs/config' // 🔥 THÊM: Import ConfigService
 import { JwtService } from '@nestjs/jwt'
 import { AxiosError, AxiosResponse } from 'axios' // Import để gán kiểu
+import * as FormData from 'form-data'
 import { firstValueFrom } from 'rxjs'
 
 import { IAccountServiceClient } from './interfaces/iaccount-service-client'
@@ -44,13 +45,49 @@ export class AccountServiceClient implements IAccountServiceClient {
     //this.INTERNAL_AUTH_TOKEN = this.configService.get<string>('JWT_SECRET') || 'default-secret';
   }
 
-  uploadImageToImageService(
+  async uploadImageToImageService(
     fileBuffer: Buffer,
     ownerType: string,
     ownerId: string,
     description: string,
-  ): Promise<boolean> {
-    throw new Error('Method not implemented.')
+  ): Promise<any> {
+    // 1. Cập nhật URL đúng theo Swagger (/api/images/upload)
+    const url = `${this.CORE_SERVICE_BASE_URL}/api/images/upload`
+
+    // 2. Tạo FormData chuẩn cho Node.js
+    const formData = new FormData()
+    formData.append('file', fileBuffer, {
+      filename: `${ownerType}${ownerId}.jpg`, // Đặt tên file (quan trọng để server nhận diện là file)
+      contentType: 'image/jpeg',
+    })
+    formData.append('ownerType', ownerType)
+    formData.append('ownerId', ownerId)
+    formData.append('description', description ?? '')
+
+    try {
+      // 3. Gửi Request
+      const response = await firstValueFrom(
+        this.httpService.post(url, formData, {
+          headers: {
+            ...formData.getHeaders(), // Tự động sinh Content-Type: multipart/form-data; boundary=...
+            // Nếu Image Service cần Token, hãy thêm vào đây:
+            // 'Authorization': `Bearer ${token}`,
+          },
+        }),
+      )
+
+      // 4. Trả về toàn bộ object response (để bên gọi check status và lấy data)
+      // Service gọi sẽ dùng: response.data (chứa url, id)
+      return response
+    } catch (error) {
+      Logger.error(
+        `Lỗi khi gọi Image Service: ${error.message}`,
+        error.response?.data || '',
+        'AccountServiceClient',
+      )
+      // Trả về null để bên gọi biết là thất bại mà không crash app
+      return null
+    }
   }
 
   private getInternalToken(): string {
@@ -138,8 +175,8 @@ export class AccountServiceClient implements IAccountServiceClient {
 
   async getPaymentStatusByPaymentId(
     paymentId: string,
-    userId: string, // Tham số mới để so sánh
-    status: string, // Tham số mới để so sánh
+    userId?: string, // Tham số mới để so sánh
+    status?: string, // Tham số mới để so sánh
   ): Promise<boolean> {
     const url = `${this.CORE_SERVICE_BASE_URL}/operators/payments/parking/xendit-invoice-detail?paymentId=${paymentId}`
 
@@ -157,14 +194,14 @@ export class AccountServiceClient implements IAccountServiceClient {
       // 2. ⭐️ BẮT ĐẦU SO SÁNH ⭐️
 
       // 2a. So sánh Trạng thái (Status)
-      if (responseData.status !== status) {
+      if (status && responseData.status !== status) {
         throw new ConflictException(
           `Thanh toán đang ở trạng thái "${responseData.status}", không phải "${status}".`,
         )
       }
 
       // 2b. So sánh Người dùng (User ID)
-      if (responseData.userId !== userId) {
+      if (userId && responseData.userId !== userId) {
         throw new ConflictException(
           'ID người dùng của thanh toán không khớp với người dùng đang đăng nhập.',
         )
