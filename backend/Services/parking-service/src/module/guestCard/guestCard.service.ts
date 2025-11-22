@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
+ 
+ 
+ 
 import {
   ConflictException,
   Inject,
@@ -20,6 +20,7 @@ import {
   UpdateGuestCardDto,
 } from './dto/guestCard.dto'
 import { GuestCardStatus } from './enums/guestCard.enum'
+import { MongoWriteError } from './guestCard.repository'
 import { IGuestCardRepository } from './interfaces/iguestCard.repository'
 import { IGuestCardService } from './interfaces/iguestCard.service'
 import { GuestCard } from './schemas/guestCard.schema'
@@ -106,8 +107,8 @@ export class GuestCardService implements IGuestCardService {
     // 1. Chuẩn bị dữ liệu
     const cardsToInsert = cards.map((card) => ({
       ...card,
-      parkingLotId: parkingLotId,
-      status: GuestCardStatus.ACTIVE, // Default status
+      parkingLotId,
+      status: 'ACTIVE', // Default status
       createdBy: userId, // Audit info
       updatedBy: userId, // Audit info
     }))
@@ -119,19 +120,21 @@ export class GuestCardService implements IGuestCardService {
       )
 
     // 3. Xử lý danh sách lỗi để báo cáo chi tiết
-    const failures = errors.map((err) => {
+    // Đảm bảo errors là mảng trước khi map
+    const safeErrors = Array.isArray(errors) ? errors : []
+
+    const failures = safeErrors.map((err: MongoWriteError) => {
       // err.op chứa dữ liệu gốc bị lỗi
       // err.code = 11000 là lỗi trùng lặp
-      const failedItem = err.op ?? {}
+      const failedItem = err.op || {}
       let reason = 'Lỗi không xác định'
 
       if (err.code === 11000) {
         // Phân tích xem trùng field nào (nfcUid hay code) dựa vào message lỗi
-        // Message mẫu: "... index: nfcUid_1_parkingLotId_1 ..."
         if (err.errmsg?.includes('nfcUid')) {
-          reason = `Trùng mã chip NFC (${String(failedItem.nfcUid)})`
+          reason = `Trùng mã chip NFC (${failedItem.nfcUid ?? 'N/A'})`
         } else if (err.errmsg?.includes('code')) {
-          reason = `Trùng mã định danh (${String(failedItem.code)})`
+          reason = `Trùng mã định danh (${failedItem.code ?? 'N/A'})`
         } else {
           reason = 'Dữ liệu đã tồn tại (Trùng lặp)'
         }
@@ -140,18 +143,24 @@ export class GuestCardService implements IGuestCardService {
       }
 
       return {
-        nfcUid: failedItem.nfcUid,
-        code: failedItem.code,
+        nfcUid: failedItem.nfcUid ?? 'Unknown',
+        code: failedItem.code ?? 'Unknown',
         reason: reason,
       }
     })
 
     // 4. Trả về kết quả tổng hợp
+    // ⚠️ QUAN TRỌNG: Kiểm tra mảng trước khi map để tránh lỗi "map is not a function"
+    const safeSuccesses = Array.isArray(successes) ? successes : []
+
     return {
       totalRequest: cards.length,
-      successCount: successes.length,
+      successCount: safeSuccesses.length,
       failureCount: failures.length,
-      successItems: successes.map((card) => this.guestCardResponseDto(card)),
+      // 👇 SỬA TÊN HÀM: dùng mapToDto thay vì guestCardResponseDto
+      successItems: safeSuccesses.map((card) =>
+        this.guestCardResponseDto(card),
+      ),
       failures: failures,
     }
   }
