@@ -37,14 +37,15 @@ class BookingMethodCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.event_available, color: Colors.blue.shade600, size: 24),
+              Icon(
+                Icons.event_available,
+                color: Colors.blue.shade600,
+                size: 24,
+              ),
               const SizedBox(width: 8),
               const Text(
-                'Phương thức đặt chỗ',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                'Phương thức đăng ký',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -98,9 +99,7 @@ class BookingMethodCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected
-              ? color.withOpacity(0.1)
-              : Colors.grey.shade50,
+          color: isSelected ? color.withOpacity(0.1) : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? color : Colors.grey.shade300,
@@ -135,19 +134,12 @@ class BookingMethodCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               description,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
             if (isSelected) ...[
               const SizedBox(height: 8),
-              Icon(
-                Icons.check_circle,
-                color: color,
-                size: 20,
-              ),
+              Icon(Icons.check_circle, color: color, size: 20),
             ],
           ],
         ),
@@ -155,4 +147,3 @@ class BookingMethodCard extends StatelessWidget {
     );
   }
 }
-
