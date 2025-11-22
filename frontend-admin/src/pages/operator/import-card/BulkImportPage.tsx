@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import {
   Card,
   Table,
@@ -9,148 +9,138 @@ import {
   Statistic,
   notification as antdNotification,
   Modal,
-} from "antd";
-import type { TableColumnsType } from "antd";
+} from 'antd'
+import type { TableColumnsType } from 'antd'
 import {
   SaveOutlined,
   DeleteOutlined,
   ClearOutlined,
   QrcodeOutlined,
   SoundOutlined,
-} from "@ant-design/icons";
-import { io, Socket } from "socket.io-client";
-import axios from "axios";
-import Success from "../../../assets/success.mp3";
+} from '@ant-design/icons'
+import { io, Socket } from 'socket.io-client'
+import axios from 'axios'
+import Success from '../../../assets/success.mp3'
 
 // ==================== CONSTANTS ====================
 const CONFIG = {
-  PYTHON_SOCKET_URL: "http://PhamVietHoang:1836",
-  NEST_API: "http://localhost:5000/guest-cards",
-  CURRENT_PARKING_ID: "6910bdd67ed4c382df23de4e",
+  PYTHON_SOCKET_URL: 'http://PhamVietHoang:1836',
+  NEST_API: 'http://localhost:5000/guest-cards',
+  CURRENT_PARKING_ID: '6910bdd67ed4c382df23de4e',
   AUTH_TOKEN:
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YmYxYmRlNjM1NDdkYWY1OTY2NzdmZSIsImVtYWlsIjoib3BlcmF0b3JAZXhhbXBsZS5jb20iLCJwaG9uZU51bWJlciI6IjA2MzQ2MzQ4NTkiLCJyb2xlIjoiT3BlcmF0b3IiLCJvcGVyYXRvcklkIjoiNjhiZjFiZGU2MzU0N2RhZjU5NjY3N2ZmIiwiZnVsbE5hbWUiOiJzdHJpbmciLCJidXNzaW5lc3NOYW1lIjoiRU1PIENvbXAiLCJwYXltZW50RW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiZXhwIjoxNzY0NDE3Njc4LCJpc3MiOiJDb3JlU2VydmljZSIsImF1ZCI6IkFsbFNlcnZpY2VzIn0.aclveCCSjW2UOUKtoPph6K1VdGA86tDYXbHX9eNvYEA",
-} as const;
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YmYxYmRlNjM1NDdkYWY1OTY2NzdmZSIsImVtYWlsIjoib3BlcmF0b3JAZXhhbXBsZS5jb20iLCJwaG9uZU51bWJlciI6IjA2MzQ2MzQ4NTkiLCJyb2xlIjoiT3BlcmF0b3IiLCJvcGVyYXRvcklkIjoiNjhiZjFiZGU2MzU0N2RhZjU5NjY3N2ZmIiwiZnVsbE5hbWUiOiJzdHJpbmciLCJidXNzaW5lc3NOYW1lIjoiRU1PIENvbXAiLCJwYXltZW50RW1haWwiOiJ1c2VyQGV4YW1wbGUuY29tIiwiZXhwIjoxNzY0NDE3Njc4LCJpc3MiOiJDb3JlU2VydmljZSIsImF1ZCI6IkFsbFNlcnZpY2VzIn0.aclveCCSjW2UOUKtoPph6K1VdGA86tDYXbHX9eNvYEA',
+} as const
 
 const DEFAULT_VALUES = {
-  PREFIX: "CARD",
+  PREFIX: 'CARD',
   COUNTER: 1,
-} as const;
+} as const
 
 // ==================== TYPES ====================
 interface ScannedCardItem {
-  nfcUid: string;
-  code: string;
+  nfcUid: string
+  code: string
 }
 
 interface SocketNfcData {
-  identifier: string;
-  [key: string]: any;
+  identifier: string
+  [key: string]: any
 }
 
 interface BulkImportResult {
-  successCount: number;
-  failureCount: number;
-  failures?: Array<{ nfcUid: string; reason: string }>;
+  successCount: number
+  failureCount: number
+  failures?: Array<{ nfcUid: string; reason: string }>
 }
 
 // ==================== UTILITY FUNCTIONS ====================
 const generateCardCode = (prefix: string, index: number): string => {
-  return `${prefix}_${String(index).padStart(3, "0")}`;
-};
+  return `${prefix}_${String(index).padStart(3, '0')}`
+}
 
-const createBulkImportPayload = (
-  parkingLotId: string,
-  cards: ScannedCardItem[]
-) => ({
+const createBulkImportPayload = (parkingLotId: string, cards: ScannedCardItem[]) => ({
   parkingLotId,
   cards: cards.map((item) => ({
     nfcUid: item.nfcUid,
     code: item.code,
   })),
-});
+})
 
 // ==================== CUSTOM HOOKS ====================
 const useAudio = () => {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isEnabled, setIsEnabled] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [isEnabled, setIsEnabled] = useState(false)
 
   useEffect(() => {
-    audioRef.current = new Audio(Success);
-    audioRef.current.load();
-  }, []);
+    audioRef.current = new Audio(Success)
+    audioRef.current.load()
+  }, [])
 
   const enable = useCallback(async () => {
-    if (!audioRef.current) return false;
+    if (!audioRef.current) return false
 
     try {
-      audioRef.current.volume = 0.1;
-      await audioRef.current.play();
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current.volume = 1.0;
-      setIsEnabled(true);
-      return true;
+      audioRef.current.volume = 0.1
+      await audioRef.current.play()
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      audioRef.current.volume = 1.0
+      setIsEnabled(true)
+      return true
     } catch (error) {
-      console.error("Lỗi mở khóa audio:", error);
-      return false;
+      console.error('Lỗi mở khóa audio:', error)
+      return false
     }
-  }, []);
+  }, [])
 
   const play = useCallback(() => {
     if (audioRef.current && isEnabled) {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch((e) => console.error("Lỗi phát tiếng:", e));
+      audioRef.current.currentTime = 0
+      audioRef.current.play().catch((e) => console.error('Lỗi phát tiếng:', e))
     }
-  }, [isEnabled]);
+  }, [isEnabled])
 
-  return { enable, play, isEnabled };
-};
+  return { enable, play, isEnabled }
+}
 
-const useSocketConnection = (
-  onNfcScanned: (uid: string) => void,
-  isAudioEnabled: boolean
-) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+const useSocketConnection = (onNfcScanned: (uid: string) => void, isAudioEnabled: boolean) => {
+  const [isConnected, setIsConnected] = useState(false)
+  const socketRef = useRef<Socket | null>(null)
 
   useEffect(() => {
     socketRef.current = io(CONFIG.PYTHON_SOCKET_URL, {
-      transports: ["websocket"],
-    });
+      transports: ['websocket'],
+    })
 
-    socketRef.current.on("connect", () => setIsConnected(true));
-    socketRef.current.on("disconnect", () => setIsConnected(false));
-    socketRef.current.on("nfc_scanned", (data: SocketNfcData) => {
-      onNfcScanned(data.identifier);
-    });
+    socketRef.current.on('connect', () => setIsConnected(true))
+    socketRef.current.on('disconnect', () => setIsConnected(false))
+    socketRef.current.on('nfc_scanned', (data: SocketNfcData) => {
+      onNfcScanned(data.identifier)
+    })
 
     return () => {
-      socketRef.current?.disconnect();
-    };
-  }, [onNfcScanned, isAudioEnabled]);
+      socketRef.current?.disconnect()
+    }
+  }, [onNfcScanned, isAudioEnabled])
 
-  return { isConnected };
-};
+  return { isConnected }
+}
 
 // ==================== API SERVICE ====================
 const bulkImportService = {
   save: async (cards: ScannedCardItem[]): Promise<BulkImportResult> => {
-    const payload = createBulkImportPayload(CONFIG.CURRENT_PARKING_ID, cards);
-    const response = await axios.post(
-      `${CONFIG.NEST_API}/bulk`,
-      payload,
-      {
-        headers: { Authorization: `Bearer ${CONFIG.AUTH_TOKEN}` },
-      }
-    );
-    return response.data.data[0];
+    const payload = createBulkImportPayload(CONFIG.CURRENT_PARKING_ID, cards)
+    const response = await axios.post(`${CONFIG.NEST_API}/bulk`, payload, {
+      headers: { Authorization: `Bearer ${CONFIG.AUTH_TOKEN}` },
+    })
+    return response.data.data[0]
   },
-};
+}
 
 // ==================== COMPONENTS ====================
 interface WelcomeModalProps {
-  open: boolean;
-  onEnable: () => void;
+  open: boolean
+  onEnable: () => void
 }
 
 const WelcomeModal: React.FC<WelcomeModalProps> = ({ open, onEnable }) => (
@@ -161,30 +151,21 @@ const WelcomeModal: React.FC<WelcomeModalProps> = ({ open, onEnable }) => (
     maskClosable={false}
     centered
     footer={[
-      <Button
-        key="start"
-        type="primary"
-        size="large"
-        icon={<SoundOutlined />}
-        onClick={onEnable}
-      >
+      <Button key="start" type="primary" size="large" icon={<SoundOutlined />} onClick={onEnable}>
         BẮT ĐẦU QUÉT THẺ
       </Button>,
     ]}
   >
-    <p>
-      Nhấn nút bên dưới để kích hoạt hệ thống âm thanh và bắt đầu phiên làm
-      việc.
-    </p>
+    <p>Nhấn nút bên dưới để kích hoạt hệ thống âm thanh và bắt đầu phiên làm việc.</p>
   </Modal>
-);
+)
 
 interface ControlPanelProps {
-  prefix: string;
-  counter: number;
-  cardCount: number;
-  onPrefixChange: (value: string) => void;
-  onCounterChange: (value: number) => void;
+  prefix: string
+  counter: number
+  cardCount: number
+  onPrefixChange: (value: string) => void
+  onCounterChange: (value: number) => void
 }
 
 const ControlPanel: React.FC<ControlPanelProps> = ({
@@ -196,12 +177,12 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
 }) => (
   <div
     style={{
-      display: "flex",
+      display: 'flex',
       gap: 10,
       marginBottom: 20,
       padding: 15,
-      background: "#fafafa",
-      border: "1px solid #eee",
+      background: '#fafafa',
+      border: '1px solid #eee',
     }}
   >
     <Input
@@ -217,145 +198,137 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
       onChange={(e) => onCounterChange(Number(e.target.value))}
       style={{ width: 150 }}
     />
-    <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-      <Statistic
-        title="Số lượng thẻ"
-        value={cardCount}
-        valueStyle={{ fontSize: 18 }}
-      />
+    <div style={{ marginLeft: 'auto', display: 'flex', gap: 10 }}>
+      <Statistic title="Số lượng thẻ" value={cardCount} valueStyle={{ fontSize: 18 }} />
     </div>
   </div>
-);
+)
 
 // ==================== MAIN COMPONENT ====================
 const BulkImportPage: React.FC = () => {
-  const [scannedCards, setScannedCards] = useState<ScannedCardItem[]>([]);
-  const [prefix, setPrefix] = useState<string>(DEFAULT_VALUES.PREFIX);
-  const [counter, setCounter] = useState<number>(DEFAULT_VALUES.COUNTER);
-  const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(true);
+  const [scannedCards, setScannedCards] = useState<ScannedCardItem[]>([])
+  const [prefix, setPrefix] = useState<string>(DEFAULT_VALUES.PREFIX)
+  const [counter, setCounter] = useState<number>(DEFAULT_VALUES.COUNTER)
+  const [showWelcomeModal, setShowWelcomeModal] = useState<boolean>(true)
 
-  const scannedCardsRef = useRef<ScannedCardItem[]>([]);
-  const [api, contextHolder] = antdNotification.useNotification();
-  const { enable: enableAudio, play: playBeep, isEnabled: isAudioEnabled } =
-    useAudio();
+  const scannedCardsRef = useRef<ScannedCardItem[]>([])
+  const [api, contextHolder] = antdNotification.useNotification()
+  const { enable: enableAudio, play: playBeep, isEnabled: isAudioEnabled } = useAudio()
 
   // Đồng bộ ref với state
   useEffect(() => {
-    scannedCardsRef.current = scannedCards;
-  }, [scannedCards]);
+    scannedCardsRef.current = scannedCards
+  }, [scannedCards])
 
   // Xử lý mở khóa âm thanh
   const handleEnableAudio = useCallback(async () => {
-    const success = await enableAudio();
-    setShowWelcomeModal(false);
+    const success = await enableAudio()
+    setShowWelcomeModal(false)
 
     if (success) {
-      api.success({ message: "Hệ thống đã sẵn sàng!" });
+      api.success({ message: 'Hệ thống đã sẵn sàng!' })
     } else {
       api.warning({
-        message: "Chưa mở khóa được âm thanh (Trình duyệt chặn)",
-      });
+        message: 'Chưa mở khóa được âm thanh (Trình duyệt chặn)',
+      })
     }
-  }, [enableAudio, api]);
+  }, [enableAudio, api])
 
   // Xử lý khi quét thẻ NFC
   const handleNfcScanned = useCallback(
     (uid: string) => {
       // Kiểm tra trùng lặp
-      const isDuplicate = scannedCardsRef.current.some((c) => c.nfcUid === uid);
+      const isDuplicate = scannedCardsRef.current.some((c) => c.nfcUid === uid)
       if (isDuplicate) {
         api.warning({
-          message: "Thẻ này vừa quét rồi!",
+          message: 'Thẻ này vừa quét rồi!',
           description: `UID: ${uid}`,
-          placement: "topRight",
+          placement: 'topRight',
           duration: 2,
-        });
-        return;
+        })
+        return
       }
 
       // Phát âm thanh và thêm thẻ mới
-      playBeep();
+      playBeep()
 
-      const currentLength = scannedCardsRef.current.length;
-      const newIndex = currentLength + counter;
-      const codeName = generateCardCode(prefix, newIndex);
+      const currentLength = scannedCardsRef.current.length
+      const newIndex = currentLength + counter
+      const codeName = generateCardCode(prefix, newIndex)
 
       api.success({
-        message: "Đã quét thẻ mới",
+        message: 'Đã quét thẻ mới',
         description: `${codeName}`,
-        placement: "bottomRight",
+        placement: 'bottomRight',
         duration: 1.5,
-      });
+      })
 
-      setScannedCards((prev) => [
-        { nfcUid: uid, code: codeName },
-        ...prev,
-      ]);
+      setScannedCards((prev) => [{ nfcUid: uid, code: codeName }, ...prev])
     },
     [prefix, counter, playBeep, api]
-  );
+  )
 
   // Kết nối socket
-  const { isConnected } = useSocketConnection(handleNfcScanned, isAudioEnabled);
+  const { isConnected } = useSocketConnection(handleNfcScanned, isAudioEnabled)
 
   // Xử lý lưu dữ liệu
   const handleSave = useCallback(async () => {
-    if (scannedCards.length === 0) return;
+    if (scannedCards.length === 0) return
 
     try {
-      const result = await bulkImportService.save(scannedCards);
+      const result = await bulkImportService.save(scannedCards)
 
       if (result.failureCount > 0) {
         api.warning({
           message: `Hoàn tất một phần`,
           description: `Thành công: ${result.successCount}. Thất bại: ${result.failureCount}. Xem console để biết chi tiết lỗi.`,
           duration: 5,
-        });
-        console.table(result.failures);
+        })
+        console.table(result.failures)
       } else {
         api.success({
           message: `Nhập kho thành công toàn bộ ${result.successCount} thẻ!`,
-        });
+        })
       }
 
-      setScannedCards([]);
+      setScannedCards([])
     } catch (err: any) {
       api.error({
-        message: "Lỗi hệ thống",
-        description: err.response?.data?.message || "Không thể kết nối Server",
-      });
+        message: 'Lỗi hệ thống',
+        description: err.response?.data?.message || 'Không thể kết nối Server',
+      })
     }
-  }, [scannedCards, api]);
+  }, [scannedCards, api])
 
   // Xử lý xóa thẻ
   const handleDeleteCard = useCallback((nfcUid: string) => {
-    setScannedCards((prev) => prev.filter((c) => c.nfcUid !== nfcUid));
-  }, []);
+    setScannedCards((prev) => prev.filter((c) => c.nfcUid !== nfcUid))
+  }, [])
 
   // Xử lý xóa hết
   const handleClearAll = useCallback(() => {
-    setScannedCards([]);
-  }, []);
+    setScannedCards([])
+  }, [])
 
   // Định nghĩa columns cho table
   const columns: TableColumnsType<ScannedCardItem> = [
     {
-      title: "STT",
+      title: 'STT',
       render: (_, __, i) => scannedCards.length - i,
       width: 60,
     },
     {
-      title: "UID (Chip)",
-      dataIndex: "nfcUid",
+      title: 'UID (Chip)',
+      dataIndex: 'nfcUid',
       render: (t: string) => <Tag color="blue">{t}</Tag>,
     },
     {
-      title: "Mã định danh",
-      dataIndex: "code",
+      title: 'Mã định danh',
+      dataIndex: 'code',
       render: (t: string) => <b>{t}</b>,
     },
     {
-      title: "Xóa",
+      title: 'Xóa',
       render: (_, record) => (
         <Button
           danger
@@ -365,10 +338,10 @@ const BulkImportPage: React.FC = () => {
         />
       ),
     },
-  ];
+  ]
 
   return (
-    <div style={{ padding: 20, background: "#f0f2f5", minHeight: "100vh" }}>
+    <div style={{ padding: 20, background: '#f0f2f5', minHeight: '100vh' }}>
       {contextHolder}
 
       <WelcomeModal open={showWelcomeModal} onEnable={handleEnableAudio} />
@@ -380,11 +353,7 @@ const BulkImportPage: React.FC = () => {
           </span>
         }
         extra={
-          isConnected ? (
-            <Tag color="success">Scanner Online</Tag>
-          ) : (
-            <Tag color="error">Offline</Tag>
-          )
+          isConnected ? <Tag color="success">Scanner Online</Tag> : <Tag color="error">Offline</Tag>
         }
       >
         <ControlPanel
@@ -406,8 +375,8 @@ const BulkImportPage: React.FC = () => {
         <div
           style={{
             marginTop: 20,
-            display: "flex",
-            justifyContent: "flex-end",
+            display: 'flex',
+            justifyContent: 'flex-end',
             gap: 10,
           }}
         >
@@ -426,7 +395,7 @@ const BulkImportPage: React.FC = () => {
         </div>
       </Card>
     </div>
-  );
-};
+  )
+}
 
-export default BulkImportPage;
+export default BulkImportPage

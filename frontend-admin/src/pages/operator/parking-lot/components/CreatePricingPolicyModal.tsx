@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Modal, Form, Input, InputNumber, Select, DatePicker, TimePicker, Button, Space } from 'antd'
+import {
+  Modal,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  DatePicker,
+  TimePicker,
+  Button,
+  Space,
+} from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { Basis } from '../../../../types/Basis'
 import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
@@ -34,10 +44,10 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
       if (isEditMode && initialData) {
         const policy = initialData.pricingPolicyId
         const basis = policy.basisId
-        
+
         // Set basis first
         setSelectedBasis(basis)
-        
+
         // Prepare form values
         const formValues: any = {
           basisId: basis._id,
@@ -51,7 +61,9 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
           formValues.tieredRateSet = {
             name: policy.tieredRateSetId.name,
             tiers: policy.tieredRateSetId.tiers.map((tier) => ({
-              fromHour: tier.fromHour ? dayjs(`2000-01-01 ${tier.fromHour}`, 'YYYY-MM-DD HH:mm') : null,
+              fromHour: tier.fromHour
+                ? dayjs(`2000-01-01 ${tier.fromHour}`, 'YYYY-MM-DD HH:mm')
+                : null,
               toHour: tier.toHour ? dayjs(`2000-01-01 ${tier.toHour}`, 'YYYY-MM-DD HH:mm') : null,
               price: tier.price,
             })),
@@ -92,7 +104,7 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
-      
+
       // Format startDate
       const startDate = values.startDate
         ? dayjs(values.startDate).toISOString()
@@ -117,7 +129,7 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
           toHour: tier.toHour ? dayjs(tier.toHour).format('HH:mm') : null,
           price: tier.price || 0,
         }))
-        
+
         requestBody.pricingPolicyId.tieredRateSet = {
           name: values.tieredRateSet?.name || '',
           tiers: formattedTiers,
@@ -172,7 +184,9 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
             showSearch
             optionFilterProp="children"
             filterOption={(input, option) =>
-              String(option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+              String(option?.label ?? '')
+                .toLowerCase()
+                .includes(input.toLowerCase())
             }
           >
             {basisList.map((basis) => (
@@ -197,7 +211,12 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
           rules={[{ required: true, message: 'Vui lòng nhập mức ưu tiên' }]}
           initialValue={1}
         >
-          <InputNumber min={1} max={10} placeholder="Nhập mức ưu tiên (1-10)" style={{ width: '100%' }} />
+          <InputNumber
+            min={1}
+            max={10}
+            placeholder="Nhập mức ưu tiên (1-10)"
+            style={{ width: '100%' }}
+          />
         </Form.Item>
 
         <Form.Item
@@ -277,10 +296,7 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
                           minuteStep={15}
                         />
                       </Form.Item>
-                      <Form.Item
-                        {...restField}
-                        name={[name, 'toHour']}
-                      >
+                      <Form.Item {...restField} name={[name, 'toHour']}>
                         <TimePicker
                           format="HH:mm"
                           placeholder="Đến giờ (tùy chọn)"
@@ -309,12 +325,7 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
                     </Space>
                   ))}
                   <Form.Item>
-                    <Button
-                      type="dashed"
-                      onClick={() => add()}
-                      block
-                      icon={<PlusOutlined />}
-                    >
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
                       Thêm khung giờ
                     </Button>
                   </Form.Item>
@@ -351,11 +362,7 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
               label="Thời lượng"
               rules={[{ required: true, message: 'Vui lòng nhập thời lượng' }]}
             >
-              <InputNumber
-                placeholder="Nhập thời lượng"
-                min={1}
-                style={{ width: '100%' }}
-              />
+              <InputNumber placeholder="Nhập thời lượng" min={1} style={{ width: '100%' }} />
             </Form.Item>
             <Form.Item
               name={['packageRate', 'unit']}
@@ -411,4 +418,3 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
 }
 
 export default CreatePricingPolicyModal
-

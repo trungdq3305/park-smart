@@ -70,8 +70,10 @@ const OperatorParkingLot: React.FC = () => {
   const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
   const basis = basisData?.data ?? []
 
-  const [createPricingPolicyLink, { isLoading: isCreatePricingLoading }] = useCreatePricingPolicyLinkMutation()
-  const [deletePricingPolicyLink, { isLoading: isDeletePricingLoading }] = useDeletePricingPolicyLinkMutation()
+  const [createPricingPolicyLink, { isLoading: isCreatePricingLoading }] =
+    useCreatePricingPolicyLinkMutation()
+  const [deletePricingPolicyLink, { isLoading: isDeletePricingLoading }] =
+    useDeletePricingPolicyLinkMutation()
 
   const pricingPolicies = pricingPoliciesData?.data ?? []
 
@@ -101,12 +103,12 @@ const OperatorParkingLot: React.FC = () => {
     try {
       // Tạo mới pricing policy với dữ liệu đã chỉnh sửa
       await createPricingPolicyLink(values).unwrap()
-      
+
       // Tự động disable pricing policy cũ bằng cách delete
       if (selectedPolicyForEdit?._id) {
         await deletePricingPolicyLink(selectedPolicyForEdit._id).unwrap()
       }
-      
+
       message.success('Cập nhật chính sách giá thành công')
       setIsEditModalOpen(false)
       setSelectedPolicyForEdit(null)
@@ -119,7 +121,6 @@ const OperatorParkingLot: React.FC = () => {
     setSelectedPolicyForEdit(policy)
     setIsEditModalOpen(true)
   }
-
 
   const summary = useMemo(() => {
     if (!parkingLot) {
