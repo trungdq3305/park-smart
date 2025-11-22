@@ -11,7 +11,7 @@ import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parki
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
-import { useGetPricingPoliciesOperatorQuery } from '../../../features/operator/pricingPolicyAPI'
+import { useCreatePricingPolicyLinkMutation, useGetPricingPoliciesOperatorQuery } from '../../../features/operator/pricingPolicyAPI'
 import ParkingLotDetails from './components/ParkingLotDetails'
 import StatCard from './components/StatCard'
 import PricingPolicyList from './components/PricingPolicyList'
@@ -51,6 +51,8 @@ const OperatorParkingLot: React.FC = () => {
           }
         : skipToken
     )
+  const [createPricingPolicyLink, { isLoading: isCreatePricingLoading }] = useCreatePricingPolicyLinkMutation()
+  
   const pricingPolicies = pricingPoliciesData?.data ?? []
 
   const handleIsDeletedChange = (newValue: boolean) => {

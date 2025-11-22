@@ -11,7 +11,16 @@ export const pricingPolicyAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['pricingPolicy'],
     }),
+    createPricingPolicyLink: builder.mutation({
+      query: (pricingPolicyLink) => ({
+        url: '/parking/parking-lot-links',
+        method: 'POST',
+        body: pricingPolicyLink,
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['pricingPolicy'],
+    }),
   }),
 })
 
-export const { useGetPricingPoliciesOperatorQuery } = pricingPolicyAPI
+export const { useGetPricingPoliciesOperatorQuery, useCreatePricingPolicyLinkMutation } = pricingPolicyAPI
