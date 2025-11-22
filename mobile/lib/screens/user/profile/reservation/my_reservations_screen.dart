@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../services/reservation_service.dart';
+import '../../../../services/parking_lot_service.dart';
 import '../../../../widgets/app_scaffold.dart';
 
 class MyReservationsScreen extends StatefulWidget {
@@ -20,6 +21,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   int _currentPage = 1;
   int _pageSize = 10;
   bool _hasMore = true;
+  final Map<String, Map<String, dynamic>> _parkingLotCache = {};
 
   @override
   void initState() {
@@ -50,6 +52,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       );
 
       final newReservations = _parseReservationResponse(response);
+
+      // Enrich reservations with parking lot details if needed
+      await _enrichReservationsWithParkingLotDetails(newReservations);
 
       setState(() {
         if (loadMore) {
@@ -143,6 +148,43 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         response['totalItems'] ?? response['total'] ?? response['totalCount'];
     if (total is int) return total;
     return null;
+  }
+
+  /// Enrich reservations with parking lot details if parkingLotId only has _id
+  Future<void> _enrichReservationsWithParkingLotDetails(
+    List<Map<String, dynamic>> reservations,
+  ) async {
+    for (var reservation in reservations) {
+      final parkingLot = reservation['parkingLotId'];
+      if (parkingLot == null) continue;
+
+      // Check if parking lot already has name (already populated)
+      if (parkingLot['name'] != null) continue;
+
+      // Get parking lot ID
+      final parkingLotId =
+          parkingLot['_id']?.toString() ?? parkingLot['id']?.toString();
+      if (parkingLotId == null) continue;
+
+      // Check cache first
+      if (_parkingLotCache.containsKey(parkingLotId)) {
+        reservation['parkingLotId'] = _parkingLotCache[parkingLotId];
+        continue;
+      }
+
+      // Fetch parking lot details
+      try {
+        final parkingLotDetails = await ParkingLotService.getParkingLotById(
+          parkingLotId,
+        );
+        final parkingLotData = parkingLotDetails['data'] ?? parkingLotDetails;
+        _parkingLotCache[parkingLotId] = parkingLotData;
+        reservation['parkingLotId'] = parkingLotData;
+      } catch (e) {
+        print('⚠️ Failed to fetch parking lot details for $parkingLotId: $e');
+        // Keep original parkingLotId if fetch fails
+      }
+    }
   }
 
   String _formatDate(String? dateString) {
@@ -392,7 +434,30 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final userExpectedTime = reservation['userExpectedTime'];
     final prepaidAmount = reservation['prepaidAmount'] as int?;
 
-    final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
+    // Extract parking lot name and address
+    final parkingLotName =
+        parkingLot?['name'] ??
+        parkingLot?['payload']?['name'] ??
+        'Không xác định';
+
+    // Extract address
+    final addressId =
+        parkingLot?['addressId'] ?? parkingLot?['payload']?['addressId'];
+    String? addressText;
+    if (addressId is Map) {
+      final street = addressId['street'] ?? '';
+      final ward = addressId['ward'] ?? '';
+      final district = addressId['district'] ?? '';
+      final city = addressId['city'] ?? '';
+      final parts = [
+        street,
+        ward,
+        district,
+        city,
+      ].where((part) => part.isNotEmpty).toList();
+      addressText = parts.isNotEmpty ? parts.join(', ') : null;
+    }
+
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
 
     return InkWell(
@@ -470,26 +535,48 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 16,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                parkingLotName,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w500,
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    parkingLotName,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
+                            if (addressText != null &&
+                                addressText.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 20),
+                                child: Text(
+                                  addressText,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ],
@@ -704,7 +791,29 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final parkingLot = reservation['parkingLotId'];
     final pricingPolicy = reservation['pricingPolicyId'];
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
-    final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
+    final parkingLotName =
+        parkingLot?['name'] ??
+        parkingLot?['payload']?['name'] ??
+        'Không xác định';
+
+    // Extract address
+    final addressId =
+        parkingLot?['addressId'] ?? parkingLot?['payload']?['addressId'];
+    String? addressText;
+    if (addressId is Map) {
+      final street = addressId['street'] ?? '';
+      final ward = addressId['ward'] ?? '';
+      final district = addressId['district'] ?? '';
+      final city = addressId['city'] ?? '';
+      final parts = [
+        street,
+        ward,
+        district,
+        city,
+      ].where((part) => part.isNotEmpty).toList();
+      addressText = parts.isNotEmpty ? parts.join(', ') : null;
+    }
+
     final userExpectedTime = reservation['userExpectedTime'];
 
     showDialog(
@@ -835,24 +944,46 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Row(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 16,
-                                color: Colors.green.shade600,
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 16,
+                                    color: Colors.green.shade600,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      parkingLotName,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.green.shade800,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  parkingLotName,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.green.shade800,
-                                    fontWeight: FontWeight.w500,
+                              if (addressText != null &&
+                                  addressText.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 24),
+                                  child: Text(
+                                    addressText,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                           if (userExpectedTime != null) ...[
