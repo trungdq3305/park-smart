@@ -14,6 +14,9 @@ export class ParkingLot extends BaseEntity {
   })
   _id: string
 
+  @Prop({ required: true, type: String })
+  name: string
+
   @Prop({
     required: true,
     type: mongoose.Schema.Types.ObjectId,
@@ -23,15 +26,6 @@ export class ParkingLot extends BaseEntity {
 
   @Prop({ required: true, type: String })
   parkingLotOperatorId: string
-
-  @Prop({ required: false, type: String })
-  openTime: string
-
-  @Prop({ required: false, type: String })
-  closeTime: string
-
-  @Prop({ required: false, type: Boolean })
-  is24Hours: boolean
 
   @Prop({ required: true, type: Number })
   totalCapacityEachLevel: number
@@ -77,6 +71,12 @@ export class ParkingLot extends BaseEntity {
     default: 3, // Giả định mặc định là 3 giờ
   })
   bookingSlotDurationHours: number
+
+  @Prop({ default: 0, index: true })
+  displayAvailableSpots: number
+
+  @Prop({ required: true, type: String, unique: true })
+  secretKey: string
 }
 
 export const ParkingLotSchema = SchemaFactory.createForClass(ParkingLot)

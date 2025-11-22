@@ -7,13 +7,14 @@ import {
 } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
 import { plainToInstance } from 'class-transformer'
-import { Connection } from 'mongoose'
+import { ClientSession, Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
 
-import { IPackageRateRepository } from '../packageRate/interfaces/ipackageRate.repository'
-import { ITieredRateSetRepository } from '../tieredRateSet/interfaces/itieredRateSet.repository'
+import { IBasisRepository } from '../basis/interfaces/ibasis.repository'
+import { IPackageRateService } from '../packageRate/interfaces/ipackageRate.service'
+import { ITieredRateSetService } from '../tieredRateSet/interfaces/itieredRateSet.service'
 // Import các DTOs liên quan đến PricingPolicy
 import {
   CreatePricingPolicyDto,
@@ -28,12 +29,56 @@ export class PricingPolicyService implements IPricingPolicyService {
   constructor(
     @Inject(IPricingPolicyRepository)
     private readonly pricingPolicyRepository: IPricingPolicyRepository,
-    @Inject(ITieredRateSetRepository)
-    private readonly tieredRateSetRepository: ITieredRateSetRepository,
-    @Inject(IPackageRateRepository)
-    private readonly packageRateRepository: IPackageRateRepository,
+    @Inject(ITieredRateSetService)
+    private readonly tieredRateSetService: ITieredRateSetService,
+    @Inject(IPackageRateService)
+    private readonly packageRateService: IPackageRateService,
+    @Inject(IBasisRepository)
+    private readonly basisRepository: IBasisRepository,
     @InjectConnection() private readonly connection: Connection,
   ) {}
+
+  async softDeletePolicyWithCascade(
+    policyId: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<void> {
+    // 1. Tìm Policy để lấy ID của các RateSets con
+    const policy = await this.pricingPolicyRepository.findPolicyById(policyId) // Bạn cần đảm bảo repo có hàm findById
+
+    if (!policy) {
+      // Nếu không tìm thấy policy thì thôi, không cần lỗi, coi như đã xóa
+      return
+    }
+
+    // 2. Xóa TieredRateSet (nếu có)
+    if (policy.tieredRateSetId) {
+      await this.tieredRateSetService.softDelete(
+        // Giả sử bạn đã có hàm softDelete bên service này
+        policy.tieredRateSetId,
+        userId,
+        session, // Truyền session
+      )
+    }
+
+    // 3. Xóa PackageRate (nếu có)
+    if (policy.packageRateId) {
+      await this.packageRateService.softDelete(
+        // Giả sử bạn đã có hàm softDelete bên service này
+        policy.packageRateId,
+        userId,
+        session, // Truyền session
+      )
+    }
+
+    // 4. Xóa chính Policy
+    await this.pricingPolicyRepository.softDeletePolicy(
+      // Hàm softDelete của repo policy
+      policyId,
+      userId,
+      session,
+    )
+  }
 
   private returnToPricingPolicyResponseDto(data: PricingPolicy) {
     return plainToInstance(PricingPolicyResponseDto, data, {
@@ -44,77 +89,136 @@ export class PricingPolicyService implements IPricingPolicyService {
   async createPolicy(
     createDto: CreatePricingPolicyDto,
     userId: string,
+    externalSession?: ClientSession, // <--- Thêm tham số này (nhớ import ClientSession từ mongoose)
   ): Promise<PricingPolicyResponseDto> {
-    if (!createDto.tieredRateSetId && !createDto.packageRateSetId) {
-      throw new BadRequestException( // <-- 2. Thay thế
-        'Phải cung cấp ít nhất một trong hai: tieredRateSetId hoặc packageRateSetId.',
-      )
+    const basis = await this.basisRepository.findBasisById(createDto.basisId)
+    if (!basis) {
+      throw new NotFoundException('Cơ sở tính giá không tồn tại.')
     }
-    if (createDto.tieredRateSetId && createDto.packageRateSetId) {
-      throw new BadRequestException( // <-- 2. Thay thế
-        'Chỉ được cung cấp một trong hai: tieredRateSetId hoặc packageRateSetId.',
-      )
+
+    // 1. Dùng cleanData
+    const cleanData: Partial<CreatePricingPolicyDto> = { ...createDto }
+    const createData: Partial<PricingPolicy> = { ...createDto }
+
+    // 2. Logic "công tắc"
+    switch (basis.basisName) {
+      case 'HOURLY':
+        if (!cleanData.pricePerHour) {
+          throw new BadRequestException(
+            'Phải cung cấp "pricePerHour" cho cơ sở HOURLY.',
+          )
+        }
+        cleanData.fixedPrice = undefined
+        cleanData.packageRate = undefined
+        cleanData.tieredRateSet = undefined
+        break
+
+      case 'FIXED':
+        if (!cleanData.fixedPrice) {
+          throw new BadRequestException(
+            'Phải cung cấp "fixedPrice" cho cơ sở FIXED.',
+          )
+        }
+        cleanData.pricePerHour = undefined
+        cleanData.packageRate = undefined
+        cleanData.tieredRateSet = undefined
+        break
+
+      case 'PACKAGE':
+        if (!cleanData.packageRate) {
+          throw new BadRequestException(
+            'Phải cung cấp "packageRateSetId" cho cơ sở PACKAGE.',
+          )
+        }
+        cleanData.pricePerHour = undefined
+        cleanData.fixedPrice = undefined
+        cleanData.tieredRateSet = undefined
+        break
+
+      case 'TIERED':
+        if (!cleanData.tieredRateSet) {
+          throw new BadRequestException(
+            'Phải cung cấp "tieredRateSet" cho cơ sở TIERED.',
+          )
+        }
+        cleanData.pricePerHour = undefined
+        cleanData.fixedPrice = undefined
+        cleanData.packageRate = undefined
+        break
     }
-    const session = await this.connection.startSession()
-    session.startTransaction()
+
+    // 3. Xử lý Session: Dùng cái bên ngoài truyền vào hoặc tạo mới
+    const session = externalSession ?? (await this.connection.startSession())
+
+    // Chỉ start transaction nếu session này do hàm này tự tạo ra
+    if (!externalSession) {
+      session.startTransaction()
+    }
+
     try {
-      if (createDto.tieredRateSetId) {
-        const tieredSet =
-          await this.tieredRateSetRepository.findSetByIdAndCreator(
-            createDto.tieredRateSetId,
-            userId,
-          )
-        if (!tieredSet) {
-          throw new NotFoundException( // <-- 2. Thay thế
-            'Bộ giá bậc thang không tồn tại hoặc không thuộc về bạn.',
-          )
-        }
-        await this.tieredRateSetRepository.setTieredRateSetAsUsed(
-          createDto.tieredRateSetId,
-          true,
+      // 4. Dùng cleanData để kiểm tra & cập nhật trạng thái
+      if (cleanData.tieredRateSet) {
+        // Gọi service tạo set (đã dùng session chung)
+        const createdTieredSet = await this.tieredRateSetService.createSet(
+          cleanData.tieredRateSet, // Đang là Object DTO
+          userId,
           session,
         )
+
+        // ✅ CẬP NHẬT LẠI: Thay thế Object bằng ID vừa tạo
+        createData.tieredRateSetId = createdTieredSet._id
       }
-      if (createDto.packageRateSetId) {
-        const packageRateSet =
-          await this.packageRateRepository.findPackageRateByIdAndCreator(
-            createDto.packageRateSetId,
-            userId,
-          )
-        if (!packageRateSet) {
-          throw new NotFoundException( // <-- 2. Thay thế
-            'Bộ giá theo gói không tồn tại hoặc không thuộc về bạn.',
-          )
-        }
-        await this.packageRateRepository.setPackageRateInUsed(
-          createDto.packageRateSetId,
-          true,
+
+      // 5. Xử lý Package Rate (Nếu có)
+      if (cleanData.packageRate) {
+        // Gọi service tạo package (đã dùng session chung)
+        const createdPackage = await this.packageRateService.createPackageRate(
+          cleanData.packageRate, // Đang là Object DTO
+          userId,
           session,
         )
+
+        // ✅ CẬP NHẬT LẠI: Thay thế Object bằng ID vừa tạo
+        createData.packageRateId = createdPackage._id
       }
+
+      // 6. Dùng cleanData để tạo Policy
       const newPolicy = await this.pricingPolicyRepository.createPolicy(
-        createDto,
+        createData as CreatePricingPolicyDto,
         userId,
-        session,
+        session, // Dùng session chung
       )
+
       if (!newPolicy) {
-        throw new InternalServerErrorException( // <-- 2. Thay thế
+        throw new InternalServerErrorException(
           'Không thể tạo chính sách giá mới.',
         )
       }
-      await session.commitTransaction()
+
+      // Chỉ commit nếu session là nội bộ (không phải từ bên ngoài truyền vào)
+      if (!externalSession) {
+        await session.commitTransaction()
+      }
+
       return this.returnToPricingPolicyResponseDto(newPolicy)
     } catch (error) {
-      await session.abortTransaction()
+      // Chỉ abort nếu session là nội bộ
+      if (!externalSession) {
+        await session.abortTransaction()
+      }
       if (
         error instanceof BadRequestException ||
-        error instanceof NotFoundException
+        error instanceof NotFoundException ||
+        error instanceof InternalServerErrorException
       ) {
         throw error
       }
       throw new InternalServerErrorException('Lỗi khi tạo chính sách giá.')
     } finally {
-      await session.endSession()
+      // Chỉ end session nếu session là nội bộ
+      if (!externalSession) {
+        await session.endSession()
+      }
     }
   }
 
@@ -151,78 +255,8 @@ export class PricingPolicyService implements IPricingPolicyService {
     }
   }
 
-  async softDeletePolicy(id: IdDto, userId: string): Promise<boolean> {
-    const existingPolicy = await this.pricingPolicyRepository.findPolicyById(
-      id.id,
-    )
-    if (!existingPolicy) {
-      throw new NotFoundException('Không tìm thấy chính sách giá.') // <-- 2. Thay thế
-    }
-    const session = await this.connection.startSession()
-    session.startTransaction()
-    try {
-      if (existingPolicy.tieredRateSetId) {
-        const countTieredRate =
-          await this.pricingPolicyRepository.countOtherPoliciesUsingTieredRate(
-            existingPolicy.tieredRateSetId || '',
-            existingPolicy._id,
-            session,
-          )
-        if (countTieredRate === 0 && existingPolicy.tieredRateSetId) {
-          const markTieredRate =
-            await this.tieredRateSetRepository.setTieredRateSetAsUsed(
-              existingPolicy.tieredRateSetId,
-              false,
-              session,
-            )
-          if (!markTieredRate) {
-            throw new InternalServerErrorException(
-              'Đã có lỗi xảy ra khi xóa, vui lòng thử lại sau.',
-            )
-          }
-        }
-      }
-      if (existingPolicy.packageRateId) {
-        const countPackageRate =
-          await this.pricingPolicyRepository.countOtherPoliciesUsingPackageRate(
-            existingPolicy.packageRateId || '',
-            existingPolicy._id,
-            session,
-          )
-        if (countPackageRate === 0 && existingPolicy.packageRateId) {
-          const markPackageRate =
-            await this.packageRateRepository.setPackageRateInUsed(
-              existingPolicy.packageRateId,
-              false,
-              session,
-            )
-          if (!markPackageRate) {
-            throw new InternalServerErrorException(
-              'Đã có lỗi xảy ra khi xóa, vui lòng thử lại sau.',
-            )
-          }
-        }
-      }
-      const result = await this.pricingPolicyRepository.softDeletePolicy(
-        id.id,
-        userId,
-      )
-      if (!result) {
-        throw new InternalServerErrorException(
-          'Đã có lỗi xảy ra khi xóa, vui lòng thử lại sau.',
-        )
-      }
-      await session.commitTransaction()
-      return result
-    } catch (error) {
-      await session.abortTransaction()
-      if (error instanceof InternalServerErrorException) {
-        throw error
-      }
-      throw new InternalServerErrorException('Lỗi khi xóa chính sách giá.')
-    } finally {
-      await session.endSession()
-    }
+  softDeletePolicy(id: IdDto, userId: string): Promise<boolean> {
+    return this.pricingPolicyRepository.softDeletePolicy(id.id, userId)
   }
 
   async findAllPoliciesForAdmin(

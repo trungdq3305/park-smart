@@ -45,8 +45,6 @@ export interface IParkingLotService {
 
   createCreateRequest(
     createDto: CreateParkingLotDto,
-    userId: string,
-    operatorId: string,
   ): Promise<ParkingLotRequestResponseDto>
 
   // =================================================================
@@ -114,7 +112,14 @@ export interface IParkingLotService {
     change: number,
   ): Promise<boolean>
 
-  getAllRequest(): Promise<ParkingLotRequestResponseDto[]>
+  getAllRequest(
+    status: string,
+    type: string,
+  ): Promise<ParkingLotRequestResponseDto[]>
+
+  hardDeleteRequestById(id: string): Promise<boolean>
+
+  validateParkingKey(parkingId: string, secretKey: string): Promise<boolean>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

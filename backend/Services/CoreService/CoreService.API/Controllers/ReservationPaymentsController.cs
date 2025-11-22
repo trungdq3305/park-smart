@@ -3,6 +3,7 @@ using CoreService.Repository.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace CoreService.API.Controllers
 {
@@ -52,20 +53,24 @@ namespace CoreService.API.Controllers
         public class PayRequestDto
         {
             // ID của đối tượng (ReservationId, SubscriptionId, hoặc SessionId)
+            [Required]
             public string EntityId { get; set; }
 
             // Loại thanh toán, sẽ được tự động map từ string JSON sang Enum
+            [Required]
+            [EnumDataType(typeof(PaymentType), ErrorMessage = "PaymentType không hợp lệ. Chỉ chấp nhận: RES, SUB, SES, OPR.")]
             public PaymentType Type { get; set; }
 
             // Số tiền cần thanh toán
+            [Required]
             public long Amount { get; set; }
         }
         // Trong Controller
-        [HttpGet("external/{externalId}")]
+        [HttpGet("{id}")]
         //[Authorize(Roles = "Driver,Operator,Admin")]
-        public async Task<IActionResult> GetByExternalId(string externalId)
+        public async Task<IActionResult> GetById(string id)
         {
-            var pr = await _payment.GetByExternalIdAsync(externalId);
+            var pr = await _payment.GetByIdAsync(id);
             return Ok(pr);
         }
 
@@ -88,7 +93,43 @@ namespace CoreService.API.Controllers
         }
         // Trong PaymentController
         // ...
+        [HttpGet("createdBy/me/status")]
+        [Authorize(Roles = "Driver,Operator,Admin")] // Các vai trò có thể tạo invoice
+        public async Task<IActionResult> GetByCreatedByMeAndStatus([FromQuery] string status)
+        {
+            // 1. Lấy accountId của người dùng hiện tại từ token
+            var accountId = User.FindFirst("id")?.Value;
 
+            if (string.IsNullOrEmpty(accountId))
+            {
+                return Unauthorized(new { message = "Không tìm thấy Account ID trong token." });
+            }
+
+            if (string.IsNullOrEmpty(status))
+            {
+                return BadRequest(new { message = "Vui lòng cung cấp trạng thái (status) cần lọc." });
+            }
+
+            try
+            {
+                // 2. Gọi Application Layer để lấy danh sách PaymentRecord theo CreatedBy và Status
+                var records = await _payment.GetByCreatedByAndStatusAsync(accountId, status);
+
+                if (records == null || !records.Any())
+                {
+                    return NotFound(new { message = $"Không tìm thấy giao dịch nào với trạng thái '{status}' được tạo bởi bạn." });
+                }
+
+                // 3. Trả về danh sách
+                return Ok(records);
+            }
+            catch (Exception ex)
+            {
+                // Ghi log lỗi (tùy thuộc vào cấu trúc logging của bạn)
+                // Ví dụ: _logger.LogError(ex, "Lỗi khi lấy giao dịch theo trạng thái.");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi nội bộ khi xử lý yêu cầu." });
+            }
+        }
         [HttpGet("refunds/createdBy/me")] // Endpoint mới
         [Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> GetRefundsByCreatedByMe()
@@ -113,8 +154,8 @@ namespace CoreService.API.Controllers
         }
 
 
-        [HttpPost("{paymentId}/refund-by-id")] // Endpoint mới: refund theo PaymentRecord ID
-        [Authorize(Roles = "Operator,Admin")]
+        [HttpPost("refund-by-id")] // Endpoint mới: refund theo PaymentRecord ID
+        [Authorize(Roles = "Driver")]
         public async Task<IActionResult> RefundByPaymentId(
     string operatorId, string paymentId, [FromBody] RefundDto dto)
         {
@@ -153,31 +194,26 @@ namespace CoreService.API.Controllers
         //}
         [HttpGet("confirm")]
         [AllowAnonymous] // redirect từ Xendit không có auth
-        public async Task<IActionResult> Confirm(
-            [FromQuery] string operatorId,
-            [FromQuery] string reservationId
+        public async Task<IActionResult> Confirm(string paymentId
             //[FromQuery] string externalId,
             //[FromQuery] string result // "success" | "failure"
         )
         {
             // 1) Lấy payment record mới nhất theo reservation
-            var pr = await _payment.GetLatestPaymentByReservationAsync(reservationId);
+            var pr = await _payment.GetByIdAsync(paymentId);
             if (pr == null)
                 return NotFound(new { message = "No payment found for reservation" });
 
             // 2) Gọi Xendit get invoice để lấy trạng thái thật (tránh user tự sửa query)
-            var status = await _payment.GetInvoiceStatusAsync(operatorId, pr.XenditInvoiceId);
+            var status = await _payment.GetInvoiceStatusAsync(pr.OperatorId, pr.XenditInvoiceId);
 
             // 3) Map trạng thái -> cập nhật DB
             //  PENDING/PAID/SETTLED/EXPIRED/CANCELED
-            await _payment.UpdatePaymentStatusAsync(pr.XenditInvoiceId, status);
+            await _payment.UpdatePaymentStatusAsync(paymentId, status);
 
             // 4) (tuỳ chọn) chuyển hướng sang UI cuối cùng, mang theo status
-            var finalUi = $"https://parksmart.vn/pay-result" +
-                          $"?reservationId={Uri.EscapeDataString(reservationId)}" +
-                          $"&invoiceId={Uri.EscapeDataString(pr.XenditInvoiceId)}" +
-                          $"&status={Uri.EscapeDataString(status)}";
-            return Redirect(finalUi);
+
+            return Ok("Xác nhận thanh toán thành công");
         }
     }
 

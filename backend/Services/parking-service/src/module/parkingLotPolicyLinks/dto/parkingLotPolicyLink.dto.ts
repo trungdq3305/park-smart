@@ -5,13 +5,17 @@ import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
 import {
   IsDateString,
+  IsDefined,
   IsMongoId,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   Min,
+  ValidateNested,
 } from 'class-validator'
-
+import { IsAfterNow } from 'src/common/decorators/isAfterNow.decorator'
+import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
+import { CreatePricingPolicyDto } from 'src/module/pricingPolicy/dto/pricingPolicy.dto'
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies ---
 // -----------------------------------------------------------------
@@ -26,12 +30,13 @@ export class CreateParkingLotPolicyLinkDto {
   parkingLotId: string
 
   @ApiProperty({
-    description: 'ID của chính sách giá (PricingPolicy)',
-    example: '68e51c5f4745c81c82b61834',
+    description: 'Chính sách giá áp dụng (PricingPolicy)',
+    example: CreatePricingPolicyDto,
   })
-  @IsNotEmpty({ message: 'pricingPolicyId không được để trống' })
-  @IsMongoId({ message: 'pricingPolicyId phải là một MongoID' })
-  pricingPolicyId: string
+  @IsDefined({ message: 'Thông tin chính sách giá không được để trống' }) // ✅ 1. Giữ lại trường này
+  @ValidateNested()
+  @Type(() => CreatePricingPolicyDto)
+  pricingPolicyId: CreatePricingPolicyDto
 
   @ApiPropertyOptional({
     description: 'Độ ưu tiên (số nhỏ hơn ưu tiên cao hơn)',
@@ -52,21 +57,28 @@ export class CreateParkingLotPolicyLinkDto {
     {},
     { message: 'startDate phải là định dạng ngày tháng hợp lệ' },
   )
-  startDate: string
-
-  @ApiProperty({
-    description: 'Ngày kết thúc hiệu lực (ISO 8601)',
-    example: '2026-11-20T00:00:00.000Z',
+  @IsAfterTime('endDate', {
+    message: 'Ngày kết thúc phải lớn hơn ngày bắt đầu.',
   })
-  @IsNotEmpty({ message: 'endDate không được để trống' })
-  @IsDateString({}, { message: 'endDate phải là định dạng ngày tháng hợp lệ' })
-  endDate: string
+  @IsAfterNow({ message: 'Ngày bắt đầu phải là tương lai.' })
+  startDate: string
 }
 
 // Sử dụng PartialType để tạo DTO Cập nhật, tất cả các trường đều là tùy chọn
 export class UpdateParkingLotPolicyLinkDto extends PartialType(
   CreateParkingLotPolicyLinkDto,
 ) {}
+
+export class UpdateLinkEndDateDto {
+  @ApiProperty({
+    description: 'Ngày kết thúc hiệu lực (ISO 8601)',
+    example: '2025-12-31T23:59:59.000Z',
+  })
+  @IsNotEmpty({ message: 'endDate không được để trống' })
+  @IsDateString({}, { message: 'endDate phải là định dạng ngày tháng hợp lệ' })
+  @IsAfterNow({ message: 'Ngày kết thúc phải là tương lai.' })
+  endDate: string
+}
 
 // -----------------------------------------------------------------
 // --- DTO for Responses ---
@@ -89,13 +101,109 @@ class LinkedParkingLotDto {
  * DTO lồng nhau cho PricingPolicy (để hiển thị thông tin khi populate)
  */
 @Exclude()
-class LinkedPricingPolicyDto {
+class TierDto {
+  @Expose()
+  fromHour: string
+
+  @Expose()
+  toHour: string | null
+
+  @Expose()
+  price: number
+}
+
+// --- DTOs for Populated Fields ---
+
+/**
+ * DTO cho 'Basis' (Cơ sở)
+ */
+@Exclude()
+class LinkedBasisDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  basisName: string
+
+  @Expose()
+  description: string
+}
+
+/**
+ * DTO cho 'PackageRate' (Gói giá)
+ */
+@Exclude()
+class LinkedPackageRateDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  price: number
+
+  @Expose()
+  durationAmount: number
+
+  @Expose()
+  unit: string
+}
+
+/**
+ * DTO cho 'TieredRateSet' (Bộ giá bậc thang)
+ */
+@Exclude()
+class LinkedTieredRateSetDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  @Type(() => TierDto) // ⭐️ Lồng mảng DTO 'Tier' vào đây
+  tiers: TierDto[]
+}
+
+// --- DTO CHÍNH (Đã hoàn thiện) ---
+
+/**
+ * DTO cho 'PricingPolicy' (Chính sách giá)
+ * Dùng lồng bên trong 'ParkingLotPolicyLinkResponseDto'
+ */
+@Exclude()
+export class LinkedPricingPolicyDto {
   @Expose()
   @Transform(({ obj }) => obj?._id?.toString())
   _id: string
 
   @Expose()
   name: string // Giả sử PricingPolicy có trường 'name'
+
+  // --- Các trường giá trị trực tiếp ---
+  @Expose()
+  pricePerHour: number
+
+  @Expose()
+  fixedPrice: number
+
+  // --- Các trường populate (lồng nhau) ---
+
+  @Expose()
+  @Type(() => LinkedBasisDto) // ⭐️ Bổ sung
+  basisId: LinkedBasisDto
+
+  @Expose()
+  @Type(() => LinkedPackageRateDto) // ⭐️ Bổ sung
+  packageRateId: LinkedPackageRateDto | null // Có thể null
+
+  @Expose()
+  @Type(() => LinkedTieredRateSetDto) // ⭐️ Bổ sung
+  tieredRateSetId: LinkedTieredRateSetDto | null // Có thể null
 }
 
 /**

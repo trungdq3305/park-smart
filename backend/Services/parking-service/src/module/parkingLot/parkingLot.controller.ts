@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpStatus,
   Inject,
@@ -25,14 +26,10 @@ import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
-import {
-  IdDto,
-  ParkingLotIdDto,
-  ParkingLotStatusIdDto,
-  RequestIdDto,
-} from 'src/common/dto/params.dto'
+import { IdDto, ParkingLotIdDto, RequestIdDto } from 'src/common/dto/params.dto'
 import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
+import { RolesGuard } from 'src/guard/role.guard'
 
 import {
   BoundingBoxDto,
@@ -46,7 +43,7 @@ import {
   RequestStatusDto,
   ReviewRequestDto,
 } from './dto/parkingLot.dto'
-import { RequestStatus } from './enums/parkingLot.enum'
+import { RequestStatus, RequestType } from './enums/parkingLot.enum'
 import { IParkingLotService } from './interfaces/iparkingLot.service'
 
 @ApiTags('parking-lots')
@@ -126,7 +123,7 @@ export class ParkingLotController {
 
   @Get('in-bounds')
   @ApiOperation({ summary: 'Tìm các bãi đỗ xe trong một khung nhìn bản đồ' })
-  @ApiOperation({ summary: 'Tìm các bãi đỗ xe trong một khung nhìn bản đồ' })
+  //@ApiOperation({ summary: 'Tìm các bãi đỗ xe trong một khung nhìn bản đồ' })
   // --- BỔ SUNG CÁC @ApiQuery Ở ĐÂY ---
   @ApiQuery({
     name: 'bottomLeftLng',
@@ -185,21 +182,12 @@ export class ParkingLotController {
 
   // ======= Endpoints cho Quản trị viên (Admin) =======
   @Post('create-parking-lot-request')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Tạo yêu cầu tạo mới một bãi đỗ xe' })
   @ApiBody({ type: CreateParkingLotDto })
   async createCreateRequest(
     @Body() createDto: CreateParkingLotDto,
-    @GetCurrentUserId() userId: string,
-    @GetCurrenIdOfUserRole() currentIdOfUserRole: string,
   ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
-    const data = await this.parkingLotService.createCreateRequest(
-      createDto,
-      userId,
-      currentIdOfUserRole,
-    )
+    const data = await this.parkingLotService.createCreateRequest(createDto)
     return {
       data: [data],
       message: 'Tạo yêu cầu bãi đỗ xe thành công',
@@ -239,7 +227,7 @@ export class ParkingLotController {
   }
 
   @Post('send-delete-requests/:parkingLotId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Tạo yêu cầu xóa một bãi đỗ xe' })
@@ -266,7 +254,7 @@ export class ParkingLotController {
   }
 
   @Get('find-for-operator')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Lấy tất cả bãi đỗ xe của một đơn vị vận hành' })
@@ -284,14 +272,31 @@ export class ParkingLotController {
   }
 
   @Get('all-requests')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN)
-  @ApiOperation({ summary: 'Lấy tất cả yêu cầu bãi đỗ xe' })
-  async findAllRequests(): Promise<
-    ApiResponseDto<ParkingLotRequestResponseDto[]>
-  > {
-    const requests = await this.parkingLotService.getAllRequest()
+  @ApiQuery({
+    name: 'status', // ⭐️ 2. (Khuyến nghị) Đổi tên thành 'status'
+    type: String, // (Có thể giữ hoặc bỏ)
+    required: true,
+    description: 'Lọc theo trạng thái yêu cầu',
+    enum: RequestStatus, // ⭐️ 3. THÊM DÒNG NÀY (để tạo dropdown)
+    example: RequestStatus.APPROVED, // Thêm ví dụ cho rõ ràng
+  })
+  @ApiQuery({
+    name: 'type', // ⭐️ 2. (Khuyến nghị) Đổi tên thành 'type'
+    type: String, // (Có thể giữ hoặc bỏ)
+    required: true,
+    description: 'Lọc theo trạng thái yêu cầu',
+    enum: RequestType, // ⭐️ 3. THÊM DÒNG NÀY (để tạo dropdown)
+    example: RequestType.CREATE, // Thêm ví dụ cho rõ ràng
+  })
+  @ApiOperation({ summary: 'Lấy tất cả yêu cầu bãi đỗ xe cho admin' })
+  async findAllRequests(
+    @Query('status') status: RequestStatus,
+    @Query('type') type: RequestType,
+  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto[]>> {
+    const requests = await this.parkingLotService.getAllRequest(status, type)
     return {
       data: requests,
       message: 'Lấy tất cả yêu cầu bãi đỗ xe thành công',
@@ -306,10 +311,12 @@ export class ParkingLotController {
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN)
   @ApiQuery({
-    name: 'parkingLotStatusId',
-    type: String,
+    name: 'status', // ⭐️ 2. (Khuyến nghị) Đổi tên thành 'status'
+    type: String, // (Có thể giữ hoặc bỏ)
     required: true,
-    description: 'ID của trạng thái cần lọc',
+    description: 'Lọc theo trạng thái yêu cầu',
+    enum: RequestStatus, // ⭐️ 3. THÊM DÒNG NÀY (để tạo dropdown)
+    example: RequestStatus.APPROVED, // Thêm ví dụ cho rõ ràng
   })
   @ApiQuery({
     name: 'page',
@@ -326,12 +333,12 @@ export class ParkingLotController {
     example: 20,
   })
   async findAll(
-    @Query() parkingLotStatusId: ParkingLotStatusIdDto,
+    @Query('status') parkingLotStatusId: string,
     @Query() paginationQuery: PaginationQueryDto,
   ): Promise<PaginatedResponseDto<ParkingLotResponseDto>> {
     const result = await this.parkingLotService.getAllParkingLots(
       paginationQuery,
-      parkingLotStatusId.parkingLotStatusId,
+      parkingLotStatusId,
     )
     return {
       data: result.data,
@@ -495,6 +502,21 @@ export class ParkingLotController {
     return {
       data: [result],
       message: 'Xử lý yêu cầu đã duyệt và đến hạn thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
+  @Delete('/core/requests/:requestId')
+  @ApiOperation({ summary: '[CORE] Xóa vĩnh viễn một yêu cầu bãi đỗ xe' })
+  @ApiParam({ name: 'requestId', description: 'ID của yêu cầu (Request)' })
+  async hardDeleteRequestById(
+    @Param() { requestId }: RequestIdDto,
+  ): Promise<ApiResponseDto<boolean>> {
+    const result = await this.parkingLotService.hardDeleteRequestById(requestId)
+    return {
+      data: [result],
+      message: 'Xóa vĩnh viễn yêu cầu bãi đỗ xe thành công',
       statusCode: HttpStatus.OK,
       success: true,
     }

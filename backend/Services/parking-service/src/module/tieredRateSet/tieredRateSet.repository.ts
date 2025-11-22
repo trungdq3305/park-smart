@@ -23,11 +23,11 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.tieredRateSetModel
-        .find({ deletedAt: false })
+        .find({ deletedAt: null })
         .skip(skip)
         .limit(pageSize)
         .exec(),
-      this.tieredRateSetModel.countDocuments({ deletedAt: false }),
+      this.tieredRateSetModel.countDocuments({ deletedAt: null }),
     ])
     return { data, total }
   }
@@ -48,14 +48,18 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
   async createSet(
     dto: CreateTieredRateSetDto,
     userId: string,
+    session: ClientSession,
   ): Promise<TieredRateSet | null> {
     const createdSet = new this.tieredRateSetModel({
       ...dto,
       createdBy: userId,
     })
-    await createdSet.save()
-    const result = await this.tieredRateSetModel.findById(createdSet._id).exec()
-    return result
+
+    // Hàm save sẽ tự động cập nhật lại object createdSet nếu có thay đổi
+    await createdSet.save({ session })
+
+    // ✅ Trả về luôn, không cần query lại
+    return createdSet
   }
 
   async findAllSetsByCreator(
@@ -66,13 +70,13 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.tieredRateSetModel
-        .find({ createdBy: userId, deletedAt: false })
+        .find({ createdBy: userId, deletedAt: null })
         .skip(skip)
         .limit(pageSize)
         .exec(),
       this.tieredRateSetModel.countDocuments({
         createdBy: userId,
-        deletedAt: false,
+        deletedAt: null,
       }),
     ])
     return { data, total }
@@ -87,7 +91,7 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     userId: string,
   ): Promise<TieredRateSet | null> {
     return await this.tieredRateSetModel
-      .findOne({ _id: id, createdBy: userId, deletedAt: false })
+      .findOne({ _id: id, createdBy: userId, deletedAt: null })
       .lean()
       .exec()
   }
@@ -99,7 +103,7 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
   ): Promise<TieredRateSet | null> {
     return await this.tieredRateSetModel
       .findOneAndUpdate(
-        { _id: id, createdBy: userId, deletedAt: false },
+        { _id: id, createdBy: userId, deletedAt: null },
         { $set: { ...dto } },
         {
           new: true,
@@ -109,10 +113,15 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
       .exec()
   }
 
-  async softDeleteSet(id: string, userId: string): Promise<boolean> {
+  async softDeleteSet(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean> {
     const data = await this.tieredRateSetModel.updateOne(
       { _id: id, createdBy: userId, deletedAt: null },
       { $set: { deletedAt: new Date(), deletedBy: userId } },
+      { session: session ?? undefined },
     )
     return data.modifiedCount > 0
   }
@@ -122,7 +131,7 @@ export class TieredRateSetRepository implements ITieredRateSetRepository {
     userId: string,
   ): Promise<TieredRateSet | null> {
     return await this.tieredRateSetModel
-      .findOne({ name, createdBy: userId, deletedAt: false })
+      .findOne({ name, createdBy: userId, deletedAt: null })
       .lean()
       .exec()
   }

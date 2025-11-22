@@ -11,12 +11,7 @@ import {
   IsOptional,
 } from 'class-validator'
 
-// (Giả định bạn có enum này ở đâu đó)
-export enum SubscriptionStatus {
-  ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
-  CANCELLED = 'CANCELLED',
-}
+import { SubscriptionStatusEnum } from '../enums/subscription.enum'
 
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies ---
@@ -58,6 +53,16 @@ export class CreateSubscriptionDto {
   // endDate, status, isUsed, subscriptionIdentifier sẽ được set bởi server.
 }
 
+export class UpdatePaymentDto {
+  @ApiProperty({
+    example: '605e3f5f4f3e8c1d4c9f1e1b',
+    description:
+      'Mã định danh thanh toán từ hệ thống thanh toán bên thứ ba (paymentId)',
+  })
+  @IsNotEmpty({ message: 'paymentId không được để trống' })
+  paymentId: string
+}
+
 /**
  * DTO cho Admin cập nhật một Gói Thuê Bao (Subscription).
  */
@@ -75,14 +80,14 @@ export class UpdateSubscriptionDto {
 
   @ApiPropertyOptional({
     example: 'CANCELLED',
-    enum: SubscriptionStatus,
+    enum: SubscriptionStatusEnum,
     description: 'Cập nhật trạng thái (ví dụ: Hủy gói)',
   })
   @IsOptional()
-  @IsEnum(SubscriptionStatus, {
+  @IsEnum(SubscriptionStatusEnum, {
     message: 'Trạng thái phải là ACTIVE, EXPIRED, hoặc CANCELLED',
   })
-  status: SubscriptionStatus
+  status: SubscriptionStatusEnum
 }
 
 // -----------------------------------------------------------------
@@ -107,14 +112,24 @@ export class SubscribedPolicyDto {
  * (Sử dụng với ClassSerializerInterceptor)
  */
 @Exclude()
+class ParkingLotSimpleDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  name: string
+}
+
+@Exclude()
 export class SubscriptionDetailResponseDto {
   @Expose()
   @Transform(({ obj }) => obj._id.toString())
   _id: string
 
   @Expose()
-  @Transform(({ obj }) => obj.parkingLotId.toString()) // Giả sử không populate
-  parkingLotId: string
+  @Type(() => ParkingLotSimpleDto)
+  parkingLotId: ParkingLotSimpleDto
 
   /**
    * Trường pricingPolicyId đã được populate (lồng nhau)
@@ -140,4 +155,47 @@ export class SubscriptionDetailResponseDto {
 
   @Expose()
   updatedAt: Date
+
+  @Expose()
+  subscriptionIdentifier: string // Mã QR hoặc mã định danh gói
+}
+
+export class AvailabilitySlotDto {
+  // ⭐️ Sửa: Đảm bảo 'export'
+  @ApiProperty({
+    description: 'Số suất còn lại',
+    example: 5,
+  })
+  remaining: number
+
+  @ApiProperty({
+    description: 'Có thể đặt không (remaining > 0)',
+    example: true,
+  })
+  isAvailable: boolean
+}
+
+@Exclude()
+export class SubscriptionLogDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  transactionType: string
+
+  @Expose()
+  extendedUntil: number
+}
+
+@Exclude()
+export class SubscriptionIdResponseDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+}
+
+export class SubscriptionRenewalEligibilityResponseDto {
+  canRenew: boolean
+  message?: string
 }

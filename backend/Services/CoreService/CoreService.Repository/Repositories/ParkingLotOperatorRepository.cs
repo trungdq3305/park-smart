@@ -38,6 +38,8 @@ namespace CoreService.Repository.Repositories
             await _collection.DeleteOneAsync(e => e.Id == id);
         public async Task<ParkingLotOperator?> GetByAccountIdAsync(string accountId) =>
     await _collection.Find(d => d.AccountId == accountId && d.DeletedAt == null).FirstOrDefaultAsync();
+        public async Task<ParkingLotOperator?> GetByPaymentEmailAsync(string PaymentEmail) =>
+    await _collection.Find(d => d.PaymentEmail == PaymentEmail && d.DeletedAt == null).FirstOrDefaultAsync();
 
     }
 }

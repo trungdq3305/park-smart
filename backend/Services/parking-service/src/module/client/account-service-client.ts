@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-arguments */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
@@ -5,9 +6,18 @@
 // src/module/client/account-service-client.ts
 
 import { HttpService } from '@nestjs/axios'
-import { Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config' // 🔥 THÊM: Import ConfigService
 import { JwtService } from '@nestjs/jwt'
+import { AxiosError, AxiosResponse } from 'axios' // Import để gán kiểu
+import * as FormData from 'form-data'
 import { firstValueFrom } from 'rxjs'
 
 import { IAccountServiceClient } from './interfaces/iaccount-service-client'
@@ -29,10 +39,55 @@ export class AccountServiceClient implements IAccountServiceClient {
     // LẤY GIÁ TRỊ TỪ ENVIRONMENT VARIABLE
     this.CORE_SERVICE_BASE_URL =
       this.configService.get<string>('CORE_SERVICE_URL') ||
-      'http://localhost:5001'
+      'http://localhost:5001/api'
 
     // 🔥 GIẢ ĐỊNH sử dụng JWT_SECRET làm Internal Token/Key cho Service-to-Service
     //this.INTERNAL_AUTH_TOKEN = this.configService.get<string>('JWT_SECRET') || 'default-secret';
+  }
+
+  async uploadImageToImageService(
+    fileBuffer: Buffer,
+    ownerType: string,
+    ownerId: string,
+    description: string,
+  ): Promise<any> {
+    // 1. Cập nhật URL đúng theo Swagger (/api/images/upload)
+    const url = `${this.CORE_SERVICE_BASE_URL}/api/images/upload`
+
+    // 2. Tạo FormData chuẩn cho Node.js
+    const formData = new FormData()
+    formData.append('file', fileBuffer, {
+      filename: `${ownerType}${ownerId}.jpg`, // Đặt tên file (quan trọng để server nhận diện là file)
+      contentType: 'image/jpeg',
+    })
+    formData.append('ownerType', ownerType)
+    formData.append('ownerId', ownerId)
+    formData.append('description', description ?? '')
+
+    try {
+      // 3. Gửi Request
+      const response = await firstValueFrom(
+        this.httpService.post(url, formData, {
+          headers: {
+            ...formData.getHeaders(), // Tự động sinh Content-Type: multipart/form-data; boundary=...
+            // Nếu Image Service cần Token, hãy thêm vào đây:
+            // 'Authorization': `Bearer ${token}`,
+          },
+        }),
+      )
+
+      // 4. Trả về toàn bộ object response (để bên gọi check status và lấy data)
+      // Service gọi sẽ dùng: response.data (chứa url, id)
+      return response
+    } catch (error) {
+      Logger.error(
+        `Lỗi khi gọi Image Service: ${error.message}`,
+        error.response?.data || '',
+        'AccountServiceClient',
+      )
+      // Trả về null để bên gọi biết là thất bại mà không crash app
+      return null
+    }
   }
 
   private getInternalToken(): string {
@@ -118,7 +173,71 @@ export class AccountServiceClient implements IAccountServiceClient {
     }
   }
 
-  getPaymentStatusByExternalId(externalId: string): Promise<string> {
-    throw new Error('Method not implemented.')
+  async getPaymentStatusByPaymentId(
+    paymentId: string,
+    userId?: string, // Tham số mới để so sánh
+    status?: string, // Tham số mới để so sánh
+  ): Promise<boolean> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/operators/payments/parking/xendit-invoice-detail?paymentId=${paymentId}`
+
+    try {
+      // 1. Gọi API (vẫn dùng kiểu 'any' vì response có thể là lỗi hoặc success)
+      const data$ = this.httpService.get<any>(url, {
+        headers: {
+          Authorization: `Bearer ${this.getInternalToken()}`,
+        },
+      })
+
+      const response: AxiosResponse<any> = await firstValueFrom(data$)
+      const responseData = response.data // Đây là { status, amount, userId }
+
+      // 2. ⭐️ BẮT ĐẦU SO SÁNH ⭐️
+
+      // 2a. So sánh Trạng thái (Status)
+      if (status && responseData.status !== status) {
+        throw new ConflictException(
+          `Thanh toán đang ở trạng thái "${responseData.status}", không phải "${status}".`,
+        )
+      }
+
+      // 2b. So sánh Người dùng (User ID)
+      if (userId && responseData.userId !== userId) {
+        throw new ConflictException(
+          'ID người dùng của thanh toán không khớp với người dùng đang đăng nhập.',
+        )
+      }
+
+      // 3. Nếu tất cả đều khớp
+      return true
+    } catch (error) {
+      // 4. XỬ LÝ LỖI (Quan trọng)
+
+      // 4a. Ném lại các lỗi (409 Conflict) mà chúng ta chủ động ném ở trên
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error
+      }
+
+      // 4b. Xử lý lỗi 404 từ .NET service (nếu API trả về 404)
+      if (error instanceof AxiosError && error.response?.status === 404) {
+        // Dù .NET trả về { success: false } hay 404 rỗng,
+        // chúng ta đều coi là NotFoundException.
+        throw new NotFoundException(
+          `Không tìm thấy thanh toán với ID: ${paymentId}`,
+        )
+      }
+
+      // 4c. Các lỗi không mong muốn khác (lỗi mạng, 500 từ .NET...)
+      Logger.error(
+        `Lỗi khi gọi Core Service cho paymentId ${paymentId}: ${error.message}`,
+        'PaymentInternalService',
+      )
+      throw new InternalServerErrorException(
+        'Lỗi máy chủ khi xác thực thanh toán.',
+      )
+    }
   }
 }

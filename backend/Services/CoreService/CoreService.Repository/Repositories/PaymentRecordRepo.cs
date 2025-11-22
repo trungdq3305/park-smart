@@ -64,7 +64,7 @@ namespace CoreService.Repository.Repositories
                       .ToListAsync();
 
         public async Task<PaymentRecord?> GetLatestByReservationIdAsync(string reservationId) =>
-        await _col.Find(x => x.ReservationId == reservationId)
+        await _col.Find(x => x.ReservationId == reservationId || x.SubscriptionId == reservationId || x.ParkingLotSessionId == reservationId)
                   .SortByDescending(x => x.CreatedAt)
                   .FirstOrDefaultAsync();
 
@@ -77,5 +77,107 @@ namespace CoreService.Repository.Repositories
               .SortByDescending(x => x.CreatedAt)
               .Limit(take)
               .ToListAsync();
+
+        public async Task<IEnumerable<PaymentRecord>> GetByTypeAndStatusAsync(
+    string operatorId,
+    PaymentType type,
+    IEnumerable<string> statuses)
+        {
+            // Tạo bộ lọc chính
+            var filterBuilder = Builders<PaymentRecord>.Filter;
+
+            // 1. Lọc theo Operator ID
+            var filterOperator = filterBuilder.Eq(x => x.OperatorId, operatorId);
+
+            // 2. Lọc theo Payment Type (Ví dụ: Subscription)
+            var filterType = filterBuilder.Eq(x => x.PaymentType, type);
+
+            // 3. Lọc theo Status (Ví dụ: PENDING, EXPIRED)
+            // $in: Tìm các bản ghi mà trường Status nằm trong danh sách statuses
+            var filterStatus = filterBuilder.In(x => x.Status, statuses);
+
+            // Kết hợp tất cả các bộ lọc bằng AND
+            var combinedFilter = filterBuilder.And(filterOperator, filterType, filterStatus);
+
+            return await _col.Find(combinedFilter)
+                             .SortByDescending(x => x.CreatedAt)
+                             .ToListAsync();
+        }
+        public async Task<IEnumerable<PaymentRecord>> GetByCreatedByAndStatusAsync(
+    string accountId,
+    string status,
+    int take = 50)
+        {
+            // Tạo filter cho cả CreatedBy và Status
+            var filter = Builders<PaymentRecord>.Filter.Eq(x => x.CreatedBy, accountId) &
+                         Builders<PaymentRecord>.Filter.Eq(x => x.Status, status);
+
+            return await _col.Find(filter)
+                .SortByDescending(x => x.CreatedAt)
+                .Limit(take)
+                .ToListAsync();
+        }
+        public async Task<IEnumerable<PaymentRecord>> GetFilteredPaymentsAsync(
+    string? operatorId,
+    IEnumerable<PaymentType>? paymentTypes,
+    string? status,
+    DateTime? fromDate,
+    DateTime? toDate)
+        {
+            var filterBuilder = Builders<PaymentRecord>.Filter;
+            var filters = new List<FilterDefinition<PaymentRecord>>();
+
+            if (!string.IsNullOrEmpty(operatorId))
+                filters.Add(filterBuilder.Eq(x => x.OperatorId, operatorId));
+
+            if (paymentTypes != null && paymentTypes.Any())
+                filters.Add(filterBuilder.In(x => x.PaymentType, paymentTypes));
+
+            if (!string.IsNullOrEmpty(status))
+                filters.Add(filterBuilder.Eq(x => x.Status, status));
+
+            if (fromDate.HasValue)
+                filters.Add(filterBuilder.Gte(x => x.CreatedAt, fromDate.Value));
+
+            if (toDate.HasValue)
+                filters.Add(filterBuilder.Lte(x => x.CreatedAt, toDate.Value.AddDays(1).AddSeconds(-1))); // Đến cuối ngày
+
+            var combinedFilter = filters.Any() ? filterBuilder.And(filters) : filterBuilder.Empty;
+
+            return await _col.Find(combinedFilter)
+                             .SortByDescending(x => x.CreatedAt)
+                             .ToListAsync();
+        }
+
+        public async Task<long> CountFilteredPaymentsAsync(
+            string? operatorId,
+            IEnumerable<PaymentType>? paymentTypes,
+            string? status,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            // Logic tạo filter tương tự như GetFilteredPaymentsAsync
+            var filterBuilder = Builders<PaymentRecord>.Filter;
+            var filters = new List<FilterDefinition<PaymentRecord>>();
+
+            if (!string.IsNullOrEmpty(operatorId))
+                filters.Add(filterBuilder.Eq(x => x.OperatorId, operatorId));
+
+            if (paymentTypes != null && paymentTypes.Any())
+                filters.Add(filterBuilder.In(x => x.PaymentType, paymentTypes));
+
+            if (!string.IsNullOrEmpty(status))
+                filters.Add(filterBuilder.Eq(x => x.Status, status));
+
+            if (fromDate.HasValue)
+                filters.Add(filterBuilder.Gte(x => x.CreatedAt, fromDate.Value));
+
+            if (toDate.HasValue)
+                filters.Add(filterBuilder.Lte(x => x.CreatedAt, toDate.Value.AddDays(1).AddSeconds(-1))); // Đến cuối ngày
+
+            var combinedFilter = filters.Any() ? filterBuilder.And(filters) : filterBuilder.Empty;
+
+            return await _col.CountDocumentsAsync(combinedFilter);
+        }
     }
 }

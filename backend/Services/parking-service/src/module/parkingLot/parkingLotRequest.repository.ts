@@ -13,6 +13,14 @@ export class ParkingLotRequestRepository
     private parkingLotRequestModel: Model<ParkingLotRequest>,
   ) {}
 
+  async hardDeleteById(id: string, session?: ClientSession): Promise<boolean> {
+    const result = await this.parkingLotRequestModel.deleteOne(
+      { _id: id },
+      session ? { session } : {},
+    )
+    return result.deletedCount === 1
+  }
+
   async createNewRequest(
     requestData: Partial<ParkingLotRequest>,
     session: ClientSession,
@@ -103,7 +111,8 @@ export class ParkingLotRequestRepository
     }
 
     // 4. Thực thi truy vấn và trả về kết quả
-    return this.parkingLotRequestModel.find(filter).exec()
+    const data = await this.parkingLotRequestModel.find(filter).exec()
+    return data
   }
 
   async findByParkingLotId(parkingLotId: string): Promise<ParkingLotRequest[]> {
@@ -113,10 +122,16 @@ export class ParkingLotRequestRepository
       .exec()
   }
 
-  async findAllRequests(): Promise<any[]> {
+  async findAllRequests(status: string, type: string): Promise<any[]> {
     const requests = await this.parkingLotRequestModel.aggregate([
       // STAGE 0: Chuyển đổi addressId từ String sang ObjectId
       // Thêm một trường tạm thời để chứa ObjectId đã được chuyển đổi
+      {
+        $match: {
+          status: status,
+          requestType: type,
+        },
+      },
       {
         $addFields: {
           convertedAddressId: { $toObjectId: '$payload.addressId' },

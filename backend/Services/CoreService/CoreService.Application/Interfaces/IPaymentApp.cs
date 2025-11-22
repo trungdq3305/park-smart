@@ -1,4 +1,6 @@
 ﻿using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.DashboardDtos;
+using CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Application.DTOs.PaymentDtos.CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Repository.Models;
 using System;
@@ -6,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static CoreService.Application.Applications.PaymentApp;
 
 namespace CoreService.Application.Interfaces
 {
@@ -32,7 +35,41 @@ namespace CoreService.Application.Interfaces
         Task<PaymentRecord?> GetLatestPaymentByReservationAsync(string reservationId);
         Task<string> GetInvoiceStatusAsync(string operatorId, string invoiceId);
         Task UpdatePaymentStatusAsync(string invoiceId, string newStatus);
-        Task<bool> GetByExternalIdAsync(string externalId);
+        Task<PaymentRecord> GetByIdAsync(string Id);
         Task<IEnumerable<RefundRecord>> GetRefundsByCreatedByAsync(string accountId, int take = 50);
+        Task<PaymentRecord> CreateSubscriptionInvoiceAsync(
+        string operatorId, string entityId,
+        long amount, DateTime dueDate);
+
+        // Method mới để lấy các hóa đơn phí định kỳ theo trạng thái
+        Task<IEnumerable<PaymentRecord>> GetSubscriptionInvoicesByStatusAsync(
+            string operatorId, IEnumerable<string> statuses);
+        Task<string> GetOperatorAccountStatusAsync(string operatorId);
+        Task<object> GetXenditInvoiceDetailAsync(string paymentId);
+        Task<IEnumerable<PaymentRecord>> GetByCreatedByAndStatusAsync(
+        string accountId,
+        string status);
+        //    Task<IEnumerable<DriverRevenueDetailDto>> GetDriverRevenueForOperatorAsync(
+        //string operatorId, DateTime? from, DateTime? to);
+        //    Task<IEnumerable<SaasRevenueDetailDto>> GetSaasRevenueForAdminAsync(
+        //DateTime? from, DateTime? to);
+        Task<IEnumerable<OperatorPaymentDetailDto>> GetOperatorPaymentsFilteredAsync( // <--- Thay đổi kiểu trả về
+    string operatorId,
+    IEnumerable<PaymentType>? paymentTypes,
+    string? status,
+    DateTime? fromDate,
+    DateTime? toDate);
+
+        Task<PaymentTotalsDto> GetPaymentTotalsAsync(
+            string? operatorId,
+            IEnumerable<PaymentType>? paymentTypes,
+            DateTime? fromDate,
+            DateTime? toDate);
+
+        Task<IEnumerable<PaymentStatusCountDto>> GetPaymentCountByStatusAsync(
+            string? operatorId,
+            IEnumerable<PaymentType>? paymentTypes,
+            DateTime? fromDate,
+            DateTime? toDate);
     }
 }

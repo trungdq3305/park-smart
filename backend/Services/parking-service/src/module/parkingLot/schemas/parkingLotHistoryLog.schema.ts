@@ -16,6 +16,9 @@ export class ParkingLotHistoryLog extends BaseEntity {
   })
   _id: string
 
+  @Prop({ required: true, type: String })
+  name: string
+
   // Giữ lại parkingLotId để biết log này của bãi xe nào
   @Prop({
     required: true,
@@ -42,29 +45,11 @@ export class ParkingLotHistoryLog extends BaseEntity {
   requestId: string
 
   // ---- CÁC TRƯỜNG SNAPSHOT DỮ LIỆU (GIỮ NGUYÊN) ----
-  @Prop({ required: false, type: String })
-  openTime: string
-
-  @Prop({ required: false, type: String })
-  closeTime: string
-
-  @Prop({ required: false, type: Boolean })
-  is24Hours: boolean
-
-  @Prop({ required: true, type: Number })
-  maxVehicleHeight: number
-
-  @Prop({ required: true, type: Number })
-  maxVehicleWidth: number
-
   @Prop({ required: true, type: Number })
   totalCapacityEachLevel: number
 
   @Prop({ required: true, type: Number })
   totalLevel: number
-
-  @Prop({ required: true, type: Number })
-  electricCarPercentage: number
 
   // Giữ lại effectiveDate để biết thay đổi này có hiệu lực từ khi nào
   @Prop({ required: true, type: Date })

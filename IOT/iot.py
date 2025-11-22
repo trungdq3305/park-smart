@@ -2,38 +2,49 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from ultralytics import YOLO
-from typing import List
-import requests
-from pyzbar.pyzbar import decode, ZBarSymbol
 import time
 import json
+import threading
+import base64
+import requests
+import queue
+import os
+import socket # 👈 THÊM MỚI: Để chạy UDP Broadcast
+from dotenv import load_dotenv
+import socketio as sio_client_lib 
+from ultralytics import YOLO
+from pyzbar.pyzbar import decode, ZBarSymbol
+
+# Flask & SocketIO (Local Server)
+from flask import Flask, Response, request, jsonify
+from flask_socketio import SocketIO
+from flask_cors import CORS
 
 # =============================
-# 1) CONFIG
+# 0) LOAD CONFIG TỪ .ENV
 # =============================
-# --- Đường dẫn đến các mô hình đã huấn luyện ---
+load_dotenv()
+
+CLOUD_URL = os.getenv("CLOUD_URL", "http://localhost:3000") 
+PARKING_ID = os.getenv("PARKING_ID", "PARKING_01")
+SECRET_KEY = os.getenv("SECRET_KEY", "secret-key-mac-dinh")
+
 YOLO_MODEL_PATH = 'lp_detect_v4.pt'
 OCR_MODEL_PATH = 'best_ocr_model.pth'
-ESP32_ENDPOINT = "http://10.20.30.42/open" # <<<--- THAY ĐỔI ĐỊA CHỈ NÀY
 
-# --- Cài đặt 2 Camera riêng biệt ---
-# Chạy lệnh `ls /dev/video*` trên Linux/RPi hoặc thử các số khác nhau trên Windows
-QR_CAM_INDEX = "http://10.20.30.19:8081/video"      # Chỉ số của camera quét QR
-PLATE_CAM_INDEX = "http://10.20.30.168:8080/video"   # Chỉ số của camera chụp biển số
+QR_CAM_INDEX = 0 
+PLATE_CAM_URL = "http://10.20.30.7:8080/video" 
 
-# Các thông số của mô hình OCR
 IMG_HEIGHT = 64
 MAX_IMG_WIDTH = 256
 CHAR_LIST = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 BLANK_IDX = len(CHAR_LIST)
 
-# =============================
-# 2) ĐỊNH NGHĨA LẠI KIẾN TRÚC VÀ CÁC HÀM HỖ TRỢ
-# =============================
+CURRENT_ESP32_IP = None
 
-# Dán class CRNN từ tệp huấn luyện của bạn vào đây
+# =============================
+# 1) MÔ HÌNH OCR & YOLO (Giữ nguyên)
+# =============================
 class CRNN(nn.Module):
     def __init__(self, num_classes: int):
         super().__init__()
@@ -59,32 +70,26 @@ class CRNN(nn.Module):
         logits = self.fc(seq)
         return logits.permute(1, 0, 2)
 
-# Khởi tạo từ điển tra cứu
 int_to_char = {i: c for i, c in enumerate(CHAR_LIST)}
 int_to_char[BLANK_IDX] = ""
 
 def preprocess_for_ocr(img: np.ndarray) -> torch.Tensor:
-    """Tiền xử lý ảnh đã cắt cho mô hình CRNN."""
     if len(img.shape) == 3 and img.shape[2] == 3:
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     else:
         img_gray = img
-        
     h, w = img_gray.shape
     ratio = w / h
     new_w = int(IMG_HEIGHT * ratio)
     new_w = max(1, min(new_w, MAX_IMG_WIDTH))
     img_resized = cv2.resize(img_gray, (new_w, IMG_HEIGHT), interpolation=cv2.INTER_LINEAR)
-    
     canvas = np.ones((IMG_HEIGHT, MAX_IMG_WIDTH), dtype=np.uint8) * 255
     canvas[:, :new_w] = img_resized
-    
     tensor_img = torch.from_numpy(canvas.astype(np.float32) / 255.0).unsqueeze(0)
     return tensor_img.unsqueeze(0)
 
 @torch.no_grad()
 def ctc_greedy_decode(logits_TNC: torch.Tensor) -> str:
-    """Giải mã kết quả thô từ mô hình."""
     best = logits_TNC.argmax(dim=2).permute(1, 0)
     decoded_str = ""
     for seq in best:
@@ -97,134 +102,295 @@ def ctc_greedy_decode(logits_TNC: torch.Tensor) -> str:
         decoded_str = ''.join(chars)
     return decoded_str
 
-def open_barrier():
-    """Gửi lệnh mở barie đến ESP32."""
-    print("===> Gửi lệnh MỞ đến Servo Controller... <===")
-    try:
-        requests.get(ESP32_ENDPOINT, timeout=5)
-        print("Lệnh đã được gửi thành công.")
-    except requests.exceptions.RequestException as e:
-        print(f"LỖI: Không thể gửi lệnh đến ESP32: {e}")
+# =============================
+# 2) HỆ THỐNG CAMERA (Threaded)
+# =============================
+class ThreadedCamera:
+    def __init__(self, src, name="Camera"):
+        self.src = src
+        self.name = name
+        self.cap = cv2.VideoCapture(self.src)
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
+        self.grabbed, self.frame = self.cap.read()
+        self.stopped = False
+        self.lock = threading.Lock()
 
-def capture_plate_image():
-    """Hàm chuyên dụng để chụp một ảnh chất lượng cao từ camera biển số."""
-    cap = cv2.VideoCapture(PLATE_CAM_INDEX)
-    if not cap.isOpened():
-        print(f"Lỗi: Không thể mở camera biển số (index {PLATE_CAM_INDEX})")
-        return None
-    
-    time.sleep(1) # Cho camera thời gian để ổn định
-    ret, frame = cap.read()
-    cap.release()
-    
-    if ret:
-        print("--> Đã chụp ảnh biển số thành công!")
-        cv2.imwrite("last_plate_capture.jpg", frame) # Lưu lại ảnh để kiểm tra
-        return frame
-    else:
-        print("--> Lỗi: Không thể chụp ảnh từ camera biển số.")
-        return None
+    def start(self):
+        t = threading.Thread(target=self.update, args=())
+        t.daemon = True
+        t.start()
+        return self
+
+    def update(self):
+        while True:
+            if self.stopped:
+                self.cap.release()
+                return
+            
+            ret, frame = self.cap.read()
+            if not ret:
+                print(f"⚠️ [{self.name}] Mất tín hiệu. Reconnect sau 2s...")
+                self.cap.release()
+                time.sleep(2)
+                self.cap = cv2.VideoCapture(self.src)
+                continue
+            
+            with self.lock:
+                self.grabbed = ret
+                self.frame = frame
+            time.sleep(0.01)
+
+    def read(self):
+        with self.lock:
+            return self.frame.copy() if self.grabbed else None
+
+    def stop(self):
+        self.stopped = True
+
+qr_cam = ThreadedCamera(QR_CAM_INDEX, "QR_CAM").start()
+plate_cam = ThreadedCamera(PLATE_CAM_URL, "PLATE_CAM").start()
 
 # =============================
-# 3) TẢI CÁC MÔ HÌNH VÀO BỘ NHỚ
+# 3) SETUP APP & MODELS
 # =============================
+app = Flask(__name__)
+CORS(app)
+socketio_local = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Hệ thống sẽ chạy trên thiết bị: {device}")
+print(f"--> Device: {device}")
 
-# Tải mô hình YOLO detector
-model_detector = YOLO(YOLO_MODEL_PATH)
-
-# Tải mô hình CRNN recognizer đã huấn luyện
-model_recognizer = CRNN(num_classes=len(CHAR_LIST) + 1).to(device)
 try:
-    checkpoint = torch.load(OCR_MODEL_PATH, map_location=device, weights_only=True)
+    model_detector = YOLO(YOLO_MODEL_PATH)
+    model_recognizer = CRNN(num_classes=len(CHAR_LIST) + 1).to(device)
+    checkpoint = torch.load(OCR_MODEL_PATH, map_location=device)
     model_recognizer.load_state_dict(checkpoint['model_state'])
     model_recognizer.eval()
-    print("Tải mô hình OCR tùy chỉnh thành công.")
+    print("✅ Models Loaded Successfully.")
 except Exception as e:
-    print(f"LỖI: Không thể tải tệp mô hình OCR tại '{OCR_MODEL_PATH}'. Lỗi: {e}")
-    model_recognizer = None
+    print(f"❌ Model Error: {e}")
 
 # =============================
-# 4) VÒNG LẶP CHÍNH
+# 4) LOGIC AI & ĐIỀU KHIỂN BARIE
 # =============================
-def main_loop():
-    if model_recognizer is None:
-        print("Không thể khởi động do lỗi tải mô hình OCR.")
-        return
+def process_ai_detection(image_full):
+    plate_text = ""
+    try:
+        detections = model_detector(image_full, verbose=False)[0]
+        if len(detections.boxes) > 0:
+            best_box = max(detections.boxes, key=lambda b: b.conf)
+            x1, y1, x2, y2 = map(int, best_box.xyxy[0])
+            plate_crop = image_full[y1:y2, x1:x2]
+            tensor = preprocess_for_ocr(plate_crop).to(device)
+            logits = model_recognizer(tensor)
+            plate_text = ctc_greedy_decode(logits)
+            print(f"🔎 [AI] Biển số: {plate_text}")
+        else:
+            print("⚠️ [AI] Không tìm thấy biển số.")
+    except Exception as e:
+        print(f"❌ AI Error: {e}")
+    return plate_text
 
-    qr_cam = cv2.VideoCapture(QR_CAM_INDEX)
-    if not qr_cam.isOpened():
-        print(f"Lỗi: Không thể mở camera QR (index {QR_CAM_INDEX})")
-        return
+def open_barrier_physical():
+    global CURRENT_ESP32_IP
+    if CURRENT_ESP32_IP:
+        try:
+            url = f"http://{CURRENT_ESP32_IP}/open"
+            print(f"--> 🚀 Gửi lệnh mở tới ESP32: {url}")
+            
+            # Gọi ESP32
+            response = requests.get(url, timeout=2)
+            
+            # Kiểm tra mã phản hồi
+            if response.status_code == 200:
+                print("--> ✅ ESP32: Mở cổng thành công")
+                return True
+            elif response.status_code == 409:
+                print("--> ⚠️ ESP32: Cổng đang mở hoặc bận, từ chối lệnh.")
+                # Ném lỗi để API catch được
+                raise Exception("Cổng barie đang mở, vui lòng chờ xe qua!")
+            else:
+                raise Exception(f"Lỗi ESP32: Mã lỗi {response.status_code}")
 
-    print("Hệ thống đã sẵn sàng. Hãy đưa mã QR vào Camera 1...")
-    print("Nhấn 'q' trên cửa sổ camera để thoát.")
-    
-    last_qr_time = 0
+        except requests.exceptions.RequestException as e:
+            print(f"❌ Lỗi kết nối ESP32: {e}")
+            raise Exception("Không thể kết nối tới Barie (Mất mạng LAN)")
+    else:
+        print("⚠️ Chưa tìm thấy ESP32 (Chưa đăng ký IP)")
+        raise Exception("Chưa tìm thấy thiết bị Barie trong mạng")
 
+# =============================
+# 5) KẾT NỐI CLOUD (SOCKET CLIENT)
+# =============================
+sio_cloud = sio_client_lib.Client()
+
+@sio_cloud.event
+def connect():
+    print(f"✅ [CLOUD] Đã kết nối socket tới {CLOUD_URL}")
+
+@sio_cloud.event
+def disconnect():
+    print("❌ [CLOUD] Mất kết nối với Cloud!")
+
+@sio_cloud.on('connection_ack')
+def on_connection_ack(data):
+    print(f"\n✨ [CLOUD] KẾT NỐI THÀNH CÔNG! Server xác nhận:")
+    print(f"   - Status: {data.get('status')}")
+    print(f"   - Message: {data.get('message')}\n")
+
+@sio_cloud.on('open_barrier')
+def on_cloud_open_command(data):
+    print(f"📥 [CLOUD] Nhận lệnh mở cổng từ Admin: {data}")
+    open_barrier_physical()
+
+def start_cloud_socket_thread():
     while True:
-        ret, qr_frame = qr_cam.read()
-        if not ret:
-            print("Lỗi: Mất kết nối camera QR.")
-            break
+        try:
+            if not sio_cloud.connected:
+                print(f"--> ☁️ Đang kết nối Cloud {CLOUD_URL}...")
+                sio_cloud.connect(
+                    CLOUD_URL, 
+                    auth={'parkingId': PARKING_ID, 'secretKey': SECRET_KEY}
+                )
+                sio_cloud.wait()
+        except Exception as e:
+            print(f"⚠️ Lỗi Cloud: {e}. Thử lại sau 5s...")
+            time.sleep(5)
 
-        decoded_objects = decode(qr_frame, symbols=[ZBarSymbol.QRCODE])
+# =============================
+# 6) UDP DISCOVERY SERVICE (MỚI)
+# =============================
+# Thay thế hoàn toàn mDNS. Máy tính sẽ lắng nghe trên cổng 1837.
+# Khi ESP32 hỏi "WHO_IS_PARKING_SERVER", Python trả lời "I_AM_PARKING_SERVER".
+def udp_discovery_service():
+    udp_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    udp_sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    
+    # Lấy IP thật của máy tính trong mạng LAN (ví dụ 10.20.30.200)
+    # Thay vì bind '', ta bind '0.0.0.0' (nghe mọi nơi) hoặc IP cụ thể
+    try:
+        # Cách này giúp in ra xem Python đang thực sự nghe ở đâu
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        print(f"--> ℹ️ Máy tính đang có IP: {local_ip}")
 
-        if decoded_objects:
-            qr_content = decoded_objects[0].data.decode("utf-8")
-            current_time = time.time()
+        udp_sock.bind(('0.0.0.0', 1837)) # 0.0.0.0 là an toàn nhất
+        print(f"--> 📡 UDP Discovery Service listening on port 1837")
+        while True:
+            data, addr = udp_sock.recvfrom(1024)
+            message = data.decode().strip()
             
-            if (current_time - last_qr_time > 10):
-                last_qr_time = current_time
-                print(f"\n[PHÁT HIỆN QR]: {qr_content}")
+            if message == "WHO_IS_PARKING_SERVER":
+                print(f"--> 🔍 Nhận yêu cầu tìm server từ {addr[0]}")
+                # Phản hồi lại để ESP32 biết IP của mình
+                response = b"I_AM_PARKING_SERVER"
+                udp_sock.sendto(response, addr)
+    except Exception as e:
+        print(f"❌ UDP Discovery Error: {e}")
 
-                try:
-                    qr_data = json.loads(qr_content)
-                    plate_from_qr = qr_data.get("plate")
-                    
-                    if not plate_from_qr:
-                        print("Lỗi: Mã QR không chứa thông tin 'plate'.")
-                        continue
+# =============================
+# 7) FLASK ROUTES (LOCAL API)
+# =============================
 
-                    # Kích hoạt camera biển số
-                    plate_image = capture_plate_image()
-                    
-                    if plate_image is not None:
-                        # Nhận dạng biển số từ ảnh vừa chụp
-                        detections = model_detector(plate_image, verbose=False)[0]
-                        
-                        if len(detections.boxes) > 0:
-                            best_detection = max(detections.boxes, key=lambda box: box.conf)
-                            x1, y1, x2, y2 = map(int, best_detection.xyxy[0])
-                            plate_crop = plate_image[y1:y2, x1:x2]
-                            
-                            image_tensor = preprocess_for_ocr(plate_crop).to(device)
-                            logits = model_recognizer(image_tensor)
-                            plate_from_ai = ctc_greedy_decode(logits)
-                            print(f"--> AI nhận dạng: {plate_from_ai}")
-                            
-                            # So sánh và ra quyết định
-                            print(f"--> So sánh: '{plate_from_ai}' (AI) vs '{plate_from_qr}' (QR)")
-                            if plate_from_ai == plate_from_qr:
-                                print("===> Hợp lệ! Mở barie. <===")
-                                open_barrier()
-                            else:
-                                print("===> KHÔNG hợp lệ! Biển số không khớp. <===")
-                        else:
-                            print("--> Không phát hiện được biển số trong ảnh chụp.")
-                
-                except Exception as e:
-                    print(f"Đã xảy ra lỗi trong quá trình xử lý: {e}")
+@app.route('/register-barrier', methods=['POST'])
+def register_barrier():
+    global CURRENT_ESP32_IP
+    CURRENT_ESP32_IP = request.remote_addr 
+    print(f"🤖 [ESP32] Đăng ký thành công IP: {CURRENT_ESP32_IP}")
+    return jsonify({"status": "registered", "ip": CURRENT_ESP32_IP}), 200
 
-        cv2.imshow("QR Scanner Feed - Nhan 'q' de thoat", qr_frame)
+@app.route('/video_feed')
+def video_feed():
+    def generate():
+        while True:
+            frame = plate_cam.read()
+            if frame is None: time.sleep(0.1); continue
+            _, buffer = cv2.imencode('.jpg', frame)
+            yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            time.sleep(0.04)
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+@app.route('/nfc-scan', methods=['POST'])
+def nfc_scan():
+    data = request.json
+    nfc_id = data.get('nfc_id', 'UNKNOWN')
+    print(f"📡 [NFC] Thẻ: {nfc_id}")
+
+    full_scene = plate_cam.read()
+    plate_number = ""
+    image_base64 = None
+    
+    if full_scene is not None:
+        plate_number = process_ai_detection(full_scene)
+        _, buffer = cv2.imencode('.jpg', full_scene)
+        image_base64 = base64.b64encode(buffer).decode('utf-8')
+
+    socketio_local.emit('nfc_scanned', {
+        'identifier': nfc_id,
+        'type': 'NFC',
+        'plateNumber': plate_number,
+        'image': f"data:image/jpeg;base64,{image_base64}" if image_base64 else None,
+        'timestamp': time.time()
+    })
+    return jsonify({"status": "ok"}), 200
+
+@app.route('/confirm-checkin', methods=['POST'])
+def confirm_checkin():
+    try:
+        open_barrier_physical()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+# =============================
+# 8) BACKGROUND TASKS & MAIN
+# =============================
+def qr_scan_loop():
+    print("--> 📸 Bắt đầu luồng quét QR...")
+    last_scan = 0
+    while True:
+        frame = qr_cam.read()
+        if frame is None: time.sleep(0.1); continue
+
+        decoded_objects = decode(frame, symbols=[ZBarSymbol.QRCODE])
+        if decoded_objects and (time.time() - last_scan > 3):
+            qr_data = decoded_objects[0].data.decode("utf-8")
+            print(f"📸 [QR] Content: {qr_data}")
+            last_scan = time.time()
+
+            scene_frame = plate_cam.read()
+            plate_text = ""
+            img_b64 = None
+            if scene_frame is not None:
+                plate_text = process_ai_detection(scene_frame)
+                _, buffer = cv2.imencode('.jpg', scene_frame)
+                img_b64 = base64.b64encode(buffer).decode('utf-8')
             
-    qr_cam.release()
-    cv2.destroyAllWindows()
+            socketio_local.emit('scan_result', {
+                'identifier': qr_data,
+                'type': 'QR_APP',
+                'plateNumber': plate_text,
+                'image': f"data:image/jpeg;base64,{img_b64}" if img_b64 else None
+            })
+        time.sleep(0.1)
 
 if __name__ == '__main__':
-    main_loop()
+    # 1. Chạy luồng kết nối Cloud
+    t_cloud = threading.Thread(target=start_cloud_socket_thread)
+    t_cloud.daemon = True
+    t_cloud.start()
+
+    # 2. Chạy luồng quét QR
+    t_qr = threading.Thread(target=qr_scan_loop)
+    t_qr.daemon = True
+    t_qr.start()
+
+    # 3. Chạy luồng UDP Discovery (MỚI)
+    t_udp = threading.Thread(target=udp_discovery_service)
+    t_udp.daemon = True
+    t_udp.start()
+
+    print(f"--> 🚀 Local Server running on port 1836...")
+    
+    # 4. Chạy Flask Server (Local)
+    socketio_local.run(app, host='0.0.0.0', port=1836, allow_unsafe_werkzeug=True)

@@ -25,7 +25,13 @@ namespace CoreService.API.Controllers
             var res = await _app.GetAllAsync();
             return StatusCode(res.StatusCode, res);
         }
-
+        [HttpGet("created-by")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetByCreatedby(string id)
+        {
+            var res = await _app.GetByAccIdAsync(id);
+            return StatusCode(res.StatusCode, res);
+        }
         [HttpGet("upcoming")]
         [AllowAnonymous]
         public async Task<IActionResult> GetUpcoming()

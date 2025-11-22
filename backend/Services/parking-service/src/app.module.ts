@@ -16,12 +16,17 @@ import { AddressModule } from './module/address/address.module'
 import { AnnouncementModule } from './module/announcement/announcement.module'
 import { BasisModule } from './module/basis/basis.module'
 import { BookingInventoryModule } from './module/bookingInventory/bookingInventory.module'
+import { GuestCardModule } from './module/guestCard/guestCard.module'
 import { NotificationModule } from './module/notification/notification.module'
 import { PackageRateModule } from './module/packageRate/packageRate.module'
 import { ParkingLotModule } from './module/parkingLot/parkingLot.module'
+import { ParkingLotPolicyLinkModule } from './module/parkingLotPolicyLinks/parkingLotPolicyLinks.module'
+import { ParkingLotSessionModule } from './module/parkingLotSession/parkingLotSession.module'
 import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
 import { ParkingSpaceStatusModule } from './module/parkingSpaceStatus/parkingSpaceStatus.module'
 import { PricingPolicyModule } from './module/pricingPolicy/pricingPolicy.module'
+import { ReservationModule } from './module/reservation/reservation.module'
+import { SubscriptionModule } from './module/subscription/subcription.module'
 import { TieredRateSetModule } from './module/tieredRateSet/tieredRateSet.module'
 import { WardModule } from './module/ward/ward.module'
 import { JwtStrategy } from './strategy/jwt.strategy'
@@ -62,6 +67,11 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     NotificationModule,
     BookingInventoryModule,
     AnnouncementModule,
+    ParkingLotPolicyLinkModule,
+    SubscriptionModule,
+    ReservationModule,
+    ParkingLotSessionModule,
+    GuestCardModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],

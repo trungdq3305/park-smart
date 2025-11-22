@@ -1,4 +1,6 @@
 ﻿using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.DashboardDtos;
+using CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Application.DTOs.PaymentDtos.CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
@@ -21,12 +23,18 @@ namespace CoreService.Application.Applications
         private readonly IOperatorPaymentAccountRepo _accRepo;
         private readonly IPaymentRecordRepo _payRepo;
         private readonly IRefundRecordRepo _refundRepo;
+        private readonly IAccountApplication _accountApp;
+        private readonly IAccountRepository _accountRepo;
 
         public PaymentApp(IXenditClient x,
             IOperatorPaymentAccountRepo accRepo,
             IPaymentRecordRepo payRepo,
-            IRefundRecordRepo refundRepo)
-        { _x = x; _accRepo = accRepo; _payRepo = payRepo; _refundRepo = refundRepo; }
+            IRefundRecordRepo refundRepo,
+            IAccountApplication accountApp)
+        {
+            _x = x; _accRepo = accRepo; _payRepo = payRepo; _refundRepo = refundRepo;
+            _accountApp = accountApp;
+        }
 
         public async Task<PaymentRecord> CreatePaymentInvoiceAsync(
     string operatorId, string entityId, string accountId, long amount, PaymentType type)
@@ -64,20 +72,41 @@ namespace CoreService.Application.Applications
             using (var d = JsonDocument.Parse(checkBody))
             {
                 var st = d.RootElement.GetProperty("status").GetString();
-                if (!string.Equals(st, "LIVE", StringComparison.OrdinalIgnoreCase))
+                if (!string.Equals(st, "REGISTERED", StringComparison.OrdinalIgnoreCase))
                     throw new ApiException($"Tài khoản thanh toán của operator chưa ACTIVE (hiện: {st}). Hãy mở email mời và Accept.");
             }
 
             // 2) Tạo invoice
             var externalId = $"{externalIdPrefix}-{entityId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
             var baseReturn = "https://parksmart.vn/pay-result"; // <-- đổi theo project
+            var pr = new PaymentRecord
+            {
+                OperatorId = operatorId,
+                ExternalId = externalId,
+                Amount = amount,
+                XenditUserId = acc.XenditUserId,
+                CreatedBy = accountId,
+                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
 
+                // GÁN LOẠI THANH TOÁN (ENUM) VÀ ID TƯƠNG ỨNG
+                PaymentType = type,
+                ReservationId = (type == PaymentType.Reservation) ? entityId : null,
+                SubscriptionId = (type == PaymentType.Subscription) ? entityId : null,
+                ParkingLotSessionId = (type == PaymentType.ParkingLotSession) ? entityId : null,
+
+                // Gán trạng thái ban đầu (Pending/Created/Draft)
+                Status = "CREATED", // Tùy thuộc vào cấu trúc dữ liệu của bạn
+            };
+            // LƯU VÀO DB ĐỂ CÓ ID THẬT
+            await _payRepo.AddAsync(pr); // <--- LƯU TRƯỚC
+            var paymentId = pr.Id;
             // Tạo successUrl và failureUrl (truyền cả PaymentType qua URL)
             var successUrl = $"{baseReturn}?result=success" +
                              $"&entityId={Uri.EscapeDataString(entityId)}" +
                              $"&operatorId={Uri.EscapeDataString(operatorId)}" +
                              $"&externalId={Uri.EscapeDataString(externalId)}" +
                              $"&accountId={Uri.EscapeDataString(accountId)}" +
+                             $"&paymentId={Uri.EscapeDataString(paymentId)}" +
                              $"&type={type}"; // THÊM TYPE
 
             var failureUrl = $"{baseReturn}?result=failure" +
@@ -85,6 +114,7 @@ namespace CoreService.Application.Applications
                              $"&operatorId={Uri.EscapeDataString(operatorId)}" +
                              $"&externalId={Uri.EscapeDataString(externalId)}" +
                              $"&accountId={Uri.EscapeDataString(accountId)}" +
+                             $"&paymentId={Uri.EscapeDataString(paymentId)}" +
                              $"&type={type}"; // THÊM TYPE
 
             var body = new
@@ -96,7 +126,7 @@ namespace CoreService.Application.Applications
                 success_redirect_url = successUrl,
                 failure_redirect_url = failureUrl,
                 should_send_email = false,
-                invoice_duration = 60
+                invoice_duration = 600
             };
 
             var res = await _x.PostAsync("/v2/invoices", body, forUserId: acc.XenditUserId);
@@ -112,25 +142,11 @@ namespace CoreService.Application.Applications
             var url = doc.RootElement.GetProperty("invoice_url").GetString();
 
             // 3. Tạo PaymentRecord (CẬP NHẬT GÁN ID và TYPE)
-            var pr = new PaymentRecord
-            {
-                OperatorId = operatorId,
-                XenditInvoiceId = invoiceId,
-                ExternalId = externalId,
-                Amount = amount,
-                Status = status,
-                XenditUserId = acc.XenditUserId,
-                CheckoutUrl = url,
-                CreatedBy = accountId,
-                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+            pr.XenditInvoiceId = invoiceId;
+            pr.Status = status; // Trạng thái ban đầu từ Xendit thường là PENDING/ACTIVE
+            pr.CheckoutUrl = url;
 
-                // GÁN LOẠI THANH TOÁN (ENUM) VÀ ID TƯƠNG ỨNG
-                PaymentType = type,
-                ReservationId = (type == PaymentType.Reservation) ? entityId : null,
-                SubscriptionId = (type == PaymentType.Subscription) ? entityId : null,
-                ParkingLotSessionId = (type == PaymentType.ParkingLotSession) ? entityId : null,
-            };
-            await _payRepo.AddAsync(pr);
+            await _payRepo.UpdateAsync(pr);
             return pr;
         }
 
@@ -508,28 +524,19 @@ namespace CoreService.Application.Applications
 
         public async Task UpdatePaymentStatusAsync(string invoiceId, string newStatus)
         {
-            var pr = await _payRepo.GetByInvoiceIdAsync(invoiceId);
+            var pr = await _payRepo.GetByIdAsync(invoiceId);
             if (pr == null) return;
             pr.Status = newStatus;
             pr.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow); ;
             await _payRepo.UpdateAsync(pr);
         }
 
-        public async Task<bool> GetByExternalIdAsync(string externalId)
+        public async Task<PaymentRecord> GetByIdAsync(string Id)
         {
             // Giả định _payRepo có phương thức tìm kiếm theo ExternalId
-            var pr = await _payRepo.GetByExternalIdAsync(externalId);
+            var pr = await _payRepo.GetByIdAsync(Id);
 
-            // Bạn có thể thêm logic kiểm tra null và ném ApiException nếu cần
-            if (pr == null)
-            {
-                throw new ApiException($"Không tìm thấy PaymentRecord với External ID: {externalId}");
-            }
-            if (pr.Status != "PAID")
-            {
-                return false;
-            }
-            return true;
+            return pr;
         }
         public async Task<IEnumerable<PaymentRecord>> GetByCreatedByAsync(string accountId)
         {
@@ -544,6 +551,358 @@ namespace CoreService.Application.Applications
             // Giả định _refundRepo đã được inject và có phương thức GetByCreatedByAsync
             return await _refundRepo.GetByCreatedByAsync(accountId, take);
         }
-    }
+    
 
-}
+    public async Task<PaymentRecord> CreateSubscriptionInvoiceAsync(
+    string operatorId, string entityId, 
+    long amount, DateTime dueDate)
+        {
+            // Dùng lại logic từ CreatePaymentInvoiceAsync nhưng gán cứng PaymentType
+
+            const PaymentType type = PaymentType.OperatorCharge;
+            const string externalIdPrefix = "SUB";
+            var description = $"Subscription Fee for {operatorId} (Due: {dueDate:yyyy-MM})";
+
+            var acc = await _accRepo.GetByOperatorAsync(operatorId)
+                                 ?? throw new ApiException("Operator chưa có tài khoản thanh toán");
+            var account = await _accountApp.GetByOperatorIdAsync(operatorId) ?? throw new ApiException("không tìm thấy tài khoản của operator");
+            var accountId = account.Data.Id;
+            // Hoặc giá trị phù hợp nếu cần
+            // 1) Kiểm tra trạng thái sub-account (Giữ nguyên logic kiểm tra LIVE)
+            // ... (logic kiểm tra LIVE status) ...
+
+            // 2) Tạo invoice
+            var externalId = $"{externalIdPrefix}-{entityId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            var baseReturn = "https://parksmart.vn/pay-result";
+
+            // ... (logic tạo successUrl và failureUrl - giữ nguyên) ...
+            var successUrl = $"{baseReturn}?result=success&entityId={Uri.EscapeDataString(entityId)}&operatorId={Uri.EscapeDataString(operatorId)}&externalId={Uri.EscapeDataString(externalId)}&accountId={Uri.EscapeDataString(accountId)}&type={type}";
+            var failureUrl = $"{baseReturn}?result=failure&entityId={Uri.EscapeDataString(entityId)}&operatorId={Uri.EscapeDataString(operatorId)}&externalId={Uri.EscapeDataString(externalId)}&accountId={Uri.EscapeDataString(accountId)}&type={type}";
+
+            // Payload Xendit. QUAN TRỌNG: Thêm fees để chuyển tiền về Master Account (tài khoản CoreService)
+            var body = new
+            {
+                external_id = externalId,
+                amount = amount,
+                currency = "VND",
+                description = description,
+                success_redirect_url = successUrl,
+                failure_redirect_url = failureUrl,
+                should_send_email = false,
+                invoice_duration = 60,
+                // CƠ CHẾ THU PHÍ NỀN TẢNG: Chuyển toàn bộ amount về tài khoản Master
+                fees = new[]
+                {
+            new
+            {
+                type = "TRANSFER",
+                value = amount // Toàn bộ số tiền (phí định kỳ)
+            }
+        }
+            };
+
+            var res = await _x.PostAsync("/v2/invoices", body, forUserId: acc.XenditUserId);
+            var json = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+                throw new ApiException($"Xendit tạo invoice lỗi: {(int)res.StatusCode} {res.ReasonPhrase}. Body: {json}");
+
+            // ... (logic parse json, lấy invoiceId, status, url) ...
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var invoiceId = doc.RootElement.GetProperty("id").GetString();
+            var status = doc.RootElement.GetProperty("status").GetString();
+            var url = doc.RootElement.GetProperty("invoice_url").GetString();
+
+
+            // 3. Tạo PaymentRecord và lưu DB
+            var pr = new PaymentRecord
+            {
+                OperatorId = operatorId,
+                XenditInvoiceId = invoiceId,
+                ExternalId = externalId,
+                Amount = amount,
+                Status = status,
+                XenditUserId = acc.XenditUserId,
+                CheckoutUrl = url,
+                CreatedBy = accountId,
+                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+
+                PaymentType = type,
+                SubscriptionId = entityId,
+                DueDate = dueDate, // LƯU NGÀY ĐÁO HẠN
+            };
+            await _payRepo.AddAsync(pr);
+            return pr;
+        }
+        public async Task<IEnumerable<PaymentRecord>> GetSubscriptionInvoicesByStatusAsync(
+    string operatorId, IEnumerable<string> statuses)
+        {
+            // Giả định _payRepo có method để lọc theo 3 trường này:
+            // 1. OperatorId
+            // 2. PaymentType == Subscription
+            // 3. Status nằm trong danh sách (e.g., PENDING, EXPIRED)
+
+            // Phương thức này cần được thêm vào IPaymentRecordRepo và triển khai (ví dụ: dùng LINQ/MongoDB filter)
+            var records = await _payRepo.GetByTypeAndStatusAsync(
+                operatorId, PaymentType.Subscription, statuses);
+
+            return records;
+        }
+        public async Task<string> GetOperatorAccountStatusAsync(string operatorId)
+        {
+            // 1. Lấy Xendit User ID (XenditUserId) của Operator
+            var acc = await _accRepo.GetByOperatorAsync(operatorId)
+                                    ?? throw new ApiException("Operator chưa có tài khoản Xendit");
+
+            // 2. Gọi Xendit API để lấy chi tiết tài khoản
+            // Endpoint: GET /v2/accounts/{user_id}
+            var res = await _x.GetAsync($"/v2/accounts/{acc.XenditUserId}");
+            var checkBody = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                // Xử lý lỗi API nếu có
+                throw new ApiException($"Lỗi khi kiểm tra tài khoản Xendit {res.StatusCode}: {checkBody}");
+            }
+
+            // 3. Phân tích JSON Response để lấy trường "status"
+            using (var d = JsonDocument.Parse(checkBody))
+            {
+                if (d.RootElement.TryGetProperty("status", out var statusElement))
+                {
+                    var status = statusElement.GetString();
+                    return status ?? "UNKNOWN";
+                }
+                else
+                {
+                    return "STATUS_FIELD_NOT_FOUND";
+                }
+            }
+        }
+        public async Task<object> GetXenditInvoiceDetailAsync(string paymentId)
+        {
+            var record = await _payRepo.GetByIdAsync(paymentId);
+            
+            // 1. Gọi Xendit API để lấy chi tiết Hóa đơn
+            // Endpoint: GET /v2/invoices/{invoice_id}
+            var acc = await _accRepo.GetByOperatorAsync(record.OperatorId)
+                      ?? throw new ApiException("Operator chưa có tài khoản Xendit");
+
+            var res = await _x.GetAsync($"/v2/invoices/{record.XenditInvoiceId}", acc.XenditUserId);
+
+            
+            var checkBody = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+            {
+                // Xử lý lỗi API nếu hóa đơn không tồn tại hoặc lỗi khác
+                throw new ApiException($"Lỗi khi kiểm tra hóa đơn Xendit {res.StatusCode}: {checkBody}", (int)res.StatusCode);
+            }
+
+            // 2. Phân tích JSON Response để lấy các trường mong muốn
+            using (var d = JsonDocument.Parse(checkBody))
+            {
+                var root = d.RootElement;
+
+                // Trạng thái hóa đơn (PAID, PENDING, EXPIRED, v.v.)
+                var status = root.TryGetProperty("status", out var statusElement)
+                             ? statusElement.GetString() : "UNKNOWN";
+
+                // Số tiền
+                var amount = root.TryGetProperty("amount", out var amountElement)
+                             ? amountElement.GetInt64() : 0;
+
+                //var record = await _payRepo.GetByInvoiceIdAsync(xenditInvoiceId);
+
+
+
+                return new
+                {
+                    status = status,
+                    amount = amount,
+                    // Sử dụng email/externalId làm ID định danh người trả tiền
+                    userId = record.CreatedBy
+                };
+            }
+        }
+        public async Task<IEnumerable<PaymentRecord>> GetByCreatedByAndStatusAsync(
+    string accountId,
+    string status)
+        {
+            // Có thể thêm logic validation ở đây nếu cần
+
+            // Gọi Repository (Giả định bạn muốn giới hạn 50 bản ghi)
+            var records = await _payRepo.GetByCreatedByAndStatusAsync(accountId, status, 50);
+
+            return records;
+        }
+        public class PaymentStatusCountDto
+        {
+            public string Status { get; set; }
+            public long Count { get; set; }
+        }
+
+        private bool IsStatusValid(string status)
+        {
+            var validStatuses = new[] { "PENDING", "PAID", "EXPIRED", "FAILED", "REFUNDED" };
+            return validStatuses.Contains(status, StringComparer.OrdinalIgnoreCase);
+        }
+
+        public async Task<IEnumerable<OperatorPaymentDetailDto>> GetOperatorPaymentsFilteredAsync(
+    string operatorId,
+    IEnumerable<PaymentType>? paymentTypes,
+    string? status,
+    DateTime? fromDate,
+    DateTime? toDate)
+        {
+            // --- 0. Kiểm tra Input ---
+            if (!string.IsNullOrEmpty(status) && !IsStatusValid(status))
+            {
+                throw new ApiException($"Trạng thái '{status}' không hợp lệ. Các trạng thái được chấp nhận: PENDING, PAID, EXPIRED, FAILED, REFUNDED.", StatusCodes.Status400BadRequest);
+            }
+
+            // 1. Lọc PaymentRecords
+            var operatorTypes = new[] { PaymentType.Reservation, PaymentType.Subscription, PaymentType.ParkingLotSession };
+
+            // Nếu paymentTypes không null, kiểm tra xem có bất kỳ type nào hợp lệ cho Operator không.
+            if (paymentTypes != null && !paymentTypes.Any(t => operatorTypes.Contains(t)))
+            {
+                // Nếu người dùng chỉ truyền các type không phải của Operator (ví dụ: chỉ OPR), 
+                // hoặc truyền type không hợp lệ, trả về rỗng.
+                return Enumerable.Empty<OperatorPaymentDetailDto>();
+            }
+
+            var typesToFilter = paymentTypes?.Intersect(operatorTypes) ?? operatorTypes;
+
+            var paymentRecords = await _payRepo.GetFilteredPaymentsAsync(
+                operatorId,
+                typesToFilter,
+                status,
+                fromDate,
+                toDate
+            );
+
+            // --- Bắt trường hợp không tìm thấy dữ liệu ---
+            if (!paymentRecords.Any())
+                throw new ApiException("Không tìm thấy giao dịch nào phù hợp với các tiêu chí lọc.", StatusCodes.Status404NotFound);
+
+            // 2. Lấy tất cả RefundRecords cho các Payment này
+            var paymentIds = paymentRecords.Select(p => p.Id).ToList();
+            var allRefunds = await _refundRepo.GetByPaymentIdsAsync(paymentIds);
+
+            // 3. Group RefundRecords theo PaymentId để dễ tra cứu
+            var refundsByPaymentId = allRefunds.GroupBy(r => r.PaymentId)
+                                               .ToDictionary(g => g.Key, g => g.ToList());
+
+            // 4. Kết hợp dữ liệu (Mapping)
+            var result = new List<OperatorPaymentDetailDto>();
+            foreach (var pr in paymentRecords)
+            {
+                refundsByPaymentId.TryGetValue(pr.Id, out var refunds);
+
+                var refundDtos = refunds?.Select(r => new RefundRecordDto
+                {
+                    XenditRefundId = r.XenditRefundId,
+                    Amount = r.Amount,
+                    Status = r.Status,
+                    Reason = r.Reason,
+                    CreatedAt = r.CreatedAt
+                }) ?? Enumerable.Empty<RefundRecordDto>();
+
+                result.Add(new OperatorPaymentDetailDto
+                {
+                    Id = pr.Id,
+                    PaymentType = pr.PaymentType,
+                    OperatorId = pr.OperatorId,
+                    XenditInvoiceId = pr.XenditInvoiceId,
+                    Amount = pr.Amount,
+                    Status = pr.Status,
+                    CheckoutUrl = pr.CheckoutUrl,
+                    CreatedAt = pr.CreatedAt,
+
+                    TotalRefundedAmount = refunds?.Sum(r => r.Amount) ?? 0,
+                    RefundHistory = refundDtos
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<PaymentTotalsDto> GetPaymentTotalsAsync(
+    string? operatorId,
+    IEnumerable<PaymentType>? paymentTypes,
+    DateTime? fromDate,
+    DateTime? toDate)
+        {
+            // --- 0. Kiểm tra Input ---
+            // Kiểm tra tính hợp lệ của paymentTypes chỉ nên được thực hiện ở Controller nếu nó là string.
+            // Ở đây, ta chỉ cần đảm bảo list paymentTypes được cung cấp không rỗng nếu muốn lọc.
+
+            var records = await _payRepo.GetFilteredPaymentsAsync(
+                operatorId,
+                paymentTypes,
+                null,
+                fromDate,
+                toDate
+            );
+
+            // Giả định trạng thái PAID/SETTLED là giao dịch thành công.
+            var successStatuses = new[] { "PAID", "SETTLED" };
+
+            var paidRecords = records.Where(r => successStatuses.Contains(r.Status, StringComparer.OrdinalIgnoreCase));
+
+            // --- Bắt trường hợp không tìm thấy giao dịch thành công ---
+            if (!paidRecords.Any())
+                throw new ApiException("Không tìm thấy giao dịch thành công nào trong khoảng thời gian này.", StatusCodes.Status404NotFound);
+
+            long totalIncoming = paidRecords.Sum(r => r.Amount);
+
+            // 3. Tính tổng Refunded
+            var paymentIds = paidRecords.Select(r => r.Id).ToList();
+            var refundRecords = await _refundRepo.GetByPaymentIdsAsync(paymentIds);
+            long totalRefunded = refundRecords.Sum(r => r.Amount);
+
+            return new PaymentTotalsDto
+            {
+                Incoming = totalIncoming,
+                Outgoing = totalRefunded,
+                Currency = "VND",
+                CountIncoming = paidRecords.Count(),
+                CountOutgoing = refundRecords.Count()
+            };
+        }
+
+        public async Task<IEnumerable<PaymentStatusCountDto>> GetPaymentCountByStatusAsync(
+    string? operatorId,
+    IEnumerable<PaymentType>? paymentTypes,
+    DateTime? fromDate,
+    DateTime? toDate)
+        {
+            var records = await _payRepo.GetFilteredPaymentsAsync(
+                operatorId,
+                paymentTypes,
+                null,
+                fromDate,
+                toDate
+            );
+
+            // --- Bắt trường hợp không tìm thấy dữ liệu ---
+            if (!records.Any())
+                throw new ApiException("Không tìm thấy giao dịch nào phù hợp với các tiêu chí lọc để thống kê.", StatusCodes.Status404NotFound);
+
+            // Group theo Status và đếm số lượng
+            var statusCounts = records
+                .GroupBy(r => r.Status)
+                .Select(g => new PaymentStatusCountDto
+                {
+                    Status = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(c => c.Count)
+                .ToList();
+
+            return statusCounts;
+        }
+    }
+    
+    }

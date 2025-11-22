@@ -47,6 +47,10 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<List<FavouriteResponseDto>>> GetMyFavouritesAsync(string driverId)
         {
             var items = await _repo.GetByDriverIdAsync(driverId);
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             var list = items.Select(Map).ToList();
             return new ApiResponse<List<FavouriteResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
         }

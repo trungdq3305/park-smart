@@ -45,7 +45,11 @@ export interface IPricingPolicyRepository {
    * (Lưu ý: Service sẽ quyết định logic xóa, thường là vô hiệu hóa link thay vì xóa policy).
    * @param id ID của chính sách giá cần xóa.
    */
-  softDeletePolicy(id: string, userId: string): Promise<boolean>
+  softDeletePolicy(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean>
   /**
    * Đếm số lượng chính sách giá (policies) KHÁC đang sử dụng một gói giá (package rate) cụ thể.
    *
@@ -93,6 +97,32 @@ export interface IPricingPolicyRepository {
     page: number,
     pageSize: number,
   ): Promise<{ data: PricingPolicy[]; total: number }>
+
+  /**
+   * Tìm một chính sách giá theo tên và người tạo.
+   * @param name Tên của chính sách giá.
+   * @param userId ID của người vận hành (ParkingLotOperator) đã tạo chính sách này.
+   */
+  findByNameAndCreator(
+    name: string,
+    userId: string,
+  ): Promise<PricingPolicy | null>
+
+  /**
+   * Lấy giá của gói (package rate) từ một chính sách giá cụ thể.
+   * @param policyId ID của chính sách giá.
+   * @returns Giá của gói (package rate) hoặc null nếu không tìm thấy.
+   */
+  getUnitPackageRateByPolicyId(policyId: string): Promise<{
+    unit: string
+    durationAmount: number
+  } | null>
+
+  /**
+   * Tìm một chính sách giá theo ID, dùng để kiểm tra gia hạn thuê bao.
+   * @param policyId ID của chính sách giá.
+   */
+  findPolicyByIdForCheckRenew(policyId: string): Promise<PricingPolicy | null>
 }
 
 export const IPricingPolicyRepository = Symbol('IPricingPolicyRepository')

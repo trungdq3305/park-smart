@@ -2,10 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession, Model } from 'mongoose'
 
-import {
-  CreateParkingLotPolicyLinkDto,
-  UpdateParkingLotPolicyLinkDto,
-} from './dto/parkingLotPolicyLink.dto'
+import { UpdateParkingLotPolicyLinkDto } from './dto/parkingLotPolicyLink.dto'
 import { IParkingLotPolicyLinkRepository } from './interfaces/iparkingLotPolicyLink.repository'
 import { ParkingLotPolicyLink } from './schemas/parkingLotPolicyLink.schema'
 
@@ -18,11 +15,46 @@ export class ParkingLotPolicyLinksRepository
     private readonly parkingLotPolicyLinkModel: Model<ParkingLotPolicyLink>,
   ) {}
 
+  findExpiredActiveLinks(currentTime: Date): Promise<ParkingLotPolicyLink[]> {
+    return this.parkingLotPolicyLinkModel
+      .find({
+        endDate: { $lte: currentTime }, // Ngày kết thúc nhỏ hơn hoặc bằng hiện tại
+        deletedAt: null,
+      })
+      .exec()
+  }
+
+  async updateEndDate(
+    linkId: string,
+    endDate: Date,
+    userId: string,
+  ): Promise<boolean> {
+    const data = await this.parkingLotPolicyLinkModel
+      .findByIdAndUpdate(
+        linkId,
+        {
+          $set: {
+            endDate: new Date(endDate),
+            updatedBy: userId,
+            updatedAt: new Date(),
+          },
+        },
+        {},
+      )
+      .exec()
+    return data ? true : false
+  }
+
   createLink(
-    linkDto: CreateParkingLotPolicyLinkDto,
+    linkDto: Partial<ParkingLotPolicyLink>,
+    userId: string,
     session?: ClientSession,
-  ): Promise<ParkingLotPolicyLink> {
-    const createdLink = new this.parkingLotPolicyLinkModel(linkDto)
+  ): Promise<ParkingLotPolicyLink | null> {
+    const createdLink = new this.parkingLotPolicyLinkModel({
+      ...linkDto,
+      createdBy: userId,
+      createdAt: new Date(),
+    })
     if (session) {
       return createdLink.save({ session })
     }
@@ -37,17 +69,33 @@ export class ParkingLotPolicyLinksRepository
     parkingLotId: string,
     page: number,
     pageSize: number,
+    isDeleted: boolean,
   ): Promise<{ data: ParkingLotPolicyLink[]; total: number }> {
     const limit = pageSize
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.parkingLotPolicyLinkModel
-        .find({ parkingLotId })
+        .find({ parkingLotId, deletedAt: isDeleted ? { $ne: null } : null })
+        .populate({
+          path: 'pricingPolicyId', // ⭐️ Populate chính sách giá
+          populate: [
+            { path: 'basisId' }, // Populate luôn cả basis
+            // (Populate thêm packageRateId, tieredRateSetId nếu cần)
+            { path: 'packageRateId' },
+            { path: 'tieredRateSetId' },
+          ],
+        })
+        .sort({ createdAt: -1 }) // Mới nhất trước
         .skip(skip)
         .limit(limit)
         .lean()
         .exec(),
-      this.parkingLotPolicyLinkModel.countDocuments({ parkingLotId }).exec(),
+      this.parkingLotPolicyLinkModel
+        .countDocuments({
+          parkingLotId,
+          deletedAt: isDeleted ? { $ne: null } : null,
+        })
+        .exec(),
     ])
     return { data, total }
   }
@@ -83,19 +131,37 @@ export class ParkingLotPolicyLinksRepository
       .exec()
   }
 
-  updateLink(
+  async updateLink(
     id: string,
     linkDto: UpdateParkingLotPolicyLinkDto,
+    userId: string,
     session?: ClientSession,
   ): Promise<boolean> {
-    throw new Error('Method not implemented.')
+    const data = await this.parkingLotPolicyLinkModel.findByIdAndUpdate(
+      id,
+      {
+        $set: { ...linkDto, updatedBy: userId, updatedAt: new Date() },
+      },
+      session ? { session } : {},
+    )
+    return data ? true : false
   }
 
-  async softDeleteLink(id: string, session?: ClientSession): Promise<boolean> {
+  async softDeleteLink(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean> {
     const data = await this.parkingLotPolicyLinkModel
       .findByIdAndUpdate(
         id,
-        { deletedAt: new Date() },
+        {
+          $set: {
+            deletedAt: new Date(),
+            deletedBy: userId,
+            endDate: new Date(),
+          },
+        },
         session ? { session } : {},
       )
       .exec()

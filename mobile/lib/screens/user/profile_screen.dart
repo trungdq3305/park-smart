@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:mobile/screens/user/profile/term_and_policy_screen.dart';
+import 'package:mobile/screens/user/profile/termpolicy/term_and_policy_screen.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
 import 'package:mobile/services/user_service.dart';
-import 'profile/personal_info_screen.dart';
-import 'profile/booking_history_screen.dart';
-import 'profile/my_car_screen.dart';
+import 'profile/infor/personal_info_screen.dart';
+import 'profile/booking/booking_history_screen.dart';
+import 'profile/subcription/my_subscriptions_screen.dart';
+import 'profile/faqs/faqs_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -313,27 +314,15 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       icon: Icons.confirmation_number_outlined,
                       title: 'Vé của tôi',
                       onTap: () {
-                        // TODO: Navigate to tickets screen
-                      },
-                    ),
-                    _buildTile(
-                      icon: Icons.directions_car_outlined,
-                      title: 'Xe của tôi',
-                      onTap: () {
-                        Navigator.of(context).push(
+                        Navigator.push(
+                          context,
                           MaterialPageRoute(
-                            builder: (_) => const MyCarScreen(),
+                            builder: (context) => const MySubscriptionsScreen(),
                           ),
                         );
                       },
                     ),
-                    _buildTile(
-                      icon: Icons.chat_outlined,
-                      title: 'Tin nhắn',
-                      onTap: () {
-                        // TODO: Navigate to chat screen
-                      },
-                    ),
+
                     _buildTile(
                       icon: Icons.history_outlined,
                       title: 'Lịch sử đặt chỗ',
@@ -346,7 +335,6 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
                     _buildTile(
-
                       icon: Icons.confirmation_number_outlined,
                       title: 'Mã giảm giá',
                       onTap: () {
@@ -354,9 +342,20 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
                     _buildTile(
-
+                      icon: Icons.question_answer_outlined,
+                      title: 'Các câu hỏi thường gặp',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const FaqsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildTile(
                       icon: Icons.note_alt_outlined,
-                      title: 'Điều khoản & Dịch vụ',
+                      title: 'Điều khoản & Chính sách',
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
@@ -366,11 +365,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
 
-
                     // Debug menu item
-                    
-
-
                     const SizedBox(height: 20),
                     // Logout button
                     Container(

@@ -24,5 +24,27 @@ namespace CoreService.Repository.Interfaces
         // (tuỳ chọn) lấy theo operator + reservation
         Task<PaymentRecord?> GetLatestByReservationAsync(string operatorId, string reservationId);
         Task<IEnumerable<PaymentRecord>> GetByCreatedByAsync(string accountId, int take = 50);
+        Task<IEnumerable<PaymentRecord>> GetByTypeAndStatusAsync(
+        string operatorId,
+        PaymentType type,
+        IEnumerable<string> statuses);
+        Task<IEnumerable<PaymentRecord>> GetByCreatedByAndStatusAsync(
+        string accountId,
+        string status,
+        int take = 50);
+        Task<IEnumerable<PaymentRecord>> GetFilteredPaymentsAsync(
+        string? operatorId, // Có thể null (Admin) hoặc có giá trị (Operator)
+        IEnumerable<PaymentType>? paymentTypes, // Lọc theo loại thanh toán
+        string? status, // Lọc theo trạng thái
+        DateTime? fromDate, // Ngày bắt đầu
+        DateTime? toDate
+    );
+        Task<long> CountFilteredPaymentsAsync(
+            string? operatorId,
+            IEnumerable<PaymentType>? paymentTypes,
+            string? status,
+            DateTime? fromDate,
+            DateTime? toDate
+        );
     }
 }

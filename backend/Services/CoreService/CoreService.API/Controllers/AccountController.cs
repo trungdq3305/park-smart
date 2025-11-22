@@ -33,6 +33,13 @@ namespace CoreService.API.Controllers
             var response = await _accountApplication.GetByRoleAsync(role, page, pageSize);
             return StatusCode(response.StatusCode, response);
         }
+        [HttpGet("by-phone")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetByPhone( string phone)
+        {
+            var response = await _accountApplication.GetByPhoneAsync(phone);
+            return StatusCode(response.StatusCode, response);
+        }
 
         [Authorize]
         [HttpGet("me")]
@@ -90,5 +97,12 @@ namespace CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
+        [HttpGet("inactive-operators")]
+        [Authorize(Roles = "Admin")] // Yêu cầu quyền Admin để xem danh sách này
+        public async Task<IActionResult> GetInactiveOperators([FromQuery] int? page, [FromQuery] int? pageSize)
+        {
+            var response = await _accountApplication.GetInactiveOperatorsAsync(page, pageSize);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }

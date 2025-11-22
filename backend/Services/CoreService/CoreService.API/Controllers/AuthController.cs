@@ -55,9 +55,9 @@ namespace KLTN.CoreService.API.Controllers
         }
 
         [HttpPost("operator-register")]
-        public async Task<IActionResult> OperatorRegister(OperatorRegisterRequest request)
+        public async Task<IActionResult> OperatorRegister(FullOperatorCreationRequest request)
         {
-            var response = await _authApplication.OperatorRegisterAsync(request);
+            var response = await _authApplication.OperatorRegisterAndCreateParkingLotAsync(request);
             return StatusCode(response.StatusCode, response);
         }
         
@@ -83,7 +83,7 @@ namespace KLTN.CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        [HttpGet("confirm-operator")]
+        [HttpPut("confirm-operator")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ConfirmOperator(string id)
         {

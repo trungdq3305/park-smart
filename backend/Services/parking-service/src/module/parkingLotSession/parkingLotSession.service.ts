@@ -1,0 +1,672 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/restrict-template-expressions */
+import {
+  BadRequestException,
+  ConflictException,
+  forwardRef,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common'
+import { ModuleRef } from '@nestjs/core'
+import { InjectConnection } from '@nestjs/mongoose'
+import { plainToInstance } from 'class-transformer'
+import { Connection } from 'mongoose'
+import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
+
+import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
+import { IGuestCardService } from '../guestCard/interfaces/iguestCard.service'
+import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
+import { IParkingLotService } from '../parkingLot/interfaces/iparkingLot.service'
+import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
+import { ReservationStatusEnum } from '../reservation/enums/reservation.enum'
+import { IReservationRepository } from '../reservation/interfaces/ireservation.repository'
+import { ISubscriptionRepository } from '../subscription/interfaces/isubcription.repository'
+import {
+  CheckInDto,
+  ParkingLotSessionResponseDto,
+} from './dto/parkingLotSession.dto'
+import {
+  ParkingSessionStatusEnum,
+  PaymentStatusEnum,
+} from './enums/parkingLotSession.enum'
+import { IParkingLotSessionRepository } from './interfaces/iparkingLotSession.repository'
+import { IParkingLotSessionService } from './interfaces/iparkingLotSession.service'
+import { ParkingLotSession } from './schemas/parkingLotSession.schema'
+
+@Injectable()
+export class ParkingLotSessionService implements IParkingLotSessionService {
+  private readonly logger = new Logger(ParkingLotSessionService.name)
+
+  // ⭐️ Khai báo các property để lưu instance sau này
+  private subscriptionRepository: ISubscriptionRepository
+  private reservationRepository: IReservationRepository
+
+  constructor(
+    @Inject(IParkingLotSessionRepository)
+    private readonly parkingLotSessionRepository: IParkingLotSessionRepository,
+
+    @Inject(IParkingLotRepository)
+    private readonly parkingLotRepository: IParkingLotRepository,
+
+    @Inject(IAccountServiceClient)
+    private readonly accountServiceClient: IAccountServiceClient,
+
+    @InjectConnection() private readonly connection: Connection,
+
+    // ⭐️ Inject ModuleRef để lấy dependency thủ công
+    private moduleRef: ModuleRef,
+
+    @Inject(forwardRef(() => IParkingLotService))
+    private readonly parkingLotService: IParkingLotService,
+
+    @Inject(IGuestCardService)
+    private readonly guestCardService: IGuestCardService,
+
+    @Inject(IPricingPolicyRepository)
+    private readonly pricingPolicyRepository: IPricingPolicyRepository,
+  ) {}
+
+  /**
+   * ⭐️ Hàm này chạy SAU KHI tất cả các module đã khởi tạo xong.
+   * Lúc này, vòng lặp dependency đã được giải quyết.
+   */
+  onModuleInit() {
+    try {
+      this.subscriptionRepository = this.moduleRef.get(
+        ISubscriptionRepository,
+        {
+          strict: false, // Cho phép lấy từ module khác
+        },
+      )
+
+      this.reservationRepository = this.moduleRef.get(IReservationRepository, {
+        strict: false,
+      })
+    } catch (error) {
+      this.logger.error('Lỗi Lazy Inject repository:', error)
+    }
+  }
+
+  private responseToDto(
+    session: ParkingLotSession,
+  ): ParkingLotSessionResponseDto {
+    return plainToInstance(ParkingLotSessionResponseDto, session, {
+      excludeExtraneousValues: true,
+    })
+  }
+
+  /**
+   * (Hàm helper - Private)
+   * Gọi sang Image-Service để tải ảnh lên.
+   * Được gọi sau khi commit transaction thành công (để không chặn luồng chính).
+   */
+  private async uploadImageToImageService(
+    file: Express.Multer.File,
+    ownerId: string,
+    ownerType: string,
+    description?: string,
+  ): Promise<any> {
+    if (!file) return null
+
+    try {
+      // Gửi request multipart/form-data
+      const response: any =
+        await this.accountServiceClient.uploadImageToImageService(
+          file.buffer,
+          ownerType,
+          ownerId,
+          description ?? '',
+        )
+      if (response.status !== 201) {
+        throw new Error(
+          `Upload ảnh thất bại với mã trạng thái: ${response.status}`,
+        )
+      }
+      return response?.data
+    } catch (error) {
+      // Chỉ log lỗi, không ném exception (để tránh làm user tưởng check-in thất bại)
+      this.logger.error(
+        `[ImageProxy] Upload ảnh thất bại cho ${ownerType} ${ownerId}: ${error.message}`,
+      )
+      return null
+    }
+  }
+
+  private calculatePriceByPolicy(policy: any, durationHours: number): number {
+    const basisName = policy.basisId?.basisName // Ví dụ: "PACKAGE", "HOURLY", "TIERED", "FIXED"
+
+    switch (basisName) {
+      case 'HOURLY':
+        // Tính theo giờ: Số giờ * Giá mỗi giờ
+        return durationHours * (policy.pricePerHour ?? 0)
+
+      case 'FIXED':
+        // Tính cố định (theo lượt): Trả về giá cố định bất kể thời gian
+        return policy.fixedPrice ?? 0
+
+      case 'PACKAGE':
+        // Tính theo gói: Lấy giá từ packageRateId
+        if (policy.packageRateId) {
+          return policy.packageRateId.price
+        }
+        return 0
+
+      case 'TIERED': // Hoặc "BLOCK"
+        // Tính theo bậc thang
+        if (policy.tieredRateSetId?.tiers) {
+          const tiers = policy.tieredRateSetId.tiers
+
+          // Tìm bậc giá phù hợp với durationHours
+          // Logic: duration phải lớn hơn fromHour và (nhỏ hơn hoặc bằng toHour HOẶC toHour là null/vô cùng)
+          const matchedTier = tiers.find((tier: any) => {
+            const from = parseFloat(tier.fromHour)
+            // Nếu toHour null thì coi như vô cùng
+            const to = tier.toHour ? parseFloat(tier.toHour) : Infinity
+
+            return durationHours > from && durationHours <= to
+          })
+
+          // Nếu tìm thấy bậc thì trả về giá của bậc đó
+          // Nếu không tìm thấy (thường là giờ đầu tiên <= fromHour của bậc 1),
+          // bạn cần logic fallback, ở đây tôi giả sử lấy bậc đầu tiên hoặc trả về 0.
+          if (matchedTier) {
+            return matchedTier.price
+          }
+
+          // Fallback: Nếu không khớp tier nào (ví dụ cấu hình lỗi),
+          // có thể return giá của tier cao nhất hoặc ném lỗi.
+          // Ở đây return tier cuối cùng nếu thời gian vượt quá mọi toHour định nghĩa
+          if (tiers.length > 0) {
+            return tiers[tiers.length - 1].price
+          }
+        }
+        return 0
+
+      default:
+        // Trường hợp không xác định basis
+        return 0
+    }
+  }
+
+  /**
+   * Check-in Phân luồng:
+   * - Ưu tiên 1: Kiểm tra QR Vé Tháng (Xô 1).
+   * - Ưu tiên 2: Kiểm tra QR Đặt Trước (Xô 2).
+   * - Fallback: Nếu không phải QR hợp lệ, kiểm tra xem có phải thẻ NFC Vãng lai (Xô 3) không.
+   */
+  async checkIn(
+    parkingLotId: string,
+    dto: CheckInDto,
+    file: Express.Multer.File,
+  ): Promise<ParkingLotSessionResponseDto> {
+    const session = await this.connection.startSession()
+    session.startTransaction()
+
+    let newSession: ParkingLotSession | null = null
+
+    try {
+      // 1. Validate Bãi xe
+      const lot = await this.parkingLotRepository.findParkingLotById(
+        parkingLotId,
+        session,
+      )
+      if (!lot) throw new NotFoundException('Bãi đỗ xe không tồn tại.')
+
+      // =================================================================
+      // A. XỬ LÝ CHECK-IN BẰNG QR (XÔ 1 & 2 - Vé Tháng / Đặt Trước)
+      // =================================================================
+      // Lưu ý: Vé tháng dùng QR nên không cần tìm thẻ GuestCard (NFC)
+      if (dto.identifier) {
+        // A1. Kiểm tra Vé Tháng (Xô 1)
+        const sub =
+          await this.subscriptionRepository.findActiveSubscriptionByIdentifier(
+            dto.identifier,
+          )
+
+        if (sub) {
+          if (sub.parkingLotId !== parkingLotId) {
+            throw new ConflictException(
+              'QR Vé tháng này không thuộc bãi xe này.',
+            )
+          }
+          if (sub.isUsed) {
+            throw new ConflictException(
+              'Vé tháng này đang được sử dụng (xe chưa ra).',
+            )
+          }
+
+          // Cập nhật trạng thái vé tháng
+          await this.subscriptionRepository.updateUsageStatus(
+            sub.subscriptionIdentifier,
+            true,
+            session,
+          )
+
+          // Tạo Session Xô 1 (Không có guestCardId vì dùng QR)
+          newSession = await this.parkingLotSessionRepository.createSession(
+            {
+              parkingLotId,
+              plateNumber: dto.plateNumber ?? 'QR-MONTHLY',
+              checkInTime: new Date(),
+              status: ParkingSessionStatusEnum.ACTIVE,
+              paymentStatus: PaymentStatusEnum.NOT_APPLICABLE,
+              subscriptionId: sub._id,
+              reservationId: undefined,
+              guestCardId: undefined, // QR không liên kết thẻ vật lý
+              nfcUid: dto.identifier, // Lưu mã QR vào đây để tra cứu
+            },
+            session,
+          )
+        }
+        // A2. Kiểm tra Vé Đặt Trước (Xô 2)
+        else {
+          const res =
+            await this.reservationRepository.findValidReservationForCheckIn(
+              dto.identifier,
+            )
+
+          if (res) {
+            if (res.parkingLotId !== parkingLotId) {
+              throw new ConflictException('QR Đặt trước không đúng bãi xe.')
+            }
+
+            // Cập nhật trạng thái đặt trước
+            await this.reservationRepository.updateReservationStatus(
+              res._id,
+              ReservationStatusEnum.CHECKED_IN,
+              'SYSTEM',
+              session,
+            )
+
+            // Tạo Session Xô 2
+            newSession = await this.parkingLotSessionRepository.createSession(
+              {
+                parkingLotId,
+                plateNumber: dto.plateNumber ?? 'QR-RESERVATION',
+                checkInTime: new Date(),
+                status: ParkingSessionStatusEnum.ACTIVE,
+                paymentStatus: PaymentStatusEnum.PREPAID,
+                reservationId: res._id,
+                subscriptionId: undefined,
+                guestCardId: undefined, // QR không liên kết thẻ vật lý
+                nfcUid: dto.identifier,
+              },
+              session,
+            )
+          }
+        }
+      }
+
+      // =================================================================
+      // B. XỬ LÝ KHÁCH VÃNG LAI (XÔ 3 - Dùng thẻ NFC hoặc Biển số)
+      // =================================================================
+      // Chỉ chạy vào đây nếu chưa tạo được session ở trên
+      if (!newSession) {
+        let guestCardId: string | undefined = undefined
+
+        // Kiểm tra xem mã gửi lên có phải là thẻ NFC hợp lệ trong bãi không
+        if (dto.identifier) {
+          const guestCard = await this.guestCardService.findGuestCardByNfc(
+            dto.identifier,
+            parkingLotId,
+          )
+
+          if (guestCard) {
+            // ==> ĐÂY LÀ THẺ NFC VÃNG LAI HỢP LỆ
+            guestCardId = guestCard._id
+          }
+        }
+
+        // CHỈ tạo session nếu tìm thấy thẻ NFC (guestCardId tồn tại)
+        // Nếu chỉ có biển số mà không có thẻ -> Bỏ qua (sẽ rơi xuống BadRequest ở dưới)
+        if (guestCardId) {
+          // B1. Kiểm tra sức chứa Xô 3
+          const currentWalkIns =
+            await this.parkingLotSessionRepository.countActiveWalkInSessions(
+              parkingLotId,
+              session,
+            )
+
+          if (currentWalkIns >= lot.walkInCapacity) {
+            throw new ConflictException('Đã hết chỗ dành cho khách vãng lai.')
+          }
+
+          // B2. Tạo Session Xô 3
+          newSession = await this.parkingLotSessionRepository.createSession(
+            {
+              parkingLotId,
+              plateNumber: dto.plateNumber ?? 'UNKNOWN', // Biển số có thể chưa có lúc vào
+              checkInTime: new Date(),
+              status: ParkingSessionStatusEnum.ACTIVE,
+              paymentStatus: PaymentStatusEnum.PENDING, // Trả sau
+              reservationId: undefined,
+              subscriptionId: undefined,
+              guestCardId, // 👈 Bắt buộc có
+              nfcUid: dto.identifier,
+            },
+            session,
+          )
+        }
+      }
+
+      // =================================================================
+      // C. KẾT THÚC
+      // =================================================================
+      if (!newSession) {
+        throw new BadRequestException(
+          'Vui lòng cung cấp Mã QR/Thẻ hợp lệ hoặc Biển số xe để check-in.',
+        )
+      }
+
+      await session.commitTransaction()
+    } catch (error) {
+      await session.abortTransaction()
+      throw error
+    } finally {
+      await session.endSession()
+    }
+
+    // =================================================================
+    // D. TÁC VỤ NỀN (POST-COMMIT)
+    // =================================================================
+
+    // 1. Cập nhật WebSocket
+    await this.parkingLotService.updateAvailableSpotsForWebsocket(
+      parkingLotId,
+      -1,
+    )
+
+    // 2. Upload ảnh
+    const ownerType = 'ParkingSession'
+    await this.uploadImageToImageService(
+      file,
+      newSession._id,
+      ownerType,
+      dto.description ?? 'Check-in Photo',
+    )
+
+    return this.responseToDto(newSession)
+  }
+
+  async calculateCheckoutFee(
+    parkingLotId: string,
+    pricingPolicyId: string,
+    uidCard?: string,
+    identifier?: string,
+  ): Promise<{
+    amount: number
+    sessionId: string
+    message?: string
+  }> {
+    // 1. Lấy chính sách giá (giữ nguyên)
+    const pricingPolicy =
+      await this.pricingPolicyRepository.findPolicyById(pricingPolicyId)
+    if (!pricingPolicy) {
+      throw new NotFoundException('Chính sách giá không tồn tại.')
+    }
+
+    // 2. Kiểm tra đặt trước (Reservation) (giữ nguyên)
+    if (identifier) {
+      const reservation =
+        await this.reservationRepository.findValidReservationForCheckIn(
+          identifier,
+        )
+
+      if (reservation) {
+        const now = new Date()
+        const endTime = new Date(reservation.estimatedEndTime)
+
+        // Tính thời gian quá giờ (milliseconds)
+        const overstayMs = now.getTime() - endTime.getTime()
+
+        // Cho phép trễ 15 phút miễn phí (Grace Period) - Tuỳ bạn cấu hình
+        const GRACE_PERIOD_MS = 15 * 60 * 1000
+
+        if (overstayMs <= GRACE_PERIOD_MS) {
+          // Ra đúng giờ hoặc trễ trong mức cho phép
+          return {
+            amount: 0,
+            sessionId: reservation._id,
+            message: 'Đã thanh toán trước (Đúng giờ)',
+          }
+        } else {
+          // --- XỬ LÝ RA TRỄ ---
+
+          // 1. Tính số giờ trễ (làm tròn lên)
+          const overstayHours = Math.ceil(overstayMs / (1000 * 60 * 60))
+
+          // 2. Tính tiền phạt dựa trên policy
+          // Lưu ý: Ta dùng hàm calculatePriceByPolicy đã viết ở bước trước
+          // Tham số truyền vào là 'overstayHours' chứ không phải tổng thời gian gửi
+          const extraFee = this.calculatePriceByPolicy(
+            pricingPolicy,
+            overstayHours,
+          )
+
+          return {
+            amount: extraFee,
+            sessionId: reservation._id,
+            message: `Quá giờ ${overstayHours} tiếng`,
+          }
+        }
+      }
+    }
+
+    // 3. Kiểm tra thẻ vãng lai/tháng (UidCard)
+    if (uidCard) {
+      const existCard = await this.guestCardService.findGuestCardByNfc(
+        uidCard,
+        parkingLotId,
+      )
+      if (!existCard) {
+        throw new NotFoundException(
+          `Thẻ có UID ${uidCard} chưa được đăng ký tại bãi xe này`,
+        )
+      }
+
+      // Tìm session đang hoạt động
+      const sessions =
+        await this.parkingLotSessionRepository.findActiveSessionByUidCard(
+          existCard._id,
+          parkingLotId,
+        )
+
+      if (sessions && sessions.length > 0) {
+        const currentSession = sessions[0] // Lấy session đầu tiên/gần nhất
+
+        // --- BẮT ĐẦU TÍNH TOÁN ---
+        // Giả sử trong session có trường checkInTime là Date
+        const checkInTime = new Date(currentSession.checkInTime)
+        const checkOutTime = new Date() // Thời gian hiện tại
+
+        // Tính thời gian gửi xe (đơn vị: giờ)
+        // Math.abs để đảm bảo dương, chia cho 36e5 để đổi ms sang giờ
+        const durationMs = checkOutTime.getTime() - checkInTime.getTime()
+        const durationHours = Math.ceil(durationMs / (1000 * 60 * 60))
+        // Lưu ý: durationHours = 0 thì có thể coi là 1 hoặc miễn phí tuỳ nghiệp vụ, ở đây tôi để tối thiểu là 1 giờ nếu cần.
+        const finalDuration = durationHours <= 0 ? 1 : durationHours
+
+        const amount = this.calculatePriceByPolicy(pricingPolicy, finalDuration)
+
+        return {
+          amount: amount,
+          sessionId: currentSession._id,
+        }
+      }
+    }
+
+    throw new NotFoundException('Phiên đỗ xe đang hoạt động không tồn tại.')
+  }
+
+  async confirmCheckout(
+    sessionId: string,
+    userId: string,
+    paymentId?: string,
+    pricingPolicyId?: string,
+  ): Promise<boolean> {
+    const session = await this.connection.startSession()
+    session.startTransaction()
+
+    try {
+      // 1. Lấy session
+      const parkingSession = await this.parkingLotSessionRepository.findById(
+        sessionId,
+        session,
+      )
+
+      if (!parkingSession) {
+        throw new NotFoundException('Phiên đỗ xe không tồn tại.')
+      }
+
+      if (parkingSession.status !== ParkingSessionStatusEnum.ACTIVE) {
+        throw new ConflictException(
+          'Phiên đỗ xe đã được thanh toán hoặc không còn hoạt động.',
+        )
+      }
+
+      if (parkingSession.subscriptionId) {
+        const sub = await this.subscriptionRepository.findSubscriptionById(
+          parkingSession.subscriptionId,
+        )
+        if (!sub) {
+          throw new NotFoundException('Vé tháng không tồn tại.')
+        }
+        await this.subscriptionRepository.updateUsageStatus(
+          sub.subscriptionIdentifier,
+          true,
+          session,
+        )
+      }
+
+      if (parkingSession.reservationId) {
+        const res = await this.reservationRepository.findReservationById(
+          parkingSession.reservationId,
+        )
+        if (!res) {
+          throw new NotFoundException('Đặt trước không tồn tại.')
+        }
+        await this.reservationRepository.updateReservationStatus(
+          res._id,
+          ReservationStatusEnum.CHECKED_OUT,
+          'SYSTEM',
+          session,
+        )
+      }
+
+      if (paymentId) {
+        await this.accountServiceClient.getPaymentStatusByPaymentId(
+          paymentId,
+          userId,
+          'PAID',
+        )
+        if (!paymentId) {
+          throw new ConflictException('Thanh toán chưa hoàn tất.')
+        }
+      }
+      // 2. Cập nhật session
+      const data =
+        await this.parkingLotSessionRepository.updateSessionOnCheckout(
+          sessionId,
+          {
+            status: ParkingSessionStatusEnum.COMPLETED,
+            checkOutTime: new Date(),
+            paymentStatus: PaymentStatusEnum.PAID,
+            pricingPolicyId: pricingPolicyId,
+          },
+          session,
+        )
+      if (!data) {
+        throw new InternalServerErrorException(
+          'Checkout thất bại, vui lòng thử lại.',
+        )
+      }
+      await this.parkingLotService.updateAvailableSpotsForWebsocket(
+        parkingSession.parkingLotId,
+        1,
+      )
+      // 3. Commit transaction
+      await session.commitTransaction()
+      return true
+    } catch (error) {
+      await session.abortTransaction()
+      throw error
+    } finally {
+      await session.endSession()
+    }
+  }
+
+  findAllSessionsByUserId(
+    userId: string,
+    paginationQuery: PaginationQueryDto,
+  ): Promise<{
+    data: ParkingLotSessionResponseDto[]
+    pagination: PaginationDto
+  }> {
+    throw new Error('Method not implemented.')
+  }
+
+  findAllSessionsByParkingLot(
+    parkingLotId: string,
+    paginationQuery: PaginationQueryDto,
+  ): Promise<{
+    data: ParkingLotSessionResponseDto[]
+    pagination: PaginationDto
+  }> {
+    throw new Error('Method not implemented.')
+  }
+
+  getSessionDetailsWithImages(
+    sessionId: string,
+  ): Promise<ParkingLotSessionResponseDto & { images: any[] }> {
+    throw new Error('Method not implemented.')
+  }
+
+  async findActiveSession(
+    parkingLotId: string,
+    identifier?: string,
+    uidCard?: string,
+  ): Promise<boolean> {
+    if (!identifier && !uidCard) {
+      throw new BadRequestException(
+        'Vui lòng cung cấp Mã QR/Thẻ hợp lệ để tìm phiên đỗ xe.',
+      )
+    }
+    if (identifier) {
+      const reservation =
+        await this.reservationRepository.findValidReservationForCheckIn(
+          identifier,
+        )
+      if (reservation) {
+        return true
+      }
+    }
+    if (uidCard) {
+      const existCard = await this.guestCardService.findGuestCardByNfc(
+        uidCard,
+        parkingLotId,
+      )
+      if (!existCard) {
+        throw new NotFoundException(
+          `Thẻ có UID ${uidCard} chưa được đăng ký tại bãi xe này`,
+        )
+      }
+      const sessions =
+        await this.parkingLotSessionRepository.findActiveSessionByUidCard(
+          existCard._id,
+          parkingLotId,
+        )
+      if (sessions && sessions.length > 0) {
+        return true
+      }
+    }
+    return false
+  }
+}

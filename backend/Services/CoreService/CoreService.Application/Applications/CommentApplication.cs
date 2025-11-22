@@ -92,12 +92,21 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<PaginationDto<CommentItemDto>>> GetByParkingLotAsync(string parkingLotId, int? page, int? pageSize)
         {
             var all = (await _repo.GetByTargetAsync(CommentTargetType.ParkingLot, parkingLotId)).ToList();
+            if (all == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
             return await BuildPagedTree(all, page, pageSize);
         }
 
         public async Task<ApiResponse<PaginationDto<CommentItemDto>>> GetByFaqAsync(string faqId, int? page, int? pageSize)
         {
             var all = (await _repo.GetByTargetAsync(CommentTargetType.Faq, faqId)).ToList();
+            if (all == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
+
             return await BuildPagedTree(all, page, pageSize);
         }
 

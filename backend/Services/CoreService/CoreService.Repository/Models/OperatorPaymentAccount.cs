@@ -18,7 +18,7 @@ namespace CoreService.Repository.Models
         public string OperatorId { get; set; }     // id account/bãi trong hệ của bạn
 
         public string XenditUserId { get; set; }   // user_id sub-account (xenPlatform)
-        public string Status { get; set; }         // ACTIVE/PENDING/RESTRICTED
+
         public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
     }
 }

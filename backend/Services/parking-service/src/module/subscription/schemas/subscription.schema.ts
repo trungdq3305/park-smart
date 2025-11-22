@@ -13,7 +13,11 @@ export type SubscriptionDocument = HydratedDocument<Subscription>
  */
 @Schema()
 export class Subscription extends BaseEntity {
-  // Kế thừa _id, createdAt, updatedAt từ BaseEntity
+  @Prop({
+    type: mongoose.Schema.Types.ObjectId,
+    default: () => new mongoose.Types.ObjectId(),
+  })
+  _id: string
 
   @Prop({
     required: true,
@@ -22,14 +26,6 @@ export class Subscription extends BaseEntity {
     index: true,
   })
   parkingLotId: string
-
-  @Prop({
-    required: true,
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Người dùng sở hữu gói này
-    index: true,
-  })
-  userId: string
 
   @Prop({
     required: true,
@@ -43,9 +39,9 @@ export class Subscription extends BaseEntity {
     required: true,
     type: String,
     enum: Object.values(SubscriptionStatusEnum), // ⭐️ 2. Dùng Object.values()
-    default: SubscriptionStatusEnum.ACTIVE,
+    default: SubscriptionStatusEnum.PENDING_PAYMENT,
   })
-  status: string
+  status: SubscriptionStatusEnum
 
   @Prop({
     required: true,
@@ -66,8 +62,15 @@ export class Subscription extends BaseEntity {
   })
   isUsed: boolean
 
-  // --- Các trường tùy chọn bạn có thể thêm sau ---
+  @Prop({
+    required: false,
+    type: String,
+    unique: true,
+    sparse: true,
+  })
+  paymentId: string
 
+  // --- Các trường tùy chọn bạn có thể thêm sau ---
   @Prop({
     type: String,
     unique: true, // Bắt buộc phải là duy nhất
@@ -81,4 +84,4 @@ export const SubscriptionSchema = SchemaFactory.createForClass(Subscription)
 
 // Tối ưu hóa truy vấn
 SubscriptionSchema.index({ parkingLotId: 1, status: 1 })
-SubscriptionSchema.index({ userId: 1, status: 1 })
+SubscriptionSchema.index({ createdBy: 1, status: 1 })

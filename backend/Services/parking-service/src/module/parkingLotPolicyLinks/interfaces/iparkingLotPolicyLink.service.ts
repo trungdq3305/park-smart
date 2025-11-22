@@ -31,26 +31,24 @@ export interface IParkingLotPolicyLinkService {
     id: IdDto,
     updateDto: UpdateParkingLotPolicyLinkDto,
     userId: string,
-  ): Promise<ParkingLotPolicyLinkResponseDto>
+  ): Promise<boolean>
 
   /**
    * Lấy thông tin chi tiết một liên kết bằng ID.
    * @param id ID của liên kết.
-   * @param userId ID của người vận hành (để kiểm tra quyền).
    */
-  findLinkById(
-    id: IdDto,
-    userId: string,
-  ): Promise<ParkingLotPolicyLinkResponseDto>
+  findLinkById(id: IdDto): Promise<ParkingLotPolicyLinkResponseDto>
 
   /**
    * (Cho Admin) Lấy tất cả các liên kết (kể cả cũ/hết hạn) của 1 bãi xe.
    * @param parkingLotId ID của bãi xe.
    * @param paginationQuery Tùy chọn phân trang (page, pageSize).
+   * @param isDeleted Có lấy các liên kết đã xóa mềm hay không.
    */
   findAllLinksByParkingLot(
     parkingLotId: string,
     paginationQuery: PaginationQueryDto,
+    isDeleted: boolean,
   ): Promise<{
     data: ParkingLotPolicyLinkResponseDto[]
     pagination: PaginationDto
@@ -73,6 +71,18 @@ export interface IParkingLotPolicyLinkService {
    * @param userId ID của người vận hành (để kiểm tra quyền).
    */
   softDeleteLink(id: IdDto, userId: string): Promise<boolean>
+
+  /**
+   * Cập nhật ngày kết thúc của một liên kết.
+   * @param linkId ID của liên kết.
+   * @param endDate Ngày kết thúc mới (ISO 8601).
+   * @param userId ID của người vận hành (để kiểm tra quyền).
+   */
+  updateEndDate(
+    linkId: string,
+    endDate: string,
+    userId: string,
+  ): Promise<boolean>
 }
 
 export const IParkingLotPolicyLinkService = Symbol(

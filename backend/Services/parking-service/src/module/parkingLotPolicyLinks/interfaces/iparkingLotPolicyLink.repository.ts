@@ -1,9 +1,6 @@
 import type { ClientSession } from 'mongoose' // <-- Thêm session
 
-import type {
-  CreateParkingLotPolicyLinkDto,
-  UpdateParkingLotPolicyLinkDto,
-} from '../dto/parkingLotPolicyLink.dto'
+import type { UpdateParkingLotPolicyLinkDto } from '../dto/parkingLotPolicyLink.dto'
 import type { ParkingLotPolicyLink } from '../schemas/parkingLotPolicyLink.schema'
 
 export interface IParkingLotPolicyLinkRepository {
@@ -11,9 +8,10 @@ export interface IParkingLotPolicyLinkRepository {
    * Tạo một liên kết mới.
    */
   createLink(
-    linkDto: CreateParkingLotPolicyLinkDto,
+    linkDto: Partial<ParkingLotPolicyLink>,
+    userId: string,
     session?: ClientSession, // <-- Nên có session
-  ): Promise<ParkingLotPolicyLink>
+  ): Promise<ParkingLotPolicyLink | null>
 
   /**
    * Tìm một liên kết bằng ID.
@@ -27,6 +25,7 @@ export interface IParkingLotPolicyLinkRepository {
     parkingLotId: string,
     page: number,
     pageSize: number,
+    isDeleted: boolean,
   ): Promise<{ data: ParkingLotPolicyLink[]; total: number }>
 
   /**
@@ -47,6 +46,7 @@ export interface IParkingLotPolicyLinkRepository {
   updateLink(
     id: string,
     linkDto: UpdateParkingLotPolicyLinkDto,
+    userId: string,
     session?: ClientSession, // <-- Nên có session
   ): Promise<boolean>
 
@@ -55,8 +55,23 @@ export interface IParkingLotPolicyLinkRepository {
    */
   softDeleteLink(
     id: string,
+    userId: string,
     session?: ClientSession, // <-- Nên có session
   ): Promise<boolean>
+
+  /**   * Cập nhật chỉ ngày kết thúc của một liên kết.
+   * (Dùng khi muốn gia hạn hoặc kết thúc sớm một liên kết).
+   * @param linkId ID của liên kết cần cập nhật.
+   * @param endDate Ngày kết thúc mới (null nếu muốn bỏ ngày kết thúc).
+   * @param userId ID của người vận hành (để kiểm tra quyền).
+   */
+  updateEndDate(linkId: string, endDate: Date, userId: string): Promise<boolean>
+
+  /**   * Tìm tất cả các liên kết đã hết hạn nhưng vẫn đang được đánh dấu là hoạt động.
+   * (Dùng để tự động vô hiệu hóa các liên kết này).
+   * @param currentTime Thời điểm hiện tại để so sánh với endDate.
+   */
+  findExpiredActiveLinks(currentTime: Date): Promise<ParkingLotPolicyLink[]>
 }
 
 export const IParkingLotPolicyLinkRepository = Symbol(

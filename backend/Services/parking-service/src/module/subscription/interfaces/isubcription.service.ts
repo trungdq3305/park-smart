@@ -4,8 +4,11 @@ import type { IdDto } from 'src/common/dto/params.dto'
 
 // Import các DTOs liên quan đến Subscription
 import type {
+  AvailabilitySlotDto,
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
+  SubscriptionLogDto,
+  SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from '../dto/subscription.dto' // <-- Giả định đường dẫn DTO
 
@@ -69,10 +72,12 @@ export interface ISubscriptionService {
    * Gia hạn một gói thuê bao (do người dùng chủ động).
    * (Service sẽ kích hoạt luồng thanh toán (cashless) cho chu kỳ tiếp theo).
    * @param id ID của gói thuê bao cần gia hạn.
+   * @param paymentId ID của thanh toán cho việc gia hạn.
    * @param userId ID của người dùng đang thực hiện.
    */
   renewSubscription(
     id: IdDto,
+    paymentId: string,
     userId: string,
   ): Promise<SubscriptionDetailResponseDto>
 
@@ -86,6 +91,47 @@ export interface ISubscriptionService {
     id: IdDto,
     updateDto: UpdateSubscriptionDto,
   ): Promise<SubscriptionDetailResponseDto>
+
+  /**
+   * (Dành cho Khách hàng) Lấy bản đồ/lịch tình trạng còn
+   * suất thuê bao (Xô 1) cho 15 ngày tới.
+   * @param parkingLotId ID của bãi xe.
+   */
+  getSubscriptionAvailability(
+    parkingLotId: string,
+  ): Promise<Record<string, AvailabilitySlotDto>>
+
+  /**
+   * Công việc định kỳ để đánh dấu các gói thuê bao đã hết hạn.
+   * Chạy hàng ngày để cập nhật trạng thái các gói thuê bao.
+   */
+  setExpiredSubscriptionsJob(): Promise<void>
+
+  /**
+   * Lấy tất cả lịch sử (logs) của một gói thuê bao (có phân trang).
+   * Dùng để hiển thị cho Admin hoặc người dùng.
+   * @param subscriptionId ID của gói thuê bao (Subscription) cha.
+   * @param paginationQuery Tùy chọn phân trang (page, pageSize).
+   */
+  findLogsBySubscriptionId(
+    subscriptionId: string,
+    paginationQuery: PaginationQueryDto,
+  ): Promise<{ data: SubscriptionLogDto[]; pagination: PaginationDto }>
+
+  handlePendingSubscriptionsTimeout(): Promise<void>
+
+  updateSubscriptionPaymentId(
+    subscriptionId: string,
+    userId: string,
+    paymentId: string,
+  ): Promise<SubscriptionDetailResponseDto>
+
+  sendExpiringSubscriptionNotificationsJob(): Promise<void>
+
+  checkRenewalEligibility(
+    id: string,
+    userId: string,
+  ): Promise<SubscriptionRenewalEligibilityResponseDto>
 }
 
 export const ISubscriptionService = Symbol('ISubscriptionService')

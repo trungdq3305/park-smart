@@ -16,6 +16,7 @@ export interface ITieredRateSetRepository {
   createSet(
     dto: CreateTieredRateSetDto,
     userId: string,
+    session: ClientSession,
   ): Promise<TieredRateSet | null>
 
   /**
@@ -65,14 +66,17 @@ export interface ITieredRateSetRepository {
    * @param id ID của bộ giá cần xóa.
    * @param userId ID của người vận hành (để xác thực quyền).
    */
-  softDeleteSet(id: string, userId: string): Promise<boolean>
+  softDeleteSet(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean>
 
   /**
    * Tìm một bộ giá theo tên và người tạo (để kiểm tra trùng lặp).
    * Có thể được sử dụng trong một transaction (session).
    * @param name Tên của bộ giá.
    * @param userId ID của người vận hành.
-   * @param session Tùy chọn, phiên làm việc của transaction.
    */
   findSetByName(name: string, userId: string): Promise<TieredRateSet | null>
 
