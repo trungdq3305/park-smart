@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
@@ -220,6 +221,28 @@ class SubscriptionRenewalFlow {
       return Map<String, dynamic>.from(value);
     }
     return null;
+  }
+
+  static String _extractErrorMessage(dynamic error) {
+    if (error is Exception) {
+      final message = error.toString();
+      // Try to extract message from JSON error response
+      if (message.contains('{')) {
+        try {
+          final jsonMatch = RegExp(r'\{[^}]+\}').firstMatch(message);
+          if (jsonMatch != null) {
+            final jsonStr = jsonMatch.group(0);
+            final json = jsonDecode(jsonStr!);
+            return json['message'] ?? json['error'] ?? message;
+          }
+        } catch (_) {
+          // If parsing fails, return original message
+        }
+      }
+      // Remove "Exception: " prefix if present
+      return message.replaceFirst(RegExp(r'^Exception:\s*'), '');
+    }
+    return error.toString();
   }
 
   static Future<Map<String, dynamic>?> _fetchSubscriptionDetail(

@@ -8,6 +8,7 @@ import '../../../widgets/booking/electric_car_message.dart';
 import '../../../widgets/booking/pricing_table_card.dart';
 import '../../../widgets/booking/comments_section.dart';
 import '../../../widgets/booking/subscription_calendar.dart';
+import '../../../widgets/booking/booking_method_card.dart';
 import 'payment_checkout_screen.dart';
 import 'payment_result_screen.dart';
 
@@ -39,6 +40,7 @@ class _BookingScreenState extends State<BookingScreen> {
   Map<String, dynamic> _availabilityData = {};
   DateTime? _selectedStartDate;
   bool _isPackageType = false;
+  BookingMethod? _selectedBookingMethod;
 
   @override
   void initState() {
@@ -224,9 +226,26 @@ class _BookingScreenState extends State<BookingScreen> {
 
                 const SizedBox(height: 24),
 
-                // Pricing table card
+                // Booking method selection card
+                BookingMethodCard(
+                  selectedMethod: _selectedBookingMethod,
+                  onMethodSelected: (method) {
+                    setState(() {
+                      _selectedBookingMethod = method;
+                      // Reset selection when changing method
+                      _selectedPricingPolicyId = null;
+                      _isPackageType = false;
+                      _availabilityData = {};
+                      _selectedStartDate = null;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Pricing table card (filtered by booking method)
                 PricingTableCard(
-                  pricingLinks: _pricingLinks,
+                  pricingLinks: _getFilteredPricingLinks(),
                   isLoading: _isLoadingPricing,
                   selectedPricingPolicyId: _selectedPricingPolicyId,
                   onPricingSelected: _onPricingSelected,
@@ -276,9 +295,11 @@ class _BookingScreenState extends State<BookingScreen> {
                               ),
                             ),
                           )
-                        : const Text(
-                            'Đăng ký gói thuê bao',
-                            style: TextStyle(
+                        : Text(
+                            _selectedBookingMethod == BookingMethod.reservation
+                                ? 'Đặt chỗ'
+                                : 'Đăng ký gói thuê bao',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
@@ -325,6 +346,29 @@ class _BookingScreenState extends State<BookingScreen> {
     final total = duration * basePrice;
 
     return total.toString();
+  }
+
+  /// Filter pricing links based on selected booking method
+  List<Map<String, dynamic>> _getFilteredPricingLinks() {
+    if (_selectedBookingMethod == null) {
+      return []; // Don't show any pricing if no method is selected
+    }
+
+    return _pricingLinks.where((link) {
+      final pricingPolicy = link['pricingPolicyId'];
+      final basisId = pricingPolicy?['basisId'];
+      final basisName = basisId?['basisName'] ?? basisId?['name'] ?? '';
+
+      if (_selectedBookingMethod == BookingMethod.reservation) {
+        // For reservation, only show TIERED pricing
+        return basisName == 'TIERED';
+      } else if (_selectedBookingMethod == BookingMethod.subscription) {
+        // For subscription, only show PACKAGE pricing
+        return basisName == 'PACKAGE';
+      }
+
+      return false;
+    }).toList();
   }
 
   /// Handle pricing policy selection (toggle)
