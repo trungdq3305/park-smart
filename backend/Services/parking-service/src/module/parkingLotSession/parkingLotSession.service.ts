@@ -114,8 +114,6 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     ownerType: string,
     description?: string,
   ): Promise<any> {
-    if (!file) return null
-
     try {
       // Gửi request multipart/form-data
       const response: any =

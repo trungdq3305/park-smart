@@ -1,5 +1,6 @@
 import type { ClientSession } from 'mongoose'
 
+import type { MongoWriteError } from '../guestCard.repository'
 import type { GuestCard } from '../schemas/guestCard.schema'
 
 export interface IGuestCardRepository {
@@ -23,7 +24,7 @@ export interface IGuestCardRepository {
   bulkInsertAllowingFailures(
     guestCards: Partial<GuestCard>[],
     session?: ClientSession,
-  ): Promise<{ successes: GuestCard[]; errors: any[] }>
+  ): Promise<{ successes: GuestCard[]; errors: MongoWriteError[] }>
 
   /**
    * Tìm một thẻ bằng ID của nó.

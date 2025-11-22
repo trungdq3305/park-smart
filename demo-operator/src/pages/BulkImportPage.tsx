@@ -25,7 +25,7 @@ import axios from "axios";
 import Success from "../assets/success.mp3";
 
 // Cấu hình
-const PYTHON_SOCKET_URL = "http://PhamVietHoang:1836";
+const PYTHON_URL = "http://PhamVietHoang:1836";
 const NEST_API = "http://localhost:5000/guest-cards";
 // 👇 ID Bãi xe hiện tại (Lấy từ User login trong thực tế)
 const CURRENT_PARKING_ID = "6910bdd67ed4c382df23de4e";
@@ -108,7 +108,7 @@ const BulkImportPage: React.FC = () => {
 
   useEffect(() => {
     // Kết nối Socket tới Python
-    socketRef.current = io(PYTHON_SOCKET_URL, { transports: ["websocket"] });
+    socketRef.current = io(PYTHON_URL, { transports: ["websocket"] });
 
     socketRef.current.on("connect", () => setIsConnected(true));
     socketRef.current.on("disconnect", () => setIsConnected(false));
