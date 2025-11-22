@@ -12,6 +12,16 @@ interface PricingPolicyListProps {
   onIsDeletedChange: (isDeleted: boolean) => void
 }
 
+const getPriorityColor = (priority: number): string | undefined => {
+  if (priority >= 8 && priority <= 10) {
+    return 'green'
+  } else if (priority >= 4 && priority <= 7) {
+    return 'gold'
+  }
+  // Priority từ 1-3: default (không set color)
+  return undefined
+}
+
 const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
   policies,
   loading,
@@ -62,7 +72,7 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
                             Đã vô hiệu
                           </Tag>
                         )}
-                        <Tag color="blue">Ưu tiên {link.priority}</Tag>
+                        <Tag color={getPriorityColor(link.priority)}>Ưu tiên {link.priority}</Tag>
                       </div>
                     </div>
 
