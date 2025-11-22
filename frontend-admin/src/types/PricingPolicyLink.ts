@@ -8,4 +8,5 @@ export interface PricingPolicyLink {
   startDate: string
   createdAt: string
   updatedAt: string | null
+  endDate?: string | null
 }

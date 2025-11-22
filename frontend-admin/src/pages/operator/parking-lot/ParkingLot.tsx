@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Card, Col, Empty, Row, Skeleton, Switch, Tag, Typography } from 'antd'
+import { Card, Col, Empty, Row, Skeleton, Typography } from 'antd'
 import { skipToken } from '@reduxjs/toolkit/query'
 import {
   CarOutlined,
@@ -14,6 +14,7 @@ import type { Pagination } from '../../../types/Pagination'
 import { useGetPricingPoliciesOperatorQuery } from '../../../features/operator/pricingPolicyAPI'
 import ParkingLotDetails from './components/ParkingLotDetails'
 import StatCard from './components/StatCard'
+import PricingPolicyList from './components/PricingPolicyList'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 
 const { Title, Text } = Typography
@@ -34,9 +35,8 @@ interface PricingPoliciesListResponse {
 }
 
 const OperatorParkingLot: React.FC = () => {
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(10)
   const [isDeleted, setIsDeleted] = useState(false)
+  const [isSwitchLoading, setIsSwitchLoading] = useState(false)
 
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const parkingLot = data?.data?.[0] ?? null
@@ -45,13 +45,25 @@ const OperatorParkingLot: React.FC = () => {
       parkingLot?._id
         ? {
             parkingLotId: parkingLot._id,
-            page,
-            pageSize,
+            page: 1,
+            pageSize: 10,
             isDeleted,
           }
         : skipToken
     )
   const pricingPolicies = pricingPoliciesData?.data ?? []
+
+  const handleIsDeletedChange = (newValue: boolean) => {
+    setIsSwitchLoading(true)
+    // Set timeout để hiển thị hiệu ứng loading (tối thiểu 500ms)
+    setTimeout(() => {
+      setIsDeleted(newValue)
+      // Đợi thêm một chút để đảm bảo query đã hoàn thành
+      setTimeout(() => {
+        setIsSwitchLoading(false)
+      }, 300)
+    }, 500)
+  }
 
 
   const summary = useMemo(() => {
@@ -136,161 +148,13 @@ const OperatorParkingLot: React.FC = () => {
           <ParkingLotDetails lot={parkingLot} />
           <PricingPolicyList
             policies={pricingPolicies}
-            loading={isPricingLoading}
+            loading={isPricingLoading || isSwitchLoading}
             isDeleted={isDeleted}
-            onIsDeletedChange={setIsDeleted}
+            onIsDeletedChange={handleIsDeletedChange}
           />
         </>
       )}
     </div>
-  )
-}
-
-interface PricingPolicyListProps {
-  policies: PricingPolicyLink[]
-  loading: boolean
-  isDeleted: boolean
-  onIsDeletedChange: (isDeleted: boolean) => void
-}
-
-const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
-  policies,
-  loading,
-  isDeleted,
-  onIsDeletedChange,
-}) => {
-  return (
-    <Card className="policy-card-list">
-      <div className="policy-card-list__header">
-        <Title level={4} className="policy-card-list__title">
-          Chính sách giá
-        </Title>
-        <div className="policy-card-list__controls">
-          <div>
-            <Text type="secondary" style={{ marginRight: 8 }}>
-              Hiển thị đã xóa:
-            </Text>
-            <Switch checked={isDeleted} onChange={onIsDeletedChange} />
-          </div>
-        </div>
-      </div>
-      {loading ? (
-        <Skeleton active />
-      ) : policies.length === 0 ? (
-        <Empty description="Chưa có chính sách giá" />
-      ) : (
-        <Row gutter={[16, 16]}>
-          {policies
-            .slice()
-            .sort((a, b) =>
-              (a.pricingPolicyId.basisId?.basisName || '').localeCompare(
-                b.pricingPolicyId.basisId?.basisName || ''
-              )
-            )
-            .map((link) => {
-              const policy = link.pricingPolicyId
-              const isPackage = policy.basisId?.basisName === 'PACKAGE'
-              const isTiered = policy.basisId?.basisName === 'TIERED'
-              return (
-                <Col xs={24} md={12} key={link._id}>
-                  <Card className="policy-card">
-                    <div className="policy-card__header">
-                      <Text className="policy-card__name">{policy.name}</Text>
-                      <Tag color="blue">Ưu tiên {link.priority}</Tag>
-                    </div>
-
-                    <div className="policy-card__meta">
-                      <div>
-                        <Text type="secondary">Giá mỗi giờ</Text>
-                        <div className="policy-card__meta-value">
-                          {policy.pricePerHour != null
-                            ? `${policy.pricePerHour.toLocaleString()} đ`
-                            : '—'}
-                        </div>
-                      </div>
-                      <div>
-                        <Text type="secondary">Giá cố định</Text>
-                        <div className="policy-card__meta-value">
-                          {policy.fixedPrice != null
-                            ? `${policy.fixedPrice.toLocaleString()} đ`
-                            : '—'}
-                        </div>
-                      </div>
-                      <div>
-                        <Text type="secondary">Ngày áp dụng</Text>
-                        <div className="policy-card__meta-value">
-                          {new Date(link.startDate).toLocaleDateString('vi-VN')}
-                        </div>
-                      </div>
-                    </div>
-
-                    <Text type="secondary">Loại chính sách</Text>
-                    <Text className="policy-card__description">
-                      {policy.basisId?.basisName || 'Không xác định'} -
-                      {policy.basisId?.description || 'Không có mô tả'}
-                    </Text>
-
-                    {isPackage && policy.packageRateId && (
-                      <div className="policy-card__section">
-                        <Text type="secondary">Gói cố định</Text>
-                        <div className="policy-card__package">
-                          <div>
-                            <Text type="secondary">Tên gói</Text>
-                            <div className="policy-card__meta-value">
-                              {policy.packageRateId.name}
-                            </div>
-                          </div>
-                          <div>
-                            <Text type="secondary">Giá gói</Text>
-                            <div className="policy-card__meta-value">
-                              {policy.packageRateId.price.toLocaleString()} đ
-                            </div>
-                          </div>
-                          <div>
-                            <Text type="secondary">Thời lượng</Text>
-                            <div className="policy-card__meta-value">
-                              {policy.packageRateId.durationAmount} {policy.packageRateId.unit}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {isTiered && policy.tieredRateSetId && (
-                      <div className="policy-card__section">
-                        <Text type="secondary">Bảng giá theo khung giờ</Text>
-                        <div className="policy-card__tiers">
-                          <Text strong>{policy.tieredRateSetId.name}</Text>
-                          {policy.tieredRateSetId.tiers.map((tier, index) => (
-                            <div className="policy-card__tier-row" key={index}>
-                              <span>
-                                {tier.fromHour} - {tier.toHour ?? '∞'}
-                              </span>
-                              <span>{tier.price.toLocaleString()} đ</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="policy-card__footer">
-                      <Text type="secondary">
-                        Tạo lúc:{' '}
-                        {link.createdAt ? new Date(link.createdAt).toLocaleString('vi-VN') : '—'}
-                      </Text>
-                      {link.updatedAt && (
-                        <Text type="secondary">
-                          Cập nhật: {new Date(link.updatedAt).toLocaleString('vi-VN')}
-                        </Text>
-                      )}
-                    </div>
-                  </Card>
-                </Col>
-              )
-            })}
-        </Row>
-      )}
-    </Card>
   )
 }
 
