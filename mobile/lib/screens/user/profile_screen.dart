@@ -311,8 +311,20 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       },
                     ),
                     _buildTile(
+                      icon: Icons.confirmation_num_outlined,
+                      title: 'Gói thuê bao đã đăng ký',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const MySubscriptionsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildTile(
                       icon: Icons.confirmation_number_outlined,
-                      title: 'Vé của tôi',
+                      title: 'Vé đặt chỗ',
                       onTap: () {
                         Navigator.push(
                           context,

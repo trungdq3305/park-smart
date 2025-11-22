@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../services/comment_service.dart';
-import '../../../services/user_service.dart';
+import '../../../../services/comment_service.dart';
+import '../../../../services/user_service.dart';
 
 class CommentsSection extends StatefulWidget {
   final String parkingLotId;
 
-  const CommentsSection({
-    super.key,
-    required this.parkingLotId,
-  });
+  const CommentsSection({super.key, required this.parkingLotId});
 
   @override
   State<CommentsSection> createState() => _CommentsSectionState();
@@ -57,7 +54,8 @@ class _CommentsSectionState extends State<CommentsSection> {
       if (token != null) {
         final claims = await UserService.decodeJWTToken(token);
         if (claims != null) {
-          final accountId = claims['sub'] ??
+          final accountId =
+              claims['sub'] ??
               claims['id'] ??
               claims['_id'] ??
               claims['accountId'] ??
@@ -75,7 +73,8 @@ class _CommentsSectionState extends State<CommentsSection> {
       // Try from userData
       final userData = await UserService.getUserData();
       if (userData != null) {
-        final accountId = userData['accountId'] ??
+        final accountId =
+            userData['accountId'] ??
             userData['user']?['_id'] ??
             userData['user']?['id'];
         if (accountId != null) {
@@ -96,7 +95,8 @@ class _CommentsSectionState extends State<CommentsSection> {
 
     final hasCommented = _comments.any((comment) {
       final commentAccountId = comment['accountId']?.toString();
-      return commentAccountId == _currentAccountId && comment['parentId'] == null;
+      return commentAccountId == _currentAccountId &&
+          comment['parentId'] == null;
     });
 
     setState(() {
@@ -138,7 +138,7 @@ class _CommentsSectionState extends State<CommentsSection> {
 
     try {
       print('📥 Loading comments for parking lot: ${widget.parkingLotId}');
-      
+
       final response = await CommentService.getCommentsByParkingLot(
         parkingLotId: widget.parkingLotId,
         page: _currentPage,
@@ -146,7 +146,7 @@ class _CommentsSectionState extends State<CommentsSection> {
       );
 
       print('📦 Response structure: ${response.keys}');
-      
+
       // Handle nested data structure: response['data']['data'] or response['data']
       dynamic commentsData = response['data'];
       List<Map<String, dynamic>> newComments = [];
@@ -161,9 +161,11 @@ class _CommentsSectionState extends State<CommentsSection> {
         final totalItems = commentsData['totalItems'] ?? 0;
         final totalPages = commentsData['totalPages'] ?? 1;
         final currentPage = commentsData['currentPage'] ?? 1;
-        
-        print('📊 Pagination (nested): totalItems=$totalItems, totalPages=$totalPages, currentPage=$currentPage');
-        
+
+        print(
+          '📊 Pagination (nested): totalItems=$totalItems, totalPages=$totalPages, currentPage=$currentPage',
+        );
+
         setState(() {
           if (refresh) {
             _comments = newComments;
@@ -177,12 +179,12 @@ class _CommentsSectionState extends State<CommentsSection> {
       } else if (commentsData is List) {
         // Direct array structure
         newComments = List<Map<String, dynamic>>.from(commentsData);
-        
+
         final pagination = response['pagination'];
         final totalPages = pagination?['totalPages'] ?? 1;
-        
+
         print('📊 Pagination (direct): totalPages=$totalPages');
-        
+
         setState(() {
           if (refresh) {
             _comments = newComments;
@@ -435,9 +437,10 @@ class _CommentsSectionState extends State<CommentsSection> {
   }
 
   void _startReply(Map<String, dynamic> comment) {
-    final creatorName = comment['creatorName'] ?? 
-        comment['userId']?['name'] ?? 
-        comment['userId']?['email'] ?? 
+    final creatorName =
+        comment['creatorName'] ??
+        comment['userId']?['name'] ??
+        comment['userId']?['email'] ??
         'Người dùng';
     setState(() {
       _replyingToId = comment['_id'] ?? comment['id'];
@@ -472,7 +475,10 @@ class _CommentsSectionState extends State<CommentsSection> {
     }
   }
 
-  Widget _buildStarRating({required int? selectedStar, required Function(int) onStarSelected}) {
+  Widget _buildStarRating({
+    required int? selectedStar,
+    required Function(int) onStarSelected,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (index) {
@@ -495,9 +501,10 @@ class _CommentsSectionState extends State<CommentsSection> {
 
   Widget _buildCommentCard(Map<String, dynamic> comment) {
     // Use creatorName from comment, fallback to userId.name
-    final creatorName = comment['creatorName'] ?? 
-        comment['userId']?['name'] ?? 
-        comment['userId']?['email'] ?? 
+    final creatorName =
+        comment['creatorName'] ??
+        comment['userId']?['name'] ??
+        comment['userId']?['email'] ??
         'Người dùng';
     final content = comment['content'] ?? '';
     final createdAt = comment['createdAt'] ?? '';
@@ -505,24 +512,19 @@ class _CommentsSectionState extends State<CommentsSection> {
     final isReply = comment['parentId'] != null;
     final commentAccountId = comment['accountId']?.toString();
     final commentId = comment['_id'] ?? comment['id'];
-    final isOwner = _currentAccountId != null && 
-        commentAccountId != null && 
+    final isOwner =
+        _currentAccountId != null &&
+        commentAccountId != null &&
         commentAccountId == _currentAccountId &&
         !isReply; // Only allow edit/delete for main comments, not replies
 
     return Container(
-      margin: EdgeInsets.only(
-        bottom: 12,
-        left: isReply ? 40 : 0,
-      ),
+      margin: EdgeInsets.only(bottom: 12, left: isReply ? 40 : 0),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isReply ? Colors.grey.shade50 : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.shade200,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.grey.shade200, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -571,7 +573,9 @@ class _CommentsSectionState extends State<CommentsSection> {
                       return Icon(
                         index < star ? Icons.star : Icons.star_border,
                         size: 16,
-                        color: index < star ? Colors.amber : Colors.grey.shade300,
+                        color: index < star
+                            ? Colors.amber
+                            : Colors.grey.shade300,
                       );
                     }),
                   ],
@@ -597,7 +601,10 @@ class _CommentsSectionState extends State<CommentsSection> {
                   label: const Text('Trả lời'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.green.shade600,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -610,7 +617,10 @@ class _CommentsSectionState extends State<CommentsSection> {
                   label: const Text('Sửa'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.blue.shade600,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -622,7 +632,10 @@ class _CommentsSectionState extends State<CommentsSection> {
                   label: const Text('Xóa'),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.red.shade600,
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -658,27 +671,17 @@ class _CommentsSectionState extends State<CommentsSection> {
           // Header
           Row(
             children: [
-              Icon(
-                Icons.comment,
-                color: Colors.green.shade600,
-                size: 24,
-              ),
+              Icon(Icons.comment, color: Colors.green.shade600, size: 24),
               const SizedBox(width: 8),
               const Text(
                 'Bình luận',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               const Spacer(),
               if (_comments.isNotEmpty)
                 Text(
                   '${_comments.length} bình luận',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
             ],
           ),
@@ -755,99 +758,106 @@ class _CommentsSectionState extends State<CommentsSection> {
             ),
 
           // Comment form - only show if user hasn't commented yet or is editing/replying
-          if (!_hasUserCommented || _editingCommentId != null || _replyingToId != null)
+          if (!_hasUserCommented ||
+              _editingCommentId != null ||
+              _replyingToId != null)
             Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Star rating
-                const Text(
-                  'Đánh giá (tùy chọn)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Star rating
+                  const Text(
+                    'Đánh giá (tùy chọn)',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _buildStarRating(
-                  selectedStar: _selectedStar,
-                  onStarSelected: (star) {
-                    setState(() {
-                      _selectedStar = star;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Comment input
-                TextFormField(
-                  controller: _commentController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText: _replyingToUserName != null
-                        ? 'Nhập phản hồi của bạn...'
-                        : 'Nhập bình luận của bạn...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.green.shade600, width: 2),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
+                  const SizedBox(height: 8),
+                  _buildStarRating(
+                    selectedStar: _selectedStar,
+                    onStarSelected: (star) {
+                      setState(() {
+                        _selectedStar = star;
+                      });
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Vui lòng nhập nội dung bình luận';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                    // Submit button
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isSubmitting ? null : _submitComment,
-                        icon: _isSubmitting
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : const Icon(Icons.send),
-                        label: Text(
-                          _isSubmitting
-                              ? 'Đang gửi...'
-                              : _editingCommentId != null
-                                  ? 'Cập nhật bình luận'
-                                  : 'Gửi bình luận',
+                  // Comment input
+                  TextFormField(
+                    controller: _commentController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      hintText: _replyingToUserName != null
+                          ? 'Nhập phản hồi của bạn...'
+                          : 'Nhập bình luận của bạn...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.green.shade600,
+                          width: 2,
                         ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey.shade50,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Vui lòng nhập nội dung bình luận';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Submit button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isSubmitting ? null : _submitComment,
+                      icon: _isSubmitting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.send),
+                      label: Text(
+                        _isSubmitting
+                            ? 'Đang gửi...'
+                            : _editingCommentId != null
+                            ? 'Cập nhật bình luận'
+                            : 'Gửi bình luận',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
 
           const SizedBox(height: 24),
           const Divider(),
@@ -864,7 +874,11 @@ class _CommentsSectionState extends State<CommentsSection> {
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.grey.shade400),
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.grey.shade400,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       'Không thể tải bình luận',
@@ -885,7 +899,11 @@ class _CommentsSectionState extends State<CommentsSection> {
                 padding: const EdgeInsets.all(40),
                 child: Column(
                   children: [
-                    Icon(Icons.comment_outlined, size: 48, color: Colors.grey.shade400),
+                    Icon(
+                      Icons.comment_outlined,
+                      size: 48,
+                      color: Colors.grey.shade400,
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       'Chưa có bình luận nào',
@@ -919,4 +937,3 @@ class _CommentsSectionState extends State<CommentsSection> {
     );
   }
 }
-
