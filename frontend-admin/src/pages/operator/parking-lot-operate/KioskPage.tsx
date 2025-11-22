@@ -9,10 +9,11 @@ import {
   Tag,
   Statistic,
   Descriptions,
-  Layout,
   Typography,
   notification as antdNotification,
   Space,
+  Badge,
+  Divider,
 } from 'antd'
 import { io, Socket } from 'socket.io-client'
 import axios from 'axios'
@@ -26,15 +27,18 @@ import {
   EditOutlined,
   LoginOutlined,
   LogoutOutlined,
+  ClockCircleOutlined,
+  UserOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons'
 
-import Success from '../assets/success.mp3'
+import Success from '../../../assets/success.mp3'
+import { useLocalGateway } from '../../../hooks/useLocalGateway'
+import SettingsModal from '../../../components/SettingsModal'
+import './KioskPage.css'
 
-const { Header, Content } = Layout
-const { Title } = Typography
+const { Title, Text } = Typography
 
-const PYTHON_URL = 'http://PhamVietHoang:1836'
-const LIVE_STREAM_URL = `${PYTHON_URL}/video_feed`
 // 👇 Cấu hình URL API NestJS (Thay đổi theo môi trường của bạn)
 const NEST_API_BASE = 'http://localhost:5000'
 const CURRENT_PARKING_ID = '6910bdd67ed4c382df23de4e' // ID bãi xe hiện tại
@@ -48,6 +52,10 @@ interface ScanData {
 }
 
 const KioskPage: React.FC = () => {
+  // Hook quản lý Gateway URL
+  const { gatewayUrl, saveGatewayUrl } = useLocalGateway()
+  const LIVE_STREAM_URL = `${gatewayUrl}/video_feed`
+
   // State
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [snapshot, setSnapshot] = useState<string | null>(null)
@@ -59,7 +67,7 @@ const KioskPage: React.FC = () => {
   const [timeOut, setTimeOut] = useState<string>('---')
   const [customerType, setCustomerType] = useState<string>('---')
   const [parkingFee, setParkingFee] = useState<number>(0)
-  const [message, setMessage] = useState<string>('Sẵn sàng...')
+  const [message, setMessage] = useState<string>('Sẵn sàng quét thẻ...')
 
   // ⭐️ STATE QUẢN LÝ CHẾ ĐỘ (VÀO hay RA)
   const [mode, setMode] = useState<'CHECK_IN' | 'CHECK_OUT' | 'IDLE'>('IDLE')
@@ -102,12 +110,12 @@ const KioskPage: React.FC = () => {
         },
       })
 
-      const { state, session } = statusRes.data
+      const { state } = statusRes.data
 
       if (state === 'INSIDE') {
         // ===> CHẾ ĐỘ CHECK-OUT (XE RA) <===
         setMode('CHECK_OUT')
-        setMessage('Phát hiện xe ra. Đang tính tiền...')
+        setMessage('Xe ra - Đang tính phí...')
 
         // Gọi tiếp API tính tiền
         const feeRes = await axios.post(
@@ -122,22 +130,22 @@ const KioskPage: React.FC = () => {
         setSessionData(checkoutInfo) // Lưu thông tin để nút bấm sử dụng
 
         // Hiển thị thông tin tính toán
-        setTimeIn(new Date(checkoutInfo.checkInTime).toLocaleString())
-        setTimeOut(new Date(checkoutInfo.checkOutTime).toLocaleString())
+        setTimeIn(new Date(checkoutInfo.checkInTime).toLocaleString('vi-VN'))
+        setTimeOut(new Date(checkoutInfo.checkOutTime).toLocaleString('vi-VN'))
         setParkingFee(checkoutInfo.totalAmount)
         setCustomerType(checkoutInfo.description || 'Khách vãng lai')
 
         api.info({
           message: 'Xe ra',
-          description: `Phí: ${checkoutInfo.totalAmount.toLocaleString()} đ`,
+          description: `Phí: ${checkoutInfo.totalAmount.toLocaleString('vi-VN')} đ`,
         })
       } else {
         // ===> CHẾ ĐỘ CHECK-IN (XE VÀO) <===
         setMode('CHECK_IN')
-        setMessage('Phát hiện xe vào. Sẵn sàng check-in.')
+        setMessage('Xe vào - Xác nhận biển số')
 
         // Reset các trường cũ
-        setTimeIn(new Date().toLocaleString())
+        setTimeIn(new Date().toLocaleString('vi-VN'))
         setTimeOut('---')
         setParkingFee(0)
         setCustomerType('Khách vào')
@@ -159,7 +167,7 @@ const KioskPage: React.FC = () => {
   }
 
   useEffect(() => {
-    socketRef.current = io(PYTHON_URL, { transports: ['websocket'] })
+    socketRef.current = io(gatewayUrl, { transports: ['websocket'] })
 
     socketRef.current.on('connect', () => {
       setIsConnected(true)
@@ -175,7 +183,7 @@ const KioskPage: React.FC = () => {
       socketRef.current?.disconnect()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [gatewayUrl])
 
   // --- HÀM XỬ LÝ NÚT BẤM ---
   const handleMainAction = async () => {
@@ -185,11 +193,9 @@ const KioskPage: React.FC = () => {
     try {
       if (mode === 'CHECK_IN') {
         // Gọi API Check-in
-        // Lưu ý: Gửi kèm file ảnh nếu có (ở đây giả lập chưa gửi file để code gọn)
         await axios.post(`${NEST_API_BASE}/parking-lot-sessions/check-in/${CURRENT_PARKING_ID}`, {
           plateNumber: plateNumber,
           identifier: cardUid,
-          // nfcUid: ... nếu có
         })
         api.success({ message: 'Mở cổng vào thành công!' })
       } else {
@@ -209,6 +215,7 @@ const KioskPage: React.FC = () => {
       setSnapshot(null)
       setPlateNumber('')
       setCardUid('---')
+      setMessage('Sẵn sàng quét thẻ...')
     } catch (error: any) {
       api.error({
         message: 'Thao tác thất bại',
@@ -227,75 +234,110 @@ const KioskPage: React.FC = () => {
   }
 
   return (
-    <Layout style={{ height: '100vh', background: '#141414' }}>
+    <div className="kiosk-layout">
       {contextHolder}
+      <SettingsModal currentUrl={gatewayUrl} onSave={saveGatewayUrl} />
 
-      {/* Header giữ nguyên */}
-      <Header
-        style={{
-          background: '#001529',
-          display: 'flex',
-          justifyContent: 'space-between',
-          padding: '0 20px',
-          alignItems: 'center',
-        }}
-      >
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <img src="/vite.svg" alt="Logo" style={{ height: 30 }} />
-          <Title level={4} style={{ color: 'white', margin: 0 }}>
-            KIOSK BẢO VỆ
-          </Title>
+      {/* Custom Header */}
+      <header className="kiosk-header">
+        <div className="kiosk-header-left">
+          <div className="kiosk-header-icon">
+            <CarOutlined />
+          </div>
+          <div>
+            <Title level={3} className="kiosk-header-title" style={{color: 'white'}}>
+              HỆ THỐNG KIỂM SOÁT BÃI ĐỖ XE
+            </Title>
+            <Text className="kiosk-header-subtitle" style={{color: 'white'}}>Kiosk Bảo Vệ - Cổng Số 1</Text>
+          </div>
         </div>
-        <Space>
-          {isConnected ? <Tag color="success">ONLINE</Tag> : <Tag color="error">OFFLINE</Tag>}
-          <Tag color="blue">CỔNG SỐ 1</Tag>
+        <Space size="large">
+          <Badge
+            status={isConnected ? 'success' : 'error'}
+            text={
+              <Text strong className="kiosk-header-status-text">
+                {isConnected ? 'KẾT NỐI' : 'MẤT KẾT NỐI'}
+              </Text>
+            }
+          />
+          <Tag color={isConnected ? 'success' : 'error'} className="kiosk-header-tag">
+            {isConnected ? 'ONLINE' : 'OFFLINE'}
+          </Tag>
         </Space>
-      </Header>
+      </header>
 
-      <Content style={{ padding: '10px' }}>
-        <Row gutter={[10, 10]} style={{ height: '100%' }}>
+      <main className="kiosk-content">
+        <Row gutter={[20, 20]} style={{ height: '100%' }}>
           {/* Cột trái: Camera */}
-          <Col span={16} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Col span={16} className="kiosk-camera-col">
+            {/* Live Stream */}
             <Card
               title={
-                <span>
-                  <VideoCameraOutlined /> Camera
-                </span>
+                <Space>
+                  <VideoCameraOutlined className="kiosk-card-title-icon" />
+                  <Text strong className="kiosk-card-title">
+                    Camera Giám Sát
+                  </Text>
+                </Space>
               }
-              bodyStyle={{
-                padding: 0,
-                background: '#000',
-                height: '45vh',
-                display: 'flex',
-                justifyContent: 'center',
+              className="kiosk-camera-card"
+              styles={{
+                body: {
+                  padding: 0,
+                  background: '#000',
+                  height: '100%',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: '0 0 8px 8px',
+                },
               }}
             >
               <img
                 src={LIVE_STREAM_URL}
-                style={{ maxWidth: '100%', maxHeight: '100%' }}
-                alt="Stream"
-                onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
+                className="kiosk-camera-image"
+                alt="Live Stream"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                  const parent = target.parentElement
+                  if (parent) {
+                    parent.innerHTML = '<div style="color: #666; font-size: 16px;">Đang kết nối camera...</div>'
+                  }
+                }}
               />
             </Card>
+
+            {/* Snapshot */}
             <Card
               title={
-                <span>
-                  <CameraOutlined /> Ảnh Chụp
-                </span>
+                <Space>
+                  <CameraOutlined className="kiosk-card-title-icon" />
+                  <Text strong className="kiosk-card-title">
+                    Ảnh Chụp Tức Thời
+                  </Text>
+                </Space>
               }
-              bodyStyle={{
-                padding: 0,
-                background: '#222',
-                height: '38vh',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
+              className="kiosk-snapshot-card"
+              styles={{
+                body: {
+                  padding: 0,
+                  background: '#1a1a1a',
+                  height: 'calc(100% - 57px)',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  borderRadius: '0 0 8px 8px',
+                },
               }}
             >
               {snapshot ? (
-                <img src={snapshot} style={{ maxWidth: '100%', maxHeight: '100%' }} alt="Snap" />
+                <img src={snapshot} className="kiosk-snapshot-image" alt="Snapshot" />
               ) : (
-                <div style={{ color: '#666' }}>Chờ tín hiệu quét...</div>
+                <div className="kiosk-snapshot-placeholder">
+                  <CameraOutlined className="kiosk-snapshot-placeholder-icon" />
+                  <Text style={{color: 'white'}}>Chờ tín hiệu quét thẻ...</Text>
+                </div>
               )}
             </Card>
           </Col>
@@ -303,125 +345,135 @@ const KioskPage: React.FC = () => {
           {/* Cột phải: Thông tin & Hành động */}
           <Col span={8}>
             <Card
-              title="THÔNG TIN GIAO DỊCH"
-              style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
+              title={<Text strong className="kiosk-transaction-title">THÔNG TIN GIAO DỊCH</Text>}
+              className="kiosk-transaction-card"
+              styles={{
+                body: {
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: 24,
+                },
               }}
-              bodyStyle={{ flex: 1, display: 'flex', flexDirection: 'column' }}
             >
               {/* Trạng thái hiện tại */}
-              <div
-                style={{
-                  marginBottom: 20,
-                  padding: 15,
-                  borderRadius: 8,
-                  textAlign: 'center',
-                  background:
-                    mode === 'CHECK_IN' ? '#f6ffed' : mode === 'CHECK_OUT' ? '#fff1f0' : '#f0f0f0',
-                  border:
-                    mode === 'CHECK_IN'
-                      ? '1px solid #b7eb8f'
-                      : mode === 'CHECK_OUT'
-                        ? '1px solid #ffa39e'
-                        : '1px solid #d9d9d9',
-                }}
-              >
-                <Title
-                  level={4}
-                  style={{
-                    margin: 0,
-                    color:
-                      mode === 'CHECK_IN'
-                        ? '#389e0d'
-                        : mode === 'CHECK_OUT'
-                          ? '#cf1322'
-                          : '#595959',
-                  }}
-                >
+              <div className={`kiosk-status-card ${mode.toLowerCase().replace('_', '-')}`}>
+                <div className={`kiosk-status-icon ${mode.toLowerCase().replace('_', '-')}`}>
                   {mode === 'CHECK_IN' && <LoginOutlined />}
                   {mode === 'CHECK_OUT' && <LogoutOutlined />}
-                  {' ' + message}
+                  {mode === 'IDLE' && <ScanOutlined />}
+                </div>
+                <Title level={3} className={`kiosk-status-title ${mode.toLowerCase().replace('_', '-')}`}>
+                  {message}
                 </Title>
               </div>
 
-              <div style={{ marginBottom: 10 }}>
-                <span style={{ fontSize: 12, color: '#888' }}>BIỂN SỐ XE</span>
+              {/* Biển số xe */}
+              <div className="kiosk-plate-section">
+                <Text strong className="kiosk-plate-label">
+                  Biển Số Xe
+                </Text>
                 <Input
                   value={plateNumber}
                   onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
-                  prefix={<CarOutlined />}
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 'bold',
-                    textAlign: 'center',
-                    color: '#1890ff',
-                  }}
-                  suffix={<EditOutlined />}
+                  prefix={<CarOutlined className="kiosk-plate-input-icon" />}
+                  suffix={<EditOutlined className="kiosk-plate-input-suffix" />}
+                  size="large"
+                  className="kiosk-plate-input"
+                  placeholder="Nhập biển số"
                 />
               </div>
 
-              <Descriptions column={1} bordered size="small">
-                <Descriptions.Item label="Mã Thẻ">
-                  <Space>
-                    <ScanOutlined /> <b>{cardUid}</b>
-                  </Space>
+              <Divider style={{ margin: '16px 0' }} />
+
+              {/* Thông tin chi tiết */}
+              <Descriptions
+                column={1}
+                bordered
+                size="small"
+                className="kiosk-descriptions"
+                labelStyle={{ background: '#fafafa', fontWeight: 600, width: '40%' }}
+                contentStyle={{ background: '#fff' }}
+              >
+                <Descriptions.Item
+                  label={
+                    <Space>
+                      <ScanOutlined />
+                      <span>Mã Thẻ</span>
+                    </Space>
+                  }
+                >
+                  <Text strong className="kiosk-descriptions-text">
+                    {cardUid}
+                  </Text>
                 </Descriptions.Item>
-                <Descriptions.Item label="Loại Khách">{customerType}</Descriptions.Item>
-                <Descriptions.Item label="Giờ Vào">{timeIn}</Descriptions.Item>
-                <Descriptions.Item label="Giờ Ra">{timeOut}</Descriptions.Item>
+                <Descriptions.Item
+                  label={
+                    <Space>
+                      <UserOutlined />
+                      <span>Loại Khách</span>
+                    </Space>
+                  }
+                >
+                  <Tag color="blue" className="kiosk-descriptions-tag">
+                    {customerType}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item
+                  label={
+                    <Space>
+                      <ClockCircleOutlined />
+                      <span>Giờ Vào</span>
+                    </Space>
+                  }
+                >
+                  <Text className="kiosk-descriptions-text-small">{timeIn}</Text>
+                </Descriptions.Item>
+                {mode === 'CHECK_OUT' && (
+                  <Descriptions.Item
+                    label={
+                      <Space>
+                        <ClockCircleOutlined />
+                        <span>Giờ Ra</span>
+                      </Space>
+                    }
+                  >
+                    <Text className="kiosk-descriptions-text-small">{timeOut}</Text>
+                  </Descriptions.Item>
+                )}
               </Descriptions>
 
-              <div
-                style={{
-                  marginTop: 20,
-                  textAlign: 'center',
-                  padding: 15,
-                  background: '#fffbe6',
-                  border: '1px solid #ffe58f',
-                  borderRadius: 8,
-                }}
-              >
-                <Statistic
-                  title="PHÍ CẦN THU"
-                  value={parkingFee}
-                  suffix="VNĐ"
-                  valueStyle={{
-                    color: '#cf1322',
-                    fontWeight: 'bold',
-                    fontSize: 32,
-                  }}
-                  prefix={<DollarOutlined />}
-                />
-              </div>
+              {/* Phí cần thu */}
+              {mode === 'CHECK_OUT' && parkingFee > 0 && (
+                <div className="kiosk-fee-card">
+                  <Text strong className="kiosk-fee-label">
+                    Phí Cần Thu
+                  </Text>
+                  <Statistic
+                    value={parkingFee}
+                    suffix="VNĐ"
+                    valueStyle={{ color: '#cf1322', fontWeight: 700, fontSize: 36 }}
+                    prefix={<DollarOutlined className="kiosk-fee-icon" />}
+                  />
+                </div>
+              )}
 
-              <div
-                style={{
-                  marginTop: 'auto',
-                  paddingTop: 20,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                }}
-              >
-                {/* NÚT HÀNH ĐỘNG CHÍNH - THAY ĐỔI THEO CHẾ ĐỘ */}
+              {/* Nút hành động */}
+              <div className="kiosk-actions">
                 <Button
                   type="primary"
                   size="large"
                   block
-                  icon={mode === 'CHECK_IN' ? <LoginOutlined /> : <CheckCircleOutlined />}
-                  style={{
-                    height: 60,
-                    fontSize: 20,
-                    background:
-                      mode === 'CHECK_IN'
-                        ? '#389e0d'
-                        : mode === 'CHECK_OUT'
-                          ? '#1890ff'
-                          : '#d9d9d9',
-                    borderColor: 'transparent',
-                  }}
+                  icon={
+                    mode === 'CHECK_IN' ? (
+                      <LoginOutlined className="kiosk-main-button-icon" />
+                    ) : mode === 'CHECK_OUT' ? (
+                      <CheckCircleOutlined className="kiosk-main-button-icon" />
+                    ) : (
+                      <ScanOutlined className="kiosk-main-button-icon" />
+                    )
+                  }
+                  className={`kiosk-main-button ${mode.toLowerCase().replace('_', '-')}`}
                   onClick={handleMainAction}
                   loading={isLoading}
                   disabled={mode === 'IDLE'}
@@ -433,15 +485,23 @@ const KioskPage: React.FC = () => {
                       : 'CHỜ QUÉT THẺ...'}
                 </Button>
 
-                <Button danger block onClick={handleCancel} disabled={mode === 'IDLE'}>
+                <Button
+                  danger
+                  block
+                  size="large"
+                  icon={<CloseCircleOutlined className="kiosk-cancel-button-icon" />}
+                  onClick={handleCancel}
+                  disabled={mode === 'IDLE'}
+                  className="kiosk-cancel-button"
+                >
                   HỦY BỎ
                 </Button>
               </div>
             </Card>
           </Col>
         </Row>
-      </Content>
-    </Layout>
+      </main>
+    </div>
   )
 }
 

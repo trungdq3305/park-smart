@@ -15,6 +15,7 @@ const CreateReport = lazy(() => import('../pages/operator/create-report/CreateRe
 const ManageParkingLots = lazy(() => import('../pages/admin/manage-parking-lots/ManageParkingLots'))
 const OperatorParkingLot = lazy(() => import('../pages/operator/parking-lot/ParkingLot'))
 const BulkImportPage = lazy(() => import('../pages/operator/import-card/BulkImportPage'))
+const KioskPage = lazy(() => import('../pages/operator/parking-lot-operate/KioskPage'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -81,6 +82,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/import-card',
         component: BulkImportPage,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/control-panel',
+        component: KioskPage,
         role: ['Operator'],
       },
     ],

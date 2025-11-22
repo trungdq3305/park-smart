@@ -45,7 +45,7 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Bãi đỗ xe',
     },
     {
-      key: '/dashboard',
+      key: '/operator/control-panel',
       icon: <DashboardOutlined />,
       label: 'Bảng điều khiển',
     },
