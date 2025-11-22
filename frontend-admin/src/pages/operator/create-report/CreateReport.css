@@ -1,0 +1,293 @@
+.create-report-wrapper {
+  display: flex;
+  width: 100%;
+}
+
+.create-report-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-radius: 1.2vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(102, 126, 234, 0.3);
+}
+
+.hero-icon {
+  width: 6.4vh;
+  height: 6.4vh;
+  border-radius: 1.2vh;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(1vh);
+  transition: all 0.3s ease;
+}
+
+.hero-icon:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-0.2vh);
+}
+
+.hero-title {
+  color: #fff;
+  margin: 0;
+  font-weight: 600;
+}
+
+.hero-subtitle {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0.8vh 0 0 0;
+  font-size: 1.4vh;
+  line-height: 1.6;
+}
+
+.hero-badge {
+  padding: 0.8vh 1.6vh;
+  font-size: 1.4vh;
+  font-weight: 500;
+  border-radius: 0.6vh;
+}
+
+.section-card {
+  border-radius: 1.2vh;
+  box-shadow: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+}
+
+.section-card:hover {
+  box-shadow: 0 0.4vh 1.6vh rgba(0, 0, 0, 0.12);
+}
+
+.section-card .ant-card-head {
+  border-bottom: 0.2vh solid #f0f0f0;
+  padding: 2vh 2.4vh;
+}
+
+.section-card .ant-card-head-title {
+  font-size: 1.8vh;
+  font-weight: 600;
+  color: #262626;
+}
+
+.section-card .ant-card-body {
+  padding: 2.4vh;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 2.4vh;
+  padding-top: 2.4vh;
+  border-top: 0.1vh solid #f0f0f0;
+}
+
+.submit-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 0.2vh 0.8vh rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+}
+
+.submit-button:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #653a8f 100%);
+  box-shadow: 0 0.4vh 1.2vh rgba(102, 126, 234, 0.4);
+}
+
+.submit-button:active {
+  transform: translateY(0);
+}
+
+/* Form item styling */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: #262626;
+}
+
+.ant-input,
+.ant-select-selector,
+.ant-input-number {
+  border-radius: 0.8vh;
+  transition: all 0.3s ease;
+}
+
+.ant-input:focus,
+.ant-select-focused .ant-select-selector,
+.ant-input-number:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2vh rgba(102, 126, 234, 0.1);
+}
+
+.ant-select-item-option-selected:not(.ant-select-item-option-disabled) {
+  background-color: rgba(102, 126, 234, 0.1);
+}
+
+/* TextArea styling */
+.ant-input {
+  border-radius: 0.8vh;
+}
+
+.ant-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2vh rgba(102, 126, 234, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .create-report-hero {
+    padding: 1.6vh;
+  }
+
+  .hero-icon {
+    width: 4.8vh;
+    height: 4.8vh;
+  }
+
+  .section-card .ant-card-body {
+    padding: 1.6vh;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    gap: 1.2vh;
+  }
+
+  .form-actions .ant-btn {
+    width: 100%;
+  }
+}
+
+/* Animation for form elements */
+.ant-form-item {
+  transition: all 0.3s ease;
+}
+
+/* Select dropdown styling */
+.ant-select-dropdown {
+  border-radius: 0.8vh;
+  box-shadow: 0 0.4vh 1.6vh rgba(0, 0, 0, 0.12);
+}
+
+/* Divider styling */
+.ant-divider {
+  margin: 2.4vh 0;
+  border-color: #f0f0f0;
+}
+
+/* View Reports Button */
+.view-reports-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 0.1vh solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  backdrop-filter: blur(1vh);
+  transition: all 0.3s ease;
+}
+
+.view-reports-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: #fff;
+  transform: translateY(-0.2vh);
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.15);
+}
+
+.view-reports-button:active {
+  transform: translateY(0);
+}
+
+/* Reports Modal */
+.reports-modal .ant-modal-header {
+  border-bottom: 0.2vh solid #f0f0f0;
+  padding: 2vh 2.4vh;
+}
+
+.reports-modal .ant-modal-title {
+  font-size: 2vh;
+  font-weight: 600;
+  color: #262626;
+}
+
+.reports-modal .ant-modal-body {
+  padding: 2.4vh;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.reports-modal .ant-modal-footer {
+  border-top: 0.1vh solid #f0f0f0;
+  padding: 1.6vh 2.4vh;
+}
+
+/* Report Item */
+.report-item {
+  padding: 0;
+  border: none;
+  margin-bottom: 1.6vh;
+}
+
+.report-card {
+  border-radius: 1.2vh;
+  box-shadow: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  border: 0.1vh solid #f0f0f0;
+}
+
+.report-card:hover {
+  box-shadow: 0 0.4vh 1.6vh rgba(0, 0, 0, 0.12);
+}
+
+.report-card .ant-card-body {
+  padding: 2vh;
+}
+
+/* Descriptions styling in modal */
+.reports-modal .ant-descriptions-item-label {
+  font-weight: 500;
+  color: #595959;
+  background-color: #fafafa;
+}
+
+.reports-modal .ant-descriptions-item-content {
+  color: #262626;
+}
+
+/* List styling */
+.reports-modal .ant-list-item {
+  padding: 0;
+}
+
+.reports-modal .ant-list-pagination {
+  margin-top: 2.4vh;
+  text-align: center;
+}
+
+/* Badge styling */
+.reports-modal .ant-badge-count {
+  box-shadow: 0 0 0 0.1vh #fff;
+}
+
+/* Empty state */
+.reports-modal .ant-empty {
+  margin: 4vh 0;
+}
+
+/* Responsive modal */
+@media (max-width: 768px) {
+  .reports-modal .ant-modal {
+    max-width: 95%;
+    margin: 1vh auto;
+  }
+
+  .reports-modal .ant-modal-body {
+    padding: 1.6vh;
+    max-height: 60vh;
+  }
+
+  .report-card .ant-card-body {
+    padding: 1.6vh;
+  }
+
+  .view-reports-button {
+    font-size: 1.2vh;
+    padding: 0.4vh 1.2vh;
+    height: auto;
+  }
+}

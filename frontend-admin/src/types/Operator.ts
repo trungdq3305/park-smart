@@ -4,7 +4,8 @@ export interface Operator {
   addressId: string
   fullName: string
   taxCode: string
-  companyName: string
+  bussinessName: string
   contactEmail: string
   isVerified: boolean
+  paymentEmail: string
 }
