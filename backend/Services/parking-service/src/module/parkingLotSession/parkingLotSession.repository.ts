@@ -13,6 +13,17 @@ export class ParkingLotSessionRepository
     private parkingLotSessionModel: Model<ParkingLotSession>,
   ) {}
 
+  findById(
+    sessionId: string,
+    session?: ClientSession,
+  ): Promise<ParkingLotSession | null> {
+    return this.parkingLotSessionModel
+      .findById(sessionId)
+      .session(session ?? null)
+      .lean()
+      .exec()
+  }
+
   async findAllSessionsByParkingLotId(
     parkingLotId: string,
     page: number,
@@ -52,13 +63,13 @@ export class ParkingLotSessionRepository
     return createdSession.save({ session })
   }
 
-  findActiveSessionByPlate(
-    plateNumber: string,
+  findActiveSessionByUidCard(
+    uidCard: string,
     parkingLotId?: string,
   ): Promise<ParkingLotSession[] | null> {
     const data = this.parkingLotSessionModel
       .find({
-        plateNumber: plateNumber,
+        guestCardId: uidCard,
         parkingLotId: parkingLotId,
       })
       .sort({ createdAt: -1 })

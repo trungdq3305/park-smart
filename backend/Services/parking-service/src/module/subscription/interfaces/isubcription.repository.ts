@@ -26,7 +26,7 @@ export interface ISubscriptionRepository {
    */
   findSubscriptionById(
     id: string,
-    userId: string,
+    userId?: string,
     session?: ClientSession,
   ): Promise<Subscription | null>
 

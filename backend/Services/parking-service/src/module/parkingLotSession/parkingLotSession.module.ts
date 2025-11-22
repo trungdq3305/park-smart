@@ -2,7 +2,9 @@ import { forwardRef, Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
 import { ClientModule } from '../client/client.module'
+import { GuestCardModule } from '../guestCard/guestCard.module'
 import { ParkingLotModule } from '../parkingLot/parkingLot.module'
+import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
 import { ReservationModule } from '../reservation/reservation.module'
 import { SubscriptionModule } from '../subscription/subcription.module'
 import { IParkingLotSessionRepository } from './interfaces/iparkingLotSession.repository'
@@ -24,6 +26,8 @@ import {
     forwardRef(() => SubscriptionModule),
     forwardRef(() => ReservationModule),
     ClientModule,
+    GuestCardModule,
+    PricingPolicyModule,
   ],
   controllers: [ParkingLotSessionController],
   providers: [

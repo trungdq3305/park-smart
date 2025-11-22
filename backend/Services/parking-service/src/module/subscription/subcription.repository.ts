@@ -162,11 +162,12 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
   findSubscriptionById(
     id: string,
-    userId: string,
+    userId?: string,
     session?: ClientSession,
   ): Promise<Subscription | null> {
+    const query = { _id: id, ...(userId ? { createdBy: userId } : {}) }
     return this.subscriptionModel
-      .findOne({ _id: id, createdBy: userId })
+      .findOne(query)
       .session(session ?? null)
       .lean()
       .exec()
