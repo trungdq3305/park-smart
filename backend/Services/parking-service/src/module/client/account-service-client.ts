@@ -50,42 +50,56 @@ export class AccountServiceClient implements IAccountServiceClient {
     ownerType: string,
     ownerId: string,
     description: string,
-  ): Promise<any> {
-    // 1. Cập nhật URL đúng theo Swagger (/api/images/upload)
-    const url = `${this.CORE_SERVICE_BASE_URL}/api/images/upload`
+  ): Promise<{ id: string; url: string } | null> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/images/upload`
 
-    // 2. Tạo FormData chuẩn cho Node.js
     const formData = new FormData()
+
     formData.append('file', fileBuffer, {
-      filename: `${ownerType}${ownerId}.jpg`, // Đặt tên file (quan trọng để server nhận diện là file)
+      filename: `${ownerType}_${ownerId}.jpg`,
       contentType: 'image/jpeg',
     })
     formData.append('ownerType', ownerType)
-    formData.append('ownerId', ownerId)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion
+    formData.append('ownerId', ownerId.toString())
     formData.append('description', description ?? '')
 
     try {
-      // 3. Gửi Request
+      // 3. Lấy headers (Chứa Content-Type và Boundary)
+      const headers = formData.getHeaders()
+
+      // Log thử để debug: Bạn sẽ thấy nó in ra dạng 'multipart/form-data; boundary=...'
+      // console.log('Headers:', headers);
+
       const response = await firstValueFrom(
         this.httpService.post(url, formData, {
           headers: {
-            ...formData.getHeaders(), // Tự động sinh Content-Type: multipart/form-data; boundary=...
-            // Nếu Image Service cần Token, hãy thêm vào đây:
-            // 'Authorization': `Bearer ${token}`,
+            ...headers, // 4. Bắt buộc phải spread headers vào đây
+            // 'Authorization': ... (nếu cần)
           },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
         }),
       )
 
-      // 4. Trả về toàn bộ object response (để bên gọi check status và lấy data)
-      // Service gọi sẽ dùng: response.data (chứa url, id)
-      return response
+      return response.data as { id: string; url: string } // Trả về { id, url }
     } catch (error) {
-      Logger.error(
-        `Lỗi khi gọi Image Service: ${error.message}`,
-        error.response?.data || '',
-        'AccountServiceClient',
-      )
-      // Trả về null để bên gọi biết là thất bại mà không crash app
+      console.log('Attempting to connect to:', url)
+
+      // 👇 LOG LỖI CHI TIẾT HƠN
+      if (error.response) {
+        // Server đã phản hồi nhưng báo lỗi (4xx, 5xx)
+        console.error('Server Response Error:', error.response.data)
+        console.error('Status:', error.response.status)
+      } else if (error.request) {
+        // Request đã gửi nhưng không nhận được phản hồi (Lỗi mạng, Timeout)
+        console.error('Network Error (No response):', error.message)
+        console.error('Error Code:', error.code) // Ví dụ: ECONNREFUSED
+      } else {
+        // Lỗi khi setup request (Lỗi code client, FormData)
+        console.error('Client Setup Error:', error.message)
+      }
+
       return null
     }
   }

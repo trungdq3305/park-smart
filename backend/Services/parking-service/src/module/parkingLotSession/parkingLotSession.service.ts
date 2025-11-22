@@ -115,25 +115,29 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     description?: string,
   ): Promise<any> {
     try {
-      // Gửi request multipart/form-data
-      const response: any =
+      // 1. Gọi Client (Hàm này trả về { id, url } hoặc null)
+      const uploadResult =
         await this.accountServiceClient.uploadImageToImageService(
           file.buffer,
           ownerType,
           ownerId,
           description ?? '',
         )
-      if (response.status !== 201) {
-        throw new Error(
-          `Upload ảnh thất bại với mã trạng thái: ${response.status}`,
-        )
+
+      // 2. Kiểm tra kết quả
+      // Vì response body thực tế chỉ có { id, url }, không có field "status" bên trong
+      // Nên ta chỉ cần check xem nó có dữ liệu hay không.
+      if (!uploadResult || !uploadResult.url) {
+        throw new Error('Service không trả về URL ảnh (Upload thất bại?)')
       }
-      return response?.data
+
+      // 3. Trả về kết quả { id, url }
+      return uploadResult
     } catch (error) {
-      // Chỉ log lỗi, không ném exception (để tránh làm user tưởng check-in thất bại)
       this.logger.error(
         `[ImageProxy] Upload ảnh thất bại cho ${ownerType} ${ownerId}: ${error.message}`,
       )
+      // Trả về null để quy trình Check-in không bị chết, chỉ thiếu ảnh thôi
       return null
     }
   }
@@ -311,9 +315,9 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         let guestCardId: string | undefined = undefined
 
         // Kiểm tra xem mã gửi lên có phải là thẻ NFC hợp lệ trong bãi không
-        if (dto.identifier) {
+        if (dto.nfcUid) {
           const guestCard = await this.guestCardService.findGuestCardByNfc(
-            dto.identifier,
+            dto.nfcUid,
             parkingLotId,
           )
 
@@ -348,7 +352,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
               reservationId: undefined,
               subscriptionId: undefined,
               guestCardId, // 👈 Bắt buộc có
-              nfcUid: dto.identifier,
+              nfcUid: dto.nfcUid,
             },
             session,
           )
@@ -496,7 +500,8 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
 
         return {
           amount: amount,
-          sessionId: currentSession._id,
+          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion
+          sessionId: currentSession._id.toString(),
         }
       }
     }

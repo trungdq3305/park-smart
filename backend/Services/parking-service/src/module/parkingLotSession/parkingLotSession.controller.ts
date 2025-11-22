@@ -93,7 +93,7 @@ export class ParkingLotSessionController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({ fileType: 'image/jpeg' }),
+          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png)$/ }),
         ],
         fileIsRequired: false, // Ảnh không bắt buộc
       }),
@@ -128,7 +128,7 @@ export class ParkingLotSessionController {
     schema: {
       type: 'object',
       properties: {
-        uidCard: {
+        nfcUid: {
           type: 'string',
           example: 'UID_abc123',
           description: 'UID của thẻ NFC (nếu có)',
@@ -138,13 +138,6 @@ export class ParkingLotSessionController {
           example: 'ID_abc123',
           description: 'Mã định danh khác (nếu có)',
         },
-      },
-    },
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
         pricingPolicyId: {
           type: 'string',
           example: 'POLICY_abc...',
@@ -161,13 +154,14 @@ export class ParkingLotSessionController {
   async calculateCheckoutFee(
     @Param('parkingLotId') parkingLotId: string,
     @Body('pricingPolicyId') pricingPolicyId: string,
-    @Body('uidCard') uidCard?: string,
+    @Body('nfcUid') nfcUid?: string,
     @Body('identifier') identifier?: string,
   ): Promise<ApiResponseDto<any>> {
+    // Call service with explicit positional arguments expected by the service implementation
     const feeDetails = await this.sessionService.calculateCheckoutFee(
       parkingLotId,
       pricingPolicyId,
-      uidCard,
+      nfcUid,
       identifier,
     )
 
@@ -183,6 +177,9 @@ export class ParkingLotSessionController {
   // 3. API XÁC NHẬN CHECK-OUT (SAU KHI THANH TOÁN)
   // =================================================================
   @Post('check-out/confirm/:sessionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Xác nhận Check-out và Đóng phiên (Bước 2)',
     description:
@@ -195,20 +192,19 @@ export class ParkingLotSessionController {
       properties: {
         paymentId: {
           type: 'string',
-          example: 'TXN_abc...',
+          example: 'TXN_abc123',
           description: 'Bằng chứng thanh toán từ .NET (nếu có trả phí)',
         },
-      },
-    },
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
         pricingPolicyId: {
           type: 'string',
           example: 'POLICY_abc...',
           description: 'ID của chính sách giá đã áp dụng (nếu cần)',
+        },
+        // Nếu cần thêm sessionId (thường là bắt buộc khi check-out), bạn thêm vào đây luôn
+        sessionId: {
+          type: 'string',
+          example: 'SESSION_xyz...',
+          description: 'ID phiên gửi xe cần check-out',
         },
       },
     },
@@ -326,21 +322,24 @@ export class ParkingLotSessionController {
   @ApiOperation({
     summary: 'Kiểm tra trạng thái xe (Để biết là Check-in hay Check-out)',
   })
+  @ApiQuery({ name: 'parkingLotId', required: true })
   @ApiQuery({
     name: 'identifier',
-    required: true,
-    description: 'NFC UID hoặc QR Identifier',
+    required: false,
+    description: 'QR Identifier',
   })
-  @ApiQuery({ name: 'parkingLotId', required: true })
+  @ApiQuery({ name: 'nfcUid', required: false, description: 'NFC UID' })
   async checkSessionStatus(
-    @Query('identifier') identifier: string,
     @Query('parkingLotId') parkingLotId: string,
+    @Query('identifier') identifier?: string,
+    @Query('nfcUid') nfcUid?: string,
   ) {
     // Gọi Service kiểm tra xem có session nào đang ACTIVE không
     // Bạn cần viết hàm này trong Service, tái sử dụng logic findActiveSessionByNfc/Plate
     const session = await this.sessionService.findActiveSession(
-      identifier,
       parkingLotId,
+      identifier,
+      nfcUid,
     )
 
     if (session) {

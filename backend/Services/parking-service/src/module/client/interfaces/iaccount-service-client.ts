@@ -36,7 +36,7 @@ export interface IAccountServiceClient {
     ownerType: string,
     ownerId: string,
     description: string,
-  ): Promise<boolean>
+  ): Promise<{ id: string; url: string } | null>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')

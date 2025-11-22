@@ -71,9 +71,12 @@ export class ParkingLotSessionRepository
       .find({
         guestCardId: uidCard,
         parkingLotId: parkingLotId,
+        status: ParkingSessionStatusEnum.ACTIVE,
       })
       .sort({ createdAt: -1 })
-    return data.exec()
+      .lean()
+      .exec()
+    return data
   }
 
   async updateSessionOnCheckout(
