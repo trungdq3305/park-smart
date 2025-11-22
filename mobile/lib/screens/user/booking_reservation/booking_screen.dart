@@ -9,6 +9,7 @@ import '../../../widgets/booking/pricing_table_card.dart';
 import '../../../widgets/booking/comments_section.dart';
 import '../../../widgets/booking/subscription_calendar.dart';
 import '../../../widgets/booking/booking_method_card.dart';
+import '../../../services/reservation_service.dart';
 import 'payment_checkout_screen.dart';
 import 'payment_result_screen.dart';
 
@@ -238,12 +239,16 @@ class _BookingScreenState extends State<BookingScreen> {
                       _availabilityData = {};
                       _selectedStartDate = null;
                     });
+                    // Auto-load reservation availability when selecting "Đặt chỗ"
+                    if (method == BookingMethod.reservation) {
+                      _loadReservationAvailability();
+                    }
                   },
                 ),
 
                 const SizedBox(height: 24),
 
-                // Pricing table card (filtered by booking method)
+                // Pricing table card (show for both methods)
                 PricingTableCard(
                   pricingLinks: _getFilteredPricingLinks(),
                   isLoading: _isLoadingPricing,
@@ -251,8 +256,21 @@ class _BookingScreenState extends State<BookingScreen> {
                   onPricingSelected: _onPricingSelected,
                 ),
 
-                // Calendar for package type subscriptions
-                if (_isPackageType && _selectedPricingPolicyId != null) ...[
+                // Calendar for reservations (show immediately when selected)
+                if (_selectedBookingMethod == BookingMethod.reservation) ...[
+                  const SizedBox(height: 24),
+                  SubscriptionCalendar(
+                    availabilityData: _availabilityData,
+                    selectedDate: _selectedStartDate,
+                    onDateSelected: _onDateSelected,
+                    isLoading: _isLoadingAvailability,
+                  ),
+                ],
+
+                // Calendar for package type subscriptions (show after selecting package)
+                if (_isPackageType &&
+                    _selectedBookingMethod == BookingMethod.subscription &&
+                    _selectedPricingPolicyId != null) ...[
                   const SizedBox(height: 24),
                   SubscriptionCalendar(
                     availabilityData: _availabilityData,
@@ -385,12 +403,17 @@ class _BookingScreenState extends State<BookingScreen> {
         _selectedPricingPolicyId = pricingPolicyId;
         print('✅ Selected pricing policy: $pricingPolicyId');
 
-        // Check if this is a PACKAGE type
+        // Check if this is a PACKAGE type or RESERVATION
         final pricingPolicy = link['pricingPolicyId'];
         final basisId = pricingPolicy?['basisId'];
         final basisName = basisId?['basisName'] ?? basisId?['name'] ?? '';
 
-        if (basisName == 'PACKAGE') {
+        if (_selectedBookingMethod == BookingMethod.reservation) {
+          // For reservation, load reservation availability
+          _isPackageType = false;
+          _loadReservationAvailability();
+        } else if (basisName == 'PACKAGE') {
+          // For subscription, load subscription availability
           _isPackageType = true;
           _loadSubscriptionAvailability();
         } else {
@@ -400,6 +423,101 @@ class _BookingScreenState extends State<BookingScreen> {
         }
       }
     });
+  }
+
+  /// Load reservation availability for the selected parking lot (15 days)
+  Future<void> _loadReservationAvailability() async {
+    final parkingLotId = widget.parkingLot['_id'] ?? widget.parkingLot['id'];
+    if (parkingLotId == null) {
+      print('⚠️ Cannot load reservation availability: Parking lot ID is null');
+      return;
+    }
+
+    setState(() {
+      _isLoadingAvailability = true;
+    });
+
+    try {
+      print(
+        '📊 Loading reservation availability for parking lot: $parkingLotId',
+      );
+
+      // Load availability for next 15 days
+      final today = DateTime.now();
+      Map<String, dynamic> availabilityMap = {};
+
+      // Fetch availability for each day (next 15 days)
+      for (int i = 0; i < 15; i++) {
+        final date = today.add(Duration(days: i));
+        final dateString = _formatDateForAPI(date);
+
+        try {
+          final response = await ReservationService.getReservationAvailability(
+            parkingLotId: parkingLotId,
+            date: dateString,
+          );
+
+          // Parse response - structure may vary, adjust based on actual API response
+          dynamic data = response['data'];
+          if (data is Map) {
+            // If data is a map, it might contain availability info
+            availabilityMap[dateString] = {
+              'isAvailable': data['isAvailable'] ?? true,
+              'remaining': data['remaining'] ?? data['availableSpots'] ?? 0,
+            };
+          } else if (data is List && data.isNotEmpty) {
+            // If data is a list, take first item
+            final firstItem = data[0];
+            if (firstItem is Map) {
+              availabilityMap[dateString] = {
+                'isAvailable': firstItem['isAvailable'] ?? true,
+                'remaining':
+                    firstItem['remaining'] ?? firstItem['availableSpots'] ?? 0,
+              };
+            }
+          } else {
+            // If no data structure matches, assume available
+            availabilityMap[dateString] = {'isAvailable': true, 'remaining': 0};
+          }
+        } catch (e) {
+          print('⚠️ Error loading availability for $dateString: $e');
+          // If error, mark as no data
+          availabilityMap[dateString] = {'isAvailable': false, 'remaining': 0};
+        }
+      }
+
+      print(
+        '✅ Parsed reservation availability data: ${availabilityMap.keys.length} dates',
+      );
+
+      setState(() {
+        _availabilityData = availabilityMap;
+        _isLoadingAvailability = false;
+      });
+    } catch (e) {
+      print('❌ Error loading reservation availability: $e');
+      setState(() {
+        _isLoadingAvailability = false;
+        _availabilityData = {};
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải lịch đặt chỗ: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Format date to YYYY-MM-DD for API
+  String _formatDateForAPI(DateTime date) {
+    final year = date.year.toString();
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 
   /// Load subscription availability for the selected parking lot
