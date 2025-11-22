@@ -45,7 +45,7 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Bãi đỗ xe',
     },
     {
-      key: '/dashboard',
+      key: '/operator/control-panel',
       icon: <DashboardOutlined />,
       label: 'Bảng điều khiển',
     },
@@ -92,9 +92,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Lịch sử',
     },
     {
-      key: '/security',
+      key: '/operator/import-card',
       icon: <SafetyOutlined />,
-      label: 'Bảo mật',
+      label: 'Thêm thẻ',
     },
   ]
 

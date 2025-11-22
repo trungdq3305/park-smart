@@ -173,11 +173,19 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
                     )}
 
                     <div className="policy-card__footer">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <div>
                           <Text type="secondary">
                             Tạo lúc:{' '}
-                            {link.createdAt ? new Date(link.createdAt).toLocaleString('vi-VN') : '—'}
+                            {link.createdAt
+                              ? new Date(link.createdAt).toLocaleString('vi-VN')
+                              : '—'}
                           </Text>
                           {link.updatedAt && (
                             <Text type="secondary" style={{ display: 'block', marginTop: 4 }}>
@@ -208,4 +216,3 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
 }
 
 export default PricingPolicyList
-
