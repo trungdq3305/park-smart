@@ -39,7 +39,7 @@ export class ParkingLotGateway
     @Inject(forwardRef(() => IParkingLotService))
     private readonly parkingLotService: IParkingLotService,
   ) {}
-  
+
   // ==================================================================
   // 1. QUẢN LÝ KẾT NỐI (Merge cả Frontend & Python Device)
   // ==================================================================
