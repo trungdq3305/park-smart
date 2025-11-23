@@ -117,6 +117,10 @@ export interface IReservationRepository {
   updateExpiredPendingReservations(
     cutoffTime: Date,
   ): Promise<{ modifiedCount: number; matchedCount: number }>
+
+  checkReservationStatusByIdentifier(
+    reservationIdentifier: string,
+  ): Promise<boolean>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')

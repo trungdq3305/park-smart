@@ -103,6 +103,11 @@ export interface IParkingLotSessionRepository {
     sessionId: string,
     session?: ClientSession,
   ): Promise<ParkingLotSession | null>
+
+  findActiveSessionBySubscriptionId(
+    subscriptionId: string,
+    parkingLotId?: string,
+  ): Promise<ParkingLotSession | null>
 }
 
 export const IParkingLotSessionRepository = Symbol(

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
@@ -127,7 +128,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
       // 2. Kiểm tra kết quả
       // Vì response body thực tế chỉ có { id, url }, không có field "status" bên trong
       // Nên ta chỉ cần check xem nó có dữ liệu hay không.
-      if (!uploadResult || !uploadResult.url) {
+      if (!uploadResult?.url) {
         throw new Error('Service không trả về URL ảnh (Upload thất bại?)')
       }
 
@@ -234,11 +235,13 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           )
 
         if (sub) {
-          if (sub.parkingLotId !== parkingLotId) {
+          console.log(parkingLotId, sub.parkingLotId.toString())
+          if (sub.parkingLotId.toString() !== parkingLotId) {
             throw new ConflictException(
               'QR Vé tháng này không thuộc bãi xe này.',
             )
           }
+
           if (sub.isUsed) {
             throw new ConflictException(
               'Vé tháng này đang được sử dụng (xe chưa ra).',
@@ -422,6 +425,29 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           identifier,
         )
 
+      const subscription =
+        await this.subscriptionRepository.findActiveSubscriptionByIdentifier(
+          identifier,
+        )
+
+      if (subscription) {
+        const sessionId =
+          await this.parkingLotSessionRepository.findActiveSessionBySubscriptionId(
+            subscription._id.toString(),
+            parkingLotId,
+          )
+        if (!sessionId) {
+          throw new NotFoundException(
+            'Phiên đỗ xe đang hoạt động không tồn tại.',
+          )
+        }
+        return {
+          amount: 0,
+          sessionId: sessionId._id.toString(),
+          message: 'Đã thanh toán trước (Vé tháng)',
+        }
+      }
+
       if (reservation) {
         const now = new Date()
         const endTime = new Date(reservation.estimatedEndTime)
@@ -436,7 +462,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           // Ra đúng giờ hoặc trễ trong mức cho phép
           return {
             amount: 0,
-            sessionId: reservation._id,
+            sessionId: reservation._id.toString(),
             message: 'Đã thanh toán trước (Đúng giờ)',
           }
         } else {
@@ -455,7 +481,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
 
           return {
             amount: extraFee,
-            sessionId: reservation._id,
+            sessionId: reservation._id.toString(),
             message: `Quá giờ ${overstayHours} tiếng`,
           }
         }
@@ -500,7 +526,6 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
 
         return {
           amount: amount,
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion
           sessionId: currentSession._id.toString(),
         }
       }
@@ -512,6 +537,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
   async confirmCheckout(
     sessionId: string,
     userId: string,
+    file: Express.Multer.File,
     paymentId?: string,
     pricingPolicyId?: string,
   ): Promise<boolean> {
@@ -586,6 +612,14 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           },
           session,
         )
+
+      await this.uploadImageToImageService(
+        file,
+        parkingSession._id.toString(), // Owner ID là Session ID
+        'ParkingSession', // Owner Type
+        'Check-out Snapshot (Xe ra)', // Description
+      )
+
       if (!data) {
         throw new InternalServerErrorException(
           'Checkout thất bại, vui lòng thử lại.',
@@ -636,7 +670,11 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     parkingLotId: string,
     identifier?: string,
     uidCard?: string,
-  ): Promise<boolean> {
+  ): Promise<{
+    session: boolean
+    images: any[]
+    type: 'SUBSCRIPTION' | 'RESERVATION' | 'WALK_IN' | null
+  }> {
     if (!identifier && !uidCard) {
       throw new BadRequestException(
         'Vui lòng cung cấp Mã QR/Thẻ hợp lệ để tìm phiên đỗ xe.',
@@ -647,8 +685,52 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         await this.reservationRepository.findValidReservationForCheckIn(
           identifier,
         )
-      if (reservation) {
-        return true
+      const subscription =
+        await this.subscriptionRepository.findActiveSubscriptionByIdentifier(
+          identifier,
+        )
+      if (subscription) {
+        const subscriptionStatus =
+          await this.subscriptionRepository.findActiveAndInUsedSubscriptionByIdentifier(
+            identifier,
+          )
+        if (!subscriptionStatus) {
+          return {
+            session: false,
+            images: [],
+            type: 'SUBSCRIPTION',
+          }
+        }
+        const sessions =
+          await this.parkingLotSessionRepository.findActiveSessionBySubscriptionId(
+            subscription._id.toString(),
+            parkingLotId,
+          )
+        if (!sessions) {
+          return { session: false, images: [], type: 'SUBSCRIPTION' }
+        }
+        const images = await this.accountServiceClient.getImagesByOwner(
+          'ParkingSession',
+          sessions._id.toString(),
+        )
+        return {
+          session: true,
+          images: images,
+          type: 'SUBSCRIPTION',
+        }
+      } else if (reservation) {
+        const reservationStatus =
+          await this.reservationRepository.checkReservationStatusByIdentifier(
+            identifier,
+          )
+        if (!reservationStatus) {
+          return { session: false, images: [], type: 'RESERVATION' }
+        }
+        const images = await this.accountServiceClient.getImagesByOwner(
+          'ParkingSession',
+          reservation._id,
+        )
+        return { session: true, images: images, type: 'RESERVATION' }
       }
     }
     if (uidCard) {
@@ -666,10 +748,19 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           existCard._id,
           parkingLotId,
         )
-      if (sessions && sessions.length > 0) {
-        return true
+
+      if (!sessions || sessions.length === 0) {
+        return { session: false, images: [], type: 'WALK_IN' }
+      }
+
+      const images = await this.accountServiceClient.getImagesByOwner(
+        'ParkingSession',
+        sessions[0]?._id,
+      )
+      if (sessions.length > 0) {
+        return { session: true, images, type: 'WALK_IN' }
       }
     }
-    return false
+    return { session: false, images: [], type: null }
   }
 }

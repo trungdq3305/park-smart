@@ -20,7 +20,10 @@ import { AxiosError, AxiosResponse } from 'axios' // Import để gán kiểu
 import * as FormData from 'form-data'
 import { firstValueFrom } from 'rxjs'
 
-import { IAccountServiceClient } from './interfaces/iaccount-service-client'
+import {
+  IAccountServiceClient,
+  ImageResponse,
+} from './interfaces/iaccount-service-client'
 
 interface CoreServiceResponse {
   _id: string
@@ -30,6 +33,8 @@ interface CoreServiceResponse {
 export class AccountServiceClient implements IAccountServiceClient {
   // KHÔNG CẦN HARDCODE BASE URL NỮA
   private readonly CORE_SERVICE_BASE_URL: string
+
+  private readonly IMAGE_SERVICE_BASE_URL: string
 
   constructor(
     private readonly httpService: HttpService,
@@ -43,6 +48,46 @@ export class AccountServiceClient implements IAccountServiceClient {
 
     // 🔥 GIẢ ĐỊNH sử dụng JWT_SECRET làm Internal Token/Key cho Service-to-Service
     //this.INTERNAL_AUTH_TOKEN = this.configService.get<string>('JWT_SECRET') || 'default-secret';
+    this.IMAGE_SERVICE_BASE_URL = 'https://parksmarthcmc.io.vn'
+  }
+
+  async getImagesByOwner(
+    ownerType: string,
+    ownerId: string,
+  ): Promise<ImageResponse[]> {
+    // 👈 1. Sửa kiểu trả về thành mảng ImageResponse
+
+    // Lưu ý: URL của bạn trong hình có vẻ là /images/by-owner (bạn kiểm tra lại đúng endpoint nhé)
+    const url = `${this.CORE_SERVICE_BASE_URL}/images/by-owner`
+
+    try {
+      const response = await firstValueFrom(
+        // 👇 2. Truyền Generic type vào get để Axios hiểu kiểu dữ liệu trả về
+        this.httpService.get<ImageResponse[]>(url, {
+          params: { ownerType, ownerId },
+          headers: {
+            // Đảm bảo hàm getInternalToken() của bạn hoạt động đúng
+            // Nếu service này là public thì có thể không cần Authorization
+            Authorization: `Bearer ${this.getInternalToken()}`,
+          },
+        }),
+      )
+
+      // 3. Trả về data (là mảng các object ảnh)
+      if (Array.isArray(response.data)) {
+        return response.data.map((image) => ({
+          ...image, // Giữ nguyên các trường id, description...
+          // Ghép Base URL vào trước đường dẫn tương đối
+          url: `${this.IMAGE_SERVICE_BASE_URL}${image.url}`,
+        }))
+      }
+
+      return []
+    } catch (error) {
+      // Xử lý lỗi nếu không tìm thấy ảnh hoặc lỗi mạng
+      console.error(`Lỗi lấy ảnh cho ${ownerType} ${ownerId}:`, error.message)
+      return [] // Trả về mảng rỗng để không crash quy trình
+    }
   }
 
   async uploadImageToImageService(

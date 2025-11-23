@@ -13,6 +13,20 @@ export class ParkingLotSessionRepository
     private parkingLotSessionModel: Model<ParkingLotSession>,
   ) {}
 
+  findActiveSessionBySubscriptionId(
+    subscriptionId: string,
+    parkingLotId?: string,
+  ): Promise<ParkingLotSession | null> {
+    return this.parkingLotSessionModel
+      .findOne({
+        subscriptionId: subscriptionId,
+        parkingLotId: parkingLotId,
+        status: ParkingSessionStatusEnum.ACTIVE,
+      })
+      .lean()
+      .exec()
+  }
+
   findById(
     sessionId: string,
     session?: ClientSession,

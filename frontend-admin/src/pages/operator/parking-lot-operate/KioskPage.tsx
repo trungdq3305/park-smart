@@ -75,6 +75,7 @@ const KioskPage: React.FC = () => {
   // State
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [snapshot, setSnapshot] = useState<string | null>(null)
+  const [checkInImage, setCheckInImage] = useState<string | null>(null)
 
   // Data hiển thị
   const [cardUid, setCardUid] = useState<string>('---')
@@ -147,7 +148,7 @@ const KioskPage: React.FC = () => {
 
       const statusRes = await triggerStatusCheck(statusParams).unwrap()
 
-      const { state } = statusRes
+      const { state, session, images, type } = statusRes
 
       if (state === 'INSIDE') {
         // ===> CHẾ ĐỘ CHECK-OUT (XE RA) <===
@@ -168,14 +169,16 @@ const KioskPage: React.FC = () => {
         }).unwrap()
 
         setSessionData(checkoutInfo) // Lưu thông tin để nút bấm sử dụng
+        const historyImgUrl = images?.[0]?.url || session?.imageUrl || null
+        setCheckInImage(historyImgUrl)
         // Hiển thị thông tin tính toán
         setTimeIn(new Date(checkoutInfo.checkInTime).toLocaleString('vi-VN'))
         setTimeOut(new Date(checkoutInfo.checkOutTime).toLocaleString('vi-VN'))
         setParkingFee(checkoutInfo.totalAmount)
-        setCustomerType(checkoutInfo.description || 'Khách vãng lai')
+        setCustomerType(type || 'Khách vãng lai')
 
         // Lấy số tiền chi tiết nếu có
-        const amountDisplay = checkoutInfo.data?.[0]?.amount || checkoutInfo.totalAmount
+        const amountDisplay = checkoutInfo?.data?.[0]?.amount ?? checkoutInfo.totalAmount ?? 0
 
         api.info({
           message: 'Xe ra',
@@ -190,7 +193,7 @@ const KioskPage: React.FC = () => {
         setTimeIn(new Date().toLocaleString('vi-VN'))
         setTimeOut('---')
         setParkingFee(0)
-        setCustomerType('Khách vào')
+        setCustomerType(type)
         setSessionData(null)
 
         api.success({
@@ -280,13 +283,37 @@ const KioskPage: React.FC = () => {
         // ===> XỬ LÝ CHECK-OUT (CONFIRM) <===
         if (!sessionData) return
 
-        // Gọi API Confirm Checkout (Mutation)
+        // 1. Kiểm tra ảnh (Bắt buộc phải chụp ảnh xe ra để đối chứng)
+        if (!snapshot) {
+          api.error({ message: 'Thiếu hình ảnh xe ra!' })
+          setIsLoading(false)
+          return
+        }
+
+        // 2. Tạo FormData
+        const formData = new FormData()
+
+        // Thêm các thông tin cần thiết
+        // Lưu ý: Append string, nếu policyId null thì coi chừng lỗi
+        if (sessionData.paymentId) {
+          formData.append('paymentId', sessionData.paymentId)
+        }
+        if (sessionData.pricingPolicyId) {
+          formData.append('pricingPolicyId', sessionData.pricingPolicyId)
+        }
+
+        // 3. Chuyển đổi ảnh snapshot sang File
+        const imageFile = dataURLtoFile(snapshot, 'checkout-snapshot.jpg')
+        if (imageFile) {
+          formData.append('file', imageFile)
+        } else {
+          throw new Error('Lỗi xử lý file ảnh check-out')
+        }
+
+        // 4. Gọi API
         await confirmCheckout({
-          sessionId: sessionData.data[0].sessionId,
-          data: {
-            pricingPolicyId: sessionData.pricingPolicyId,
-            paymentId: undefined, // Tiền mặt
-          },
+          sessionId: sessionData.data[0].sessionId, // Hoặc sessionData.sessionId tùy cấu trúc trả về
+          formData: formData, // 👈 Gửi cục FormData này đi
         }).unwrap()
 
         api.success({ message: 'Thanh toán xong. Mở cổng ra!' })
@@ -299,6 +326,8 @@ const KioskPage: React.FC = () => {
       setPlateNumber('')
       setCardUid('---')
       setIdentifier('---')
+      setCheckInImage(null) // Xóa ảnh đối chiếu cũ
+      setSessionData(null) // Xóa dữ liệu phiên cũ
       setMessage('Sẵn sàng quét thẻ...')
     } catch (error: any) {
       console.error('Lỗi thao tác:', error)
@@ -316,6 +345,18 @@ const KioskPage: React.FC = () => {
     setMode('IDLE')
     setSnapshot(null)
     setMessage('Đã hủy bỏ. Sẵn sàng quét mới.')
+  }
+
+  const handleOpenBarier = async () => {
+    try {
+      await axios.post(`${gatewayUrl}/confirm-checkin`)
+    } catch (error: any) {
+      console.error('Lỗi mở barrier:', error)
+      api.error({
+        message: 'Lỗi mở barrier',
+        description: error?.response?.data?.message || 'Không thể mở barrier',
+      })
+    }
   }
 
   return (
@@ -356,78 +397,125 @@ const KioskPage: React.FC = () => {
       <main className="kiosk-content">
         <Row gutter={[20, 20]} style={{ height: '100%' }}>
           {/* Cột trái: Camera */}
-          <Col span={16} className="kiosk-camera-col">
-            {/* Live Stream */}
-            <Card
-              title={
-                <Space>
-                  <VideoCameraOutlined className="kiosk-card-title-icon" />
-                  <Text strong className="kiosk-card-title">
-                    Camera Giám Sát
-                  </Text>
-                </Space>
-              }
-              className="kiosk-camera-card"
-              styles={{
-                body: {
-                  padding: 0,
-                  background: '#000',
-                  height: '100%',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderRadius: '0 0 8px 8px',
-                },
-              }}
-            >
-              <img
-                src={LIVE_STREAM_URL}
-                className="kiosk-camera-image"
-                alt="Live Stream"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement
-                  target.style.display = 'none'
-                  const parent = target.parentElement
-                  if (parent) {
-                    parent.innerHTML =
-                      '<div style="color: #666; font-size: 16px;">Đang kết nối camera...</div>'
+          <Col span={16} style={{ height: '100%' }}>
+            <div className="kiosk-left-column">
+              {/* 1. Live Stream (Flex 6) */}
+              <div className="kiosk-camera-wrapper">
+                <Card
+                  title={
+                    <Space>
+                      <VideoCameraOutlined className="kiosk-card-title-icon" />
+                      <Text strong className="kiosk-card-title">
+                        Camera Giám Sát
+                      </Text>
+                    </Space>
                   }
-                }}
-              />
-            </Card>
+                  className="kiosk-card-container"
+                  // Ghi đè style body của Antd để full chiều cao
+                  styles={{
+                    body: {
+                      flex: 1,
+                      padding: 0,
+                      background: '#000',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                    },
+                  }}
+                >
+                  <img
+                    src={LIVE_STREAM_URL}
+                    className="kiosk-image-display"
+                    alt="Live Stream"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.style.display = 'none'
+                      if (target.parentElement) {
+                        target.parentElement.innerHTML =
+                          '<div style="color: #666;">Đang kết nối camera...</div>'
+                      }
+                    }}
+                  />
+                </Card>
+              </div>
 
-            {/* Snapshot */}
-            <Card
-              title={
-                <Space>
-                  <CameraOutlined className="kiosk-card-title-icon" />
-                  <Text strong className="kiosk-card-title">
-                    Ảnh Chụp Tức Thời
-                  </Text>
-                </Space>
-              }
-              className="kiosk-snapshot-card"
-              styles={{
-                body: {
-                  padding: 0,
-                  background: '#1a1a1a',
-                  height: 'calc(100% - 57px)',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderRadius: '0 0 8px 8px',
-                },
-              }}
-            >
-              {snapshot ? (
-                <img src={snapshot} className="kiosk-snapshot-image" alt="Snapshot" />
-              ) : (
-                <div className="kiosk-snapshot-placeholder">
-                  <CameraOutlined className="kiosk-snapshot-placeholder-icon" />
-                  <Text style={{ color: 'white' }}>Chờ tín hiệu quét thẻ...</Text>
-                </div>
-              )}
-            </Card>
+              {/* 2. Khu vực Ảnh chụp dưới (Flex 4) */}
+              <div className="kiosk-bottom-row">
+                {/* Ảnh chụp hiện tại (Snapshot) */}
+                <Card
+                  title={
+                    <Space>
+                      <CameraOutlined className="kiosk-card-title-icon" />
+                      <Text strong className="kiosk-card-title">
+                        {mode === 'CHECK_OUT' ? 'Ảnh Ra (Hiện tại)' : 'Ảnh Chụp Tức Thời'}
+                      </Text>
+                    </Space>
+                  }
+                  className="kiosk-card-container"
+                  style={{ flex: 1 }} // Chia đều 50-50
+                  styles={{
+                    body: {
+                      flex: 1,
+                      padding: 0,
+                      background: '#1a1a1a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                    },
+                  }}
+                >
+                  {snapshot ? (
+                    <img src={snapshot} className="kiosk-image-display" alt="Snapshot" />
+                  ) : (
+                    <div className="kiosk-placeholder">
+                      <CameraOutlined className="kiosk-placeholder-icon" />
+                      <Text style={{ color: '#8c8c8c' }}>Chờ tín hiệu...</Text>
+                    </div>
+                  )}
+                </Card>
+
+                {/* Ảnh Lịch sử (Chỉ hiện khi Check-out) */}
+                {mode === 'CHECK_OUT' && (
+                  <Card
+                    title={
+                      <Space>
+                        <ClockCircleOutlined className="kiosk-card-title-icon" />
+                        <Text strong className="kiosk-card-title">
+                          Ảnh Vào (Đối chiếu)
+                        </Text>
+                      </Space>
+                    }
+                    className="kiosk-card-container"
+                    style={{ flex: 1, borderColor: '#1890ff' }}
+                    styles={{
+                      body: {
+                        flex: 1,
+                        padding: 0,
+                        background: '#1a1a1a',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        overflow: 'hidden',
+                      },
+                    }}
+                  >
+                    {checkInImage ? (
+                      <img
+                        src={checkInImage}
+                        className="kiosk-image-display"
+                        alt="Check-in Evidence"
+                      />
+                    ) : (
+                      <div className="kiosk-placeholder">
+                        <div style={{ color: '#999' }}>Không có ảnh</div>
+                      </div>
+                    )}
+                  </Card>
+                )}
+              </div>
+            </div>
           </Col>
 
           {/* Cột phải: Thông tin & Hành động */}
@@ -590,6 +678,16 @@ const KioskPage: React.FC = () => {
                   className="kiosk-cancel-button"
                 >
                   HỦY BỎ
+                </Button>
+
+                <Button
+                  block
+                  size="large"
+                  icon={<CarOutlined className="kiosk-open-barrier-icon" />}
+                  onClick={handleOpenBarier}
+                  className="kiosk-open-barrier-button"
+                >
+                  MỞ CỔNG BARRIER THỦ CÔNG
                 </Button>
               </div>
             </Card>

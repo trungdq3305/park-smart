@@ -27,10 +27,11 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
 
     // 3. Xác nhận Check-out (Thanh toán xong)
     confirmCheckout: builder.mutation({
-      query: ({ sessionId, data }) => ({
+      query: ({ sessionId, formData }) => ({
+        // 👈 Đổi tham số thành formData
         url: `/parking-sessions/check-out/confirm/${sessionId}`,
         method: 'POST',
-        body: data, // { paymentId, pricingPolicyId }
+        body: formData, // 👈 Gửi body là FormData
       }),
       transformResponse: (res) => res,
       invalidatesTags: ['ParkingSession'],

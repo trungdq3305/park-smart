@@ -13,6 +13,21 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
 
+  async findActiveAndInUsedSubscriptionByIdentifier(
+    subscriptionIdentifier: string,
+  ): Promise<boolean> {
+    const filter = {
+      subscriptionIdentifier,
+      status: SubscriptionStatusEnum.ACTIVE,
+    }
+    const data = await this.subscriptionModel
+      .findOne(filter)
+      .select('isUsed')
+      .lean()
+      .exec()
+    return data?.isUsed ?? false
+  }
+
   async countPendingByUser(userId: string): Promise<number> {
     return this.subscriptionModel
       .countDocuments({
