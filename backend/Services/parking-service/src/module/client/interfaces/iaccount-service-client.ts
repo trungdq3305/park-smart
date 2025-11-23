@@ -1,5 +1,9 @@
 // src/module/client/interfaces/iaccount-service-client.ts
-
+export interface ImageResponse {
+  id: string
+  url: string
+  description?: string // Dấu ? vì có thể có ảnh không có mô tả
+}
 export interface IAccountServiceClient {
   /**
    * @description Gọi API của Core Service để lấy danh sách ID người dùng theo vai trò.
@@ -36,7 +40,15 @@ export interface IAccountServiceClient {
     ownerType: string,
     ownerId: string,
     description: string,
-  ): Promise<boolean>
+  ): Promise<{ id: string; url: string } | null>
+
+  /**
+   * @description Gọi API của Core Service để lấy ảnh theo ownerType và ownerId.
+   * @param ownerType Loại chủ sở hữu ảnh (ví dụ: 'ParkingSession').
+   * @param ownerId ID tham chiếu (ví dụ: ID của ParkingSession).
+   * @returns Mảng các đối tượng ảnh với ID và URL.
+   */
+  getImagesByOwner(ownerType: string, ownerId: string): Promise<ImageResponse[]>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')

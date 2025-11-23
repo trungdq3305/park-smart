@@ -516,6 +516,18 @@
       "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE"]
     },
     {
+      "DownstreamPathTemplate": "/parking-sessions/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/parking-sessions/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PATCH", "DELETE", "PUT"]
+    },
+    {
       "DownstreamPathTemplate": "/swagger/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

@@ -44,3 +44,13 @@ export class PricingPolicy extends BaseEntity {
 }
 
 export const PricingPolicySchema = SchemaFactory.createForClass(PricingPolicy)
+// Tạo index để đảm bảo tính duy nhất của 'name' trong phạm vi 'createdBy' khi 'deletedAt' là null
+PricingPolicySchema.index(
+  { name: 1, createdBy: 1 }, // 1. Phạm vi unique: Tên + Người tạo
+  {
+    unique: true, // 2. Bắt buộc duy nhất
+    partialFilterExpression: { deletedAt: null }, // 3. Chỉ áp dụng khi chưa bị xóa (deletedAt là null)
+    background: true,
+    name: 'unique_name_per_user_active', // Đặt tên index cho dễ debug
+  },
+)

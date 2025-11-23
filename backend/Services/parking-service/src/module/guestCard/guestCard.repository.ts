@@ -5,14 +5,14 @@ import { ClientSession, InsertManyOptions, Model } from 'mongoose'
 import { IGuestCardRepository } from './interfaces/iguestCard.repository'
 import { GuestCard } from './schemas/guestCard.schema'
 
-interface MongoWriteError {
+export interface MongoWriteError {
   code: number
   index: number
   errmsg: string
   op: Partial<GuestCard> // Dữ liệu gốc gây ra lỗi
 }
 
-interface MongoBulkWriteError extends Error {
+export interface MongoBulkWriteError extends Error {
   insertedDocs: GuestCard[] // Danh sách các bản ghi đã chèn thành công
   writeErrors: MongoWriteError[] // Danh sách các lỗi chi tiết
   code?: number
@@ -59,31 +59,31 @@ export class GuestCardRepository implements IGuestCardRepository {
     guestCards: Partial<GuestCard>[],
     session?: ClientSession,
   ): Promise<{ successes: GuestCard[]; errors: MongoWriteError[] }> {
-    // 1. Sử dụng InsertManyOptions để type-safe cho options
-    const options: InsertManyOptions & { rawResult?: boolean } = {
+    const options: InsertManyOptions = {
       session,
-      ordered: false, // Quan trọng: Tiếp tục insert dù gặp lỗi
-      rawResult: true, // Để lấy kết quả thô nếu cần (tùy version mongoose)
+      ordered: false,
+      // ⚠️ QUAN TRỌNG: Bỏ rawResult: true hoặc set thành false
+      // Để Mongoose trả về mảng Documents thay vì object result
+      rawResult: false,
     }
 
     try {
-      // Nếu thành công 100%, Mongoose trả về mảng documents
+      // Khi rawResult = false, result sẽ là mảng GuestCard[]
       const result = await this.guestCardModel.insertMany(guestCards, options)
 
-      // Mongoose types đôi khi trả về (Document & T)[] hoặc BulkWriteResult
-      // Ta ép kiểu an toàn về mảng GuestCard[]
+      // Double check: Đảm bảo nó là mảng (phòng trường hợp thư viện thay đổi)
+      const successes = Array.isArray(result) ? result : []
+
       return {
-        successes: result as unknown as GuestCard[],
+        successes: successes as unknown as GuestCard[],
         errors: [],
       }
     } catch (error) {
-      // 2. Ép kiểu lỗi về Interface đã định nghĩa (MongoBulkWriteError)
-      // Thay vì dùng 'any', ta dùng Type Assertion
       const bulkError = error as MongoBulkWriteError
 
-      // Bây giờ TS hiểu bulkError có insertedDocs và writeErrors
-      const successes = bulkError.insertedDocs
-      const writeErrors = bulkError.writeErrors
+      // Trong trường hợp lỗi, insertedDocs luôn là mảng các doc thành công
+      const successes = bulkError.insertedDocs || []
+      const writeErrors = bulkError.writeErrors || []
 
       return {
         successes: successes,

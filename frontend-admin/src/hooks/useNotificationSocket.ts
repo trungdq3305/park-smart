@@ -47,7 +47,6 @@ const useNotificationSocket = ({
 
     const newSocket = io(socketEndpoint, {
       query: { token },
-      withCredentials: true,
     })
 
     socketRef.current = newSocket

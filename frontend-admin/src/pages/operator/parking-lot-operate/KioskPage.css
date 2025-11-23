@@ -349,3 +349,93 @@
 .kiosk-card-title-icon {
   font-size: 18px;
 }
+
+/* --- CỘT TRÁI: CAMERA & ẢNH --- */
+
+/* Container chính của cột trái */
+.kiosk-left-column {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* ⭐️ QUAN TRỌNG: Tạo khoảng cách giữa Camera và hàng dưới */
+}
+
+/* Phần Camera (Chiếm 60% chiều cao) */
+.kiosk-camera-wrapper {
+  flex: 6;
+  /* Tỉ lệ 6 phần */
+  min-height: 0;
+  /* Cho phép co nhỏ nếu cần */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Phần Hàng dưới (Chiếm 40% chiều cao) */
+.kiosk-bottom-row {
+  flex: 4;
+  /* Tỉ lệ 4 phần */
+  min-height: 0;
+  display: flex;
+  gap: 20px;
+  /* Khoảng cách giữa 2 ảnh dưới */
+}
+
+/* Card bao ngoài */
+.kiosk-card-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Style đè lên Ant Card Body để ảnh full khung */
+.kiosk-card-body-full {
+  flex: 1;
+  /* Chiếm hết phần còn lại sau header */
+  background: #000;
+  /* Nền đen cho camera */
+  padding: 0 !important;
+  /* Xóa padding mặc định của Antd */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.kiosk-card-body-snapshot {
+  background: #1a1a1a;
+  /* Nền xám đậm cho snapshot */
+}
+
+/* Ảnh hiển thị */
+.kiosk-image-display {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Giữ tỉ lệ ảnh, không bị méo */
+}
+
+/* Placeholder khi chưa có ảnh */
+.kiosk-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #8c8c8c;
+}
+
+.kiosk-placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #595959;
+}
+
+/* --- CỘT PHẢI: TRANSACTION --- */
+/* Giữ nguyên như cũ, chỉ đảm bảo height */
+.kiosk-transaction-col {
+  height: 100%;
+}
