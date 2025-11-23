@@ -25,4 +25,3 @@ export const useLocalGateway = () => {
 
   return { gatewayUrl, saveGatewayUrl }
 }
-
