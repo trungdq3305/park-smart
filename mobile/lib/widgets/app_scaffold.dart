@@ -9,6 +9,7 @@ class AppScaffold extends StatelessWidget {
   final ValueChanged<int>? onTapBottomNav;
   final Color? backgroundColor;
   final Widget? floatingActionButton;
+  final int? unreadNotificationCount;
 
   const AppScaffold({
     super.key,
@@ -19,6 +20,7 @@ class AppScaffold extends StatelessWidget {
     this.onTapBottomNav,
     this.backgroundColor,
     this.floatingActionButton,
+    this.unreadNotificationCount,
   });
 
   @override
@@ -32,6 +34,7 @@ class AppScaffold extends StatelessWidget {
           ? BottomNavBar(
               currentIndex: currentIndex,
               onTap: (index) => onTapBottomNav?.call(index),
+              unreadNotificationCount: unreadNotificationCount,
             )
           : null,
     );

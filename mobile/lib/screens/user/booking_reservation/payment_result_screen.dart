@@ -5,6 +5,7 @@ class PaymentResultScreen extends StatelessWidget {
   final String? message;
   final String? paymentId;
   final String? subscriptionId;
+  final String? reservationId;
   final String? errorMessage;
 
   const PaymentResultScreen({
@@ -13,6 +14,7 @@ class PaymentResultScreen extends StatelessWidget {
     this.message,
     this.paymentId,
     this.subscriptionId,
+    this.reservationId,
     this.errorMessage,
   });
 
@@ -81,7 +83,7 @@ class PaymentResultScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               // Details Card
-              if (paymentId != null || subscriptionId != null)
+              if (paymentId != null || subscriptionId != null || reservationId != null)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -132,6 +134,14 @@ class PaymentResultScreen extends StatelessWidget {
                           label: 'Mã gói thuê bao',
                           value: subscriptionId!,
                           icon: Icons.subscriptions,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      if (reservationId != null) ...[
+                        _buildInfoRow(
+                          label: 'Mã đặt chỗ',
+                          value: reservationId!,
+                          icon: Icons.event_available,
                         ),
                       ],
                     ],

@@ -3,6 +3,8 @@ import 'package:mobile/screens/user/home_screen.dart';
 import 'package:mobile/screens/user/parking_lot_screen.dart';
 import 'package:mobile/screens/user/profile_screen.dart';
 import 'package:mobile/screens/user/message_list_screen.dart';
+import 'package:mobile/screens/user/notification_screen.dart';
+import 'package:mobile/services/notification_service.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
 
 class MainWrapper extends StatefulWidget {
@@ -14,14 +16,55 @@ class MainWrapper extends StatefulWidget {
 
 class _MainWrapperState extends State<MainWrapper> {
   int _currentIndex = 0;
+  int? _unreadNotificationCount;
 
   final List<Widget> _pages = [
     const HomeScreen(),
     const MessageListScreen(),
     const ParkingLotScreen(),
-    const MessageListScreen(),
+    const NotificationScreen(),
     const ProfileScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadCount();
+    // Refresh unread count periodically
+    _startPeriodicRefresh();
+  }
+
+  void _startPeriodicRefresh() {
+    Future.delayed(const Duration(seconds: 30), () {
+      if (mounted) {
+        _loadUnreadCount();
+        _startPeriodicRefresh();
+      }
+    });
+  }
+
+  Future<void> _loadUnreadCount() async {
+    try {
+      final response = await NotificationService.getUnreadCount();
+      final data = response['data'];
+      int? count;
+
+      if (data is Map) {
+        count = data['unreadCount'] ?? data['count'];
+      } else if (data is int) {
+        count = data;
+      }
+
+      if (mounted) {
+        setState(() {
+          _unreadNotificationCount = count ?? 0;
+        });
+      }
+    } catch (e) {
+      print('❌ Error loading unread count: $e');
+      // Don't show error to user, just log it
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,10 +90,15 @@ class _MainWrapperState extends State<MainWrapper> {
       ),
       showBottomNav: true,
       currentIndex: _currentIndex,
+      unreadNotificationCount: _unreadNotificationCount,
       onTapBottomNav: (index) {
         setState(() {
           _currentIndex = index;
         });
+        // Refresh unread count when navigating to notification screen
+        if (index == 3) {
+          _loadUnreadCount();
+        }
       },
     );
   }
