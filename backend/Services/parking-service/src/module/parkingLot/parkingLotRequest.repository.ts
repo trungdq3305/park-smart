@@ -1,7 +1,7 @@
 import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession, FilterQuery, Model } from 'mongoose'
 
-import { RequestStatus } from './enums/parkingLot.enum'
+import { RequestStatus, RequestType } from './enums/parkingLot.enum'
 import { IParkingLotRequestRepository } from './interfaces/iparkingLotRequest.repository'
 import { ParkingLotRequest } from './schemas/parkingLotRequest.schema'
 
@@ -12,6 +12,30 @@ export class ParkingLotRequestRepository
     @InjectModel(ParkingLotRequest.name)
     private parkingLotRequestModel: Model<ParkingLotRequest>,
   ) {}
+
+  findByOperatorId(
+    operatorId: string,
+    status: string,
+    type: string,
+    session?: ClientSession,
+  ): Promise<ParkingLotRequest[]> {
+    const filter: FilterQuery<ParkingLotRequest> = {
+      'payload.parkingLotOperatorId': operatorId,
+    }
+
+    if (status) {
+      filter.status = status as RequestStatus
+    }
+
+    if (type) {
+      filter.requestType = type as RequestType
+    }
+
+    return this.parkingLotRequestModel
+      .find(filter, null, session ? { session } : {})
+      .lean()
+      .exec()
+  }
 
   async hardDeleteById(id: string, session?: ClientSession): Promise<boolean> {
     const result = await this.parkingLotRequestModel.deleteOne(

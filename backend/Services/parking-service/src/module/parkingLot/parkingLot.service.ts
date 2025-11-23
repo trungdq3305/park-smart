@@ -118,6 +118,24 @@ export class ParkingLotService implements IParkingLotService {
     }
   }
 
+  async findRequestsByOperatorId(
+    operatorId: string,
+    status: string,
+    type: string,
+  ): Promise<ParkingLotRequestResponseDto[]> {
+    const data = await this.parkingLotRequestRepository.findByOperatorId(
+      operatorId,
+      status,
+      type,
+    )
+    if (data.length === 0) {
+      throw new NotFoundException(
+        `Không tìm thấy yêu cầu nào khớp với ${status} và ${type} cho chủ bãi xe này`,
+      )
+    }
+    return data.map((item) => this.returnParkingLotRequestResponseDto(item))
+  }
+
   async createCreateRequest(
     createDto: CreateParkingLotDto,
   ): Promise<ParkingLotRequestResponseDto> {
