@@ -93,6 +93,14 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['ParkingSession'],
     }),
+
+    getActivePricingPolicies: builder.query({
+      query: (parkingLotId) => ({
+        url: `/parking-lot-links/active/by-parking-lot/${parkingLotId}`,
+        method: 'GET',
+      }),
+      transformResponse: (res: any) => res.data, // Chỉ lấy mảng data[]
+    }),
   }),
 })
 
@@ -105,4 +113,5 @@ export const {
   useGetMyParkingHistoryQuery,
   useGetParkingLotHistoryQuery,
   useGetSessionDetailsQuery,
+  useGetActivePricingPoliciesQuery,
 } = parkingLotSessionAPI

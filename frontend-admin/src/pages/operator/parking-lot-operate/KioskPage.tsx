@@ -14,6 +14,8 @@ import {
   Space,
   Badge,
   Divider,
+  Select, // 👈 Thêm Select
+  Spin,
 } from 'antd'
 import { io, Socket } from 'socket.io-client'
 import {
@@ -44,6 +46,7 @@ import {
   useCalculateCheckoutFeeMutation,
   useConfirmCheckoutMutation,
   useLazyCheckSessionStatusQuery,
+  useGetActivePricingPoliciesQuery,
 } from '../../../features/operator/parkingSessionAPI'
 import axios from 'axios'
 
@@ -76,6 +79,8 @@ const KioskPage: React.FC = () => {
   const [isConnected, setIsConnected] = useState<boolean>(false)
   const [snapshot, setSnapshot] = useState<string | null>(null)
   const [checkInImage, setCheckInImage] = useState<string | null>(null)
+  const { data: policies, isLoading: isLoadingPolicies } =
+    useGetActivePricingPoliciesQuery(CURRENT_PARKING_ID)
 
   // Data hiển thị
   const [cardUid, setCardUid] = useState<string>('---')
@@ -86,7 +91,8 @@ const KioskPage: React.FC = () => {
   const [customerType, setCustomerType] = useState<string>('---')
   const [parkingFee, setParkingFee] = useState<number>(0)
   const [message, setMessage] = useState<string>('Sẵn sàng quét thẻ...')
-
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null)
+  const [currentScanData, setCurrentScanData] = useState<any>(null)
   // ⭐️ STATE QUẢN LÝ CHẾ ĐỘ (VÀO hay RA)
   const [mode, setMode] = useState<'CHECK_IN' | 'CHECK_OUT' | 'IDLE'>('IDLE')
   const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -124,6 +130,49 @@ const KioskPage: React.FC = () => {
     return new File([u8arr], filename, { type: mime })
   }
 
+  const calculateFeeAction = async (scanParams: any, policyId: string) => {
+    try {
+      setMessage('Đang tính toán phí...')
+      const feeParams = {
+        ...scanParams,
+        pricingPolicyId: policyId, // Dùng policy được chọn
+      }
+
+      const checkoutInfo = await calculateCheckoutFee({
+        parkingLotId: CURRENT_PARKING_ID,
+        data: feeParams,
+      }).unwrap()
+
+      setSessionData(checkoutInfo)
+
+      // Update UI
+      setTimeIn(new Date(checkoutInfo.checkInTime).toLocaleString('vi-VN'))
+      setTimeOut(new Date(checkoutInfo.checkOutTime).toLocaleString('vi-VN'))
+      setParkingFee(checkoutInfo.totalAmount)
+      setCustomerType(checkoutInfo.description || 'Khách vãng lai')
+
+      const amountDisplay = checkoutInfo?.data?.[0]?.amount ?? checkoutInfo.totalAmount ?? 0
+
+      api.info({
+        message: 'Đã cập nhật phí',
+        description: `Phí mới: ${amountDisplay.toLocaleString('vi-VN')} đ`,
+      })
+      setMessage('Sẵn sàng thanh toán')
+    } catch (error) {
+      console.error(error)
+      api.error({ message: 'Lỗi tính phí với chính sách này' })
+    }
+  }
+
+  // ⭐️ SỰ KIỆN: Khi người dùng chọn chính sách khác trong Dropdown
+  const handlePolicyChange = (newPolicyId: string) => {
+    setSelectedPolicyId(newPolicyId)
+    if (currentScanData) {
+      // Tính lại tiền ngay lập tức với Policy mới
+      calculateFeeAction(currentScanData, newPolicyId)
+    }
+  }
+
   // --- XỬ LÝ KHI QUÉT THẺ / BIỂN SỐ ---
   const handleNewScan = async (data: ScanData) => {
     playBeep()
@@ -136,54 +185,52 @@ const KioskPage: React.FC = () => {
     if (data.plateNumber) setPlateNumber(data.plateNumber)
 
     try {
-      // 2. GỌI API STATUS CHECK (Dùng Lazy Query)
-      // Lưu ý: Mapping nfcUid vào identifier nếu API yêu cầu param tên là identifier
+      // 2. GỌI API STATUS CHECK
       const statusParams = {
         parkingLotId: CURRENT_PARKING_ID,
-        // Nếu có nfcUid thì gửi nfcUid, nếu không thì gửi undefined
-        nfcUid: data.nfcUid,
-        // Nếu có identifier thì gửi identifier
-        identifier: data.identifier,
+        nfcUid: data.nfcUid || undefined,
+        identifier: data.identifier || undefined,
       }
 
       const statusRes = await triggerStatusCheck(statusParams).unwrap()
-
       const { state, session, images, type } = statusRes
 
       if (state === 'INSIDE') {
         // ===> CHẾ ĐỘ CHECK-OUT (XE RA) <===
         setMode('CHECK_OUT')
-        setMessage('Xe ra - Đang tính phí...')
 
-        // Chuẩn bị params tính phí
-        const feeParams: any = {
-          pricingPolicyId: '6916a1aec41cb340244d3c28', // ID chính sách giá mẫu
-        }
-        if (data.nfcUid) feeParams.nfcUid = data.nfcUid
-        if (data.identifier) feeParams.identifier = data.identifier
+        // 1. Lưu thông tin quét để dùng tính tiền sau khi chọn Policy
+        const scanParams: any = {}
+        if (data.nfcUid) scanParams.nfcUid = data.nfcUid
+        if (data.identifier) scanParams.identifier = data.identifier
+        setCurrentScanData(scanParams)
 
-        // Gọi API tính tiền (Mutation)
-        const checkoutInfo = await calculateCheckoutFee({
-          parkingLotId: CURRENT_PARKING_ID,
-          data: feeParams,
-        }).unwrap()
-
-        setSessionData(checkoutInfo) // Lưu thông tin để nút bấm sử dụng
+        // 2. Xử lý ảnh đối chiếu
         const historyImgUrl = images?.[0]?.url || session?.imageUrl || null
         setCheckInImage(historyImgUrl)
-        // Hiển thị thông tin tính toán
-        setTimeIn(new Date(checkoutInfo.checkInTime).toLocaleString('vi-VN'))
-        setTimeOut(new Date(checkoutInfo.checkOutTime).toLocaleString('vi-VN'))
-        setParkingFee(checkoutInfo.totalAmount)
-        setCustomerType(type || 'Khách vãng lai')
 
-        // Lấy số tiền chi tiết nếu có
-        const amountDisplay = checkoutInfo?.data?.[0]?.amount ?? checkoutInfo.totalAmount ?? 0
+        // 3. LOGIC CHỌN BẢNG GIÁ
+        if (selectedPolicyId) {
+          // Nếu bảo vệ ĐÃ chọn bảng giá từ trước -> Tính tiền ngay
+          setMessage('Xe ra - Đang tính phí...')
+          await calculateFeeAction(scanParams, selectedPolicyId)
+        } else {
+          // Nếu CHƯA chọn -> Nhắc nhở & Reset hiển thị tiền
+          setMessage('Vui lòng chọn bảng giá!')
+          api.warning({
+            message: 'Chưa chọn bảng giá',
+            description: 'Vui lòng chọn bảng giá áp dụng ở danh sách bên phải.',
+            duration: 4,
+          })
 
-        api.info({
-          message: 'Xe ra',
-          description: `Phí: ${amountDisplay.toLocaleString('vi-VN')} đ`,
-        })
+          setParkingFee(0)
+          // Hiển thị giờ nhưng chưa có tiền
+          setTimeIn(new Date(session.checkInTime).toLocaleString('vi-VN'))
+          setTimeOut(new Date().toLocaleString('vi-VN'))
+          setCustomerType(type || '---')
+          // Xóa sessionData cũ để nút bấm không hoạt động
+          setSessionData(null)
+        }
       } else {
         // ===> CHẾ ĐỘ CHECK-IN (XE VÀO) <===
         setMode('CHECK_IN')
@@ -195,6 +242,8 @@ const KioskPage: React.FC = () => {
         setParkingFee(0)
         setCustomerType(type)
         setSessionData(null)
+        // Lưu ý: Không reset selectedPolicyId để giữ lựa chọn cho xe sau
+        setCurrentScanData(null)
 
         api.success({
           message: 'Xe vào',
@@ -281,9 +330,15 @@ const KioskPage: React.FC = () => {
         api.success({ message: 'Check-in thành công!', description: 'Đã mở barrier.' })
       } else {
         // ===> XỬ LÝ CHECK-OUT (CONFIRM) <===
-        if (!sessionData) return
 
-        // 1. Kiểm tra ảnh (Bắt buộc phải chụp ảnh xe ra để đối chứng)
+        // 🔴 THÊM ĐOẠN NÀY: Chặn nếu chưa chọn bảng giá hoặc chưa có dữ liệu tính phí
+        if (!selectedPolicyId || !sessionData) {
+          api.error({ message: 'Vui lòng chọn bảng giá để tính tiền trước khi cho xe ra!' })
+          setIsLoading(false)
+          return
+        }
+
+        // 1. Kiểm tra ảnh (giữ nguyên)
         if (!snapshot) {
           api.error({ message: 'Thiếu hình ảnh xe ra!' })
           setIsLoading(false)
@@ -293,14 +348,13 @@ const KioskPage: React.FC = () => {
         // 2. Tạo FormData
         const formData = new FormData()
 
-        // Thêm các thông tin cần thiết
-        // Lưu ý: Append string, nếu policyId null thì coi chừng lỗi
+        // Thêm paymentId (nếu có)
         if (sessionData.paymentId) {
           formData.append('paymentId', sessionData.paymentId)
         }
-        if (sessionData.pricingPolicyId) {
-          formData.append('pricingPolicyId', sessionData.pricingPolicyId)
-        }
+
+        // 🔴 SỬA ĐOẠN NÀY: Dùng selectedPolicyId chắc chắn hơn sessionData
+        formData.append('pricingPolicyId', selectedPolicyId)
 
         // 3. Chuyển đổi ảnh snapshot sang File
         const imageFile = dataURLtoFile(snapshot, 'checkout-snapshot.jpg')
@@ -536,6 +590,53 @@ const KioskPage: React.FC = () => {
                 },
               }}
             >
+              <div style={{ marginBottom: 20 }}>
+                <Text strong style={{ display: 'block', marginBottom: 6, color: '#595959' }}>
+                  Bảng giá áp dụng: <span style={{ color: 'red' }}>*</span>
+                </Text>
+                <Select
+                  style={{ width: '100%' }}
+                  size="large"
+                  value={selectedPolicyId}
+                  onChange={handlePolicyChange}
+                  loading={isLoadingPolicies}
+                  placeholder="-- Chọn bảng giá --"
+                  allowClear
+                  status={mode === 'CHECK_OUT' && !selectedPolicyId ? 'error' : ''}
+                  // 👇 QUAN TRỌNG: Thêm dòng này để chỉ hiện Tên (label) khi đã chọn
+                  optionLabelProp="label"
+                >
+                  {policies?.map((item: any) => (
+                    <Select.Option
+                      key={item.pricingPolicyId._id}
+                      value={item.pricingPolicyId._id}
+                      // 👇 Giá trị này sẽ được hiện lên ô Input khi chọn
+                      label={item.pricingPolicyId.name}
+                    >
+                      {/* 👇 Giao diện chi tiết này chỉ hiện trong danh sách xổ xuống */}
+                      <div style={{ display: 'flex', flexDirection: 'column', padding: '4px 0' }}>
+                        <span style={{ fontWeight: 600, fontSize: '14px', lineHeight: '1.2' }}>
+                          {item.pricingPolicyId.name}
+                        </span>
+
+                        {item.pricingPolicyId.basisId?.description && (
+                          <span style={{ color: '#8c8c8c', fontSize: '12px', marginTop: '2px' }}>
+                            {item.pricingPolicyId.basisId.description}
+                          </span>
+                        )}
+                      </div>
+                    </Select.Option>
+                  ))}
+                </Select>
+                {/* Dòng nhắc nhở nhỏ */}
+                {mode === 'CHECK_OUT' && !selectedPolicyId && (
+                  <Text type="danger" style={{ fontSize: 12, marginTop: 4, display: 'block' }}>
+                    Vui lòng chọn bảng giá để tính tiền
+                  </Text>
+                )}
+              </div>
+
+              <Divider style={{ margin: '10px 0 20px 0' }} />
               {/* Trạng thái hiện tại */}
               <div className={`kiosk-status-card ${mode.toLowerCase().replace('_', '-')}`}>
                 <div className={`kiosk-status-icon ${mode.toLowerCase().replace('_', '-')}`}>
