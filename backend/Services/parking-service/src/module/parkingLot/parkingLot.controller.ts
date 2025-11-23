@@ -305,9 +305,54 @@ export class ParkingLotController {
     }
   }
 
+  @Get('requests-by-operator/:parkingLotOperatorId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
+  @ApiOperation({
+    summary: 'Lấy tất cả yêu cầu bãi đỗ xe của một đơn vị vận hành',
+  })
+  @ApiParam({
+    name: 'parkingLotOperatorId',
+    description: 'ID của đơn vị vận hành',
+  })
+  @ApiQuery({
+    name: 'status',
+    type: String,
+    required: true,
+    description: 'Lọc theo trạng thái yêu cầu',
+    enum: RequestStatus,
+    example: RequestStatus.PENDING,
+  })
+  @ApiQuery({
+    name: 'type',
+    type: String,
+    required: true,
+    description: 'Lọc theo loại yêu cầu',
+    enum: RequestType,
+    example: RequestType.UPDATE,
+  })
+  async findRequestsByOperatorId(
+    @Param('parkingLotOperatorId') operatorId: string,
+    @Query('status') status: RequestStatus,
+    @Query('type') type: RequestType,
+  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto[]>> {
+    const requests = await this.parkingLotService.findRequestsByOperatorId(
+      operatorId,
+      status,
+      type,
+    )
+    return {
+      data: requests,
+      message: 'Lấy yêu cầu bãi đỗ xe của đơn vị vận hành thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách tất cả bãi đỗ xe cho admin' })
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN)
   @ApiQuery({
@@ -367,9 +412,9 @@ export class ParkingLotController {
   // Removed duplicate findAllForOperator method for 'operator/my-lots' route
 
   @Get(':id/history')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Roles(RoleEnum.ADMIN)
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
   @ApiOperation({ summary: 'Lấy lịch sử cập nhật của một bãi đỗ xe' })
   @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
   async getHistory(
