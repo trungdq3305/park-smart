@@ -276,6 +276,9 @@ export class ParkingLotResponseDto {
 
   @Expose()
   displayAvailableSpots: number
+
+  @Expose()
+  name: string
 }
 
 /**
