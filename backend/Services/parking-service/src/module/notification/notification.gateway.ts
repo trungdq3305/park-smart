@@ -16,7 +16,6 @@ import { NotificationResponseDto } from './dto/notification.dto'
 @WebSocketGateway({
   cors: {
     origin: '*',
-    credentials: true,
   },
 })
 export class NotificationGateway implements OnGatewayConnection {

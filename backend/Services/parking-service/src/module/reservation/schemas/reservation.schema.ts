@@ -90,6 +90,13 @@ export class Reservation extends BaseEntity {
     index: true,
   })
   reservationIdentifier: string
+
+  @Prop({
+    required: true,
+    type: Boolean,
+    default: false,
+  })
+  inUsed: boolean
 }
 
 export const ReservationSchema = SchemaFactory.createForClass(Reservation)

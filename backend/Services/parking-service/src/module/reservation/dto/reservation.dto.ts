@@ -186,3 +186,17 @@ export class ReservationDetailResponseDto {
   @Expose()
   updatedAt: Date
 }
+
+export class ReservationAvailabilitySlotDto {
+  @ApiProperty({
+    description: 'Số suất đặt trước còn lại trong khung giờ này',
+    example: 25,
+  })
+  remaining: number
+
+  @ApiProperty({
+    description: 'Có thể đặt không (remaining > 0)',
+    example: true,
+  })
+  isAvailable: boolean
+}

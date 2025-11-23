@@ -46,6 +46,12 @@ export interface IBookingInventoryRepository {
    * @returns Promise<number> - Số lượng bản ghi đã bị xóa.
    */
   deleteInventoriesBefore(cutoffTime: Date): Promise<number>
+
+  findInventoriesForAvailability(
+    parkingLotId: string,
+    startTime: Date, // 00:00
+    endTime: Date, // 23:59
+  ): Promise<Pick<BookingInventory, 'timeSlot' | 'bookedCount'>[]>
 }
 
 export const IBookingInventoryRepository = Symbol('IBookingInventoryRepository')

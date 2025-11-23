@@ -11,6 +11,8 @@ import {
   IsString,
   ValidateNested,
 } from 'class-validator'
+import { CreatePackageRateDto } from 'src/module/packageRate/dto/packageRate.dto'
+import { CreateTieredRateSetDto } from 'src/module/tieredRateSet/dto/tieredRateSet.dto'
 
 // --- DTO for Request Bodies ---
 export class CreatePricingPolicyDto {
@@ -19,15 +21,23 @@ export class CreatePricingPolicyDto {
   @IsMongoId()
   basisId: string
 
-  @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
-  @IsOptional()
-  @IsMongoId()
-  tieredRateSetId: string
+  @ApiProperty({
+    description: 'Chính sách giá bậc thang',
+    example: CreateTieredRateSetDto,
+  })
+  @IsOptional() // ✅ 1. Giữ lại trường này
+  @ValidateNested()
+  @Type(() => CreateTieredRateSetDto)
+  tieredRateSet: CreateTieredRateSetDto
 
-  @ApiProperty({ example: '605e3f5f4f3e8c1d4c9f1e1a' })
-  @IsOptional()
-  @IsMongoId()
-  packageRateId: string
+  @ApiProperty({
+    description: 'Chính sách giá gói',
+    example: CreatePackageRateDto,
+  })
+  @IsOptional() // ✅ 1. Giữ lại trường này
+  @ValidateNested()
+  @Type(() => CreatePackageRateDto)
+  packageRate: CreatePackageRateDto
 
   @ApiProperty({ example: 'Gói theo tháng', description: 'Tên chính sách giá' })
   @IsNotEmpty()

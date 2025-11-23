@@ -1,0 +1,441 @@
+/* Layout */
+.kiosk-layout {
+  height: 100vh;
+  background: #f0f2f5;
+  overflow: hidden;
+}
+
+.kiosk-content {
+  padding: 20px;
+  height: calc(100vh - 70px);
+  overflow: auto;
+}
+
+/* Header */
+.kiosk-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 30px;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  height: 70px;
+}
+
+.kiosk-header-left {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.kiosk-header-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #64676a 0%, #096dd9 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+}
+
+.kiosk-header-title {
+  color: #fff;
+  margin: 0;
+  font-weight: 600;
+}
+
+.kiosk-header-subtitle {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.kiosk-header-status-text {
+  color: #fff;
+  font-size: 14px;
+}
+
+.kiosk-header-tag {
+  padding: 4px 16px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Camera Section */
+.kiosk-camera-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.kiosk-camera-card {
+  flex: 1;
+  min-height: 0;
+}
+
+.kiosk-camera-card-body {
+  padding: 0;
+  background: #000;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0 0 8px 8px;
+}
+
+.kiosk-camera-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.kiosk-snapshot-card {
+  height: 40%;
+  min-height: 300px;
+}
+
+.kiosk-snapshot-card-body {
+  padding: 0;
+  background: #1a1a1a;
+  height: calc(100% - 57px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0 0 8px 8px;
+}
+
+.kiosk-snapshot-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 0 0 8px 8px;
+}
+
+.kiosk-snapshot-placeholder {
+  color: #8c8c8c;
+  font-size: 16px;
+  text-align: center;
+  padding: 40px;
+}
+
+.kiosk-snapshot-placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+/* Transaction Card */
+.kiosk-transaction-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.kiosk-transaction-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.kiosk-transaction-title {
+  font-size: 18px;
+}
+
+/* Status Display */
+.kiosk-status-card {
+  margin-bottom: 24px;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.kiosk-status-card.check-in {
+  background: #f6ffed;
+  border: 2px solid #b7eb8f;
+}
+
+.kiosk-status-card.check-out {
+  background: #e6f7ff;
+  border: 2px solid #91d5ff;
+}
+
+.kiosk-status-card.idle {
+  background: #fafafa;
+  border: 2px solid #d9d9d9;
+}
+
+.kiosk-status-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.kiosk-status-icon.check-in {
+  color: #52c41a;
+}
+
+.kiosk-status-icon.check-out {
+  color: #1890ff;
+}
+
+.kiosk-status-icon.idle {
+  color: #d9d9d9;
+}
+
+.kiosk-status-title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.kiosk-status-title.check-in {
+  color: #52c41a;
+}
+
+.kiosk-status-title.check-out {
+  color: #1890ff;
+}
+
+.kiosk-status-title.idle {
+  color: #595959;
+}
+
+/* Plate Number Input */
+.kiosk-plate-section {
+  margin-bottom: 20px;
+}
+
+.kiosk-plate-label {
+  font-size: 13px;
+  color: #8c8c8c;
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.kiosk-plate-input {
+  font-size: 28px;
+  font-weight: bold;
+  text-align: center;
+  color: #1890ff;
+  height: 60px;
+  letter-spacing: 2px;
+}
+
+.kiosk-plate-input-icon {
+  font-size: 20px;
+  color: #1890ff;
+}
+
+.kiosk-plate-input-suffix {
+  color: #8c8c8c;
+}
+
+/* Descriptions */
+.kiosk-descriptions {
+  margin-bottom: 20px;
+}
+
+.kiosk-descriptions-label {
+  background: #fafafa;
+  font-weight: 600;
+  width: 40%;
+}
+
+.kiosk-descriptions-content {
+  background: #fff;
+}
+
+.kiosk-descriptions-text {
+  font-size: 14px;
+}
+
+.kiosk-descriptions-text-small {
+  font-size: 13px;
+}
+
+.kiosk-descriptions-tag {
+  font-size: 13px;
+}
+
+/* Fee Display */
+.kiosk-fee-card {
+  margin-bottom: 24px;
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #fffbe6 0%, #fff7e6 100%);
+  border: 2px solid #ffd591;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+}
+
+.kiosk-fee-label {
+  font-size: 13px;
+  color: #8c8c8c;
+  display: block;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.kiosk-fee-value {
+  color: #cf1322;
+  font-weight: 700;
+  font-size: 36px;
+}
+
+.kiosk-fee-icon {
+  font-size: 32px;
+  margin-right: 8px;
+}
+
+/* Action Buttons */
+.kiosk-actions {
+  margin-top: auto;
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kiosk-main-button {
+  height: 70px;
+  font-size: 18px;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.kiosk-main-button.check-in {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border-color: #52c41a;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.25);
+}
+
+.kiosk-main-button.check-out {
+  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  border-color: #1890ff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.25);
+}
+
+.kiosk-main-button.idle {
+  background: #d9d9d9;
+  border-color: #d9d9d9;
+  box-shadow: none;
+}
+
+.kiosk-main-button-icon {
+  font-size: 20px;
+}
+
+.kiosk-cancel-button {
+  height: 50px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.kiosk-cancel-button-icon {
+  font-size: 18px;
+}
+
+/* Card Title */
+.kiosk-card-title {
+  font-size: 16px;
+}
+
+.kiosk-card-title-icon {
+  font-size: 18px;
+}
+
+/* --- CỘT TRÁI: CAMERA & ẢNH --- */
+
+/* Container chính của cột trái */
+.kiosk-left-column {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  /* ⭐️ QUAN TRỌNG: Tạo khoảng cách giữa Camera và hàng dưới */
+}
+
+/* Phần Camera (Chiếm 60% chiều cao) */
+.kiosk-camera-wrapper {
+  flex: 6;
+  /* Tỉ lệ 6 phần */
+  min-height: 0;
+  /* Cho phép co nhỏ nếu cần */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Phần Hàng dưới (Chiếm 40% chiều cao) */
+.kiosk-bottom-row {
+  flex: 4;
+  /* Tỉ lệ 4 phần */
+  min-height: 0;
+  display: flex;
+  gap: 20px;
+  /* Khoảng cách giữa 2 ảnh dưới */
+}
+
+/* Card bao ngoài */
+.kiosk-card-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Style đè lên Ant Card Body để ảnh full khung */
+.kiosk-card-body-full {
+  flex: 1;
+  /* Chiếm hết phần còn lại sau header */
+  background: #000;
+  /* Nền đen cho camera */
+  padding: 0 !important;
+  /* Xóa padding mặc định của Antd */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.kiosk-card-body-snapshot {
+  background: #1a1a1a;
+  /* Nền xám đậm cho snapshot */
+}
+
+/* Ảnh hiển thị */
+.kiosk-image-display {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* Giữ tỉ lệ ảnh, không bị méo */
+}
+
+/* Placeholder khi chưa có ảnh */
+.kiosk-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #8c8c8c;
+}
+
+.kiosk-placeholder-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #595959;
+}
+
+/* --- CỘT PHẢI: TRANSACTION --- */
+/* Giữ nguyên như cũ, chỉ đảm bảo height */
+.kiosk-transaction-col {
+  height: 100%;
+}

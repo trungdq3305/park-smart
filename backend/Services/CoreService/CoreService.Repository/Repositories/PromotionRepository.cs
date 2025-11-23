@@ -43,5 +43,9 @@ namespace CoreService.Repository.Repositories
                 .Set(x => x.DeletedBy, deletedBy);
             return _collection.UpdateOneAsync(x => x.Id == id, update);
         }
+        public async Task<IEnumerable<Promotion>> GetByOperatorIdAsync(string operatorId) =>
+        await _collection.Find(x => x.OperatorId == operatorId && x.DeletedAt == null)
+            .SortByDescending(x => x.CreatedAt)
+            .ToListAsync();
     }
 }

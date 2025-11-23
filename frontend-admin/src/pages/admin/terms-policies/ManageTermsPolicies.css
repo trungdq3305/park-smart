@@ -1,0 +1,157 @@
+.tp-page {
+  padding: 2.4vh;
+}
+
+.tp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2vh;
+}
+
+.tp-title {
+  display: flex;
+  gap: 1.2vh;
+  align-items: center;
+}
+
+.tp-title h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.tp-title p {
+  margin: 0.2vh 0 0 0;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.tp-content {
+  background: #fff;
+  border: 1px solid #eef0f3;
+  border-radius: 10px;
+  padding: 1.6vh;
+}
+
+.tp-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 4vh 0;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 2.8vh;
+  height: 2.8vh;
+  border-radius: 50%;
+  border: 3px solid #e5e7eb;
+  border-top-color: #1677ff;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1vh;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tp-empty {
+  padding: 4vh 0;
+  text-align: center;
+}
+
+.tp-table-wrapper {
+  overflow: auto;
+}
+
+.tp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 1vh;
+}
+
+.tp-table thead th {
+  text-align: left;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 1.2vh 14px;
+}
+
+.tp-table tbody tr {
+  background: #fafafa;
+  box-shadow:
+    0 1px 0 #f0f0f0,
+    0 -1px 0 #f0f0f0;
+}
+
+.tp-table tbody td {
+  padding: 1.4vh;
+  vertical-align: top;
+}
+
+.tp-title-cell .tp-title-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.2vh;
+}
+
+.tp-avatar {
+  width: 3.6vh;
+  height: 3.6vh;
+  border-radius: 8px;
+  background: #e6f4ff;
+  color: #1677ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.tp-title-text {
+  font-weight: 600;
+}
+
+.tp-id {
+  color: #9aa1ab;
+  font-size: 12px;
+}
+
+.tp-description {
+  max-width: 520px;
+  color: #374151;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+}
+
+.tp-actions {
+  display: flex;
+  gap: 0.8vh;
+}
+
+/* Responsive enhancements for ManageTermsPolicies */
+.taps-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.2vh;
+}
+
+@media (max-width: 576px) {
+  .taps-container {
+    padding: 1.2vh;
+  }
+
+  .taps-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8vh;
+  }
+
+  .taps-add-btn {
+    width: 100%;
+  }
+}

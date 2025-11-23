@@ -34,6 +34,7 @@ namespace CoreService.Repository
             services.AddScoped<IFavouriteParkingLotRepository, FavouriteParkingLotRepository>();
             services.AddScoped<IReportCategoryRepository, ReportCategoryRepository>();
             services.AddScoped<IReportRepository, ReportRepository>();
+            services.AddScoped<IUserPromotionUsageRepository, UserPromotionUsageRepository>();
             return services;
         }
     }

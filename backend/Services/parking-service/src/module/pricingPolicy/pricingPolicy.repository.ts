@@ -153,6 +153,16 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     return data
   }
 
+  async findPolicyByIdForCheckRenew(id: string): Promise<PricingPolicy | null> {
+    const data = await this.pricingPolicyModel
+      .findOne({ _id: id })
+      .populate({ path: 'basisId' })
+      .populate({ path: 'tieredRateSetId' })
+      .populate({ path: 'packageRateId' })
+      .exec()
+    return data
+  }
+
   async getPolicyDetailsById(policyId: string): Promise<PricingPolicy | null> {
     const data = await this.pricingPolicyModel
       .findOne({ _id: policyId, deletedAt: null })
@@ -163,10 +173,15 @@ export class PricingPolicyRepository implements IPricingPolicyRepository {
     return data
   }
 
-  async softDeletePolicy(id: string, userId: string): Promise<boolean> {
+  async softDeletePolicy(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean> {
     const result = await this.pricingPolicyModel.updateOne(
       { _id: id, createdBy: userId, deletedAt: null },
       { $set: { deletedAt: new Date(), deletedBy: userId } },
+      { session: session ?? undefined },
     )
     return result.modifiedCount > 0
   }

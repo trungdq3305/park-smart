@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
 import { plainToInstance } from 'class-transformer'
-import { Connection } from 'mongoose'
+import { ClientSession, Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
@@ -28,6 +28,14 @@ export class PackageRateService implements IPackageRateService {
     private readonly packageRateRepository: IPackageRateRepository,
     @InjectConnection() private readonly connection: Connection,
   ) {}
+
+  softDelete(
+    id: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<boolean> {
+    return this.packageRateRepository.softDeletePackageRate(id, userId, session)
+  }
 
   private returnPackageRateResponseDto(
     packageRate: PackageRate,
@@ -54,12 +62,6 @@ export class PackageRateService implements IPackageRateService {
       // 2. Gói cước tồn tại nhưng không phải của bạn
       throw new NotFoundException(
         'Gói cước không tồn tại hoặc bạn không có quyền truy cập',
-      )
-    }
-
-    if (existingPackageRate.isUsed) {
-      throw new ConflictException(
-        'Gói cước đã được sử dụng, không thể cập nhật',
       )
     }
   }
@@ -105,48 +107,51 @@ export class PackageRateService implements IPackageRateService {
   async createPackageRate(
     createDto: CreatePackageRateDto,
     userId: string,
+    externalSession?: ClientSession, // Nhận session từ createPolicy
   ): Promise<PackageRateResponseDto> {
-    const session = await this.connection.startSession()
-    session.startTransaction()
+    // 1. Xử lý Session
+    const session = externalSession ?? (await this.connection.startSession())
+    if (!externalSession) {
+      session.startTransaction()
+    }
+
     try {
-      const isNameConflict = await this.checkNameConflict(
-        createDto.name,
-        userId,
-      )
-      if (isNameConflict) {
-        throw new ConflictException('Tên gói cước đã tồn tại')
-      }
+      // 2. Truyền session vào Repository
       const data = await this.packageRateRepository.createPackageRate(
         createDto,
         userId,
-        session,
+        session, // <--- QUAN TRỌNG: Phải truyền vào đây
       )
+
       if (!data) {
         throw new InternalServerErrorException('Tạo gói cước thất bại')
       }
-      await session.commitTransaction()
+
+      // 3. Chỉ commit nếu session là nội bộ
+      if (!externalSession) {
+        await session.commitTransaction()
+      }
+
       return this.returnPackageRateResponseDto(data)
     } catch (error) {
-      // <-- 2. Khối catch bắt được "error"
+      // 4. Chỉ abort nếu session là nội bộ
+      if (!externalSession) {
+        await session.abortTransaction()
+      }
 
-      // 3. LUÔN LUÔN HỦY TRANSACTION KHI CÓ LỖI
-      await session.abortTransaction()
-
-      // 4. Kiểm tra xem có phải lỗi bạn ném không (hoặc lỗi NestJS khác)
       if (
         error instanceof InternalServerErrorException ||
         error instanceof ConflictException
       ) {
-        // 5. NÉM LẠI LỖI: NestJS sẽ bắt lỗi này và gửi về client
-        // với đúng message "Tạo gói cước thất bại"
         throw error
       }
 
-      // Lỗi chung
       throw new InternalServerErrorException('Đã có lỗi không xác định xảy ra.')
     } finally {
-      // 6. LUÔN LUÔN ĐÓNG SESSION
-      await session.endSession()
+      // 5. Chỉ end session nếu session là nội bộ
+      if (!externalSession) {
+        await session.endSession()
+      }
     }
   }
 

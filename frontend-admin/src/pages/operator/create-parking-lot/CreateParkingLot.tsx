@@ -17,7 +17,7 @@ import {
   Tag,
   Select,
 } from 'antd'
-import { useCreateParkingLotMutation } from '../../features/operator/parkingLotAPI'
+import { useCreateParkingLotMutation } from '../../../features/operator/parkingLotAPI'
 import dayjs from 'dayjs'
 import {
   ClockCircleOutlined,
@@ -29,9 +29,9 @@ import {
   DashboardOutlined,
 } from '@ant-design/icons'
 import './CreateParkingLot.css'
-import { useGetWardQuery } from '../../features/operator/wardAPI'
-import type { Ward } from '../../types/Ward'
-import { useCreateAddressMutation } from '../../features/operator/addressAPI'
+import { useGetWardQuery } from '../../../features/operator/wardAPI'
+import type { Ward } from '../../../types/Ward'
+import { useCreateAddressMutation } from '../../../features/operator/addressAPI'
 
 interface WardResponse {
   data: {
@@ -55,7 +55,7 @@ const CreateParkingLot: React.FC = () => {
         fullAddress: values.fullAddress,
       }).unwrap()
 
-      const addressId = createdAddress?.data?.[0]?._id 
+      const addressId = createdAddress?.data?.[0]?._id
       if (!addressId) {
         throw new Error('Không lấy được addressId từ API tạo địa chỉ')
       }
@@ -65,8 +65,7 @@ const CreateParkingLot: React.FC = () => {
         openTime: is24Hours ? '00:00' : values.openTime ? values.openTime.format('HH:mm') : null,
         closeTime: is24Hours ? '23:59' : values.closeTime ? values.closeTime.format('HH:mm') : null,
         is24Hours,
-        maxVehicleHeight:
-          values.maxVehicleHeight != null ? Number(values.maxVehicleHeight) : null,
+        maxVehicleHeight: values.maxVehicleHeight != null ? Number(values.maxVehicleHeight) : null,
         maxVehicleWidth: values.maxVehicleWidth != null ? Number(values.maxVehicleWidth) : null,
         totalCapacityEachLevel:
           values.totalCapacityEachLevel != null ? Number(values.totalCapacityEachLevel) : null,
@@ -77,7 +76,7 @@ const CreateParkingLot: React.FC = () => {
       }
 
       await createParkingLot(payload).unwrap()
-      message.success('Yêu cầu tạo bãi đỗ xe đã được gửi tới Admin')
+      message.success('Yêu cầu tạo bãi đỗ xe đã được gửi tới Quản trị viên')
       form.resetFields()
     } catch (err: unknown) {
       const extractMessage = (e: unknown): string => {
@@ -111,12 +110,12 @@ const CreateParkingLot: React.FC = () => {
               Tạo yêu cầu bãi đỗ xe mới
             </Typography.Title>
             <Typography.Paragraph className="hero-subtitle">
-              Gửi thông tin chi tiết để Admin xem xét và phê duyệt yêu cầu của bạn
+              Gửi thông tin chi tiết để Quản trị viên xem xét và phê duyệt yêu cầu của bạn
             </Typography.Paragraph>
           </Col>
           <Col flex="none">
             <Tag color="gold" className="hero-badge">
-              Operator
+              Chủ bãi xe
             </Tag>
           </Col>
         </Row>

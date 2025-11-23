@@ -1,11 +1,12 @@
 import {
-  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common'
 import { Inject } from '@nestjs/common'
+import { InjectConnection } from '@nestjs/mongoose'
 import { plainToInstance } from 'class-transformer'
+import { ClientSession, Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
@@ -25,7 +26,16 @@ export class TieredRateSetService implements ITieredRateSetService {
   constructor(
     @Inject(ITieredRateSetRepository)
     private readonly tieredRateSetRepository: ITieredRateSetRepository,
+    @InjectConnection() private readonly connection: Connection,
   ) {}
+
+  softDelete(
+    id: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<boolean> {
+    return this.tieredRateSetRepository.softDeleteSet(id, userId, session)
+  }
 
   private returnTieredRateSetResponseDto(
     tieredRateSet: TieredRateSet,
@@ -35,41 +45,46 @@ export class TieredRateSetService implements ITieredRateSetService {
     })
   }
 
-  private async checkIsUsed(id: string): Promise<boolean> {
-    const tieredRateSet = await this.tieredRateSetRepository.findSetById(id)
-    if (!tieredRateSet) {
-      throw new InternalServerErrorException('Không tìm thấy bộ giá bậc thang')
-    }
-    return tieredRateSet.isUsed
-  }
-
-  private async checkDuplicateName(
-    name: string,
-    userId: string,
-  ): Promise<void> {
-    const existsSet = await this.tieredRateSetRepository.findSetByName(
-      name,
-      userId,
-    )
-
-    if (existsSet) {
-      throw new ConflictException('Đã tồn tại bộ giá bậc thang với tên này')
-    }
-  }
-
   async createSet(
     createDto: CreateTieredRateSetDto,
     userId: string,
+    externalSession?: ClientSession, // Nhận session từ createPolicy
   ): Promise<TieredRateSetResponseDto> {
-    await this.checkDuplicateName(createDto.name, userId)
-    const createdSet = await this.tieredRateSetRepository.createSet(
-      createDto,
-      userId,
-    )
-    if (!createdSet) {
-      throw new InternalServerErrorException('Tạo bộ giá bậc thang thất bại')
+    // 1. Xử lý Session
+    const session = externalSession ?? (await this.connection.startSession())
+    if (!externalSession) {
+      session.startTransaction()
     }
-    return this.returnTieredRateSetResponseDto(createdSet)
+
+    try {
+      // 2. Truyền session vào Repository
+      const createdSet = await this.tieredRateSetRepository.createSet(
+        createDto,
+        userId,
+        session, // <--- QUAN TRỌNG
+      )
+      if (!createdSet) {
+        throw new InternalServerErrorException('Tạo bộ giá bậc thang thất bại')
+      }
+
+      // 3. Chỉ commit nếu tự quản lý session
+      if (!externalSession) {
+        await session.commitTransaction()
+      }
+
+      return this.returnTieredRateSetResponseDto(createdSet)
+    } catch (error) {
+      // 4. Chỉ abort nếu tự quản lý session
+      if (!externalSession) {
+        await session.abortTransaction()
+      }
+      throw error
+    } finally {
+      // 5. Chỉ end nếu tự quản lý session
+      if (!externalSession) {
+        await session.endSession()
+      }
+    }
   }
 
   async updateSet(
@@ -77,15 +92,6 @@ export class TieredRateSetService implements ITieredRateSetService {
     updateDto: UpdateTieredRateSetDto,
     userId: string,
   ): Promise<TieredRateSetResponseDto> {
-    if (updateDto.name) {
-      await this.checkDuplicateName(updateDto.name, userId)
-    }
-    const isUsed = await this.checkIsUsed(id.id)
-    if (isUsed) {
-      throw new ConflictException(
-        'Không thể cập nhật bộ giá bậc thang đang được sử dụng',
-      )
-    }
     const updatedSet = await this.tieredRateSetRepository.updateSet(
       id.id,
       updateDto,
@@ -129,12 +135,6 @@ export class TieredRateSetService implements ITieredRateSetService {
   }
 
   async softDeleteSet(id: IdDto, userId: string): Promise<boolean> {
-    const isUsed = await this.checkIsUsed(id.id)
-    if (isUsed) {
-      throw new ConflictException(
-        'Không thể cập nhật bộ giá bậc thang đang được sử dụng',
-      )
-    }
     const data = await this.tieredRateSetRepository.softDeleteSet(id.id, userId)
     if (!data) {
       throw new InternalServerErrorException('Xoá bộ giá bậc thang thất bại')

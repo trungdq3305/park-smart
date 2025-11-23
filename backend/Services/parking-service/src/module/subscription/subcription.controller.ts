@@ -37,6 +37,7 @@ import {
   CreateSubscriptionDto,
   SubscriptionDetailResponseDto,
   SubscriptionLogDto,
+  SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto' // <-- Thay đổi
 import { ISubscriptionService } from './interfaces/isubcription.service' // <-- Thay đổi
@@ -461,6 +462,46 @@ export class SubscriptionController {
       data: [availabilityMap],
       statusCode: HttpStatus.OK,
       message: 'Lấy tình trạng suất thuê bao thành công',
+      success: true,
+    }
+  }
+
+  @Get(':id/renewal-eligibility')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Kiểm tra điều kiện gia hạn (Pre-check trước khi thanh toán)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của gói thuê bao',
+    type: 'string',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Kiểm tra điều kiện thành công',
+    type: ApiResponseDto<SubscriptionRenewalEligibilityResponseDto>,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy gói thuê bao',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Không đủ điều kiện gia hạn (Hết chỗ hoặc gói đã hủy)',
+  })
+  async checkRenewalEligibility(
+    @Param('id') id: string,
+    @GetCurrentUserId() userId: string,
+  ): Promise<ApiResponseDto<SubscriptionRenewalEligibilityResponseDto>> {
+    const result = await this.subscriptionService.checkRenewalEligibility(
+      id,
+      userId,
+    )
+    return {
+      data: [result],
+      statusCode: HttpStatus.OK,
+      message: 'Kiểm tra điều kiện gia hạn thành công',
       success: true,
     }
   }

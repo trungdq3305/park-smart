@@ -23,10 +23,6 @@ namespace CoreService.Repository.Models
     }
     public enum PromotionRuleType
     {
-        MinBookingValue,
-        ParkingLot,
-        User,
-        VehicleType,
-        PaymentMethod
+        MinBookingValue
     }
 }

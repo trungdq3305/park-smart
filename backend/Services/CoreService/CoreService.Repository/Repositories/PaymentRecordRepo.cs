@@ -117,5 +117,67 @@ namespace CoreService.Repository.Repositories
                 .Limit(take)
                 .ToListAsync();
         }
+        public async Task<IEnumerable<PaymentRecord>> GetFilteredPaymentsAsync(
+    string? operatorId,
+    IEnumerable<PaymentType>? paymentTypes,
+    string? status,
+    DateTime? fromDate,
+    DateTime? toDate)
+        {
+            var filterBuilder = Builders<PaymentRecord>.Filter;
+            var filters = new List<FilterDefinition<PaymentRecord>>();
+
+            if (!string.IsNullOrEmpty(operatorId))
+                filters.Add(filterBuilder.Eq(x => x.OperatorId, operatorId));
+
+            if (paymentTypes != null && paymentTypes.Any())
+                filters.Add(filterBuilder.In(x => x.PaymentType, paymentTypes));
+
+            if (!string.IsNullOrEmpty(status))
+                filters.Add(filterBuilder.Eq(x => x.Status, status));
+
+            if (fromDate.HasValue)
+                filters.Add(filterBuilder.Gte(x => x.CreatedAt, fromDate.Value));
+
+            if (toDate.HasValue)
+                filters.Add(filterBuilder.Lte(x => x.CreatedAt, toDate.Value.AddDays(1).AddSeconds(-1))); // Đến cuối ngày
+
+            var combinedFilter = filters.Any() ? filterBuilder.And(filters) : filterBuilder.Empty;
+
+            return await _col.Find(combinedFilter)
+                             .SortByDescending(x => x.CreatedAt)
+                             .ToListAsync();
+        }
+
+        public async Task<long> CountFilteredPaymentsAsync(
+            string? operatorId,
+            IEnumerable<PaymentType>? paymentTypes,
+            string? status,
+            DateTime? fromDate,
+            DateTime? toDate)
+        {
+            // Logic tạo filter tương tự như GetFilteredPaymentsAsync
+            var filterBuilder = Builders<PaymentRecord>.Filter;
+            var filters = new List<FilterDefinition<PaymentRecord>>();
+
+            if (!string.IsNullOrEmpty(operatorId))
+                filters.Add(filterBuilder.Eq(x => x.OperatorId, operatorId));
+
+            if (paymentTypes != null && paymentTypes.Any())
+                filters.Add(filterBuilder.In(x => x.PaymentType, paymentTypes));
+
+            if (!string.IsNullOrEmpty(status))
+                filters.Add(filterBuilder.Eq(x => x.Status, status));
+
+            if (fromDate.HasValue)
+                filters.Add(filterBuilder.Gte(x => x.CreatedAt, fromDate.Value));
+
+            if (toDate.HasValue)
+                filters.Add(filterBuilder.Lte(x => x.CreatedAt, toDate.Value.AddDays(1).AddSeconds(-1))); // Đến cuối ngày
+
+            var combinedFilter = filters.Any() ? filterBuilder.And(filters) : filterBuilder.Empty;
+
+            return await _col.CountDocumentsAsync(combinedFilter);
+        }
     }
 }

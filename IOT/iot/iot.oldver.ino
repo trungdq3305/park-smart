@@ -3,8 +3,8 @@
 #include <ESP32Servo.h>
 
 // --- CẤU HÌNH ---
-const char* ssid ="YOUR WIFI NAME";
-const char* password = "YOUR WIFI PASSWORD";
+const char* ssid ="#02 Tan My";
+const char* password = "0982621234";
 
 // Pin kết nối
 const int SERVO_PIN = 13;

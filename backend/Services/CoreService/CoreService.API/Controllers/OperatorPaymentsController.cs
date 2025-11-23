@@ -57,7 +57,6 @@ namespace CoreService.API.Controllers
 
             var pr = await _payment.CreateSubscriptionInvoiceAsync(
                 operatorId,
-                dto.EntityId,
                 dto.Amount,
                 dto.DueDate); // Truyền DueDate
 

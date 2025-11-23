@@ -1,3 +1,4 @@
+import type { ClientSession } from 'mongoose'
 import type { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import type { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import type { IdDto } from 'src/common/dto/params.dto'
@@ -19,6 +20,7 @@ export interface IPricingPolicyService {
   createPolicy(
     createDto: CreatePricingPolicyDto,
     userId: string,
+    externalSession?: ClientSession,
   ): Promise<PricingPolicyResponseDto>
 
   /**
@@ -54,6 +56,12 @@ export interface IPricingPolicyService {
   findAllPoliciesForAdmin(
     paginationQuery: PaginationQueryDto,
   ): Promise<{ data: PricingPolicyResponseDto[]; pagination: PaginationDto }>
+
+  softDeletePolicyWithCascade(
+    policyId: string,
+    userId: string,
+    session: ClientSession,
+  ): Promise<void>
 }
 
 export const IPricingPolicyService = Symbol('IPricingPolicyService')

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
 import { ClientModule } from '../client/client.module'
@@ -25,7 +25,7 @@ import { SubscriptionLogRepository } from './subcriptionLog.repository'
       { name: SubscriptionLog.name, schema: SubscriptionLogSchema },
     ]),
     ClientModule,
-    ParkingLotModule,
+    forwardRef(() => ParkingLotModule),
     PricingPolicyModule,
     NotificationModule,
   ],

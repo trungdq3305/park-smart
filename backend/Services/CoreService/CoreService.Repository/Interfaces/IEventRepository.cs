@@ -12,6 +12,7 @@ namespace CoreService.Repository.Interfaces
         Task<Event> GetByIdAsync(string id);
         Task<IEnumerable<Event>> GetAllAsync();
         Task<IEnumerable<Event>> GetByOperatorIdAsync(string operatorId);
+        Task<IEnumerable<Event>> GetByCreatedByAsync(string accId);
         Task<IEnumerable<Event>> GetUpcomingEventsAsync();
         Task AddAsync(Event entity);
         Task UpdateAsync(Event entity);

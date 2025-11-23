@@ -10,14 +10,15 @@ import {
   PauseOutlined,
   PlayCircleOutlined,
 } from '@ant-design/icons'
-import { AccountDetailsModal, DeleteConfirmModal } from '../../components/modals'
-import { PaginationLoading } from '../../components/common'
+import { AccountDetailsModal, DeleteConfirmModal } from '../../../components/modals'
+import { PaginationLoading } from '../../../components/common'
 import {
   useGetAccountQuery,
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
-} from '../../features/admin/accountAPI'
-import type { Account } from '../../types/Account'
+  useGetInactiveAccountQuery,
+} from '../../../features/admin/accountAPI'
+import type { Account } from '../../../types/Account'
 import './ManageAccountPage.css'
 
 interface ListAccountResponse {
@@ -38,6 +39,34 @@ interface ListAccountResponse {
   isLoading: boolean
 }
 
+interface ListInactiveAccountResponse {
+  data: {
+    data: Account[]
+    totalItems: number
+    pageSize: number
+    totalPages: number
+    currentPage: number
+  }
+  success: boolean
+  message: string
+  isLoading: boolean
+}
+
+const translateRoleName = (roleName: string) => {
+  switch (roleName.toLowerCase()) {
+    case 'admin':
+      return 'Quản trị viên'
+    case 'operator':
+      return 'Chủ bãi xe'
+    case 'driver':
+      return 'Tài xế'
+    case 'user':
+      return 'Người dùng'
+    default:
+      return roleName
+  }
+}
+
 const ManageAccountPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -50,22 +79,37 @@ const ManageAccountPage: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
   const [isPageLoading, setIsPageLoading] = useState(false)
+  const [showInactiveAccounts, setShowInactiveAccounts] = useState(false)
 
   const { data, isLoading } = useGetAccountQuery<ListAccountResponse>({
     page: currentPage,
     pageSize,
   })
 
+  const { data: inactiveAccountData, isLoading: isInactiveAccountLoading } =
+    useGetInactiveAccountQuery({
+      page: currentPage,
+      pageSize,
+    }) as { data: ListInactiveAccountResponse | undefined; isLoading: boolean }
+
   const [deleteAccount] = useDeleteAccountMutation()
   const [toggleAccountStatus] = useToggleAccountStatusMutation()
 
-  const accounts = data?.data?.pagedAccounts?.data || []
-  const totalItems = data?.data?.pagedAccounts?.totalItems || 0
-  const totalPages = Math.ceil(totalItems / pageSize)
+  const activeAccounts = data?.data?.pagedAccounts?.data || []
+  const inActiveAccounts = inactiveAccountData?.data?.data || []
+
+  // Determine which accounts to display based on toggle state
+  const accounts = showInactiveAccounts ? inActiveAccounts : activeAccounts
+  const totalItems = showInactiveAccounts
+    ? inactiveAccountData?.data?.totalItems || 0
+    : data?.data?.pagedAccounts?.totalItems || 0
+  const totalPages = showInactiveAccounts
+    ? inactiveAccountData?.data?.totalPages || 0
+    : Math.ceil(totalItems / pageSize)
+
   const totalAdmins = data?.data?.totalAdmins || 0
   const totalOperators = data?.data?.totalOperators || 0
   const totalDrivers = data?.data?.totalDrivers || 0
-
   // Functions to update URL parameters
   const updateSearchParams = (updates: Record<string, string | number | null>) => {
     const newSearchParams = new URLSearchParams(searchParams)
@@ -153,16 +197,16 @@ const ManageAccountPage: React.FC = () => {
   const getMenuItems = (account: Account): MenuProps['items'] => [
     {
       key: 'view',
-      label: 'Xem profile',
+      label: 'Xem hồ sơ',
       icon: <EyeOutlined />,
       onClick: () => handleViewDetails(account),
     },
     {
       key: 'permission',
-      label: 'Thay đổi quyền',
+      label: 'Điều chỉnh quyền hạn',
       icon: <KeyOutlined />,
       onClick: () => {
-        message.info('Tính năng thay đổi quyền đang được phát triển')
+        message.info('Tính năng điều chỉnh quyền đang được phát triển')
       },
     },
     {
@@ -183,7 +227,15 @@ const ManageAccountPage: React.FC = () => {
     },
   ]
 
-  if (isLoading && !isPageLoading) {
+  const handleToggleView = () => {
+    setShowInactiveAccounts(!showInactiveAccounts)
+    // Reset to page 1 when switching views
+    updateSearchParams({ page: 1 })
+  }
+
+  const isLoadingData = showInactiveAccounts ? isInactiveAccountLoading : isLoading
+
+  if (isLoadingData && !isPageLoading) {
     return (
       <div className="manage-account-page">
         <div className="loading-container">
@@ -208,28 +260,28 @@ const ManageAccountPage: React.FC = () => {
             <div className="stat-icon admin-icon">👤</div>
             <div className="stat-content">
               <h3>{totalAdmins}</h3>
-              <p>Admin</p>
+              <p>Quản trị viên</p>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon operator-icon">🏢</div>
             <div className="stat-content">
               <h3>{totalOperators}</h3>
-              <p>Operator</p>
+              <p>Chủ bãi xe</p>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon driver-icon">🚗</div>
             <div className="stat-content">
               <h3>{totalDrivers}</h3>
-              <p>Driver</p>
+              <p>Tài xế</p>
             </div>
           </div>
           <div className="stat-card">
             <div className="stat-icon total-icon">📊</div>
             <div className="stat-content">
               <h3>{totalItems}</h3>
-              <p>Tổng cộng</p>
+              <p>Tổng tài khoản</p>
             </div>
           </div>
         </div>
@@ -238,7 +290,15 @@ const ManageAccountPage: React.FC = () => {
         <div className="table-container">
           <div className="table-header">
             <h3>Danh sách tài khoản</h3>
-            <span className="table-count">{accounts.length} tài khoản</span>
+            <div className="table-controls">
+              <button
+                className={`filter-btn ${showInactiveAccounts ? 'active' : ''}`}
+                onClick={handleToggleView}
+              >
+                {showInactiveAccounts ? 'Tài khoản không hoạt động' : 'Tài khoản hoạt động'}
+              </button>
+              <span className="table-count">{accounts.length} tài khoản</span>
+            </div>
           </div>
 
           <div className="table-wrapper">
@@ -269,7 +329,7 @@ const ManageAccountPage: React.FC = () => {
                       </td>
                       <td>
                         <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
-                          {account.roleName}
+                          {translateRoleName(account.roleName)}
                         </span>
                       </td>
                       <td>

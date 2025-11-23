@@ -49,5 +49,21 @@ namespace CoreService.Repository.Repositories
               .SortByDescending(x => x.CreatedAt)
               .Limit(take)
               .ToListAsync();
+       
+        public async Task<IEnumerable<RefundRecord>> GetByPaymentIdsAsync(IEnumerable<string> paymentRecordIds)
+        {
+            if (paymentRecordIds == null || !paymentRecordIds.Any())
+            {
+                return Enumerable.Empty<RefundRecord>();
+            }
+
+            // Sử dụng Builders<RefundRecord>.Filter.In để tìm các bản ghi có PaymentId nằm trong danh sách.
+            // Lọc theo PaymentRecord ID
+            var filter = Builders<RefundRecord>.Filter.In(x => x.PaymentId, paymentRecordIds);
+
+            return await _col.Find(filter)
+                             .SortByDescending(x => x.CreatedAt)
+                             .ToListAsync();
+        }
     }
 }

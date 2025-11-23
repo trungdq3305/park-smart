@@ -28,8 +28,18 @@ namespace CoreService.Repository.Models
 
     public class OwnerRef
     {
-        public string Type { get; set; } = default!;    // report | comment | account | parking_lot ...
+        [BsonRepresentation(MongoDB.Bson.BsonType.String)] // Lưu trữ enum dưới dạng chuỗi trong MongoDB
+        public OwnerType Type { get; set; } = default!;
         [BsonRepresentation(BsonType.ObjectId)]
         public string Id { get; set; } = default!;
+    }
+    public enum OwnerType
+    {
+        ParkingSession,
+        Account,
+        ParkingLot,
+        Report,
+        PaymentRecord,
+        RefundRecord
     }
 }

@@ -1,4 +1,5 @@
 import { apiSlice } from '../../apis/apiSlice'
+import type { OperatorFullRegisterRequest } from '../../types/register.types'
 import { login } from './authSlice'
 
 export const authAPI = apiSlice.injectEndpoints({
@@ -18,16 +19,11 @@ export const authAPI = apiSlice.injectEndpoints({
         }
       },
     }),
-    register: builder.mutation({
-      query: (userData: {
-        email: string
-        password: string
-        phoneNumber: string
-        fullName: string
-      }) => ({
+    register: builder.mutation<{ data: string }, OperatorFullRegisterRequest>({
+      query: (payload) => ({
         url: '/core/auths/operator-register',
         method: 'POST',
-        body: userData,
+        body: payload,
       }),
     }),
   }),

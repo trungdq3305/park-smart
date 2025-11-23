@@ -3,7 +3,8 @@
   display: flex;
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Override Ant Design default styles */
@@ -124,16 +125,18 @@
   flex: 1;
   background: #fafafa;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 2rem;
+  padding: 2.5rem;
   height: 100vh;
   min-height: 100vh;
+  overflow-y: auto;
 }
 
 .login-form-container {
   width: 100%;
-  max-width: 40vh;
+  max-width: 460px;
+  padding-bottom: 2rem;
 }
 
 .login-form-section .brand-title {
@@ -213,17 +216,13 @@
 }
 
 .login-form .login-button {
-  background: #1f2937;
   border: none;
   height: 4.8vh;
   font-size: 1rem;
   font-weight: 600;
   border-radius: 0.8vh;
   margin-top: 1rem;
-}
-
-.login-form .login-button:hover {
-  background: #374151;
+  background: #1f2937;
 }
 
 /* Google Login Button */
@@ -263,7 +262,8 @@
 @media (max-width: 768px) {
   .login-container {
     flex-direction: column;
-    height: 100vh;
+    height: auto;
+    min-height: 100vh;
   }
 
   .promotional-section {
@@ -274,9 +274,9 @@
 
   .login-form-section {
     flex: 1;
-    height: 50vh;
+    height: auto;
     min-height: 50vh;
-    padding: 1rem;
+    padding: 1.5rem;
   }
 
   .promotional-section .promotional-title {

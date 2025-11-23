@@ -13,6 +13,20 @@ export class ReservationRepository implements IReservationRepository {
     private reservationModel: Model<Reservation>,
   ) {}
 
+  async checkReservationStatusByIdentifier(
+    reservationIdentifier: string,
+  ): Promise<boolean> {
+    const data = await this.reservationModel
+      .findOne({
+        reservationIdentifier,
+        status: ReservationStatusEnum.CONFIRMED,
+      })
+      .select('inUsed')
+      .lean<{ inUsed?: boolean }>()
+      .exec()
+    return !!data?.inUsed
+  }
+
   async updateExpiredPendingReservations(
     cutoffTime: Date,
   ): Promise<{ modifiedCount: number; matchedCount: number }> {
@@ -130,6 +144,14 @@ export class ReservationRepository implements IReservationRepository {
     return Promise.all([
       this.reservationModel
         .find({ createdBy: userId })
+        .populate({
+          path: 'parkingLotId',
+          select: 'name',
+        })
+        .populate({
+          path: 'pricingPolicyId',
+          select: 'name',
+        })
         .sort({ createdAt: -1 }) // Mới nhất trước
         .skip(skip)
         .limit(pageSize)

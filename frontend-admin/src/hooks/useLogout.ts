@@ -9,6 +9,7 @@ export function useLogout(redirectTo: string = '/login') {
       // 1. Xóa cookies
       Cookies.remove('userToken', { path: '/' })
       Cookies.remove('userData', { path: '/' })
+      Cookies.remove('parkingLotId', { path: '/' })
       notification.success({
         message: 'Đăng xuất thành công',
         description: 'Bạn đã đăng xuất thành công',

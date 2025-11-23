@@ -13,6 +13,31 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
 
+  async findActiveAndInUsedSubscriptionByIdentifier(
+    subscriptionIdentifier: string,
+  ): Promise<boolean> {
+    const filter = {
+      subscriptionIdentifier,
+      status: SubscriptionStatusEnum.ACTIVE,
+    }
+    const data = await this.subscriptionModel
+      .findOne(filter)
+      .select('isUsed')
+      .lean()
+      .exec()
+    return data?.isUsed ?? false
+  }
+
+  async countPendingByUser(userId: string): Promise<number> {
+    return this.subscriptionModel
+      .countDocuments({
+        userId: userId,
+        status: SubscriptionStatusEnum.PENDING_PAYMENT,
+        deletedAt: null,
+      })
+      .exec()
+  }
+
   async updateExpiredPendingSubscriptions(
     cutoffTime: Date,
   ): Promise<{ modifiedCount: number; matchedCount: number }> {
@@ -107,7 +132,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     const filter = {
       parkingLotId: parkingLotId,
       status: {
-        $or: [
+        $in: [
           SubscriptionStatusEnum.ACTIVE,
           SubscriptionStatusEnum.PENDING_PAYMENT,
         ],
@@ -152,11 +177,12 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
   findSubscriptionById(
     id: string,
-    userId: string,
+    userId?: string,
     session?: ClientSession,
   ): Promise<Subscription | null> {
+    const query = { _id: id, ...(userId ? { createdBy: userId } : {}) }
     return this.subscriptionModel
-      .findOne({ _id: id, createdBy: userId })
+      .findOne(query)
       .session(session ?? null)
       .lean()
       .exec()
@@ -196,7 +222,12 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     return this.subscriptionModel
       .countDocuments({
         parkingLotId,
-        status: SubscriptionStatusEnum.ACTIVE,
+        status: {
+          $in: [
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.PENDING_PAYMENT, // ✅ Thêm dòng này
+          ],
+        },
         deletedAt: null,
         startDate: { $lte: requestedDate },
         endDate: { $gte: requestedDate },
