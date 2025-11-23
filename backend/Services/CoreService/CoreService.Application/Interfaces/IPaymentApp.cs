@@ -38,7 +38,7 @@ namespace CoreService.Application.Interfaces
         Task<PaymentRecord> GetByIdAsync(string Id);
         Task<IEnumerable<RefundRecord>> GetRefundsByCreatedByAsync(string accountId, int take = 50);
         Task<PaymentRecord> CreateSubscriptionInvoiceAsync(
-        string operatorId, string entityId,
+        string operatorId,
         long amount, DateTime dueDate);
 
         // Method mới để lấy các hóa đơn phí định kỳ theo trạng thái
