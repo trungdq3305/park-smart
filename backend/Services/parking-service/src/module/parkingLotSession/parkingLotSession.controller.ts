@@ -225,7 +225,7 @@ export class ParkingLotSessionController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png)$/ }),
+          new FileTypeValidator({ fileType: 'image/*' }),
         ],
         fileIsRequired: false, // Có thể không bắt buộc nếu chỉ test logic
       }),
