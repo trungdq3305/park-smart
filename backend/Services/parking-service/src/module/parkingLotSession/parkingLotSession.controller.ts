@@ -44,6 +44,7 @@ import {
 } from './dto/parkingLotSession.dto'
 // Interface Service
 import { IParkingLotSessionService } from './interfaces/iparkingLotSession.service'
+import { CustomImageFileValidator } from 'src/common/validators/imageFile.validator'
 
 @Controller('parking-sessions')
 @ApiTags('parking-sessions')
@@ -225,7 +226,7 @@ export class ParkingLotSessionController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({ fileType: 'image/*' }),
+          new CustomImageFileValidator({}),
         ],
         fileIsRequired: false, // Có thể không bắt buộc nếu chỉ test logic
       }),
