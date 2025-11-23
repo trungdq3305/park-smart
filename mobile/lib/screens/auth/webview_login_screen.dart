@@ -38,6 +38,11 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
         NavigationDelegate(
           onProgress: (int progress) {
             // Update loading progress
+            if (mounted) {
+              setState(() {
+                _isLoading = progress < 100;
+              });
+            }
           },
           onPageStarted: (String url) {
             setState(() {
@@ -54,6 +59,14 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
           },
           onWebResourceError: (WebResourceError error) {
             // Handle WebView error
+            print('❌ WebView Error: ${error.description}');
+            print('   Error Code: ${error.errorCode}');
+            print('   Error Type: ${error.errorType}');
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+              });
+            }
           },
           onNavigationRequest: (NavigationRequest request) {
             // Kiểm tra URL callback để lấy token
@@ -102,9 +115,18 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
         loginUrl += '?prompt=select_account';
       }
 
+      print('🔐 Loading login URL: $loginUrl');
       await _controller.loadRequest(Uri.parse(loginUrl));
     } catch (e) {
-      // Handle error loading login URL
+      print('❌ Error loading login URL: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi tải trang đăng nhập: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -157,7 +179,7 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
         }
       }
     } catch (e) {
-      // Handle error checking JSON response
+      print('❌ Error checking JSON response: $e');
     }
   }
 
@@ -173,17 +195,20 @@ class _WebViewLoginScreenState extends State<WebViewLoginScreen> {
           onPressed: () => Navigator.of(context).pop(false),
         ),
       ),
-      // body: Stack(
-      //   children: [
-      //     WebViewWidget(controller: _controller),
-      //     if (_isLoading)
-      //       const Center(
-      //         child: CircularProgressIndicator(
-      //           valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-      //         ),
-      //       ),
-      //   ],
-      // ),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
+          if (_isLoading)
+            Container(
+              color: Colors.white,
+              child: const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

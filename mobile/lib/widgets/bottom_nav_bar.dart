@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class BottomNavBar extends StatefulWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final int? unreadNotificationCount;
 
   const BottomNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.unreadNotificationCount,
   });
 
   @override
@@ -17,27 +19,81 @@ class BottomNavBar extends StatefulWidget {
 class _BottomNavBarState extends State<BottomNavBar> {
   int? _hoveredIndex;
 
-  Widget _buildIcon(IconData icon, int index) {
+  Widget _buildIcon(IconData icon, int index, {int? badgeCount}) {
     final bool isSelected = widget.currentIndex == index;
     final bool isHovered = _hoveredIndex == index;
     final Color hoverColor = Colors.green.shade400;
     final Color iconColor = isSelected ? Colors.white : Colors.grey[400]!;
+    final bool showBadge = badgeCount != null && badgeCount > 0 && index == 3;
 
     return MouseRegion(
       onEnter: (_) => setState(() => _hoveredIndex = index),
       onExit: (_) => setState(() => _hoveredIndex = null),
       cursor: SystemMouseCursors.click,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 140),
-        curve: Curves.easeOut,
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: isSelected
-              ? hoverColor
-              : (isHovered ? hoverColor.withOpacity(0.35) : Colors.transparent),
-        ),
-        child: Icon(icon, size: 26, color: iconColor),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isSelected
+                  ? hoverColor
+                  : (isHovered
+                        ? hoverColor.withOpacity(0.35)
+                        : Colors.transparent),
+            ),
+            child: Icon(icon, size: 26, color: iconColor),
+          ),
+          if (showBadge)
+            Positioned(
+              right: -4,
+              top: -4,
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.elasticOut,
+                builder: (context, value, child) {
+                  return Transform.scale(scale: value, child: child);
+                },
+                child: Container(
+                  padding: badgeCount > 9
+                      ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)
+                      : const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.5),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 20,
+                    minHeight: 20,
+                  ),
+                  child: Center(
+                    child: Text(
+                      badgeCount > 99 ? '99+' : '$badgeCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -87,7 +143,11 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 label: 'Địa chỉ',
               ),
               BottomNavigationBarItem(
-                icon: _buildIcon(Icons.notifications_outlined, 3),
+                icon: _buildIcon(
+                  Icons.notifications_outlined,
+                  3,
+                  badgeCount: widget.unreadNotificationCount,
+                ),
                 label: 'Thông báo',
               ),
               BottomNavigationBarItem(

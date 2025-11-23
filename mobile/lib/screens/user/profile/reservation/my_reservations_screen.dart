@@ -2,37 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
-import '../../../../services/subcription_service.dart';
+import '../../../../services/reservation_service.dart';
+import '../../../../services/parking_lot_service.dart';
 import '../../../../widgets/app_scaffold.dart';
-import 'renewal_subscriptions_screen.dart';
-import 'subscription_renewal_flow.dart';
 
-class MySubscriptionsScreen extends StatefulWidget {
-  const MySubscriptionsScreen({super.key});
+class MyReservationsScreen extends StatefulWidget {
+  const MyReservationsScreen({super.key});
 
   @override
-  State<MySubscriptionsScreen> createState() => _MySubscriptionsScreenState();
+  State<MyReservationsScreen> createState() => _MyReservationsScreenState();
 }
 
-class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
-  List<Map<String, dynamic>> _allSubscriptions = [];
-  List<Map<String, dynamic>> _subscriptions = [];
+class _MyReservationsScreenState extends State<MyReservationsScreen> {
+  List<Map<String, dynamic>> _reservations = [];
   bool _isLoading = true;
   bool _isLoadingMore = false;
   String? _errorMessage;
   int _currentPage = 1;
   int _pageSize = 10;
   bool _hasMore = true;
-  final Set<String> _renewingSubscriptionIds = <String>{};
-  bool _showExpired = false;
+  final Map<String, Map<String, dynamic>> _parkingLotCache = {};
 
   @override
   void initState() {
     super.initState();
-    _loadSubscriptions();
+    _loadReservations();
   }
 
-  Future<void> _loadSubscriptions({bool loadMore = false}) async {
+  Future<void> _loadReservations({bool loadMore = false}) async {
     if (loadMore) {
       if (!_hasMore || _isLoadingMore) return;
       setState(() {
@@ -44,32 +41,31 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
         _errorMessage = null;
         _currentPage = 1;
         _hasMore = true;
-        _renewingSubscriptionIds.clear();
-        _allSubscriptions = [];
-        _subscriptions = [];
+        _reservations = [];
       });
     }
 
     try {
-      final response = await SubscriptionService.getMySubscriptions(
+      final response = await ReservationService.getMyReservations(
         page: _currentPage,
         pageSize: _pageSize,
       );
 
-      final newSubscriptions = _parseSubscriptionResponse(response);
+      final newReservations = _parseReservationResponse(response);
+
+      // Enrich reservations with parking lot details if needed
+      await _enrichReservationsWithParkingLotDetails(newReservations);
 
       setState(() {
         if (loadMore) {
-          _allSubscriptions.addAll(newSubscriptions);
+          _reservations.addAll(newReservations);
         } else {
-          _allSubscriptions = newSubscriptions;
+          _reservations = newReservations;
         }
 
-        _subscriptions = _filterSubscriptionsList();
-
         final totalItems = _extractTotalItems(response);
-        final fetchedCount = newSubscriptions.length;
-        final currentCount = _allSubscriptions.length;
+        final fetchedCount = newReservations.length;
+        final currentCount = _reservations.length;
 
         _hasMore =
             fetchedCount == _pageSize &&
@@ -83,7 +79,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
         _isLoadingMore = false;
       });
     } catch (e) {
-      print('❌ Error loading subscriptions: $e');
+      print('❌ Error loading reservations: $e');
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
@@ -93,7 +89,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       if (mounted && !loadMore) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi tải danh sách gói thuê bao: ${e.toString()}'),
+            content: Text('Lỗi tải danh sách đặt chỗ: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -101,7 +97,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     }
   }
 
-  List<Map<String, dynamic>> _parseSubscriptionResponse(
+  List<Map<String, dynamic>> _parseReservationResponse(
     Map<String, dynamic> response,
   ) {
     final List<Map<String, dynamic>> results = [];
@@ -154,67 +150,41 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     return null;
   }
 
-  static const List<String> _activeStatuses = <String>[
-    'ACTIVE',
-    'ACTIVATED',
-    'PENDING',
-  ];
+  /// Enrich reservations with parking lot details if parkingLotId only has _id
+  Future<void> _enrichReservationsWithParkingLotDetails(
+    List<Map<String, dynamic>> reservations,
+  ) async {
+    for (var reservation in reservations) {
+      final parkingLot = reservation['parkingLotId'];
+      if (parkingLot == null) continue;
 
-  static const List<String> _expiredStatuses = <String>[
-    'RENEWAL',
-    'EXPIRED',
-    'CANCELLED',
-    'INACTIVE',
-    'FINISHED',
-    'DEACTIVATED',
-  ];
+      // Check if parking lot already has name (already populated)
+      if (parkingLot['name'] != null) continue;
 
-  List<Map<String, dynamic>> _filterSubscriptionsList() {
-    final allowedStatuses = _showExpired ? _expiredStatuses : _activeStatuses;
-    return _allSubscriptions.where((sub) {
-      final status = (sub['status'] as String?)?.toUpperCase();
-      if (status == null) return false;
-      return allowedStatuses.contains(status);
-    }).toList();
-  }
+      // Get parking lot ID
+      final parkingLotId =
+          parkingLot['_id']?.toString() ?? parkingLot['id']?.toString();
+      if (parkingLotId == null) continue;
 
-  void _onFilterChanged(bool showExpired) {
-    if (_showExpired == showExpired) return;
-    setState(() {
-      _showExpired = showExpired;
-      _subscriptions = _filterSubscriptionsList();
-    });
-  }
+      // Check cache first
+      if (_parkingLotCache.containsKey(parkingLotId)) {
+        reservation['parkingLotId'] = _parkingLotCache[parkingLotId];
+        continue;
+      }
 
-  Widget _buildFilterChips() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-      child: Wrap(
-        spacing: 12,
-        children: [
-          ChoiceChip(
-            label: const Text('Đang hoạt động'),
-            selected: !_showExpired,
-            selectedColor: Colors.green.shade600,
-            labelStyle: TextStyle(
-              color: !_showExpired ? Colors.white : Colors.grey.shade700,
-              fontWeight: FontWeight.w600,
-            ),
-            onSelected: (_) => _onFilterChanged(false),
-          ),
-          ChoiceChip(
-            label: const Text('Đã hết hạn'),
-            selected: _showExpired,
-            selectedColor: Colors.red.shade500,
-            labelStyle: TextStyle(
-              color: _showExpired ? Colors.white : Colors.grey.shade700,
-              fontWeight: FontWeight.w600,
-            ),
-            onSelected: (_) => _onFilterChanged(true),
-          ),
-        ],
-      ),
-    );
+      // Fetch parking lot details
+      try {
+        final parkingLotDetails = await ParkingLotService.getParkingLotById(
+          parkingLotId,
+        );
+        final parkingLotData = parkingLotDetails['data'] ?? parkingLotDetails;
+        _parkingLotCache[parkingLotId] = parkingLotData;
+        reservation['parkingLotId'] = parkingLotData;
+      } catch (e) {
+        print('⚠️ Failed to fetch parking lot details for $parkingLotId: $e');
+        // Keep original parkingLotId if fetch fails
+      }
+    }
   }
 
   String _formatDate(String? dateString) {
@@ -227,19 +197,40 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     }
   }
 
+  String _formatDateTime(String? dateString) {
+    if (dateString == null) return 'N/A';
+    try {
+      final date = DateTime.parse(dateString);
+      final hour = date.hour.toString().padLeft(2, '0');
+      final minute = date.minute.toString().padLeft(2, '0');
+      return '${_formatDate(dateString)} $hour:$minute';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  String _formatPrice(int? price) {
+    if (price == null) return '0';
+    return price.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
   String _getStatusText(String? status) {
     switch (status?.toUpperCase()) {
-      case 'ACTIVE':
-      case 'ACTIVATED':
-        return 'Đang hoạt động';
-      case 'PENDING':
+      case 'CONFIRMED':
+        return 'Đã xác nhận';
+      case 'PENDING_PAYMENT':
         return 'Chờ thanh toán';
-      case 'EXPIRED':
-        return 'Đã hết hạn';
+      case 'ACTIVE':
+        return 'Đang sử dụng';
+      case 'COMPLETED':
+        return 'Hoàn thành';
       case 'CANCELLED':
         return 'Đã hủy';
-      case 'RENEWAL':
-        return 'Cần gia hạn';
+      case 'EXPIRED':
+        return 'Đã hết hạn';
       default:
         return status ?? 'Không xác định';
     }
@@ -247,58 +238,18 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
 
   Color _getStatusColor(String? status) {
     switch (status?.toUpperCase()) {
+      case 'CONFIRMED':
       case 'ACTIVE':
-      case 'ACTIVATED':
         return Colors.green;
-      case 'PENDING':
+      case 'PENDING_PAYMENT':
         return Colors.orange;
-      case 'EXPIRED':
+      case 'COMPLETED':
+        return Colors.blue;
       case 'CANCELLED':
+      case 'EXPIRED':
         return Colors.red;
-      case 'RENEWAL':
-        return Colors.orange;
       default:
         return Colors.grey;
-    }
-  }
-
-  Future<void> _handleRenewSubscription(
-    Map<String, dynamic> subscription,
-  ) async {
-    final dynamic subscriptionIdValue =
-        subscription['_id'] ??
-        subscription['id'] ??
-        subscription['subscriptionId'];
-    final String? subscriptionId = subscriptionIdValue?.toString();
-
-    if (subscriptionId == null) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Không tìm thấy ID của gói thuê bao để gia hạn.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      _renewingSubscriptionIds.add(subscriptionId);
-    });
-
-    final success = await SubscriptionRenewalFlow.start(
-      context: context,
-      subscription: subscription,
-    );
-
-    if (!mounted) return;
-
-    setState(() {
-      _renewingSubscriptionIds.remove(subscriptionId);
-    });
-
-    if (success) {
-      _loadSubscriptions();
     }
   }
 
@@ -308,28 +259,10 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       showBottomNav: false,
       body: Scaffold(
         appBar: AppBar(
-          title: const Text('Vé của tôi'),
+          title: const Text('Đặt chỗ của tôi'),
           backgroundColor: Colors.green,
           foregroundColor: Colors.white,
           elevation: 0,
-          actions: [
-            IconButton(
-              tooltip: 'Gói cần gia hạn',
-              icon: const Icon(Icons.refresh),
-              onPressed: () async {
-                final bool? shouldRefresh = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const RenewalSubscriptionsScreen(),
-                  ),
-                );
-                if (!mounted) return;
-                if (shouldRefresh == true) {
-                  _loadSubscriptions();
-                }
-              },
-            ),
-          ],
         ),
         body: _buildBody(),
       ),
@@ -337,7 +270,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   }
 
   Widget _buildBody() {
-    if (_isLoading && _subscriptions.isEmpty) {
+    if (_isLoading && _reservations.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
@@ -345,22 +278,11 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       );
     }
 
-    if (_errorMessage != null &&
-        _subscriptions.isEmpty &&
-        _allSubscriptions.isEmpty) {
+    if (_errorMessage != null && _reservations.isEmpty) {
       return _buildErrorState();
     }
 
-    return Column(
-      children: [
-        _buildFilterChips(),
-        Expanded(
-          child: _subscriptions.isEmpty
-              ? _buildEmptyState()
-              : _buildSubscriptionList(),
-        ),
-      ],
-    );
+    return _reservations.isEmpty ? _buildEmptyState() : _buildReservationList();
   }
 
   Widget _buildErrorState() {
@@ -399,7 +321,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
             ),
             const SizedBox(height: 32),
             ElevatedButton.icon(
-              onPressed: () => _loadSubscriptions(),
+              onPressed: () => _loadReservations(),
               icon: const Icon(Icons.refresh, size: 20),
               label: const Text(
                 'Thử lại',
@@ -425,11 +347,6 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   }
 
   Widget _buildEmptyState() {
-    final title = _showExpired ? 'Chưa có gói hết hạn' : 'Chưa có gói thuê bao';
-    final description = _showExpired
-        ? 'Chưa có gói thuê bao nào đã hết hạn. Bạn sẽ thấy danh sách tại đây khi có gói hết hạn.'
-        : 'Bạn chưa có gói thuê bao nào đang hoạt động. Hãy đăng ký gói thuê bao để sử dụng dịch vụ.';
-
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -443,16 +360,14 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                _showExpired
-                    ? Icons.history_rounded
-                    : Icons.confirmation_number_outlined,
+                Icons.event_available_outlined,
                 size: 64,
                 color: Colors.green.shade400,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              title,
+              'Chưa có đặt chỗ',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -461,7 +376,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              description,
+              'Bạn chưa có đặt chỗ nào. Hãy đặt chỗ để sử dụng dịch vụ.',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade600,
@@ -475,16 +390,16 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     );
   }
 
-  Widget _buildSubscriptionList() {
+  Widget _buildReservationList() {
     return RefreshIndicator(
-      onRefresh: () => _loadSubscriptions(),
+      onRefresh: () => _loadReservations(),
       color: Colors.green.shade600,
       backgroundColor: Colors.white,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        itemCount: _subscriptions.length + (_hasMore ? 1 : 0),
+        itemCount: _reservations.length + (_hasMore ? 1 : 0),
         itemBuilder: (context, index) {
-          if (index == _subscriptions.length) {
+          if (index == _reservations.length) {
             if (_isLoadingMore) {
               return const Padding(
                 padding: EdgeInsets.all(16.0),
@@ -496,44 +411,57 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
               );
             }
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _loadSubscriptions(loadMore: true);
+              _loadReservations(loadMore: true);
             });
             return const SizedBox.shrink();
           }
 
-          final subscription = _subscriptions[index];
-          return _buildSubscriptionCard(subscription);
+          final reservation = _reservations[index];
+          return _buildReservationCard(reservation);
         },
       ),
     );
   }
 
-  Widget _buildSubscriptionCard(Map<String, dynamic> subscription) {
-    final status = subscription['status'] as String?;
+  Widget _buildReservationCard(Map<String, dynamic> reservation) {
+    final status = reservation['status'] as String?;
     final statusColor = _getStatusColor(status);
     final statusText = _getStatusText(status);
-    final dynamic subscriptionIdValue =
-        subscription['_id'] ?? subscription['id'];
-    final String? subscriptionId = subscriptionIdValue?.toString();
-    final isRenewalStatus = status?.toUpperCase() == 'RENEWAL';
-    final isProcessingRenewal =
-        subscriptionId != null &&
-        _renewingSubscriptionIds.contains(subscriptionId);
 
-    // Extract subscription details
-    final pricingPolicy = subscription['pricingPolicyId'];
-    final parkingLot = subscription['parkingLotId'];
-    final packageRate = pricingPolicy?['packageRateId'];
+    // Extract reservation details
+    final parkingLot = reservation['parkingLotId'];
+    final pricingPolicy = reservation['pricingPolicyId'];
+    final userExpectedTime = reservation['userExpectedTime'];
+    final prepaidAmount = reservation['prepaidAmount'] as int?;
+
+    // Extract parking lot name and address
+    final parkingLotName =
+        parkingLot?['name'] ??
+        parkingLot?['payload']?['name'] ??
+        'Không xác định';
+
+    // Extract address
+    final addressId =
+        parkingLot?['addressId'] ?? parkingLot?['payload']?['addressId'];
+    String? addressText;
+    if (addressId is Map) {
+      final street = addressId['street'] ?? '';
+      final ward = addressId['ward'] ?? '';
+      final district = addressId['district'] ?? '';
+      final city = addressId['city'] ?? '';
+      final parts = [
+        street,
+        ward,
+        district,
+        city,
+      ].where((part) => part.isNotEmpty).toList();
+      addressText = parts.isNotEmpty ? parts.join(', ') : null;
+    }
 
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
-    final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
-    final startDate = subscription['startDate'];
-    final endDate = subscription['endDate'];
-    final durationAmount = packageRate?['durationAmount'] ?? 0;
-    final unit = packageRate?['unit'] ?? '';
 
     return InkWell(
-      onTap: () => _showQRCodeDialog(subscription),
+      onTap: () => _showQRCodeDialog(reservation),
       borderRadius: BorderRadius.circular(20),
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
@@ -586,7 +514,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
-                      Icons.confirmation_number,
+                      Icons.event_available,
                       color: statusColor,
                       size: 24,
                     ),
@@ -607,26 +535,48 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                           ),
                         ),
                         const SizedBox(height: 6),
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(
-                              Icons.location_on,
-                              size: 16,
-                              color: Colors.grey.shade600,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                parkingLotName,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w500,
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
                                 ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    parkingLotName,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade700,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
+                            if (addressText != null &&
+                                addressText.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 20),
+                                child: Text(
+                                  addressText,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ],
@@ -656,7 +606,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                         Container(
                           width: 6,
                           height: 6,
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
@@ -682,7 +632,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Date range card
+                  // Time slot card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -699,7 +649,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Icon(
-                            Icons.calendar_today,
+                            Icons.access_time,
                             size: 20,
                             color: Colors.green.shade700,
                           ),
@@ -710,7 +660,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Thời hạn',
+                                'Thời gian vào',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.grey.shade600,
@@ -719,7 +669,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${_formatDate(startDate)} - ${_formatDate(endDate)}',
+                                _formatDateTime(userExpectedTime),
                                 style: TextStyle(
                                   fontSize: 15,
                                   color: Colors.grey.shade900,
@@ -732,8 +682,8 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                       ],
                     ),
                   ),
-                  // Duration info
-                  if (packageRate != null) ...[
+                  // Amount card
+                  if (prepaidAmount != null) ...[
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -754,7 +704,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Icon(
-                              Icons.access_time,
+                              Icons.attach_money,
                               size: 20,
                               color: Colors.blue.shade700,
                             ),
@@ -765,7 +715,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Thời lượng',
+                                  'Số tiền đã thanh toán',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: Colors.blue.shade700,
@@ -774,7 +724,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  '$durationAmount $unit',
+                                  '${_formatPrice(prepaidAmount)} đ',
                                   style: TextStyle(
                                     fontSize: 15,
                                     color: Colors.blue.shade900,
@@ -813,95 +763,20 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                 ],
               ),
             ),
-            if (isRenewalStatus) ...[
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.orange.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Colors.orange.shade600,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Gói thuê bao đã đến hạn. Vui lòng gia hạn để tiếp tục sử dụng.',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.orange.shade900,
-                                fontWeight: FontWeight.w600,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: isProcessingRenewal
-                            ? null
-                            : () => _handleRenewSubscription(subscription),
-                        icon: isProcessingRenewal
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.refresh),
-                        label: Text(
-                          isProcessingRenewal
-                              ? 'Đang xử lý...'
-                              : 'Gia hạn ngay',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade600,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
           ],
         ),
       ),
     );
   }
 
-  void _showQRCodeDialog(Map<String, dynamic> subscription) {
-    // Get identifier from subscription (subscriptionIdentifier field)
-    final identifier =
-        subscription['subscriptionIdentifier'] as String? ??
-        subscription['identifier'] as String?;
+  void _showQRCodeDialog(Map<String, dynamic> reservation) {
+    final identifier = reservation['reservationIdentifier'] as String?;
 
     if (identifier == null || identifier.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Không tìm thấy mã định danh của gói thuê bao'),
+            content: Text('Không tìm thấy mã định danh của đặt chỗ'),
             backgroundColor: Colors.red,
           ),
         );
@@ -909,15 +784,37 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       return;
     }
 
-    // Show QR code popup directly with subscription data
-    _showQRCodePopup(subscription, identifier);
+    _showQRCodePopup(reservation, identifier);
   }
 
-  void _showQRCodePopup(Map<String, dynamic> subscription, String identifier) {
-    final pricingPolicy = subscription['pricingPolicyId'];
-    final parkingLot = subscription['parkingLotId'];
+  void _showQRCodePopup(Map<String, dynamic> reservation, String identifier) {
+    final parkingLot = reservation['parkingLotId'];
+    final pricingPolicy = reservation['pricingPolicyId'];
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
-    final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
+    final parkingLotName =
+        parkingLot?['name'] ??
+        parkingLot?['payload']?['name'] ??
+        'Không xác định';
+
+    // Extract address
+    final addressId =
+        parkingLot?['addressId'] ?? parkingLot?['payload']?['addressId'];
+    String? addressText;
+    if (addressId is Map) {
+      final street = addressId['street'] ?? '';
+      final ward = addressId['ward'] ?? '';
+      final district = addressId['district'] ?? '';
+      final city = addressId['city'] ?? '';
+      final parts = [
+        street,
+        ward,
+        district,
+        city,
+      ].where((part) => part.isNotEmpty).toList();
+      addressText = parts.isNotEmpty ? parts.join(', ') : null;
+    }
+
+    final userExpectedTime = reservation['userExpectedTime'];
 
     showDialog(
       context: context,
@@ -974,7 +871,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                     const SizedBox(width: 12),
                     const Expanded(
                       child: Text(
-                        'Mã QR Vé',
+                        'Mã QR Đặt chỗ',
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -1008,7 +905,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    // Subscription info card
+                    // Reservation info card
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -1029,7 +926,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                           Row(
                             children: [
                               Icon(
-                                Icons.confirmation_number,
+                                Icons.event_available,
                                 size: 18,
                                 color: Colors.green.shade700,
                               ),
@@ -1047,31 +944,76 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                             ],
                           ),
                           const SizedBox(height: 8),
-                          Row(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.location_on,
-                                size: 16,
-                                color: Colors.green.shade600,
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.location_on,
+                                    size: 16,
+                                    color: Colors.green.shade600,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      parkingLotName,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.green.shade800,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  parkingLotName,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.green.shade800,
-                                    fontWeight: FontWeight.w500,
+                              if (addressText != null &&
+                                  addressText.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 24),
+                                  child: Text(
+                                    addressText,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.green.shade700,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
+                          if (userExpectedTime != null) ...[
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.access_time,
+                                  size: 16,
+                                  color: Colors.green.shade600,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _formatDateTime(userExpectedTime),
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.green.shade800,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // QR Code container with decorative border
+                    // QR Code container
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -1108,8 +1050,6 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                           foregroundColor: Colors.black,
                           errorCorrectionLevel: QrErrorCorrectLevel.H,
                           padding: const EdgeInsets.all(8),
-                          embeddedImage: null,
-                          embeddedImageStyle: null,
                         ),
                       ),
                     ),
