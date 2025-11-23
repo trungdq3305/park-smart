@@ -93,7 +93,7 @@ export class ParkingLotSessionController {
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
-          new FileTypeValidator({ fileType: 'image/jpeg' }),
+          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png)$/ }),
         ],
         fileIsRequired: false, // Ảnh không bắt buộc
       }),
@@ -128,7 +128,7 @@ export class ParkingLotSessionController {
     schema: {
       type: 'object',
       properties: {
-        uidCard: {
+        nfcUid: {
           type: 'string',
           example: 'UID_abc123',
           description: 'UID của thẻ NFC (nếu có)',
@@ -138,13 +138,6 @@ export class ParkingLotSessionController {
           example: 'ID_abc123',
           description: 'Mã định danh khác (nếu có)',
         },
-      },
-    },
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
         pricingPolicyId: {
           type: 'string',
           example: 'POLICY_abc...',
@@ -161,13 +154,14 @@ export class ParkingLotSessionController {
   async calculateCheckoutFee(
     @Param('parkingLotId') parkingLotId: string,
     @Body('pricingPolicyId') pricingPolicyId: string,
-    @Body('uidCard') uidCard?: string,
+    @Body('nfcUid') nfcUid?: string,
     @Body('identifier') identifier?: string,
   ): Promise<ApiResponseDto<any>> {
+    // Call service with explicit positional arguments expected by the service implementation
     const feeDetails = await this.sessionService.calculateCheckoutFee(
       parkingLotId,
       pricingPolicyId,
-      uidCard,
+      nfcUid,
       identifier,
     )
 
@@ -183,32 +177,38 @@ export class ParkingLotSessionController {
   // 3. API XÁC NHẬN CHECK-OUT (SAU KHI THANH TOÁN)
   // =================================================================
   @Post('check-out/confirm/:sessionId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
+  @ApiBearerAuth()
+  // 👇 1. Thêm Interceptor để xử lý file upload
+  @UseInterceptors(FileInterceptor('file'))
+  // 👇 2. Báo cho Swagger biết endpoint này nhận FormData
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Xác nhận Check-out và Đóng phiên (Bước 2)',
     description:
-      'Gọi sau khi thanh toán thành công (hoặc nếu phí = 0). Mở barie ra.',
+      'Gọi sau khi thanh toán thành công. Mở barie ra. Kèm ảnh chụp xe ra.',
   })
   @ApiParam({ name: 'sessionId', description: 'ID của phiên đỗ xe' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
+        // 👇 3. Thêm trường file vào Swagger
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Ảnh chụp xe lúc ra (Snapshot)',
+        },
         paymentId: {
           type: 'string',
-          example: 'TXN_abc...',
-          description: 'Bằng chứng thanh toán từ .NET (nếu có trả phí)',
+          example: 'TXN_abc123',
+          description: 'Bằng chứng thanh toán (nếu có)',
         },
-      },
-    },
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
         pricingPolicyId: {
           type: 'string',
           example: 'POLICY_abc...',
-          description: 'ID của chính sách giá đã áp dụng (nếu cần)',
+          description: 'ID chính sách giá',
         },
       },
     },
@@ -221,12 +221,26 @@ export class ParkingLotSessionController {
   async confirmWalkInCheckout(
     @Param('sessionId') sessionId: string,
     @GetCurrentUserId() userId: string,
-    @Body('paymentId') paymentId?: string,
-    @Body('pricingPolicyId') pricingPolicyId?: string,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
+          new FileTypeValidator({ fileType: /^image\/(jpeg|jpg|png)$/ }),
+        ],
+        fileIsRequired: false, // Có thể không bắt buộc nếu chỉ test logic
+      }),
+    )
+    file: Express.Multer.File,
+    // 👇 4. Lấy dữ liệu từ Body (Lưu ý: Khi dùng Interceptor, Body sẽ là object chứa các text field)
+    @Body() body?: { paymentId?: string; pricingPolicyId?: string },
+    // 👇 5. Lấy file ảnh đã upload
   ): Promise<ApiResponseDto<boolean>> {
+    const paymentId = body?.paymentId ?? undefined
+    const pricingPolicyId = body?.pricingPolicyId ?? undefined
     const success = await this.sessionService.confirmCheckout(
       sessionId,
       userId,
+      file, // 👈 Truyền file xuống service
       paymentId,
       pricingPolicyId,
     )
@@ -326,34 +340,41 @@ export class ParkingLotSessionController {
   @ApiOperation({
     summary: 'Kiểm tra trạng thái xe (Để biết là Check-in hay Check-out)',
   })
+  @ApiQuery({ name: 'parkingLotId', required: true })
   @ApiQuery({
     name: 'identifier',
-    required: true,
-    description: 'NFC UID hoặc QR Identifier',
+    required: false,
+    description: 'QR Identifier',
   })
-  @ApiQuery({ name: 'parkingLotId', required: true })
+  @ApiQuery({ name: 'nfcUid', required: false, description: 'NFC UID' })
   async checkSessionStatus(
-    @Query('identifier') identifier: string,
     @Query('parkingLotId') parkingLotId: string,
+    @Query('identifier') identifier?: string,
+    @Query('nfcUid') nfcUid?: string,
   ) {
     // Gọi Service kiểm tra xem có session nào đang ACTIVE không
     // Bạn cần viết hàm này trong Service, tái sử dụng logic findActiveSessionByNfc/Plate
     const session = await this.sessionService.findActiveSession(
-      identifier,
       parkingLotId,
+      identifier,
+      nfcUid,
     )
 
-    if (session) {
+    if (session.session) {
       return {
         state: 'INSIDE',
         message: 'Xe đang trong bãi -> Chuyển sang Check-out',
-        session: session, // Trả về thông tin lúc vào để hiện ảnh đối chiếu
+        session: session.session, // Trả về thông tin lúc vào để hiện ảnh đối chiếu
+        images: session.images,
+        type: session.type,
       }
     } else {
       return {
         state: 'OUTSIDE',
         message: 'Xe đang ở ngoài -> Chuyển sang Check-in',
         session: null,
+        images: [],
+        type: session.type,
       }
     }
   }

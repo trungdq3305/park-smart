@@ -13,6 +13,20 @@ export class ParkingLotSessionRepository
     private parkingLotSessionModel: Model<ParkingLotSession>,
   ) {}
 
+  findActiveSessionBySubscriptionId(
+    subscriptionId: string,
+    parkingLotId?: string,
+  ): Promise<ParkingLotSession | null> {
+    return this.parkingLotSessionModel
+      .findOne({
+        subscriptionId: subscriptionId,
+        parkingLotId: parkingLotId,
+        status: ParkingSessionStatusEnum.ACTIVE,
+      })
+      .lean()
+      .exec()
+  }
+
   findById(
     sessionId: string,
     session?: ClientSession,
@@ -71,9 +85,12 @@ export class ParkingLotSessionRepository
       .find({
         guestCardId: uidCard,
         parkingLotId: parkingLotId,
+        status: ParkingSessionStatusEnum.ACTIVE,
       })
       .sort({ createdAt: -1 })
-    return data.exec()
+      .lean()
+      .exec()
+    return data
   }
 
   async updateSessionOnCheckout(

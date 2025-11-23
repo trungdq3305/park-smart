@@ -326,7 +326,7 @@ def nfc_scan():
         image_base64 = base64.b64encode(buffer).decode('utf-8')
 
     socketio_local.emit('nfc_scanned', {
-        'identifier': nfc_id,
+        'nfcUid': nfc_id,
         'type': 'NFC',
         'plateNumber': plate_number,
         'image': f"data:image/jpeg;base64,{image_base64}" if image_base64 else None,
@@ -336,6 +336,14 @@ def nfc_scan():
 
 @app.route('/confirm-checkin', methods=['POST'])
 def confirm_checkin():
+    try:
+        open_barrier_physical()
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+    
+@app.route('/confirm-checkout', methods=['POST'])
+def confirm_checkout():
     try:
         open_barrier_physical()
         return jsonify({"success": True}), 200
