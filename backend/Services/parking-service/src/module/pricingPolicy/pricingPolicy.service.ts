@@ -184,7 +184,7 @@ export class PricingPolicyService implements IPricingPolicyService {
 
       // 6. Dùng cleanData để tạo Policy
       const newPolicy = await this.pricingPolicyRepository.createPolicy(
-        createData as CreatePricingPolicyDto,
+        cleanData as CreatePricingPolicyDto,
         userId,
         session, // Dùng session chung
       )
@@ -212,6 +212,10 @@ export class PricingPolicyService implements IPricingPolicyService {
         error instanceof InternalServerErrorException
       ) {
         throw error
+      }
+      if (error.code === 11000) {
+        // Xử lý lỗi duplicate key (ví dụ: tên trùng trong phạm vi người dùng)
+        throw new BadRequestException('Chính sách giá với tên này đã tồn tại.')
       }
       throw new InternalServerErrorException('Lỗi khi tạo chính sách giá.')
     } finally {
