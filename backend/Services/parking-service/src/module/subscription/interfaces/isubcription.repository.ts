@@ -166,6 +166,10 @@ export interface ISubscriptionRepository {
   ): Promise<Pick<Subscription, '_id' | 'createdBy' | 'endDate' | 'status'>[]>
 
   countPendingByUser(userId: string): Promise<number>
+
+  findActiveAndInUsedSubscriptionByIdentifier(
+    subscriptionIdentifier: string,
+  ): Promise<boolean>
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')

@@ -98,9 +98,9 @@ export class ParkingLotSession extends BaseEntity {
 
   @Prop({
     type: String,
-    default: null,
     unique: true,
     sparse: true,
+    required: false,
   })
   paymentId?: string // ID thanh toán từ hệ thống bên ngoài (.NET) (nếu có)
 

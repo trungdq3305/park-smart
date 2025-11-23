@@ -59,6 +59,7 @@ export interface IParkingLotSessionService {
   confirmCheckout(
     sessionId: string,
     userId: string,
+    file: Express.Multer.File,
     paymentId?: string,
     pricingPolicyId?: string,
   ): Promise<boolean>
@@ -102,7 +103,11 @@ export interface IParkingLotSessionService {
     parkingLotId: string,
     identifier?: string,
     nfcUid?: string,
-  ): Promise<boolean>
+  ): Promise<{
+    session: boolean
+    images: any[]
+    type: 'SUBSCRIPTION' | 'RESERVATION' | 'WALK_IN' | null
+  }>
 }
 
 export const IParkingLotSessionService = Symbol('IParkingLotSessionService')
