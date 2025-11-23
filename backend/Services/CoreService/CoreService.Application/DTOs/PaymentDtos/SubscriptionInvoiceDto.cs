@@ -10,7 +10,6 @@ namespace CoreService.Application.DTOs.PaymentDtos
 {
     public class SubscriptionInvoiceDto
     {
-        public string EntityId { get; set; }
 
         // Số tiền cần thanh toán (Phí định kỳ)
         public long Amount { get; set; }
