@@ -384,10 +384,18 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     // =================================================================
 
     // 1. Cập nhật WebSocket
-    await this.parkingLotService.updateAvailableSpotsForWebsocket(
-      parkingLotId,
-      -1,
-    )
+    if (newSession.guestCardId) {
+      const wsData =
+        await this.parkingLotService.updateAvailableSpotsForWebsocket(
+          parkingLotId,
+          -1,
+        )
+      if (!wsData) {
+        this.logger.warn(
+          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingLotId} khi check-in session ${newSession._id}`,
+        )
+      }
+    }
 
     // 2. Upload ảnh
     const ownerType = 'ParkingSession'
@@ -659,21 +667,23 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         'Check-out từ Kiosk Bảo Vệ', // Description
       )
 
+      if (parkingSession.guestCardId) {
+        const updateSpots =
+          await this.parkingLotService.updateAvailableSpotsForWebsocket(
+            parkingSession.parkingLotId,
+            1,
+          )
+
+        if (!updateSpots) {
+          this.logger.warn(
+            `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingSession.parkingLotId} khi checkout session ${sessionId}`,
+          )
+        }
+      }
+
       if (!data) {
         throw new InternalServerErrorException(
           'Checkout thất bại, vui lòng thử lại.',
-        )
-      }
-
-      const updateSpots =
-        await this.parkingLotService.updateAvailableSpotsForWebsocket(
-          parkingSession.parkingLotId,
-          1,
-        )
-
-      if (!updateSpots) {
-        this.logger.warn(
-          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingSession.parkingLotId} khi checkout session ${sessionId}`,
         )
       }
 
