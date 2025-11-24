@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  FileTypeValidator,
   Get,
   HttpStatus,
   Inject,
@@ -40,6 +39,7 @@ import { RolesGuard } from 'src/guard/role.guard'
 // DTOs
 import {
   CheckInDto,
+  ConfirmCheckoutDto,
   GetHistorySessionDto,
   ParkingLotSessionResponseDto,
   // (Bạn có thể tạo thêm CheckoutFeeDto nếu cần)
@@ -182,39 +182,15 @@ export class ParkingLotSessionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
   @ApiBearerAuth()
-  // 👇 1. Thêm Interceptor để xử lý file upload
   @UseInterceptors(FileInterceptor('file'))
-  // 👇 2. Báo cho Swagger biết endpoint này nhận FormData
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
-    summary: 'Xác nhận Check-out và Đóng phiên (Bước 2)',
+    summary: 'Xác nhận Check-out và Đóng phiên',
     description:
       'Gọi sau khi thanh toán thành công. Mở barie ra. Kèm ảnh chụp xe ra.',
   })
   @ApiParam({ name: 'sessionId', description: 'ID của phiên đỗ xe' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        // 👇 3. Thêm trường file vào Swagger
-        file: {
-          type: 'string',
-          format: 'binary',
-          description: 'Ảnh chụp xe lúc ra (Snapshot)',
-        },
-        paymentId: {
-          type: 'string',
-          example: 'TXN_abc123',
-          description: 'Bằng chứng thanh toán (nếu có)',
-        },
-        pricingPolicyId: {
-          type: 'string',
-          example: 'POLICY_abc...',
-          description: 'ID chính sách giá',
-        },
-      },
-    },
-  })
+  @ApiBody({ type: ConfirmCheckoutDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Check-out thành công. Barie mở.',
@@ -223,28 +199,30 @@ export class ParkingLotSessionController {
   async confirmWalkInCheckout(
     @Param('sessionId') sessionId: string,
     @GetCurrentUserId() userId: string,
+
+    // 👇 1. Sử dụng DTO ở đây để NestJS tự validate và ép kiểu
+    @Body() body: ConfirmCheckoutDto,
+
+    // 👇 2. File để riêng hoặc gộp vào DTO cũng được, nhưng để riêng cho rõ ràng với Interceptor
     @UploadedFile(
       new ParseFilePipe({
         validators: [
           new MaxFileSizeValidator({ maxSize: 10 * 1024 * 1024 }), // 10MB
           new CustomImageFileValidator({}),
         ],
-        fileIsRequired: false, // Có thể không bắt buộc nếu chỉ test logic
+        fileIsRequired: false,
       }),
     )
     file: Express.Multer.File,
-    // 👇 4. Lấy dữ liệu từ Body (Lưu ý: Khi dùng Interceptor, Body sẽ là object chứa các text field)
-    @Body() body?: { paymentId?: string; pricingPolicyId?: string },
-    // 👇 5. Lấy file ảnh đã upload
   ): Promise<ApiResponseDto<boolean>> {
-    const paymentId = body?.paymentId ?? undefined
-    const pricingPolicyId = body?.pricingPolicyId ?? undefined
+    // Gọi Service
     const success = await this.sessionService.confirmCheckout(
       sessionId,
       userId,
-      file, // 👈 Truyền file xuống service
-      paymentId,
-      pricingPolicyId,
+      file,
+      body.paymentId,
+      body.pricingPolicyId,
+      body.amountPayAfterCheckOut, // 👈 Bây giờ nó đã là kiểu Number chuẩn
     )
 
     return {

@@ -94,8 +94,8 @@ export interface IParkingLotSessionRepository {
     parkingLotId: string,
     page: number,
     pageSize: number,
-    startTime?: Date,
-    endTime?: Date,
+    startTime: Date,
+    endTime: Date,
     session?: ClientSession,
   ): Promise<{ data: ParkingLotSession[]; total: number }>
 
@@ -106,6 +106,11 @@ export interface IParkingLotSessionRepository {
 
   findActiveSessionBySubscriptionId(
     subscriptionId: string,
+    parkingLotId?: string,
+  ): Promise<ParkingLotSession | null>
+
+  findActiveSessionByReservationId(
+    reservationId: string,
     parkingLotId?: string,
   ): Promise<ParkingLotSession | null>
 }
