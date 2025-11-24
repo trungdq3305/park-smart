@@ -325,7 +325,7 @@ const KioskPage: React.FC = () => {
         if (plateNumber) formData.append('plateNumber', plateNumber)
         if (cardUid && cardUid !== '---') formData.append('nfcUid', cardUid)
         if (identifier && identifier !== '---') formData.append('identifier', identifier)
-        formData.append('description', 'Check-in tại cổng Kiosk 1')
+        formData.append('description', 'Check-in từ Kiosk Bảo Vệ')
 
         const imageFile = dataURLtoFile(snapshot, 'checkin-snapshot.jpg')
         if (imageFile) formData.append('file', imageFile)
