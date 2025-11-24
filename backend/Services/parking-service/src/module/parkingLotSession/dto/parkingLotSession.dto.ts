@@ -2,9 +2,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  IntersectionType,
+} from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies (Yêu cầu) ---
@@ -186,3 +191,26 @@ export class ParkingLotSessionResponseDto {
   @Expose()
   updatedAt: Date
 }
+
+export class HistoryFilterDto {
+  @ApiProperty({
+    description: 'Ngày bắt đầu (ISO 8601)',
+    example: '2024-01-01T08:00:00.000Z',
+    type: String,
+  })
+  @IsDateString() // Tự động validate format ngày
+  startDate: string
+
+  @ApiProperty({
+    description: 'Ngày kết thúc (ISO 8601)',
+    example: '2024-01-31T17:30:00.000Z',
+    type: String,
+  })
+  @IsDateString()
+  endDate: string
+}
+
+export class GetHistorySessionDto extends IntersectionType(
+  PaginationQueryDto,
+  HistoryFilterDto,
+) {}

@@ -431,20 +431,57 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         )
 
       if (subscription) {
-        const sessionId =
+        const activeSession =
           await this.parkingLotSessionRepository.findActiveSessionBySubscriptionId(
             subscription._id.toString(),
             parkingLotId,
           )
-        if (!sessionId) {
+
+        if (!activeSession) {
           throw new NotFoundException(
             'Phiên đỗ xe đang hoạt động không tồn tại.',
           )
         }
+
+        // 2. So sánh ngày hết hạn
+        const now = new Date()
+        const endDate = new Date(subscription.endDate)
+
+        // Case A: Chưa hết hạn (hoặc vừa đúng thời điểm hết hạn)
+        if (now.getTime() <= endDate.getTime()) {
+          return {
+            amount: 0,
+            sessionId: activeSession._id.toString(),
+            message: 'Đã thanh toán trước (Vé tháng hợp lệ)',
+          }
+        }
+
+        // Case B: Đã HẾT HẠN -> Tính phí thời gian dôi ra
+        const overstayMs = now.getTime() - endDate.getTime()
+
+        // (Tùy chọn) Thêm thời gian ân hạn (Grace Period) - ví dụ 15 phút
+        // Nếu khách ra trễ 5-10 phút sau khi hết hạn vé tháng thì châm chước.
+        const GRACE_PERIOD_MS = 15 * 60 * 1000
+        if (overstayMs <= GRACE_PERIOD_MS) {
+          return {
+            amount: 0,
+            sessionId: activeSession._id.toString(),
+            message: 'Vé tháng vừa hết hạn (Trong thời gian ân hạn)',
+          }
+        }
+
+        // 1. Tính số giờ quá hạn (làm tròn lên)
+        // Ví dụ: Hết hạn lúc 10:00, ra lúc 11:15 -> Dư 1h15p -> Tính 2 tiếng
+        const overstayHours = Math.ceil(overstayMs / (1000 * 60 * 60))
+
+        // 2. Tính toán lại giá dựa trên Policy đã lấy ở đầu hàm
+        // (Hàm calculatePriceByPolicy lấy từ các bước trước)
+        const amount = this.calculatePriceByPolicy(pricingPolicy, overstayHours)
+
         return {
-          amount: 0,
-          sessionId: sessionId._id.toString(),
-          message: 'Đã thanh toán trước (Vé tháng)',
+          amount: amount,
+          sessionId: activeSession._id.toString(),
+          message: `Vé tháng hết hạn vào ${endDate.toLocaleString('vi-VN')}. Quá hạn ${overstayHours} giờ.`,
         }
       }
 
@@ -625,10 +662,19 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           'Checkout thất bại, vui lòng thử lại.',
         )
       }
-      await this.parkingLotService.updateAvailableSpotsForWebsocket(
-        parkingSession.parkingLotId,
-        1,
-      )
+
+      const updateSpots =
+        await this.parkingLotService.updateAvailableSpotsForWebsocket(
+          parkingSession.parkingLotId,
+          1,
+        )
+
+      if (!updateSpots) {
+        this.logger.warn(
+          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingSession.parkingLotId} khi checkout session ${sessionId}`,
+        )
+      }
+
       // 3. Commit transaction
       await session.commitTransaction()
       return true
@@ -653,6 +699,8 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
   findAllSessionsByParkingLot(
     parkingLotId: string,
     paginationQuery: PaginationQueryDto,
+    startDate: string,
+    endDate: string,
   ): Promise<{
     data: ParkingLotSessionResponseDto[]
     pagination: PaginationDto

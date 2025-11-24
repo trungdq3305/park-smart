@@ -85,6 +85,8 @@ export interface IParkingLotSessionService {
   findAllSessionsByParkingLot(
     parkingLotId: string,
     paginationQuery: PaginationQueryDto,
+    startDate: string,
+    endDate: string,
   ): Promise<{
     data: ParkingLotSessionResponseDto[]
     pagination: PaginationDto
