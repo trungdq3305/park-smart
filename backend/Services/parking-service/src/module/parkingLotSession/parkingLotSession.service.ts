@@ -656,7 +656,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         file,
         parkingSession._id.toString(), // Owner ID là Session ID
         'ParkingSession', // Owner Type
-        'Check-out Snapshot (Xe ra)', // Description
+        'Check-out từ Kiosk Bảo Vệ', // Description
       )
 
       if (!data) {
@@ -730,10 +730,24 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     }
   }
 
-  getSessionDetailsWithImages(
+  async getSessionDetailsWithImages(
     sessionId: string,
   ): Promise<ParkingLotSessionResponseDto & { images: any[] }> {
-    throw new Error('Method not implemented.')
+    const session = await this.parkingLotSessionRepository.findById(sessionId)
+
+    if (!session) {
+      throw new NotFoundException('Phiên đỗ xe không tồn tại.')
+    }
+
+    const images = await this.accountServiceClient.getImagesByOwner(
+      'ParkingSession',
+      sessionId,
+    )
+
+    return {
+      ...this.responseToDto(session),
+      images,
+    }
   }
 
   async findActiveSession(
