@@ -33,18 +33,19 @@ import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { RoleEnum } from 'src/common/enum/role.enum'
+import { CustomImageFileValidator } from 'src/common/validators/imageFile.validator'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 import { RolesGuard } from 'src/guard/role.guard'
 
 // DTOs
 import {
   CheckInDto,
+  GetHistorySessionDto,
   ParkingLotSessionResponseDto,
   // (Bạn có thể tạo thêm CheckoutFeeDto nếu cần)
 } from './dto/parkingLotSession.dto'
 // Interface Service
 import { IParkingLotSessionService } from './interfaces/iparkingLotSession.service'
-import { CustomImageFileValidator } from 'src/common/validators/imageFile.validator'
 
 @Controller('parking-sessions')
 @ApiTags('parking-sessions')
@@ -289,17 +290,20 @@ export class ParkingLotSessionController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
   @ApiBearerAuth()
-  @ApiOperation({ summary: '[Admin] Lấy lịch sử ra/vào của một bãi xe' })
+  @ApiOperation({
+    summary: '[Admin, Operator] Lấy lịch sử ra/vào của một bãi xe',
+  })
   @ApiParam({ name: 'parkingLotId', description: 'ID bãi xe' })
-  @ApiQuery({ name: 'page', required: true, type: Number, example: 1 })
-  @ApiQuery({ name: 'pageSize', required: true, type: Number, example: 20 })
   async getHistoryByParkingLot(
     @Param('parkingLotId') parkingLotId: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() query: GetHistorySessionDto, // 👈 Dùng DTO đã gộp ở đây
   ): Promise<PaginatedResponseDto<ParkingLotSessionResponseDto>> {
+    const { page, pageSize, startDate, endDate } = query
     const result = await this.sessionService.findAllSessionsByParkingLot(
       parkingLotId,
-      paginationQuery,
+      { page, pageSize },
+      startDate,
+      endDate,
     )
 
     return {
