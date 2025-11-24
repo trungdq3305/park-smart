@@ -4,9 +4,25 @@ import { NestFactory, Reflector } from '@nestjs/core'
 import type { NestExpressApplication } from '@nestjs/platform-express'
 import { IoAdapter } from '@nestjs/platform-socket.io'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import type { ServerOptions } from 'socket.io' // Dùng để định nghĩa options cho Socket.IO
 
 import { AppModule } from './app.module'
-
+class SocketIoAdapter extends IoAdapter {
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  createIOServer(port: number, options?: ServerOptions): any {
+    const corsOptions = {
+      // Cho phép tất cả các nguồn truy cập vào Socket.IO
+      // (BẠN CÓ THỂ THAY '*' bằng 'http://localhost:3000' để bảo mật hơn)
+      origin: '*', 
+      methods: ['GET', 'POST'],
+      credentials: true,
+    }
+    
+    // Tạo server Socket.IO với các tùy chọn CORS
+    const server = super.createIOServer(port, { ...options, cors: corsOptions })
+    return server
+  }
+}
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
   const configService = app.get(ConfigService)
@@ -20,7 +36,7 @@ async function bootstrap() {
   )
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)))
   // --- Bắt đầu cấu hình Swagger ---
-  app.useWebSocketAdapter(new IoAdapter(app))
+  app.useWebSocketAdapter(new SocketIoAdapter(app))
   app.enableCors({
     // Đảm bảo 'origin' khớp với cổng của frontend React
     origin: '*',
