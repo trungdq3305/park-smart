@@ -8,7 +8,13 @@ import {
   IntersectionType,
 } from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
-import { IsDateString, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 // -----------------------------------------------------------------
@@ -186,6 +192,9 @@ export class ParkingLotSessionResponseDto {
   amountPaid: number // Tiền đã trả (cho Xô 3 hoặc phụ thu Xô 2)
 
   @Expose()
+  amountPayAfterCheckOut: number | null // Tiền phải trả sau khi check-out
+
+  @Expose()
   createdAt: Date
 
   @Expose()
@@ -195,7 +204,7 @@ export class ParkingLotSessionResponseDto {
 export class HistoryFilterDto {
   @ApiProperty({
     description: 'Ngày bắt đầu (ISO 8601)',
-    example: '2024-01-01T08:00:00.000Z',
+    example: new Date().toISOString(),
     type: String,
   })
   @IsDateString() // Tự động validate format ngày
@@ -203,7 +212,7 @@ export class HistoryFilterDto {
 
   @ApiProperty({
     description: 'Ngày kết thúc (ISO 8601)',
-    example: '2024-01-31T17:30:00.000Z',
+    example: new Date().toISOString(),
     type: String,
   })
   @IsDateString()
@@ -214,3 +223,30 @@ export class GetHistorySessionDto extends IntersectionType(
   PaginationQueryDto,
   HistoryFilterDto,
 ) {}
+
+export class ConfirmCheckoutDto {
+  @ApiPropertyOptional({
+    description: 'ID giao dịch thanh toán (nếu có)',
+    example: 'TXN_123456',
+  })
+  @IsOptional()
+  @IsString()
+  paymentId?: string
+
+  @ApiPropertyOptional({
+    description: 'ID chính sách giá áp dụng',
+    example: '6910...',
+  })
+  @IsOptional()
+  @IsString()
+  pricingPolicyId?: string
+
+  @ApiPropertyOptional({
+    description: 'Số tiền thanh toán (sẽ tự ép kiểu từ chuỗi sang số)',
+    example: 50000,
+    type: Number,
+  })
+  @Type(() => Number) // 👈 QUAN TRỌNG: Tự động chuyển chuỗi "50000" -> số 50000
+  @IsNumber()
+  amountPayAfterCheckOut: number
+}
