@@ -47,6 +47,10 @@ export class ParkingLotSessionRepository
   ): Promise<ParkingLotSession | null> {
     return this.parkingLotSessionModel
       .findById(sessionId)
+      .populate({
+        path: 'parkingLotId',
+        select: '_id name',
+      })
       .session(session ?? null)
       .lean()
       .exec()
