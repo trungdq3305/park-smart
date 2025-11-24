@@ -577,6 +577,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     file: Express.Multer.File,
     paymentId?: string,
     pricingPolicyId?: string,
+    amountPayAfterCheckOut?: number,
   ): Promise<boolean> {
     const session = await this.connection.startSession()
     session.startTransaction()
@@ -646,6 +647,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
             checkOutTime: new Date(),
             paymentStatus: PaymentStatusEnum.PAID,
             pricingPolicyId: pricingPolicyId,
+            amountPayAfterCheckOut: amountPayAfterCheckOut,
           },
           session,
         )
@@ -696,7 +698,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     throw new Error('Method not implemented.')
   }
 
-  findAllSessionsByParkingLot(
+  async findAllSessionsByParkingLot(
     parkingLotId: string,
     paginationQuery: PaginationQueryDto,
     startDate: string,
@@ -705,7 +707,27 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     data: ParkingLotSessionResponseDto[]
     pagination: PaginationDto
   }> {
-    throw new Error('Method not implemented.')
+    const { page, pageSize } = paginationQuery
+    const startDateObj = new Date(startDate)
+    const endDateObj = new Date(endDate)
+    const data =
+      await this.parkingLotSessionRepository.findAllSessionsByParkingLotId(
+        parkingLotId,
+        page,
+        pageSize,
+        startDateObj,
+        endDateObj,
+      )
+
+    return {
+      data: data.data.map((session) => this.responseToDto(session)),
+      pagination: {
+        totalItems: data.total,
+        totalPages: Math.ceil(data.total / pageSize),
+        currentPage: page,
+        pageSize: pageSize,
+      },
+    }
   }
 
   getSessionDetailsWithImages(
@@ -719,7 +741,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     identifier?: string,
     uidCard?: string,
   ): Promise<{
-    session: boolean
+    session: ParkingLotSessionResponseDto | null
     images: any[]
     type: 'SUBSCRIPTION' | 'RESERVATION' | 'WALK_IN' | null
   }> {
@@ -744,7 +766,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           )
         if (!subscriptionStatus) {
           return {
-            session: false,
+            session: null,
             images: [],
             type: 'SUBSCRIPTION',
           }
@@ -755,30 +777,42 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
             parkingLotId,
           )
         if (!sessions) {
-          return { session: false, images: [], type: 'SUBSCRIPTION' }
+          return { session: null, images: [], type: 'SUBSCRIPTION' }
         }
         const images = await this.accountServiceClient.getImagesByOwner(
           'ParkingSession',
           sessions._id.toString(),
         )
         return {
-          session: true,
+          session: this.responseToDto(sessions),
           images: images,
           type: 'SUBSCRIPTION',
         }
       } else if (reservation) {
-        const reservationStatus =
-          await this.reservationRepository.checkReservationStatusByIdentifier(
-            identifier,
-          )
-        if (!reservationStatus) {
-          return { session: false, images: [], type: 'RESERVATION' }
+        const reservation =
+          await this.reservationRepository.findReservationById(identifier)
+        if (!reservation) {
+          return { session: null, images: [], type: 'RESERVATION' }
         }
+        const sessions =
+          await this.parkingLotSessionRepository.findActiveSessionByReservationId(
+            reservation._id.toString(),
+            parkingLotId,
+          )
+        if (!sessions) {
+          return { session: null, images: [], type: 'RESERVATION' }
+        }
+
         const images = await this.accountServiceClient.getImagesByOwner(
           'ParkingSession',
-          reservation._id,
+          sessions._id,
         )
-        return { session: true, images: images, type: 'RESERVATION' }
+
+        return {
+          session: this.responseToDto(sessions),
+          images: images,
+          type: 'RESERVATION',
+        }
       }
     }
     if (uidCard) {
@@ -798,7 +832,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         )
 
       if (!sessions || sessions.length === 0) {
-        return { session: false, images: [], type: 'WALK_IN' }
+        return { session: null, images: [], type: 'WALK_IN' }
       }
 
       const images = await this.accountServiceClient.getImagesByOwner(
@@ -806,9 +840,13 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         sessions[0]?._id,
       )
       if (sessions.length > 0) {
-        return { session: true, images, type: 'WALK_IN' }
+        return {
+          session: this.responseToDto(sessions[0]),
+          images,
+          type: 'WALK_IN',
+        }
       }
     }
-    return { session: false, images: [], type: null }
+    return { session: null, images: [], type: null }
   }
 }

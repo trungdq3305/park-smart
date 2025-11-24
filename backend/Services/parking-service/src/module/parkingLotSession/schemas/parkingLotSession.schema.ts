@@ -111,6 +111,13 @@ export class ParkingLotSession extends BaseEntity {
     index: true,
   })
   pricingPolicyId?: string
+
+  @Prop({
+    type: Number,
+    default: 0,
+    required: false,
+  })
+  amountPayAfterCheckOut?: number
 }
 
 export const ParkingLotSessionSchema =
