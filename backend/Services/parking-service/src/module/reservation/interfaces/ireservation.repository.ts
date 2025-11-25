@@ -88,11 +88,13 @@ export interface IReservationRepository {
    * Dùng khi cần liên kết thanh toán sau khi tạo đơn đặt chỗ.
    * @param id ID của đơn đặt chỗ.
    * @param paymentId ID thanh toán từ .NET service.
+   * @param prepaidAmount Số tiền đã thanh toán
    * @param session (Bắt buộc) Phải chạy trong transaction.
    */
   updateReservationPaymentId(
     id: string,
     paymentId: string,
+    prepaidAmount: number,
     session: ClientSession,
   ): Promise<boolean>
 
@@ -118,9 +120,46 @@ export interface IReservationRepository {
     cutoffTime: Date,
   ): Promise<{ modifiedCount: number; matchedCount: number }>
 
+  updateExpiredReservationsToExpiredStatus(
+    cutoffTime: Date,
+  ): Promise<{ modifiedCount: number; matchedCount: number }>
+
   checkReservationStatusByIdentifier(
     reservationIdentifier: string,
   ): Promise<boolean>
+
+  /**
+   * Dùng để kiểm tra xem khoảng thời gian "muốn gia hạn thêm" có còn slot không.
+   *
+   * @param parkingLotId ID bãi xe.
+   * @param start Thời gian bắt đầu của khoảng gia hạn (thường là endTime hiện tại).
+   * @param end Thời gian kết thúc mới mong muốn.
+   * @param excludeReservationId ID của đơn hiện tại (để không tự đếm chính mình).
+   */
+  countConflictingReservations(
+    parkingLotId: string,
+    start: Date,
+    end: Date,
+    excludeReservationId: string,
+  ): Promise<number>
+
+  /**
+   * @param id ID đơn đặt chỗ.
+   * @param newEndTime Thời gian kết thúc mới.
+   * @param additionalAmount Số tiền đóng thêm (để cộng dồn vào totalAmount hoặc lưu log).
+   * @param session Phiên transaction.
+   */
+  extendReservationEndTime(
+    id: string,
+    newEndTime: Date,
+    additionalAmount: number,
+    session: ClientSession,
+  ): Promise<Reservation | null>
+
+  findReservationByIdWithoutPopulate(
+    id: string,
+    session?: ClientSession,
+  ): Promise<Reservation | null>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')

@@ -25,7 +25,7 @@ export interface IAccountServiceClient {
     paymentId: string,
     userId?: string,
     status?: string,
-  ): Promise<boolean>
+  ): Promise<{ isValid: boolean; amount: number }>
 
   /**
    * @description Gọi API của Core Service để tải ảnh lên Image Service.

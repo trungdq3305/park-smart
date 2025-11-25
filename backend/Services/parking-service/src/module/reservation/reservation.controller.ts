@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   HttpStatus,
   Inject,
   Param,
@@ -33,10 +34,13 @@ import { RolesGuard } from 'src/guard/role.guard'
 
 // --- Thay đổi DTOs và Interface ---
 import {
+  CheckExtensionBodyDto,
   ConfirmReservationPaymentDto,
   CreateReservationDto,
+  ExtendReservationDto,
   ReservationAvailabilitySlotDto,
   ReservationDetailResponseDto,
+  ReservationExtensionEligibilityResponseDto,
   UpdateReservationStatusDto,
 } from './dto/reservation.dto' // <-- Thay đổi
 import { IReservationService } from './interfaces/ireservation.service' // <-- Thay đổi
@@ -134,6 +138,71 @@ export class ReservationController {
       message: 'Hóa đơn Đặt chỗ đã được tạo (chờ thanh toán).', // <-- Thay đổi
       success: true,
     }
+  }
+
+  @Post(':id/extension/check')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER) // Chỉ Driver mới được tự gia hạn
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({
+    name: 'id',
+    description: 'ID của Đơn đặt chỗ (Reservation) cần gia hạn',
+    type: 'string',
+  })
+  @ApiBody({ type: CheckExtensionBodyDto })
+  @ApiOperation({
+    summary: 'Bước 1: Kiểm tra khả năng gia hạn và Tính phí',
+    description:
+      'Kiểm tra xem khoảng thời gian muốn gia hạn có còn slot trống không (check BookingInventory) và trả về số tiền cần thanh toán.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Kết quả kiểm tra (Có thể gia hạn hay không, giá tiền...).',
+    type: ReservationExtensionEligibilityResponseDto,
+  })
+  async checkExtensionEligibility(
+    @Param() params: IdDto, // Lấy ID Reservation từ URL
+    @GetCurrentUserId() userId: string,
+    @Body() body: CheckExtensionBodyDto, // Chỉ nhận additionalHours
+  ): Promise<ReservationExtensionEligibilityResponseDto> {
+    // Lưu ý: Service tính toán additionalCost, Controller không cần truyền vào
+    // Tôi đã bỏ tham số additionalCost ở đây vì nó là Output của hàm này
+    return this.reservationService.checkExtensionEligibility(
+      params,
+      userId,
+      body.additionalHours,
+      body.additionalCost,
+    )
+  }
+
+  @Post(':id/extension/confirm')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({
+    name: 'id',
+    description: 'ID của Đơn đặt chỗ (Reservation) cần gia hạn',
+    type: 'string',
+  })
+  @ApiBody({ type: ExtendReservationDto }) // Chứa additionalHours VÀ paymentId
+  @ApiOperation({
+    summary: 'Bước 2: Xác nhận gia hạn (Sau khi thanh toán)',
+    description:
+      'Gọi API này sau khi đã thanh toán thành công số tiền được báo ở Bước 1. Hệ thống sẽ xác thực paymentId và cập nhật thời gian kết thúc.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Gia hạn thành công. Trả về thông tin vé mới.',
+    type: ReservationDetailResponseDto,
+  })
+  async extendReservation(
+    @Param() params: IdDto,
+    @GetCurrentUserId() userId: string,
+    @Body() body: ExtendReservationDto, // Chứa additionalHours VÀ paymentId
+  ): Promise<ReservationDetailResponseDto> {
+    return this.reservationService.extendReservation(params, userId, body)
   }
 
   // =================================================================

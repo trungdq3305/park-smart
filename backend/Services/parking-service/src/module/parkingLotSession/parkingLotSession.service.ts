@@ -235,7 +235,6 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           )
 
         if (sub) {
-          console.log(parkingLotId, sub.parkingLotId.toString())
           if (sub.parkingLotId.toString() !== parkingLotId) {
             throw new ConflictException(
               'QR Vé tháng này không thuộc bãi xe này.',
@@ -371,6 +370,18 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         )
       }
 
+      const updateSpots =
+        await this.parkingLotService.updateAvailableSpotsForWebsocket(
+          parkingLotId,
+          -1,
+        )
+
+      if (!updateSpots) {
+        this.logger.warn(
+          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingLotId}`,
+        )
+      }
+
       await session.commitTransaction()
     } catch (error) {
       await session.abortTransaction()
@@ -384,10 +395,18 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     // =================================================================
 
     // 1. Cập nhật WebSocket
-    await this.parkingLotService.updateAvailableSpotsForWebsocket(
-      parkingLotId,
-      -1,
-    )
+    if (newSession.guestCardId) {
+      const wsData =
+        await this.parkingLotService.updateAvailableSpotsForWebsocket(
+          parkingLotId,
+          -1,
+        )
+      if (!wsData) {
+        this.logger.warn(
+          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingLotId} khi check-in session ${newSession._id}`,
+        )
+      }
+    }
 
     // 2. Upload ảnh
     const ownerType = 'ParkingSession'
@@ -627,14 +646,14 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           session,
         )
       }
-
       if (paymentId) {
-        await this.accountServiceClient.getPaymentStatusByPaymentId(
-          paymentId,
-          userId,
-          'PAID',
-        )
-        if (!paymentId) {
+        const paymentData =
+          await this.accountServiceClient.getPaymentStatusByPaymentId(
+            paymentId,
+            userId,
+            'PAID',
+          )
+        if (!paymentData.isValid) {
           throw new ConflictException('Thanh toán chưa hoàn tất.')
         }
       }

@@ -26,6 +26,7 @@ import { formatDateToLocalYYYYMMDD } from 'src/utils/formatDateTime.util'
 
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
+import { IParkingLotService } from '../parkingLot/interfaces/iparkingLot.service'
 import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 // Import các DTOs liên quan đến Subscription
 import {
@@ -62,6 +63,8 @@ export class SubscriptionService implements ISubscriptionService {
     private readonly pricingPolicyRepository: IPricingPolicyRepository,
     @Inject(INotificationService)
     private readonly notificationService: INotificationService,
+    @Inject(IParkingLotService)
+    private readonly parkingLotService: IParkingLotService,
   ) {}
 
   private readonly logger: Logger = new Logger(SubscriptionService.name)
@@ -123,6 +126,23 @@ export class SubscriptionService implements ISubscriptionService {
     }
 
     return endDate
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async updateSubscriptionStatus(): Promise<void> {
+    this.logger.log('[CronJob] Bắt đầu kích hoạt vé tháng SCHEDULED...')
+
+    // 1. Gọi Repository (Lấy về map thống kê)
+    const { modifiedCount, statsByParkingLot } =
+      await this.subscriptionRepository.setScheduledToActiveSubscriptions()
+
+    if (modifiedCount > 0) {
+      this.logger.log(
+        `[CronJob] Đã kích hoạt ${modifiedCount} vé. Tại ${statsByParkingLot.length} bãi đỗ xe.`,
+      )
+    } else {
+      this.logger.log('[CronJob] Không có vé nào cần kích hoạt.')
+    }
   }
 
   /**
@@ -212,17 +232,28 @@ export class SubscriptionService implements ISubscriptionService {
           userId,
           'PAID', // ⭐️ Trạng thái mong đợi từ .NET
         )
-      if (!checkPaymentStatus) {
+      if (!checkPaymentStatus.isValid) {
         throw new ConflictException(
           'Thanh toán không hợp lệ hoặc sai thông tin.',
         )
       }
 
+      const amountPaid = checkPaymentStatus.amount
+
       // --- BƯỚC 3: HÀNH ĐỘNG (ACT) ---
 
       // ⭐️ Sửa Lỗi 2: Tính toán và chuẩn bị dữ liệu cập nhật
+      let status: SubscriptionStatusEnum
+      if (
+        subscriptionDraft.startDate > new Date() // Ngày bắt đầu trong tương lai
+      ) {
+        status = SubscriptionStatusEnum.SCHEDULED // Đặt trạng thái thành SCHEDULED
+      } else {
+        status = SubscriptionStatusEnum.ACTIVE // Kích hoạt gói
+      }
       const updateData = {
-        status: SubscriptionStatusEnum.ACTIVE, // Kích hoạt gói
+        amountPaid: amountPaid, // Gán số tiền đã thanh toán
+        status: status, // Kích hoạt gói
         paymentId: paymentId, // Gán paymentId (gốc)
         endDate: await this.calculateEndDate(
           subscriptionDraft.pricingPolicyId,
@@ -258,6 +289,7 @@ export class SubscriptionService implements ISubscriptionService {
           transactionType: isInitialPurchase
             ? SubscriptionTransactionType.INITIAL_PURCHASE
             : SubscriptionTransactionType.RENEWAL,
+          amountPaid: amountPaid,
         },
         session,
       )
@@ -705,26 +737,22 @@ export class SubscriptionService implements ISubscriptionService {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async setExpiredSubscriptionsJob(): Promise<void> {
     try {
-      const result =
+      this.logger.log('[CronJob] Bắt đầu quét các gói thuê bao hết hạn...')
+
+      // 1. Gọi Repository (Lấy về map thống kê)
+      const { modifiedCount, statsByParkingLot } =
         await this.subscriptionRepository.setExpiredSubscriptionsJob()
 
-      // 1. Chỉ log (info) số lượng thành công
-      this.logger.log(
-        `[CronJob] Đã cập nhật ${String(
-          result.modifiedCount,
-        )} gói thuê bao hết hạn.`,
-      )
-
-      // 2. Chỉ cảnh báo (warn) nếu có gì đó không khớp
-      if (result.failedCount > 0) {
-        this.logger.warn(
-          `[CronJob] Có ${String(
-            result.failedCount,
-          )} gói được tìm thấy nhưng không cập nhật.`,
+      if (modifiedCount > 0) {
+        this.logger.log(
+          `[CronJob] Đã chuyển trạng thái EXPIRED cho ${modifiedCount} gói. Tại ${statsByParkingLot.length} bãi đỗ xe.`,
         )
+
+        // 2. Duyệt qua từng bãi xe để CỘNG SLOT (Trả lại chỗ trống)
+      } else {
+        this.logger.log('[CronJob] Không có gói thuê bao nào hết hạn hôm nay.')
       }
     } catch (error) {
-      // 3. ⭐️ Đây mới là nơi bắt lỗi thực sự (ví dụ: CSDL sập)
       this.logger.error(
         `[CronJob] Gặp lỗi khi cập nhật gói hết hạn: ${error.message}`,
         error.stack,
