@@ -8,7 +8,6 @@ import type { ServerOptions } from 'socket.io' // Dùng để định nghĩa opt
 
 import { AppModule } from './app.module'
 class SocketIoAdapter extends IoAdapter {
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   createIOServer(port: number, options?: ServerOptions): any {
     const corsOptions = {
       // Cho phép tất cả các nguồn truy cập vào Socket.IO
@@ -19,6 +18,7 @@ class SocketIoAdapter extends IoAdapter {
     }
     
     // Tạo server Socket.IO với các tùy chọn CORS
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const server = super.createIOServer(port, { ...options, cors: corsOptions })
     return server
   }

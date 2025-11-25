@@ -236,7 +236,7 @@ export class AccountServiceClient implements IAccountServiceClient {
     paymentId: string,
     userId?: string, // Tham số mới để so sánh
     status?: string, // Tham số mới để so sánh
-  ): Promise<boolean> {
+  ): Promise<{ isValid: boolean; amount: number }> {
     const url = `${this.CORE_SERVICE_BASE_URL}/operators/payments/parking/xendit-invoice-detail?paymentId=${paymentId}`
 
     try {
@@ -267,7 +267,7 @@ export class AccountServiceClient implements IAccountServiceClient {
       }
 
       // 3. Nếu tất cả đều khớp
-      return true
+      return { isValid: true, amount: responseData.amount }
     } catch (error) {
       // 4. XỬ LÝ LỖI (Quan trọng)
 

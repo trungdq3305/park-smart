@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession } from 'mongoose'
 import { Model } from 'mongoose'
@@ -12,6 +13,51 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     @InjectModel(Subscription.name)
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
+
+  async setScheduledToActiveSubscriptions(): Promise<{
+    modifiedCount: number
+    statsByParkingLot: Record<string, number> // Trả về Map: { "parkingLotId": số_lượng }
+  }> {
+    const now = new Date()
+    const criteria = {
+      status: SubscriptionStatusEnum.SCHEDULED,
+      startDate: { $lte: now },
+      endDate: { $gt: now },
+    }
+
+    // 1. Tìm các vé sẽ được kích hoạt
+    const subsToActivate = await this.subscriptionModel
+      .find(criteria)
+      .select('parkingLotId') // Chỉ cần lấy ID bãi xe
+      .lean()
+      .exec()
+
+    if (subsToActivate.length === 0) {
+      return { modifiedCount: 0, statsByParkingLot: {} }
+    }
+
+    // 2. Gom nhóm và đếm số lượng theo từng bãi xe
+    // Kết quả sẽ dạng: { "id_bai_xe_A": 5, "id_bai_xe_B": 2 }
+    const statsByParkingLot: Record<string, number> = {}
+    const idsToUpdate: string[] = []
+
+    for (const sub of subsToActivate) {
+      const pId = sub.parkingLotId.toString()
+      statsByParkingLot[pId] = (statsByParkingLot[pId] || 0) + 1
+      idsToUpdate.push(sub._id.toString())
+    }
+
+    // 3. Cập nhật trạng thái sang ACTIVE
+    const updateResult = await this.subscriptionModel.updateMany(
+      { _id: { $in: idsToUpdate } },
+      { $set: { status: SubscriptionStatusEnum.ACTIVE } },
+    )
+
+    return {
+      modifiedCount: updateResult.modifiedCount,
+      statsByParkingLot,
+    }
+  }
 
   async findActiveAndInUsedSubscriptionByIdentifier(
     subscriptionIdentifier: string,
@@ -110,18 +156,45 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
   async setExpiredSubscriptionsJob(): Promise<{
     modifiedCount: number
-    failedCount: number
+    statsByParkingLot: Record<string, number> // Trả về: { "id_bai_xe": số_lượng_hết_hạn }
   }> {
-    const data = await this.subscriptionModel.updateMany(
-      {
-        endDate: { $lt: new Date() },
-        status: { $eq: SubscriptionStatusEnum.ACTIVE },
-      },
+    const now = new Date()
+    const criteria = {
+      status: SubscriptionStatusEnum.ACTIVE, // Chỉ tìm vé đang hoạt động
+      endDate: { $lt: now }, // Đã quá hạn (ngày kết thúc nhỏ hơn hiện tại)
+    }
+
+    // 1. Tìm danh sách vé hết hạn
+    const expiredSubs = await this.subscriptionModel
+      .find(criteria)
+      .select('parkingLotId') // Chỉ cần lấy ID bãi xe
+      .lean()
+      .exec()
+
+    if (expiredSubs.length === 0) {
+      return { modifiedCount: 0, statsByParkingLot: {} }
+    }
+
+    // 2. Thống kê số lượng theo từng bãi xe
+    const statsByParkingLot: Record<string, number> = {}
+    const idsToUpdate: string[] = []
+
+    for (const sub of expiredSubs) {
+      const pId = sub.parkingLotId.toString()
+      // Cộng dồn số lượng vé hết hạn cho bãi này
+      statsByParkingLot[pId] = (statsByParkingLot[pId] || 0) + 1
+      idsToUpdate.push(sub._id.toString())
+    }
+
+    // 3. Cập nhật trạng thái sang EXPIRED
+    const updateResult = await this.subscriptionModel.updateMany(
+      { _id: { $in: idsToUpdate } },
       { $set: { status: SubscriptionStatusEnum.EXPIRED } },
     )
+
     return {
-      modifiedCount: data.modifiedCount,
-      failedCount: data.matchedCount - data.modifiedCount,
+      modifiedCount: updateResult.modifiedCount,
+      statsByParkingLot,
     }
   }
 
@@ -135,6 +208,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         $in: [
           SubscriptionStatusEnum.ACTIVE,
           SubscriptionStatusEnum.PENDING_PAYMENT,
+          SubscriptionStatusEnum.SCHEDULED,
         ],
       }, // Chỉ đếm các gói đang active
       deletedAt: null, // Bỏ qua các gói đã xóa mềm
@@ -226,6 +300,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
           $in: [
             SubscriptionStatusEnum.ACTIVE,
             SubscriptionStatusEnum.PENDING_PAYMENT, // ✅ Thêm dòng này
+            SubscriptionStatusEnum.SCHEDULED, // ✅ Thêm dòng này
           ],
         },
         deletedAt: null,
@@ -272,6 +347,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   async updateSubscription(
     id: string,
     updateData: {
+      amountPaid: number
       startDate?: Date
       endDate?: Date
       status?: string

@@ -8,7 +8,10 @@ import {
   IsEnum,
   IsMongoId,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
+  IsString,
+  Min,
 } from 'class-validator'
 import { IsAfterNow } from 'src/common/decorators/isAfterNow.decorator'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
@@ -169,6 +172,9 @@ export class ReservationDetailResponseDto {
   userExpectedTime: Date // Giờ khách chọn (9:15)
 
   @Expose()
+  estimatedEndTime: Date
+
+  @Expose()
   prepaidAmount: number // Số tiền đã trả trước
 
   @Expose()
@@ -200,3 +206,58 @@ export class ReservationAvailabilitySlotDto {
   })
   isAvailable: boolean
 }
+
+export class ExtendReservationDto {
+  @ApiProperty({ description: 'Số giờ muốn gia hạn thêm', example: 1 })
+  @IsNumber()
+  @Min(0.5)
+  additionalHours: number
+
+  @ApiProperty({
+    description: 'Mã giao dịch thanh toán cho phần gia hạn',
+    example: 'PAY_EXT_123',
+  })
+  @IsString()
+  @IsNotEmpty()
+  paymentId: string
+}
+
+export class ReservationExtensionEligibilityResponseDto {
+  @ApiProperty()
+  canExtend: boolean
+
+  @ApiProperty()
+  newEndTime: Date
+
+  @ApiProperty({ description: 'Số tiền cần thanh toán thêm' })
+  additionalCost: number
+
+  @ApiPropertyOptional({
+    description: 'Lý do không thể gia hạn (nếu canExtend=false)',
+  })
+  reason?: string
+}
+
+export class CheckExtensionBodyDto {
+  @ApiProperty({
+    description: 'Số giờ muốn gia hạn thêm (tối thiểu 0.5 giờ)',
+    example: 1,
+    type: Number,
+  })
+  @IsNumber()
+  @Min(0.5, { message: 'Thời gian gia hạn tối thiểu là 30 phút (0.5)' })
+  additionalHours: number
+
+  @ApiProperty({
+    description: 'Số tiền dự kiến phải thanh toán cho phần gia hạn',
+    example: 100000,
+    type: Number,
+  })
+  @IsNumber()
+  additionalCost: number
+}
+
+/**
+ * DTO dùng cho Bước 2: Xác nhận gia hạn kèm Payment ID
+ * (Kế thừa từ CheckExtensionBodyDto nên đã có sẵn additionalHours)
+ */

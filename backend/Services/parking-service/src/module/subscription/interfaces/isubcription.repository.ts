@@ -88,6 +88,7 @@ export interface ISubscriptionRepository {
   updateSubscription(
     id: string,
     updateData: {
+      amountPaid?: number
       startDate?: Date
       endDate?: Date
       status?: string
@@ -124,7 +125,7 @@ export interface ISubscriptionRepository {
    */
   setExpiredSubscriptionsJob(): Promise<{
     modifiedCount: number
-    failedCount: number
+    statsByParkingLot: Record<string, number> // Trả về: { "id_bai_xe": số_lượng_hết_hạn }
   }>
 
   /**
@@ -170,6 +171,11 @@ export interface ISubscriptionRepository {
   findActiveAndInUsedSubscriptionByIdentifier(
     subscriptionIdentifier: string,
   ): Promise<boolean>
+
+  setScheduledToActiveSubscriptions(): Promise<{
+    modifiedCount: number
+    statsByParkingLot: Record<string, number> // Trả về Map: { "parkingLotId": số_lượng }
+  }>
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')
