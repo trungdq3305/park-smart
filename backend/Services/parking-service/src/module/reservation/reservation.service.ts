@@ -63,9 +63,8 @@ export class ReservationService implements IReservationService {
     additionalCost: number,
   ): Promise<ReservationExtensionEligibilityResponseDto> {
     // 1. Lấy thông tin Reservation hiện tại
-    const reservation = await this.reservationRepository.findReservationById(
-      id.id,
-    )
+    const reservation =
+      await this.reservationRepository.findReservationByIdWithoutPopulate(id.id)
     if (!reservation) {
       throw new NotFoundException('Đơn đặt chỗ không tồn tại.')
     }
@@ -91,7 +90,6 @@ export class ReservationService implements IReservationService {
     const newEndTime = new Date(
       currentEndTime.getTime() + additionalHours * 60 * 60 * 1000,
     )
-
     // 4. Lấy thông tin Bãi xe để biết BookableCapacity
     const lot = await this.parkingLotRepository.findParkingLotById(
       reservation.parkingLotId.toString(),
@@ -182,10 +180,11 @@ export class ReservationService implements IReservationService {
       // 2. Xác thực Thanh toán (Gọi Account Service)
       // Kiểm tra xem paymentId này có hợp lệ và đủ tiền (additionalCost) không
 
-      const reservation = await this.reservationRepository.findReservationById(
-        id.id,
-        session,
-      )
+      const reservation =
+        await this.reservationRepository.findReservationByIdWithoutPopulate(
+          id.id,
+          session,
+        )
 
       if (!reservation) {
         throw new NotFoundException('Đơn đặt chỗ không tồn tại.')
@@ -387,10 +386,11 @@ export class ReservationService implements IReservationService {
     const session = await this.connection.startSession()
     session.startTransaction()
     try {
-      const reservation = await this.reservationRepository.findReservationById(
-        id.id,
-        session,
-      )
+      const reservation =
+        await this.reservationRepository.findReservationByIdWithoutPopulate(
+          id.id,
+          session,
+        )
 
       if (!reservation) {
         throw new NotFoundException('Đơn đặt chỗ không tồn tại.')
@@ -507,10 +507,11 @@ export class ReservationService implements IReservationService {
     try {
       // --- BƯỚC 1: LẤY VÉ (RESERVATION) ---
       // (Lấy bản ghi, khóa nó lại bằng session)
-      const reservation = await this.reservationRepository.findReservationById(
-        id.id,
-        session, // ⭐️ Rất quan trọng: Khóa bản ghi này
-      )
+      const reservation =
+        await this.reservationRepository.findReservationByIdWithoutPopulate(
+          id.id,
+          session, // ⭐️ Rất quan trọng: Khóa bản ghi này
+        )
 
       if (!reservation) {
         throw new NotFoundException('Không tìm thấy đơn đặt chỗ.')
@@ -590,7 +591,8 @@ export class ReservationService implements IReservationService {
     updateDto: UpdateReservationStatusDto,
     userId: string,
   ): Promise<boolean> {
-    const data = await this.reservationRepository.findReservationById(id.id)
+    const data =
+      await this.reservationRepository.findReservationByIdWithoutPopulate(id.id)
     if (!data) {
       throw new NotFoundException('Đơn đặt chỗ không tồn tại.')
     }

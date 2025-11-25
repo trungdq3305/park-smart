@@ -13,6 +13,17 @@ export class ReservationRepository implements IReservationRepository {
     private reservationModel: Model<Reservation>,
   ) {}
 
+  findReservationByIdWithoutPopulate(
+    id: string,
+    session?: ClientSession,
+  ): Promise<Reservation | null> {
+    const query = this.reservationModel.findById(id).lean()
+    if (session) {
+      query.session(session)
+    }
+    return query.exec()
+  }
+
   async updateExpiredReservationsToExpiredStatus(
     cutoffTime: Date,
   ): Promise<{ modifiedCount: number; matchedCount: number }> {
@@ -204,8 +215,12 @@ export class ReservationRepository implements IReservationRepository {
   ): Promise<Reservation | null> {
     const query = this.reservationModel
       .findById(id)
-      .populate('parkingLotId') // Populate chi tiết bãi đỗ xe
-      .populate('pricingPolicyId') // Populate chi tiết chính sách giá
+      .populate({
+        path: 'parkingLotId',
+      }) // Populate chi tiết bãi đỗ xe
+      .populate({
+        path: 'pricingPolicyId',
+      }) // Populate chi tiết chính sách giá
     if (session) {
       query.session(session)
     }

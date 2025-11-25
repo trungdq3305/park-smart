@@ -172,6 +172,9 @@ export class ReservationDetailResponseDto {
   userExpectedTime: Date // Giờ khách chọn (9:15)
 
   @Expose()
+  estimatedEndTime: Date
+
+  @Expose()
   prepaidAmount: number // Số tiền đã trả trước
 
   @Expose()

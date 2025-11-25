@@ -155,6 +155,11 @@ export interface IReservationRepository {
     additionalAmount: number,
     session: ClientSession,
   ): Promise<Reservation | null>
+
+  findReservationByIdWithoutPopulate(
+    id: string,
+    session?: ClientSession,
+  ): Promise<Reservation | null>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')
