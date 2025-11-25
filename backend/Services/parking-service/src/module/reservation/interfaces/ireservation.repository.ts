@@ -123,6 +123,34 @@ export interface IReservationRepository {
   checkReservationStatusByIdentifier(
     reservationIdentifier: string,
   ): Promise<boolean>
+
+  /**
+   * Dùng để kiểm tra xem khoảng thời gian "muốn gia hạn thêm" có còn slot không.
+   *
+   * @param parkingLotId ID bãi xe.
+   * @param start Thời gian bắt đầu của khoảng gia hạn (thường là endTime hiện tại).
+   * @param end Thời gian kết thúc mới mong muốn.
+   * @param excludeReservationId ID của đơn hiện tại (để không tự đếm chính mình).
+   */
+  countConflictingReservations(
+    parkingLotId: string,
+    start: Date,
+    end: Date,
+    excludeReservationId: string,
+  ): Promise<number>
+
+  /**
+   * @param id ID đơn đặt chỗ.
+   * @param newEndTime Thời gian kết thúc mới.
+   * @param additionalAmount Số tiền đóng thêm (để cộng dồn vào totalAmount hoặc lưu log).
+   * @param session Phiên transaction.
+   */
+  extendReservationEndTime(
+    id: string,
+    newEndTime: Date,
+    additionalAmount: number,
+    session: ClientSession,
+  ): Promise<Reservation | null>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -27,8 +28,10 @@ import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPo
 import {
   ConfirmReservationPaymentDto,
   CreateReservationDto,
+  ExtendReservationDto,
   ReservationAvailabilitySlotDto,
   ReservationDetailResponseDto,
+  ReservationExtensionEligibilityResponseDto,
   UpdateReservationStatusDto,
 } from './dto/reservation.dto'
 import { ReservationStatusEnum } from './enums/reservation.enum'
@@ -53,6 +56,192 @@ export class ReservationService implements IReservationService {
     private readonly accountServiceClient: IAccountServiceClient,
   ) {}
 
+  async checkExtensionEligibility(
+    id: IdDto,
+    userId: string,
+    additionalHours: number,
+    additionalCost: number,
+  ): Promise<ReservationExtensionEligibilityResponseDto> {
+    // 1. Lấy thông tin Reservation hiện tại
+    const reservation = await this.reservationRepository.findReservationById(
+      id.id,
+    )
+    if (!reservation) {
+      throw new NotFoundException('Đơn đặt chỗ không tồn tại.')
+    }
+
+    // 2. Validate cơ bản
+    if (reservation.createdBy !== userId) {
+      throw new BadRequestException('Bạn không có quyền gia hạn đơn này.')
+    }
+    // Chỉ cho gia hạn khi đang Giữ chỗ hoặc Đang trong bãi
+    if (
+      ![
+        ReservationStatusEnum.CONFIRMED,
+        ReservationStatusEnum.CHECKED_IN,
+      ].includes(reservation.status)
+    ) {
+      throw new BadRequestException(
+        'Chỉ có thể gia hạn khi đơn đặt chỗ đang hoạt động (Confirmed/Checked-in).',
+      )
+    }
+
+    // 3. Tính toán thời gian mới
+    const currentEndTime = new Date(reservation.estimatedEndTime)
+    const newEndTime = new Date(
+      currentEndTime.getTime() + additionalHours * 60 * 60 * 1000,
+    )
+
+    // 4. Lấy thông tin Bãi xe để biết BookableCapacity
+    const lot = await this.parkingLotRepository.findParkingLotById(
+      reservation.parkingLotId.toString(),
+    )
+    if (!lot) throw new NotFoundException('Bãi xe không tồn tại.')
+
+    // 5. Chuẩn hóa thời gian để check Kho (Booking Inventory)
+    // Chúng ta chỉ check khoảng thời gian "dôi ra" (Extension Delta)
+    const inventoryCheckStart = new Date(currentEndTime)
+    inventoryCheckStart.setMinutes(0, 0, 0) // Làm tròn xuống giờ
+
+    const inventoryCheckEnd = new Date(newEndTime)
+    inventoryCheckEnd.setMinutes(0, 0, 0) // Làm tròn xuống giờ
+
+    // 6. KIỂM TRA KHO (Booking Inventory)
+    // Tìm xem trong khoảng giờ mới, có giờ nào bị full (đạt ngưỡng bookableCapacity) chưa
+    const inventories =
+      await this.bookingInventoryRepository.findInventoriesInTimeRange(
+        reservation.parkingLotId.toString(),
+        inventoryCheckStart,
+        inventoryCheckEnd,
+      )
+
+    let isAvailable = true
+    let reason: string | null = null
+
+    for (const inv of inventories) {
+      // Logic: Nếu số lượng đã đặt >= Sức chứa cho phép -> Hết chỗ
+      if (inv.bookedCount >= lot.bookableCapacity) {
+        isAvailable = false
+        reason = `Khung giờ ${inv.timeSlot.getHours()}:00 đã hết suất đặt trước.`
+        break
+      }
+    }
+
+    // 7. Tính tiền (Estimate Cost)
+    // Lấy lại chính sách giá cũ để tính tiếp (hoặc lấy policy mới tùy business)
+    // Ở đây giả sử dùng giá theo giờ (pricePerHour) của Policy cũ
+
+    return {
+      canExtend: isAvailable,
+      newEndTime: newEndTime,
+      additionalCost: additionalCost,
+      reason: reason ?? undefined,
+    }
+  }
+
+  async extendReservation(
+    id: IdDto,
+    userId: string,
+    extendDto: ExtendReservationDto,
+  ): Promise<ReservationDetailResponseDto> {
+    const session = await this.connection.startSession()
+    session.startTransaction()
+
+    try {
+      // 1. Gọi lại hàm kiểm tra (Re-validate logic)
+      // Để đảm bảo trong lúc user đang thanh toán, slot không bị người khác lấy mất
+      const paymentCheck =
+        await this.accountServiceClient.getPaymentStatusByPaymentId(
+          extendDto.paymentId,
+          userId,
+          'PAID',
+        )
+
+      // Validate số tiền thanh toán phải khớp (hoặc >=) số tiền cần thiết
+      // Lưu ý: So sánh số thực nên dùng epsilon hoặc thư viện decimal nếu cần chính xác tuyệt đối
+      if (!paymentCheck.isValid) {
+        throw new BadRequestException(
+          'Thanh toán không hợp lệ hoặc không đủ số tiền.',
+        )
+      }
+
+      const eligibility = await this.checkExtensionEligibility(
+        id,
+        userId,
+        extendDto.additionalHours,
+        paymentCheck.amount,
+      )
+
+      if (!eligibility.canExtend) {
+        throw new ConflictException(
+          eligibility.reason ??
+            'Không còn chỗ trống để gia hạn trong khung giờ này.',
+        )
+      }
+
+      // 2. Xác thực Thanh toán (Gọi Account Service)
+      // Kiểm tra xem paymentId này có hợp lệ và đủ tiền (additionalCost) không
+
+      const reservation = await this.reservationRepository.findReservationById(
+        id.id,
+        session,
+      )
+
+      if (!reservation) {
+        throw new NotFoundException('Đơn đặt chỗ không tồn tại.')
+      }
+
+      // 3. CẬP NHẬT KHO (BOOKING INVENTORY) - Tăng bookedCount cho khung giờ MỚI
+      const currentEndTime = new Date(reservation.estimatedEndTime)
+      const newEndTime = eligibility.newEndTime
+
+      const inventoryUpdateStart = new Date(currentEndTime)
+      inventoryUpdateStart.setMinutes(0, 0, 0)
+
+      const inventoryUpdateEnd = new Date(newEndTime)
+      inventoryUpdateEnd.setMinutes(0, 0, 0)
+
+      await this.bookingInventoryRepository.updateInventoryCounts(
+        reservation.parkingLotId.toString(),
+        inventoryUpdateStart,
+        inventoryUpdateEnd,
+        1, // ⭐️ Tăng 1 slot (chiếm thêm giờ)
+        session,
+      )
+
+      // 4. Cập nhật Reservation (Giờ ra mới + Tiền đã đóng thêm)
+      // Lưu ý: Ta không đổi status (vẫn giữ CONFIRMED hoặc CHECKED_IN)
+      const updatedReservation =
+        await this.reservationRepository.extendReservationEndTime(
+          id.id,
+          newEndTime,
+          paymentCheck.amount, // Cộng thêm số tiền thực tế đã trả
+          session,
+        )
+
+      if (!updatedReservation) {
+        throw new InternalServerErrorException('Lỗi khi cập nhật đơn đặt chỗ.')
+      }
+
+      await session.commitTransaction()
+      return this.returnToDto(updatedReservation)
+    } catch (error) {
+      await session.abortTransaction()
+
+      // Nếu lỗi là Conflict (hết chỗ), BadRequest... thì ném tiếp
+      if (
+        error instanceof ConflictException ||
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error
+      }
+      throw new InternalServerErrorException(error.message)
+    } finally {
+      await session.endSession()
+    }
+  }
+
   private readonly logger: Logger = new Logger(ReservationService.name)
 
   private returnToDto(reservation: Reservation): ReservationDetailResponseDto {
@@ -66,76 +255,6 @@ export class ReservationService implements IReservationService {
    * Hàm helper (phụ) để tính giá Bậc thang (Tiered)
    * (Logic: Tính theo LŨY KẾ - Progressive, theo yêu cầu của bạn)
    */
-  private calculateTieredPrice(
-    policy: any, // Kiểu PricingPolicy đã populate
-    durationInHours: number,
-  ): number {
-    if (!policy.tieredRateSetId?.tiers?.length) {
-      throw new InternalServerErrorException(
-        'Lỗi dữ liệu: Cơ sở TIERED nhưng không có bậc thang (tiers).',
-      )
-    }
-
-    // Sắp xếp các bậc thang theo 'fromHour' (từ thấp đến cao)
-    const sortedTiers = policy.tieredRateSetId.tiers.sort(
-      (a: any, b: any) => parseFloat(a.fromHour) - parseFloat(b.fromHour),
-    )
-
-    let totalCost = 0
-    let hoursAccountedFor = 0 // Số giờ đã được tính tiền
-
-    // ⭐️ LOGIC LŨY KẾ: Dùng vòng lặp 'for' thay vì 'find'
-    for (const tier of sortedTiers) {
-      // Chuyển đổi (parsing)
-      // (Giả sử fromHour/toHour là string, ví dụ '0', '5')
-      const tierStartHour = parseFloat(tier.fromHour) // Ví dụ: Bậc 1 là 0
-      const tierEndHour = tier.toHour ? parseFloat(tier.toHour) : Infinity // Ví dụ: Bậc 1 là 5
-      const tierRate = tier.price // Ví dụ: 10000
-
-      // Nếu tổng thời gian đỗ (7) > số giờ đã tính (0)
-      if (durationInHours > hoursAccountedFor) {
-        // 1. Tính toán thời gian áp dụng cho BẬC NÀY
-        // (Không vượt quá 'tierStartHour', ví dụ: 0)
-        const start = Math.max(hoursAccountedFor, tierStartHour)
-
-        // (Không vượt quá 'tierEndHour' (5) VÀ không vượt quá tổng thời gian đỗ (7))
-        const end = Math.min(durationInHours, tierEndHour)
-
-        // 2. Lấy số giờ trong bậc này
-        // (Lần lặp 1: end(5) - start(0) = 5 giờ)
-        const hoursInThisTier = end - start
-
-        // 3. Nếu có giờ nào trong bậc này, cộng tiền
-        if (hoursInThisTier > 0) {
-          totalCost += hoursInThisTier * tierRate // totalCost = 0 + (5 * 10000) = 50000
-          hoursAccountedFor += hoursInThisTier // hoursAccountedFor = 0 + 5 = 5
-        }
-      } else {
-        break // Đã tính xong
-      }
-    }
-
-    // (Vòng lặp 2: tierStartHour = 5, tierEndHour = 8, tierRate = 15000)
-    // 1. (durationInHours (7) > hoursAccountedFor (5)) -> True
-    // 2. start = Math.max(5, 5) = 5
-    // 3. end = Math.min(7, 8) = 7
-    // 4. hoursInThisTier = end(7) - start(5) = 2 giờ
-    // 5. totalCost = 50000 + (2 * 15000) = 80000
-    // 6. hoursAccountedFor = 5 + 2 = 7
-
-    // (Vòng lặp 3: tierStartHour = 8)
-    // 1. (durationInHours (7) > hoursAccountedFor (7)) -> False
-    // 2. break;
-
-    // Trả về tổng chi phí
-    if (totalCost === 0 && durationInHours > 0) {
-      throw new BadRequestException(
-        `Không tìm thấy mức giá bậc thang nào áp dụng cho ${String(durationInHours)} giờ.`,
-      )
-    }
-
-    return totalCost // ⭐️ Trả về 80.000
-  }
 
   async createReservation(
     createDto: CreateReservationDto,

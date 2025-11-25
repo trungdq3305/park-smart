@@ -8,7 +8,10 @@ import {
   IsEnum,
   IsMongoId,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
+  IsString,
+  Min,
 } from 'class-validator'
 import { IsAfterNow } from 'src/common/decorators/isAfterNow.decorator'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
@@ -199,4 +202,35 @@ export class ReservationAvailabilitySlotDto {
     example: true,
   })
   isAvailable: boolean
+}
+
+export class ExtendReservationDto {
+  @ApiProperty({ description: 'Số giờ muốn gia hạn thêm', example: 1 })
+  @IsNumber()
+  @Min(0.5)
+  additionalHours: number
+
+  @ApiProperty({
+    description: 'Mã giao dịch thanh toán cho phần gia hạn',
+    example: 'PAY_EXT_123',
+  })
+  @IsString()
+  @IsNotEmpty()
+  paymentId: string
+}
+
+export class ReservationExtensionEligibilityResponseDto {
+  @ApiProperty()
+  canExtend: boolean
+
+  @ApiProperty()
+  newEndTime: Date
+
+  @ApiProperty({ description: 'Số tiền cần thanh toán thêm' })
+  additionalCost: number
+
+  @ApiPropertyOptional({
+    description: 'Lý do không thể gia hạn (nếu canExtend=false)',
+  })
+  reason?: string
 }

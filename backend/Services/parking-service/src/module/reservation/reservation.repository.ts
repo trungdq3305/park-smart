@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { ClientSession, Model } from 'mongoose'
+import { ClientSession, FilterQuery, Model, Types } from 'mongoose'
 
 import { ReservationStatusEnum } from './enums/reservation.enum'
 import { IReservationRepository } from './interfaces/ireservation.repository'
-import { Reservation } from './schemas/reservation.schema'
+import { Reservation, ReservationDocument } from './schemas/reservation.schema'
 
 @Injectable()
 export class ReservationRepository implements IReservationRepository {
@@ -12,6 +12,66 @@ export class ReservationRepository implements IReservationRepository {
     @InjectModel(Reservation.name)
     private reservationModel: Model<Reservation>,
   ) {}
+
+  async countConflictingReservations(
+    parkingLotId: string,
+    start: Date,
+    end: Date,
+    excludeReservationId: string,
+  ): Promise<number> {
+    /**
+     * Logic tìm Booking trùng giờ:
+     * (StartA < EndB) AND (EndA > StartB)
+     *
+     * A: Booking trong DB
+     * B: Khoảng thời gian muốn kiểm tra (start, end)
+     */
+    const filter: FilterQuery<ReservationDocument> = {
+      parkingLotId: new Types.ObjectId(parkingLotId),
+      // Loại trừ chính booking đang gia hạn
+      _id: { $ne: new Types.ObjectId(excludeReservationId) },
+      // Chỉ tính các booking đang chiếm chỗ
+      status: {
+        $in: [
+          ReservationStatusEnum.CONFIRMED,
+          ReservationStatusEnum.CHECKED_IN,
+          ReservationStatusEnum.PENDING_PAYMENT, // Tính cả những ông đang trả tiền
+        ],
+      },
+      $or: [
+        {
+          userExpectedTime: { $lt: end }, // Start DB < End Request
+          estimatedEndTime: { $gt: start }, // End DB > Start Request
+        },
+      ],
+    }
+
+    return this.reservationModel.countDocuments(filter).exec()
+  }
+
+  async extendReservationEndTime(
+    id: string,
+    newEndTime: Date,
+    additionalAmount: number,
+    session: ClientSession,
+  ): Promise<Reservation | null> {
+    return this.reservationModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            estimatedEndTime: newEndTime, // Cập nhật giờ ra mới
+            updatedAt: new Date(),
+          },
+          $inc: {
+            prepaidAmount: additionalAmount, // Cộng dồn tiền vào tổng tiền đã trả
+            // Hoặc nếu bạn có field 'totalAmount', hãy update nó
+          },
+        },
+        { new: true, session },
+      )
+      .exec()
+  }
 
   async checkReservationStatusByIdentifier(
     reservationIdentifier: string,
