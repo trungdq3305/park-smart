@@ -32,6 +32,7 @@ import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPo
 import {
   AvailabilitySlotDto,
   CreateSubscriptionDto,
+  SubscriptionCancellationPreviewResponseDto,
   SubscriptionDetailResponseDto,
   SubscriptionLogDto,
   SubscriptionRenewalEligibilityResponseDto,
@@ -126,6 +127,70 @@ export class SubscriptionService implements ISubscriptionService {
     }
 
     return endDate
+  }
+
+  private calculateRefundPolicy(subscription: SubscriptionDetailResponseDto): {
+    amount: number
+    percent: number
+    policy: string
+  } {
+    const now = new Date()
+    const start = new Date(subscription.startDate)
+    const diffTime = start.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays > 7) {
+      return {
+        amount: subscription.amountPaid,
+        percent: 100,
+        policy: '> 7 Days',
+      }
+    } else if (diffDays >= 3) {
+      return {
+        amount: subscription.amountPaid * 0.5,
+        percent: 50,
+        policy: '3-7 Days',
+      }
+    } else {
+      return { amount: 0, percent: 0, policy: '< 3 Days' }
+    }
+  }
+
+  // --- API 1: PREVIEW ---
+  async getCancellationPreview(
+    id: IdDto,
+    userId: string,
+  ): Promise<SubscriptionCancellationPreviewResponseDto> {
+    const sub = await this.findSubscriptionById(id, userId)
+
+    // Nếu đã Active -> Không cho hủy
+    if (sub.status === SubscriptionStatusEnum.ACTIVE) {
+      return {
+        canCancel: false,
+        refundAmount: 0,
+        refundPercentage: 0,
+        daysUntilActivation: 0,
+        policyApplied: 'Active',
+        warningMessage: 'Vé tháng đang hoạt động, không thể hủy.',
+      }
+    }
+
+    const policy = this.calculateRefundPolicy(sub)
+
+    return {
+      canCancel: true,
+      refundAmount: policy.amount,
+      refundPercentage: policy.percent,
+      policyApplied: policy.policy,
+      daysUntilActivation: Math.ceil(
+        (new Date(sub.startDate).getTime() - new Date().getTime()) /
+          (1000 * 60 * 60 * 24),
+      ),
+      warningMessage:
+        policy.percent < 100
+          ? `Bạn sẽ bị trừ phí vì hủy sát ngày. Số tiền hoàn lại: ${policy.amount.toLocaleString()}đ`
+          : 'Bạn sẽ được hoàn tiền 100%.',
+    }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
@@ -531,7 +596,12 @@ export class SubscriptionService implements ISubscriptionService {
     return this.returnToDto(subscription)
   }
 
-  async cancelSubscription(id: IdDto, userId: string): Promise<boolean> {
+  async cancelSubscription(
+    id: IdDto,
+    userId: string,
+    userToken: string,
+  ): Promise<boolean> {
+    // 1. Lấy thông tin gói
     const subscription = await this.subscriptionRepository.findSubscriptionById(
       id.id,
       userId,
@@ -541,28 +611,53 @@ export class SubscriptionService implements ISubscriptionService {
       throw new NotFoundException('Không tìm thấy gói thuê bao.')
     }
 
-    const now = new Date()
-    const minCancellationDate = new Date()
-    minCancellationDate.setDate(now.getDate() + 5) // Đặt ngày giới hạn là 5 ngày tới
-
-    const subscriptionStartDate = new Date(subscription.startDate) // Ngày bắt đầu của gói
-
-    // 3. SO SÁNH
-    // Nếu ngày bắt đầu của gói <= ngày giới hạn (tức là nằm TRONG VÒNG 5 ngày tới)
-    if (subscriptionStartDate <= minCancellationDate) {
+    // 2. KIỂM TRA TRẠNG THÁI (Chỉ cho hủy khi SCHEDULED)
+    // Nếu đã ACTIVE (đang chạy) hoặc EXPIRED/CANCELLED thì chặn ngay
+    if (subscription.status !== SubscriptionStatusEnum.SCHEDULED) {
       throw new BadRequestException(
-        'Không thể hủy gói thuê bao trong vòng 5 ngày trước ngày bắt đầu.',
+        'Chỉ có thể hủy gói thuê bao khi đang ở trạng thái chờ kích hoạt (Scheduled).',
       )
     }
 
-    // 4. KIỂM TRA CÁC LOGIC KHÁC
-    // (Ví dụ: không cho hủy nếu đang có xe trong bãi)
+    // 3. KIỂM TRA ĐANG SỬ DỤNG (An toàn)
     if (subscription.isUsed) {
       throw new ConflictException('Gói đang được sử dụng, không thể hủy.')
     }
+
+    // 4. TÍNH TOÁN SỐ TIỀN HOÀN (TIERED REFUND POLICY)
+    const now = new Date()
+    const startDate = new Date(subscription.startDate)
+
+    // Tính khoảng cách thời gian (miliseconds)
+    const diffTime = startDate.getTime() - now.getTime()
+    // Đổi sang ngày (Làm tròn lên: ví dụ còn 2.5 ngày -> tính là 3 ngày)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    let refundAmount = 0
+    let refundPercentage = 0
+
+    // Áp dụng quy tắc BR-45
+    if (diffDays > 7) {
+      // Hủy trước hơn 7 ngày -> Hoàn 100%
+      refundAmount = subscription.amountPaid
+      refundPercentage = 100
+    } else if (diffDays >= 3) {
+      // Hủy trước 3-7 ngày -> Hoàn 50%
+      refundAmount = subscription.amountPaid * 0.5
+      refundPercentage = 50
+    } else {
+      // Hủy sát nút (< 3 ngày) -> Không hoàn tiền
+      refundAmount = 0
+      refundPercentage = 0
+    }
+
+    // 5. THỰC HIỆN TRANSACTION
     const session = await this.connection.startSession()
     session.startTransaction()
+
     try {
+      // 5a. Cập nhật trạng thái trong DB -> CANCELLED
+      // (Lưu ý: Bạn nên sửa hàm repo để nhận thêm refundAmount lưu vào lịch sử nếu cần)
       const cancelResult = await this.subscriptionRepository.cancelSubscription(
         id.id,
         userId,
@@ -573,10 +668,58 @@ export class SubscriptionService implements ISubscriptionService {
         throw new InternalServerErrorException('Hủy gói thuê bao thất bại.')
       }
 
+      const parkingLotOperatorId =
+        await this.parkingLotRepository.getParkingLotOperatorId(
+          subscription.parkingLotId,
+          session,
+        )
+
+      if (!parkingLotOperatorId) {
+        throw new InternalServerErrorException(
+          'Không tìm thấy thông tin quản lý bãi đỗ xe.',
+        )
+      }
+
+      await this.subscriptionLogRepository.createLog(
+        {
+          paymentId: subscription.paymentId || '',
+          subscriptionId: subscription._id,
+          extendedUntil: subscription.endDate,
+          transactionType: SubscriptionTransactionType.CANCELLATION,
+          amountPaid: -refundAmount, // Số tiền hoàn (âm)
+        },
+        session,
+      )
+
+      // 5b. GỌI MODULE THANH TOÁN ĐỂ HOÀN TIỀN (Nếu số tiền > 0)
+      if (refundAmount > 0 && subscription.paymentId) {
+        // Gọi sang AccountService hoặc PaymentService
+        await this.accountServiceClient.refundTransaction(
+          subscription.paymentId,
+          refundAmount,
+          `Hoàn tiền hủy vé tháng (Trước ${diffDays} ngày - ${refundPercentage}%)`,
+          userToken,
+          parkingLotOperatorId,
+        )
+        
+        await this.subscriptionLogRepository.createLog(
+          {
+            paymentId: subscription.paymentId || '',
+            subscriptionId: subscription._id,
+            extendedUntil: subscription.endDate,
+            transactionType: SubscriptionTransactionType.REFUND,
+            amountPaid: -refundAmount, // Số tiền hoàn (âm)
+          },
+          session,
+        )
+      }
+
       await session.commitTransaction()
       return true
     } catch (error) {
       await session.abortTransaction()
+      // Log lỗi chi tiết nếu cần
+      this.logger.error(`Lỗi khi hủy vé tháng: ${error.message}`)
       throw error
     } finally {
       await session.endSession()

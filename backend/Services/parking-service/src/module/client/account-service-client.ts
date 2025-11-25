@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-arguments */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -31,6 +32,7 @@ interface CoreServiceResponse {
 
 @Injectable()
 export class AccountServiceClient implements IAccountServiceClient {
+  private readonly logger = new Logger(AccountServiceClient.name)
   // KHÔNG CẦN HARDCODE BASE URL NỮA
   private readonly CORE_SERVICE_BASE_URL: string
 
@@ -49,6 +51,65 @@ export class AccountServiceClient implements IAccountServiceClient {
     // 🔥 GIẢ ĐỊNH sử dụng JWT_SECRET làm Internal Token/Key cho Service-to-Service
     //this.INTERNAL_AUTH_TOKEN = this.configService.get<string>('JWT_SECRET') || 'default-secret';
     this.IMAGE_SERVICE_BASE_URL = 'https://parksmarthcmc.io.vn'
+  }
+
+  async refundTransaction(
+    paymentId: string,
+    refundAmount: number,
+    reason: string,
+    userToken: string,
+    operatorId: string,
+  ): Promise<void> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/payments/refund-by-id`
+
+    try {
+      // Gọi API POST
+      await firstValueFrom(
+        this.httpService.post(
+          url,
+          // 1. Body (amount, reason)
+          {
+            amount: refundAmount,
+            reason: 'REQUESTED_BY_CUSTOMER',
+          },
+          // 2. Config (Query params + Headers)
+          {
+            params: {
+              paymentId: paymentId,
+              operatorId: operatorId,
+            },
+            headers: {
+              // Đảm bảo userToken là chuỗi sạch, cần thêm tiền tố 'Bearer '
+              Authorization: `Bearer ${userToken}`,
+            },
+          },
+        ),
+      )
+
+      this.logger.log(
+        `Hoàn tiền thành công cho PaymentId: ${paymentId}, Số tiền: ${refundAmount}`,
+      )
+    } catch (error: any) {
+      // Xử lý lỗi
+      this.logger.error(
+        `Lỗi khi gọi Refund API: ${error.message}`,
+        error.response?.data,
+      )
+
+      // Ném lại lỗi để Service gọi hàm này biết mà xử lý (rollback transaction)
+      if (error.response) {
+        // Lỗi từ phía Account Service trả về (400, 404, etc.)
+        throw new BadRequestException(
+          error.response?.data?.message ||
+            'Hoàn tiền thất bại từ phía Account Service',
+        )
+      }
+
+      // Lỗi mạng hoặc lỗi khác
+      throw new InternalServerErrorException(
+        'Lỗi kết nối tới dịch vụ thanh toán.',
+      )
+    }
   }
 
   async getImagesByOwner(
@@ -107,7 +168,7 @@ export class AccountServiceClient implements IAccountServiceClient {
     formData.append('ownerType', ownerType)
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion
     formData.append('ownerId', ownerId.toString())
-    formData.append('description', description ?? '')
+    formData.append('description', description)
 
     try {
       // 3. Lấy headers (Chứa Content-Type và Boundary)
@@ -129,20 +190,20 @@ export class AccountServiceClient implements IAccountServiceClient {
 
       return response.data as { id: string; url: string } // Trả về { id, url }
     } catch (error) {
-      console.log('Attempting to connect to:', url)
+      this.logger.log(`Attempting to connect to: ${url}`)
 
       // 👇 LOG LỖI CHI TIẾT HƠN
       if (error.response) {
         // Server đã phản hồi nhưng báo lỗi (4xx, 5xx)
-        console.error('Server Response Error:', error.response.data)
-        console.error('Status:', error.response.status)
+        this.logger.error('Server Response Error:', error.response.data)
+        this.logger.error('Status:', error.response.status)
       } else if (error.request) {
         // Request đã gửi nhưng không nhận được phản hồi (Lỗi mạng, Timeout)
-        console.error('Network Error (No response):', error.message)
-        console.error('Error Code:', error.code) // Ví dụ: ECONNREFUSED
+        this.logger.error('Network Error (No response):', error.message)
+        this.logger.error('Error Code:', error.code) // Ví dụ: ECONNREFUSED
       } else {
         // Lỗi khi setup request (Lỗi code client, FormData)
-        console.error('Client Setup Error:', error.message)
+        this.logger.error('Client Setup Error:', error.message)
       }
 
       return null
@@ -183,7 +244,7 @@ export class AccountServiceClient implements IAccountServiceClient {
       const url = `${this.CORE_SERVICE_BASE_URL}/accounts/by-role`
       const token = this.getInternalToken() // 🔥 TẠO TOKEN
 
-      console.log(`[DEBUG S2S] Gọi URL: ${url}?role=${roleName}`)
+      this.logger.log(`[DEBUG S2S] Gọi URL: ${url}?role=${roleName}`)
 
       const response = await firstValueFrom(
         this.httpService.get(url, {
@@ -200,11 +261,11 @@ export class AccountServiceClient implements IAccountServiceClient {
       const userIds: string[] = dataArray.map(
         (user: CoreServiceResponse) => user._id,
       )
-      console.log(
+      this.logger.log(
         `[AccountServiceClient]  ${userIds} users cho role: ${roleName}`,
       )
 
-      console.log(
+      this.logger.log(
         `[AccountServiceClient] Lấy thành công ${userIds.length} users cho role: ${roleName}`,
       )
       return userIds

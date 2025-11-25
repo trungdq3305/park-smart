@@ -49,6 +49,14 @@ export class CreateSubscriptionDto {
   @IsNotEmpty({ message: 'Ngày bắt đầu không được để trống' })
   startDate: string
 
+  @ApiPropertyOptional({
+    example: '605e3f5f4f3e8c1d4c9f1e1c',
+    description: 'ID của Khuyến mãi (Promotion) nếu có',
+  })
+  @IsOptional()
+  @IsMongoId({ message: 'ID khuyến mãi phải là một MongoID hợp lệ' })
+  promotionId: string
+
   // Lưu ý: userId sẽ được lấy từ @GetCurrentUserId() trong controller.
   // endDate, status, isUsed, subscriptionIdentifier sẽ được set bởi server.
 }
@@ -139,7 +147,7 @@ export class SubscriptionDetailResponseDto {
   pricingPolicyId: SubscribedPolicyDto
 
   @Expose()
-  status: string
+  status: SubscriptionStatusEnum
 
   @Expose()
   startDate: Date
@@ -158,6 +166,12 @@ export class SubscriptionDetailResponseDto {
 
   @Expose()
   subscriptionIdentifier: string // Mã QR hoặc mã định danh gói
+
+  @Expose()
+  promotionId: string
+
+  @Expose()
+  amountPaid: number
 }
 
 export class AvailabilitySlotDto {
@@ -198,4 +212,30 @@ export class SubscriptionIdResponseDto {
 export class SubscriptionRenewalEligibilityResponseDto {
   canRenew: boolean
   message?: string
+}
+
+export class SubscriptionCancellationPreviewResponseDto {
+  @ApiProperty({ description: 'Có được phép hủy không', example: true })
+  canCancel: boolean
+
+  @ApiProperty({ description: 'Số tiền sẽ được hoàn lại', example: 500000 })
+  refundAmount: number
+
+  @ApiProperty({ description: 'Tỷ lệ hoàn tiền (%)', example: 50 })
+  refundPercentage: number
+
+  @ApiProperty({ description: 'Số ngày còn lại đến khi kích hoạt', example: 4 })
+  daysUntilActivation: number
+
+  @ApiProperty({
+    description: 'Tên chính sách áp dụng',
+    example: '3-7 Days Policy',
+  })
+  policyApplied: string
+
+  @ApiProperty({
+    description: 'Thông báo/Cảnh báo cho người dùng',
+    example: 'Bạn hủy sát ngày nên chỉ được hoàn 50%.',
+  })
+  warningMessage: string
 }

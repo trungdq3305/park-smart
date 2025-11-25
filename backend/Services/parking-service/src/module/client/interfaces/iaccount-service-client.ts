@@ -49,6 +49,14 @@ export interface IAccountServiceClient {
    * @returns Mảng các đối tượng ảnh với ID và URL.
    */
   getImagesByOwner(ownerType: string, ownerId: string): Promise<ImageResponse[]>
+
+  refundTransaction(
+    paymentId: string,
+    refundAmount: number,
+    reason: string,
+    userToken: string,
+    operatorId: string,
+  ): Promise<void>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')

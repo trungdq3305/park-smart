@@ -29,7 +29,6 @@ export class SubscriptionLog extends BaseEntity {
   @Prop({
     required: true,
     type: String,
-    unique: true, // ⭐️ Mỗi mã giao dịch từ .NET chỉ được ghi nhận 1 lần
   })
   paymentId: string // Mã giao dịch từ hệ thống thanh toán (ví dụ: "TXN_abc123")
 

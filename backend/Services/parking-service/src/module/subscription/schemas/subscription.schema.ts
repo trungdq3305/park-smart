@@ -80,6 +80,12 @@ export class Subscription extends BaseEntity {
   subscriptionIdentifier: string // (Mã QR hoặc mã định danh duy nhất cho gói này)\
 
   @Prop({
+    type: String,
+    required: false,
+  })
+  promtionId: string // Mã khuyến mãi áp dụng cho gói này
+
+  @Prop({
     type: Number,
     required: false,
   })
