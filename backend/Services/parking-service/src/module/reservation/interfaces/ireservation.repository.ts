@@ -120,6 +120,10 @@ export interface IReservationRepository {
     cutoffTime: Date,
   ): Promise<{ modifiedCount: number; matchedCount: number }>
 
+  updateExpiredReservationsToExpiredStatus(
+    cutoffTime: Date,
+  ): Promise<{ modifiedCount: number; matchedCount: number }>
+
   checkReservationStatusByIdentifier(
     reservationIdentifier: string,
   ): Promise<boolean>

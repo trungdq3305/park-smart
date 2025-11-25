@@ -14,7 +14,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { InjectConnection } from '@nestjs/mongoose'
-import { Cron } from '@nestjs/schedule'
+import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import { Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
@@ -719,5 +719,34 @@ export class ReservationService implements IReservationService {
     }
 
     return availabilityMap
+  }
+
+  @Cron(CronExpression.EVERY_10_MINUTES)
+  async cleanupExpiredPendingReservations(): Promise<void> {
+    this.logger.log(
+      '[CronJob] Bắt đầu dọn dẹp các đơn đặt chỗ PENDING_PAYMENT quá hạn...',
+    )
+    const TEN_MINUTES_AGO_MS = 10 * 60 * 1000
+    const cutoffTime = new Date(Date.now() - TEN_MINUTES_AGO_MS)
+
+    try {
+      const result =
+        await this.reservationRepository.updateExpiredReservationsToExpiredStatus(
+          cutoffTime,
+        )
+
+      if (result.modifiedCount > 0) {
+        this.logger.log(
+          `[CronJob] Đã hủy ${String(
+            result.modifiedCount,
+          )} đơn đặt chỗ quá hạn thanh toán.`,
+        )
+      }
+    } catch (error) {
+      this.logger.error(
+        `[CronJob] Gặp lỗi khi dọn dẹp đơn đặt chỗ: ${error.message}`,
+        error.stack,
+      )
+    }
   }
 }

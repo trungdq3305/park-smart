@@ -13,6 +13,38 @@ export class ReservationRepository implements IReservationRepository {
     private reservationModel: Model<Reservation>,
   ) {}
 
+  async updateExpiredReservationsToExpiredStatus(
+    cutoffTime: Date,
+  ): Promise<{ modifiedCount: number; matchedCount: number }> {
+    const filter = {
+      status: {
+        $in: [
+          ReservationStatusEnum.CONFIRMED, // Chỉ xử lý những vé ĐÃ ĐẶT mà KHÔNG ĐẾN
+        ],
+      },
+      estimatedEndTime: { $lt: cutoffTime }, // Đã quá giờ kết thúc
+      deletedAt: null,
+    }
+
+    // 2. Dữ liệu cập nhật
+    const update = {
+      $set: {
+        status: ReservationStatusEnum.EXPIRED,
+        updatedAt: new Date(),
+        // Có thể thêm log ghi chú
+        cancelReason: 'System Auto-expire (No-show)',
+      },
+    }
+
+    // 3. Thực thi
+    const result = await this.reservationModel.updateMany(filter, update)
+
+    return {
+      modifiedCount: result.modifiedCount,
+      matchedCount: result.matchedCount,
+    }
+  }
+
   async countConflictingReservations(
     parkingLotId: string,
     start: Date,

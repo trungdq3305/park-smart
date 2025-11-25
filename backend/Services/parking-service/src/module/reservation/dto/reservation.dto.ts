@@ -234,3 +234,27 @@ export class ReservationExtensionEligibilityResponseDto {
   })
   reason?: string
 }
+
+export class CheckExtensionBodyDto {
+  @ApiProperty({
+    description: 'Số giờ muốn gia hạn thêm (tối thiểu 0.5 giờ)',
+    example: 1,
+    type: Number,
+  })
+  @IsNumber()
+  @Min(0.5, { message: 'Thời gian gia hạn tối thiểu là 30 phút (0.5)' })
+  additionalHours: number
+
+  @ApiProperty({
+    description: 'Số tiền dự kiến phải thanh toán cho phần gia hạn',
+    example: 100000,
+    type: Number,
+  })
+  @IsNumber()
+  additionalCost: number
+}
+
+/**
+ * DTO dùng cho Bước 2: Xác nhận gia hạn kèm Payment ID
+ * (Kế thừa từ CheckExtensionBodyDto nên đã có sẵn additionalHours)
+ */
