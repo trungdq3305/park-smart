@@ -138,28 +138,8 @@ export class SubscriptionService implements ISubscriptionService {
 
     if (modifiedCount > 0) {
       this.logger.log(
-        `[CronJob] Đã kích hoạt ${modifiedCount} vé. Đang cập nhật slot...`,
+        `[CronJob] Đã kích hoạt ${modifiedCount} vé. Tại ${statsByParkingLot.length} bãi đỗ xe.`,
       )
-
-      // 2. Duyệt qua từng bãi xe để trừ slot
-      // statsByParkingLot dạng: { "parkingId1": 5, "parkingId2": 1 }
-      const updatePromises = Object.entries(statsByParkingLot).map(
-        ([parkingLotId, count]) => {
-          // change là số ÂM (vì kích hoạt vé => mất chỗ trống)
-          const change = -count
-
-          this.logger.log(
-            `Bãi ${parkingLotId}: Trừ ${count} chỗ (Active vé tháng)`,
-          )
-
-          return this.parkingLotService.updateAvailableSpotsForWebsocket(
-            parkingLotId,
-            change, // Truyền số âm để trừ
-          )
-        },
-      )
-
-      await Promise.all(updatePromises)
     } else {
       this.logger.log('[CronJob] Không có vé nào cần kích hoạt.')
     }
@@ -761,27 +741,10 @@ export class SubscriptionService implements ISubscriptionService {
 
       if (modifiedCount > 0) {
         this.logger.log(
-          `[CronJob] Đã chuyển trạng thái EXPIRED cho ${modifiedCount} gói. Đang hoàn trả slot...`,
+          `[CronJob] Đã chuyển trạng thái EXPIRED cho ${modifiedCount} gói. Tại ${statsByParkingLot.length} bãi đỗ xe.`,
         )
 
         // 2. Duyệt qua từng bãi xe để CỘNG SLOT (Trả lại chỗ trống)
-        const updatePromises = Object.entries(statsByParkingLot).map(
-          ([parkingLotId, count]) => {
-            // change là số DƯƠNG (vì vé hết hạn => có thêm chỗ trống)
-            const change = count
-
-            this.logger.log(
-              `Bãi ${parkingLotId}: Cộng ${count} chỗ (Vé tháng hết hạn)`,
-            )
-
-            return this.parkingLotService.updateAvailableSpotsForWebsocket(
-              parkingLotId,
-              change, // Truyền số dương để cộng
-            )
-          },
-        )
-
-        await Promise.all(updatePromises)
       } else {
         this.logger.log('[CronJob] Không có gói thuê bao nào hết hạn hôm nay.')
       }

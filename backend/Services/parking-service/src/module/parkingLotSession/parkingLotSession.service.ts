@@ -235,7 +235,6 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           )
 
         if (sub) {
-          console.log(parkingLotId, sub.parkingLotId.toString())
           if (sub.parkingLotId.toString() !== parkingLotId) {
             throw new ConflictException(
               'QR Vé tháng này không thuộc bãi xe này.',
@@ -368,6 +367,18 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
       if (!newSession) {
         throw new BadRequestException(
           'Vui lòng cung cấp Mã QR/Thẻ hợp lệ hoặc Biển số xe để check-in.',
+        )
+      }
+
+      const updateSpots =
+        await this.parkingLotService.updateAvailableSpotsForWebsocket(
+          parkingLotId,
+          -1,
+        )
+
+      if (!updateSpots) {
+        this.logger.warn(
+          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingLotId}`,
         )
       }
 
@@ -667,23 +678,21 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         'Check-out từ Kiosk Bảo Vệ', // Description
       )
 
-      if (parkingSession.guestCardId) {
-        const updateSpots =
-          await this.parkingLotService.updateAvailableSpotsForWebsocket(
-            parkingSession.parkingLotId,
-            1,
-          )
-
-        if (!updateSpots) {
-          this.logger.warn(
-            `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingSession.parkingLotId} khi checkout session ${sessionId}`,
-          )
-        }
-      }
-
       if (!data) {
         throw new InternalServerErrorException(
           'Checkout thất bại, vui lòng thử lại.',
+        )
+      }
+
+      const updateSpots =
+        await this.parkingLotService.updateAvailableSpotsForWebsocket(
+          parkingSession.parkingLotId,
+          1,
+        )
+
+      if (!updateSpots) {
+        this.logger.warn(
+          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingSession.parkingLotId} khi checkout session ${sessionId}`,
         )
       }
 
