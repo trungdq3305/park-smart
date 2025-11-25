@@ -646,14 +646,14 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           session,
         )
       }
-
       if (paymentId) {
-        await this.accountServiceClient.getPaymentStatusByPaymentId(
-          paymentId,
-          userId,
-          'PAID',
-        )
-        if (!paymentId) {
+        const paymentData =
+          await this.accountServiceClient.getPaymentStatusByPaymentId(
+            paymentId,
+            userId,
+            'PAID',
+          )
+        if (!paymentData.isValid) {
           throw new ConflictException('Thanh toán chưa hoàn tất.')
         }
       }

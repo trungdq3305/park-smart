@@ -88,6 +88,7 @@ export interface ISubscriptionRepository {
   updateSubscription(
     id: string,
     updateData: {
+      amountPaid?: number
       startDate?: Date
       endDate?: Date
       status?: string

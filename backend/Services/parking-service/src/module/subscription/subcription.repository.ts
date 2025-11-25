@@ -347,6 +347,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   async updateSubscription(
     id: string,
     updateData: {
+      amountPaid: number
       startDate?: Date
       endDate?: Date
       status?: string

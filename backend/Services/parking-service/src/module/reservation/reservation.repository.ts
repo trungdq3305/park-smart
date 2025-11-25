@@ -79,12 +79,19 @@ export class ReservationRepository implements IReservationRepository {
   async updateReservationPaymentId(
     id: string,
     paymentId: string,
+    prepaidAmount: number,
     session: ClientSession,
   ): Promise<boolean> {
     const result = await this.reservationModel
       .updateOne(
         { _id: id },
-        { $set: { paymentId, status: ReservationStatusEnum.CONFIRMED } },
+        {
+          $set: {
+            paymentId,
+            status: ReservationStatusEnum.CONFIRMED,
+            prepaidAmount: prepaidAmount,
+          },
+        },
         { session }, // 'new: true' để trả về document mới
       )
       .exec()

@@ -232,11 +232,13 @@ export class SubscriptionService implements ISubscriptionService {
           userId,
           'PAID', // ⭐️ Trạng thái mong đợi từ .NET
         )
-      if (!checkPaymentStatus) {
+      if (!checkPaymentStatus.isValid) {
         throw new ConflictException(
           'Thanh toán không hợp lệ hoặc sai thông tin.',
         )
       }
+
+      const amountPaid = checkPaymentStatus.amount
 
       // --- BƯỚC 3: HÀNH ĐỘNG (ACT) ---
 
@@ -250,6 +252,7 @@ export class SubscriptionService implements ISubscriptionService {
         status = SubscriptionStatusEnum.ACTIVE // Kích hoạt gói
       }
       const updateData = {
+        amountPaid: amountPaid, // Gán số tiền đã thanh toán
         status: status, // Kích hoạt gói
         paymentId: paymentId, // Gán paymentId (gốc)
         endDate: await this.calculateEndDate(
@@ -286,6 +289,7 @@ export class SubscriptionService implements ISubscriptionService {
           transactionType: isInitialPurchase
             ? SubscriptionTransactionType.INITIAL_PURCHASE
             : SubscriptionTransactionType.RENEWAL,
+          amountPaid: amountPaid,
         },
         session,
       )

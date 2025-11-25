@@ -88,11 +88,13 @@ export interface IReservationRepository {
    * Dùng khi cần liên kết thanh toán sau khi tạo đơn đặt chỗ.
    * @param id ID của đơn đặt chỗ.
    * @param paymentId ID thanh toán từ .NET service.
+   * @param prepaidAmount Số tiền đã thanh toán
    * @param session (Bắt buộc) Phải chạy trong transaction.
    */
   updateReservationPaymentId(
     id: string,
     paymentId: string,
+    prepaidAmount: number,
     session: ClientSession,
   ): Promise<boolean>
 

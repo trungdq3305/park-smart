@@ -137,97 +137,6 @@ export class ReservationService implements IReservationService {
     return totalCost // ⭐️ Trả về 80.000
   }
 
-  /**
-   * Tính toán số tiền TRẢ TRƯỚC (prepaid) cho một Đơn đặt chỗ (Reservation)
-   * dựa trên chính sách giá và thời gian.
-   */
-  private async calculateReservationPrice(
-    policyId: string, // Đây là ID của PricingPolicy
-    startTime: Date,
-    endTime: Date,
-  ): Promise<number> {
-    // --- BƯỚC 1: TÍNH TOÁN THỜI GIAN ---
-
-    // (Lưu ý: Bạn cần quyết định logic nghiệp vụ của mình:
-    // 1. Tính chính xác (float): (30 phút = 0.5 giờ)
-    // 2. Tính làm tròn lên (block): (30 phút = 1 giờ)
-
-    // (Tạm dùng logic gốc của bạn: tính float)
-    const durationInMs = endTime.getTime() - startTime.getTime()
-    if (durationInMs <= 0) {
-      throw new BadRequestException(
-        'Thời gian kết thúc phải sau thời gian bắt đầu.',
-      )
-    }
-    const durationInHours = durationInMs / (1000 * 60 * 60)
-
-    // --- BƯỚC 2: LẤY CHI TIẾT CHÍNH SÁCH GIÁ ---
-
-    // (Hàm này phải populate 'basisId', 'packageRateId', 'tieredRateSetId.tiers')
-    const policy =
-      await this.pricingPolicyRepository.getPolicyDetailsById(policyId)
-
-    if (!policy?.basisId) {
-      throw new InternalServerErrorException(
-        'Không tìm thấy chính sách giá hoặc cơ sở (basis) của nó.',
-      )
-    }
-
-    const basisName =
-      typeof policy.basisId === 'string'
-        ? policy.basisId
-        : (policy.basisId as any)?.basisName
-
-    // --- BƯỚC 3: QUYẾT ĐỊNH LOGIC TÍNH TOÁN (CÔNG TẮC) ---
-
-    switch (basisName) {
-      /**
-       * TRƯỜNG HỢP 1: TÍNH THEO GIỜ (ĐƠN GIẢN)
-       */
-      case 'HOURLY':
-        if (typeof policy.pricePerHour !== 'number') {
-          throw new InternalServerErrorException(
-            'Lỗi dữ liệu: Cơ sở HOURLY nhưng thiếu "pricePerHour".',
-          )
-        }
-        return durationInHours * policy.pricePerHour
-
-      /**
-       * TRƯỜNG HỢP 2: GIÁ CỐ ĐỊNH (FIXED)
-       */
-      case 'FIXED':
-        if (typeof policy.fixedPrice !== 'number') {
-          throw new InternalServerErrorException(
-            'Lỗi dữ liệu: Cơ sở FIXED nhưng thiếu "fixedPrice".',
-          )
-        }
-        // Bỏ qua thời gian, chỉ lấy giá cố định
-        return policy.fixedPrice
-
-      /**
-       * TRƯỜNG HỢP 3: THEO GÓI (PACKAGE)
-       * (Giả định: Reservation Xô 2 cũng có thể dùng Gói, ví dụ "Gói 4 giờ")
-       */
-      case 'PACKAGE': {
-        // packageRateId có thể là string (chỉ ref) hoặc object đã populate.
-        throw new InternalServerErrorException(
-          'Chính sách giá theo gói không thể dùng cho Đặt chỗ (Reservation).',
-        )
-      }
-
-      /**
-       * TRƯỜNG HỢP 4: BẬC THANG (TIERED) - (Câu hỏi của bạn)
-       */
-      case 'TIERED':
-        return this.calculateTieredPrice(policy, durationInHours)
-
-      default:
-        throw new BadRequestException(
-          `Cơ sở tính giá (basis) '${basisName}' không được hỗ trợ.`,
-        )
-    }
-  }
-
   async createReservation(
     createDto: CreateReservationDto,
     userId: string,
@@ -277,11 +186,6 @@ export class ReservationService implements IReservationService {
       }
 
       // Tính toán số tiền trả trước (Logic này cần được triển khai)
-      const prepaidAmount = await this.calculateReservationPrice(
-        createDto.pricingPolicyId,
-        startTime,
-        endTime,
-      )
 
       // Chuẩn hóa thời gian về 00 phút (để kiểm tra Kho)
       const inventoryStartTime = new Date(startTime.getTime())
@@ -330,7 +234,6 @@ export class ReservationService implements IReservationService {
           inventoryTimeSlot: inventoryStartTime, // 9:00
           userExpectedTime: new Date(createDto.userExpectedTime),
           estimatedEndTime: new Date(createDto.estimatedEndTime),
-          prepaidAmount: prepaidAmount, // Số tiền đã tính
           status: ReservationStatusEnum.PENDING_PAYMENT, // ⭐️ Chờ thanh toán
         },
         session,
@@ -387,16 +290,19 @@ export class ReservationService implements IReservationService {
           userId,
           'PAID',
         )
-      if (!checkPaymentStatus) {
+      if (!checkPaymentStatus.isValid) {
         throw new BadRequestException(
           'Thanh toán không hợp lệ hoặc sai thông tin.',
         )
       }
 
+      const prepaidAmount = checkPaymentStatus.amount
+
       const updatedReservation =
         await this.reservationRepository.updateReservationPaymentId(
           id.id,
           confirmDto.paymentId,
+          prepaidAmount,
           session,
         )
       if (!updatedReservation) {
