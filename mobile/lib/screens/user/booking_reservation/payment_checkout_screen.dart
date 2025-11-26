@@ -23,10 +23,8 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
   bool _isRecovering = false;
-  int _retryAttempts = 0;
   Timer? _retryTimer;
   String? _errorMessage;
-  static const int _maxRetryAttempts = 3;
 
   @override
   void initState() {
@@ -65,7 +63,6 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
                 _isLoading = false;
                 _isRecovering = false;
                 _errorMessage = null;
-                _retryAttempts = 0;
               });
 
               // Check for payment completion indicators
@@ -251,36 +248,17 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
   void _handleLoadError(WebResourceError error) {
     if (!mounted) return;
 
+    // Log once and show a stable error state instead of auto-retrying in a loop
     setState(() {
       _isLoading = false;
-      _isRecovering = true;
-      _errorMessage = 'Không thể tải trang thanh toán. Đang thử lại...';
-    });
-
-    if (_retryAttempts >= _maxRetryAttempts) {
-      setState(() {
-        _isRecovering = false;
-        _errorMessage =
-            'Không thể tải trang thanh toán. Kiểm tra kết nối mạng và thử lại.';
-      });
-      return;
-    }
-
-    _retryAttempts++;
-    _retryTimer?.cancel();
-    _retryTimer = Timer(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      print('🔁 Retrying WebView load (attempt $_retryAttempts)...');
-      _controller.reload();
-      setState(() {
-        _isRecovering = true;
-        _errorMessage = 'Đang thử kết nối lại...';
-      });
+      _isRecovering = false;
+      _errorMessage =
+          'Không thể tải trang thanh toán (lỗi mạng hoặc chứng chỉ SSL). '
+          'Vui lòng kiểm tra kết nối và thử lại.';
     });
   }
 
   void _manualReload() {
-    _retryTimer?.cancel();
     setState(() {
       _isLoading = true;
       _isRecovering = false;

@@ -241,10 +241,11 @@ class SubscriptionService {
   }
 
   /// Lấy tất cả gói thuê bao của người dùng hiện tại
-  /// GET /subscriptions/my?pageSize=10&page=1
+  /// GET /subscriptions/my?pageSize=10&page=1&status=ACTIVE
   static Future<Map<String, dynamic>> getMySubscriptions({
     required int pageSize,
     required int page,
+    String? status,
   }) async {
     try {
       String? token = await _getToken();
@@ -252,12 +253,15 @@ class SubscriptionService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/parking/subscriptions/my').replace(
-        queryParameters: {
-          'pageSize': pageSize.toString(),
-          'page': page.toString(),
-        },
-      );
+      final query = <String, String>{
+        'pageSize': pageSize.toString(),
+        'page': page.toString(),
+        if (status != null && status.isNotEmpty) 'status': status,
+      };
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/my',
+      ).replace(queryParameters: query);
 
       print('📋 Getting my subscriptions:');
       print('  URL: $uri');
