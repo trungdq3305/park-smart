@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/screens/user/profile/payment_history/payment_history_screen.dart';
 import 'package:mobile/screens/user/profile/reservation/my_reservations_screen.dart';
 import 'package:mobile/screens/user/profile/termpolicy/term_and_policy_screen.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
 import 'package:mobile/services/user_service.dart';
 import 'profile/infor/personal_info_screen.dart';
-import 'profile/payment_history/booking_history_screen.dart';
 import 'profile/subcription/my_subscriptions_screen.dart';
 import 'profile/faqs/faqs_screen.dart';
 

@@ -23,6 +23,8 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   bool _isRefreshing = false;
   String? _errorMessage;
   List<Map<String, dynamic>> _payments = [];
+  static const int _pageSize = 10;
+  int _currentPage = 1;
 
   @override
   void initState() {
@@ -76,6 +78,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       if (!mounted) return;
       setState(() {
         _payments = payments;
+        _currentPage = 1;
         _errorMessage = null;
       });
     } catch (e) {
@@ -139,14 +142,24 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       );
     }
 
-    return ListView.separated(
-      physics: const AlwaysScrollableScrollPhysics(),
-      itemCount: _payments.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final payment = _payments[index];
-        return _buildPaymentCard(payment);
-      },
+    final pagePayments = _getCurrentPagePayments();
+
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: pagePayments.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final payment = pagePayments[index];
+              return _buildPaymentCard(payment);
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildPaginationControls(),
+      ],
     );
   }
 
@@ -455,6 +468,49 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
       return Map<String, dynamic>.from(value);
     }
     return null;
+  }
+
+  List<Map<String, dynamic>> _getCurrentPagePayments() {
+    if (_payments.isEmpty) return [];
+    final startIndex = (_currentPage - 1) * _pageSize;
+    final endIndex = (startIndex + _pageSize).clamp(0, _payments.length);
+    if (startIndex >= _payments.length) return [];
+    return _payments.sublist(startIndex, endIndex);
+  }
+
+  int get _totalPages {
+    if (_payments.isEmpty) return 1;
+    return (_payments.length / _pageSize).ceil();
+  }
+
+  void _changePage(int delta) {
+    final newPage = (_currentPage + delta).clamp(1, _totalPages);
+    if (newPage == _currentPage) return;
+    setState(() {
+      _currentPage = newPage;
+    });
+  }
+
+  Widget _buildPaginationControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          color: Colors.green,
+          onPressed: _currentPage > 1 ? () => _changePage(-1) : null,
+        ),
+        Text(
+          'Trang $_currentPage/$_totalPages',
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          color: Colors.green,
+          onPressed: _currentPage < _totalPages ? () => _changePage(1) : null,
+        ),
+      ],
+    );
   }
 }
 
