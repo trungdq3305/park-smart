@@ -40,7 +40,11 @@ export interface IPackageRateRepository {
    * @param id ID của gói giá cần xóa mềm.
    * @returns Trả về true nếu xóa mềm thành công, ngược lại false.
    */
-  softDeletePackageRate(id: string, userId: string): Promise<boolean>
+  softDeletePackageRate(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<boolean>
 
   /**
    * Xóa vĩnh viễn một gói giá khỏi cơ sở dữ liệu.
@@ -50,6 +54,7 @@ export interface IPackageRateRepository {
    */
   deletePackageRatePermanently(
     id: string,
+
     session: ClientSession,
   ): Promise<boolean>
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 import {
@@ -25,13 +26,16 @@ import { formatDateToLocalYYYYMMDD } from 'src/utils/formatDateTime.util'
 
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
+import { IParkingLotService } from '../parkingLot/interfaces/iparkingLot.service'
 import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 // Import các DTOs liên quan đến Subscription
 import {
   AvailabilitySlotDto,
   CreateSubscriptionDto,
+  SubscriptionCancellationPreviewResponseDto,
   SubscriptionDetailResponseDto,
   SubscriptionLogDto,
+  SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto'
 import {
@@ -60,6 +64,8 @@ export class SubscriptionService implements ISubscriptionService {
     private readonly pricingPolicyRepository: IPricingPolicyRepository,
     @Inject(INotificationService)
     private readonly notificationService: INotificationService,
+    @Inject(IParkingLotService)
+    private readonly parkingLotService: IParkingLotService,
   ) {}
 
   private readonly logger: Logger = new Logger(SubscriptionService.name)
@@ -123,6 +129,87 @@ export class SubscriptionService implements ISubscriptionService {
     return endDate
   }
 
+  private calculateRefundPolicy(subscription: SubscriptionDetailResponseDto): {
+    amount: number
+    percent: number
+    policy: string
+  } {
+    const now = new Date()
+    const start = new Date(subscription.startDate)
+    const diffTime = start.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays > 7) {
+      return {
+        amount: subscription.amountPaid,
+        percent: 100,
+        policy: '> 7 Days',
+      }
+    } else if (diffDays >= 3) {
+      return {
+        amount: subscription.amountPaid * 0.5,
+        percent: 50,
+        policy: '3-7 Days',
+      }
+    } else {
+      return { amount: 0, percent: 0, policy: '< 3 Days' }
+    }
+  }
+
+  // --- API 1: PREVIEW ---
+  async getCancellationPreview(
+    id: IdDto,
+    userId: string,
+  ): Promise<SubscriptionCancellationPreviewResponseDto> {
+    const sub = await this.findSubscriptionById(id, userId)
+
+    // Nếu đã Active -> Không cho hủy
+    if (sub.status === SubscriptionStatusEnum.ACTIVE) {
+      return {
+        canCancel: false,
+        refundAmount: 0,
+        refundPercentage: 0,
+        daysUntilActivation: 0,
+        policyApplied: 'Active',
+        warningMessage: 'Vé tháng đang hoạt động, không thể hủy.',
+      }
+    }
+
+    const policy = this.calculateRefundPolicy(sub)
+
+    return {
+      canCancel: true,
+      refundAmount: policy.amount,
+      refundPercentage: policy.percent,
+      policyApplied: policy.policy,
+      daysUntilActivation: Math.ceil(
+        (new Date(sub.startDate).getTime() - new Date().getTime()) /
+          (1000 * 60 * 60 * 24),
+      ),
+      warningMessage:
+        policy.percent < 100
+          ? `Bạn sẽ bị trừ phí vì hủy sát ngày. Số tiền hoàn lại: ${policy.amount.toLocaleString()}đ`
+          : 'Bạn sẽ được hoàn tiền 100%.',
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async updateSubscriptionStatus(): Promise<void> {
+    this.logger.log('[CronJob] Bắt đầu kích hoạt vé tháng SCHEDULED...')
+
+    // 1. Gọi Repository (Lấy về map thống kê)
+    const { modifiedCount, statsByParkingLot } =
+      await this.subscriptionRepository.setScheduledToActiveSubscriptions()
+
+    if (modifiedCount > 0) {
+      this.logger.log(
+        `[CronJob] Đã kích hoạt ${modifiedCount} vé. Tại ${statsByParkingLot.length} bãi đỗ xe.`,
+      )
+    } else {
+      this.logger.log('[CronJob] Không có vé nào cần kích hoạt.')
+    }
+  }
+
   /**
    * ⭐️ HÀM CRON JOB ĐÃ SỬA
    * Chạy mỗi 5 phút (hoặc 10 phút) để tìm và hủy các
@@ -148,6 +235,10 @@ export class SubscriptionService implements ISubscriptionService {
       if (result.modifiedCount > 0) {
         this.logger.log(
           `[CronJob] Đã hủy ${String(result.modifiedCount)} gói thuê bao quá hạn.`,
+        )
+      } else {
+        this.logger.log(
+          '[CronJob] Không có gói thuê bao PENDING_PAYMENT nào quá hạn để hủy.',
         )
       }
     } catch (error) {
@@ -206,17 +297,28 @@ export class SubscriptionService implements ISubscriptionService {
           userId,
           'PAID', // ⭐️ Trạng thái mong đợi từ .NET
         )
-      if (!checkPaymentStatus) {
+      if (!checkPaymentStatus.isValid) {
         throw new ConflictException(
           'Thanh toán không hợp lệ hoặc sai thông tin.',
         )
       }
 
+      const amountPaid = checkPaymentStatus.amount
+
       // --- BƯỚC 3: HÀNH ĐỘNG (ACT) ---
 
       // ⭐️ Sửa Lỗi 2: Tính toán và chuẩn bị dữ liệu cập nhật
+      let status: SubscriptionStatusEnum
+      if (
+        subscriptionDraft.startDate > new Date() // Ngày bắt đầu trong tương lai
+      ) {
+        status = SubscriptionStatusEnum.SCHEDULED // Đặt trạng thái thành SCHEDULED
+      } else {
+        status = SubscriptionStatusEnum.ACTIVE // Kích hoạt gói
+      }
       const updateData = {
-        status: SubscriptionStatusEnum.ACTIVE, // Kích hoạt gói
+        amountPaid: amountPaid, // Gán số tiền đã thanh toán
+        status: status, // Kích hoạt gói
         paymentId: paymentId, // Gán paymentId (gốc)
         endDate: await this.calculateEndDate(
           subscriptionDraft.pricingPolicyId,
@@ -252,6 +354,7 @@ export class SubscriptionService implements ISubscriptionService {
           transactionType: isInitialPurchase
             ? SubscriptionTransactionType.INITIAL_PURCHASE
             : SubscriptionTransactionType.RENEWAL,
+          amountPaid: amountPaid,
         },
         session,
       )
@@ -365,6 +468,16 @@ export class SubscriptionService implements ISubscriptionService {
     createDto: CreateSubscriptionDto,
     userId: string,
   ): Promise<SubscriptionDetailResponseDto> {
+    const pendingCount =
+      await this.subscriptionRepository.countPendingByUser(userId)
+
+    if (pendingCount >= 1) {
+      // Giới hạn chỉ cho phép 1 đơn chờ
+      throw new ConflictException(
+        'Bạn đang có một giao dịch chưa thanh toán. Vui lòng hoàn tất hoặc hủy nó trước khi mua gói mới.',
+      )
+    }
+
     const session = await this.connection.startSession()
     session.startTransaction()
     try {
@@ -428,6 +541,7 @@ export class SubscriptionService implements ISubscriptionService {
   async findAllByUserId(
     userId: string,
     paginationQuery: PaginationQueryDto,
+    status: string,
   ): Promise<{
     data: SubscriptionDetailResponseDto[]
     pagination: PaginationDto
@@ -437,10 +551,13 @@ export class SubscriptionService implements ISubscriptionService {
       userId,
       page,
       pageSize,
+      status,
     )
 
     if (data.data.length === 0) {
-      throw new ConflictException('Người dùng chưa có gói đăng ký nào')
+      throw new ConflictException(
+        `Không có gói thuê bao nào với trạng thái ${status}.`,
+      )
     }
 
     return {
@@ -483,7 +600,12 @@ export class SubscriptionService implements ISubscriptionService {
     return this.returnToDto(subscription)
   }
 
-  async cancelSubscription(id: IdDto, userId: string): Promise<boolean> {
+  async cancelSubscription(
+    id: IdDto,
+    userId: string,
+    userToken: string,
+  ): Promise<boolean> {
+    // 1. Lấy thông tin gói
     const subscription = await this.subscriptionRepository.findSubscriptionById(
       id.id,
       userId,
@@ -493,28 +615,53 @@ export class SubscriptionService implements ISubscriptionService {
       throw new NotFoundException('Không tìm thấy gói thuê bao.')
     }
 
-    const now = new Date()
-    const minCancellationDate = new Date()
-    minCancellationDate.setDate(now.getDate() + 5) // Đặt ngày giới hạn là 5 ngày tới
-
-    const subscriptionStartDate = new Date(subscription.startDate) // Ngày bắt đầu của gói
-
-    // 3. SO SÁNH
-    // Nếu ngày bắt đầu của gói <= ngày giới hạn (tức là nằm TRONG VÒNG 5 ngày tới)
-    if (subscriptionStartDate <= minCancellationDate) {
+    // 2. KIỂM TRA TRẠNG THÁI (Chỉ cho hủy khi SCHEDULED)
+    // Nếu đã ACTIVE (đang chạy) hoặc EXPIRED/CANCELLED thì chặn ngay
+    if (subscription.status !== SubscriptionStatusEnum.SCHEDULED) {
       throw new BadRequestException(
-        'Không thể hủy gói thuê bao trong vòng 5 ngày trước ngày bắt đầu.',
+        'Chỉ có thể hủy gói thuê bao khi đang ở trạng thái chờ kích hoạt (Scheduled).',
       )
     }
 
-    // 4. KIỂM TRA CÁC LOGIC KHÁC
-    // (Ví dụ: không cho hủy nếu đang có xe trong bãi)
+    // 3. KIỂM TRA ĐANG SỬ DỤNG (An toàn)
     if (subscription.isUsed) {
       throw new ConflictException('Gói đang được sử dụng, không thể hủy.')
     }
+
+    // 4. TÍNH TOÁN SỐ TIỀN HOÀN (TIERED REFUND POLICY)
+    const now = new Date()
+    const startDate = new Date(subscription.startDate)
+
+    // Tính khoảng cách thời gian (miliseconds)
+    const diffTime = startDate.getTime() - now.getTime()
+    // Đổi sang ngày (Làm tròn lên: ví dụ còn 2.5 ngày -> tính là 3 ngày)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    let refundAmount = 0
+    let refundPercentage = 0
+
+    // Áp dụng quy tắc BR-45
+    if (diffDays > 7) {
+      // Hủy trước hơn 7 ngày -> Hoàn 100%
+      refundAmount = subscription.amountPaid
+      refundPercentage = 100
+    } else if (diffDays >= 3) {
+      // Hủy trước 3-7 ngày -> Hoàn 50%
+      refundAmount = subscription.amountPaid * 0.5
+      refundPercentage = 50
+    } else {
+      // Hủy sát nút (< 3 ngày) -> Không hoàn tiền
+      refundAmount = 0
+      refundPercentage = 0
+    }
+
+    // 5. THỰC HIỆN TRANSACTION
     const session = await this.connection.startSession()
     session.startTransaction()
+
     try {
+      // 5a. Cập nhật trạng thái trong DB -> CANCELLED
+      // (Lưu ý: Bạn nên sửa hàm repo để nhận thêm refundAmount lưu vào lịch sử nếu cần)
       const cancelResult = await this.subscriptionRepository.cancelSubscription(
         id.id,
         userId,
@@ -525,10 +672,58 @@ export class SubscriptionService implements ISubscriptionService {
         throw new InternalServerErrorException('Hủy gói thuê bao thất bại.')
       }
 
+      const parkingLotOperatorId =
+        await this.parkingLotRepository.getParkingLotOperatorId(
+          subscription.parkingLotId,
+          session,
+        )
+
+      if (!parkingLotOperatorId) {
+        throw new InternalServerErrorException(
+          'Không tìm thấy thông tin quản lý bãi đỗ xe.',
+        )
+      }
+
+      await this.subscriptionLogRepository.createLog(
+        {
+          paymentId: subscription.paymentId || '',
+          subscriptionId: subscription._id,
+          extendedUntil: subscription.endDate,
+          transactionType: SubscriptionTransactionType.CANCELLATION,
+          amountPaid: -refundAmount, // Số tiền hoàn (âm)
+        },
+        session,
+      )
+
+      // 5b. GỌI MODULE THANH TOÁN ĐỂ HOÀN TIỀN (Nếu số tiền > 0)
+      if (refundAmount > 0 && subscription.paymentId) {
+        // Gọi sang AccountService hoặc PaymentService
+        await this.accountServiceClient.refundTransaction(
+          subscription.paymentId,
+          refundAmount,
+          `Hoàn tiền hủy vé tháng (Trước ${diffDays} ngày - ${refundPercentage}%)`,
+          userToken,
+          parkingLotOperatorId,
+        )
+
+        await this.subscriptionLogRepository.createLog(
+          {
+            paymentId: subscription.paymentId || '',
+            subscriptionId: subscription._id,
+            extendedUntil: subscription.endDate,
+            transactionType: SubscriptionTransactionType.REFUND,
+            amountPaid: -refundAmount, // Số tiền hoàn (âm)
+          },
+          session,
+        )
+      }
+
       await session.commitTransaction()
       return true
     } catch (error) {
       await session.abortTransaction()
+      // Log lỗi chi tiết nếu cần
+      this.logger.error(`Lỗi khi hủy vé tháng: ${error.message}`)
       throw error
     } finally {
       await session.endSession()
@@ -558,7 +753,7 @@ export class SubscriptionService implements ISubscriptionService {
         userId,
         'PAID',
       )
-    if (!checkPaymentStatus) {
+    if (!checkPaymentStatus.isValid) {
       throw new ConflictException('Vé chưa được thanh toán')
     }
     const checkLog =
@@ -689,26 +884,22 @@ export class SubscriptionService implements ISubscriptionService {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async setExpiredSubscriptionsJob(): Promise<void> {
     try {
-      const result =
+      this.logger.log('[CronJob] Bắt đầu quét các gói thuê bao hết hạn...')
+
+      // 1. Gọi Repository (Lấy về map thống kê)
+      const { modifiedCount, statsByParkingLot } =
         await this.subscriptionRepository.setExpiredSubscriptionsJob()
 
-      // 1. Chỉ log (info) số lượng thành công
-      this.logger.log(
-        `[CronJob] Đã cập nhật ${String(
-          result.modifiedCount,
-        )} gói thuê bao hết hạn.`,
-      )
-
-      // 2. Chỉ cảnh báo (warn) nếu có gì đó không khớp
-      if (result.failedCount > 0) {
-        this.logger.warn(
-          `[CronJob] Có ${String(
-            result.failedCount,
-          )} gói được tìm thấy nhưng không cập nhật.`,
+      if (modifiedCount > 0) {
+        this.logger.log(
+          `[CronJob] Đã chuyển trạng thái EXPIRED cho ${modifiedCount} gói. Tại ${statsByParkingLot.length} bãi đỗ xe.`,
         )
+
+        // 2. Duyệt qua từng bãi xe để CỘNG SLOT (Trả lại chỗ trống)
+      } else {
+        this.logger.log('[CronJob] Không có gói thuê bao nào hết hạn hôm nay.')
       }
     } catch (error) {
-      // 3. ⭐️ Đây mới là nơi bắt lỗi thực sự (ví dụ: CSDL sập)
       this.logger.error(
         `[CronJob] Gặp lỗi khi cập nhật gói hết hạn: ${error.message}`,
         error.stack,
@@ -742,7 +933,7 @@ export class SubscriptionService implements ISubscriptionService {
         await this.notificationService.createAndSendNotification({
           recipientId: sub.createdBy!, // ID người dùng
           recipientRole: NotificationRole.DRIVER, // Giả định người mua là DRIVER
-           
+
           type: NotificationType.SUBSCRIPTION_ALERT, // Cần định nghĩa thêm loại này
           title: 'Gói Thuê Bao Sắp Hết Hạn! 🔔',
           body: `Gói thuê bao của bạn (ID: ${sub._id.slice(-4)}) sẽ hết hạn vào ngày ${expiryDate}. Vui lòng gia hạn để tiếp tục sử dụng.`,
@@ -761,6 +952,100 @@ export class SubscriptionService implements ISubscriptionService {
         `[CronJob Error] Lỗi khi gửi thông báo hết hạn: ${error.message}`,
         error.stack,
       )
+    }
+  }
+
+  async checkRenewalEligibility(
+    id: string,
+    userId: string,
+  ): Promise<SubscriptionRenewalEligibilityResponseDto> {
+    // 1. Tìm subscription
+    const subscription = await this.subscriptionRepository.findSubscriptionById(
+      id,
+      userId,
+    )
+
+    if (!subscription) {
+      throw new NotFoundException('Không tìm thấy gói thuê bao.')
+    }
+
+    if (
+      subscription.status === SubscriptionStatusEnum.CANCELLED ||
+      subscription.status ===
+        SubscriptionStatusEnum.CANCELLED_DUE_TO_NON_PAYMENT
+    ) {
+      throw new BadRequestException(
+        'Gói thuê bao này đã bị hủy hoặc không thanh toán. Không thể gia hạn.',
+      )
+    }
+
+    // --- THAY ĐỔI TỪ ĐÂY ---
+
+    // 2. Xác định thời điểm cần kiểm tra Slot (Critical Time)
+    let dateToCheck: Date
+    const now = new Date()
+
+    // Nếu đang Active và hạn chưa hết: Ta cần kiểm tra slot cho TƯƠNG LAI (ngay sau khi hết hạn)
+    if (
+      subscription.status === SubscriptionStatusEnum.ACTIVE &&
+      new Date(subscription.endDate) > now
+    ) {
+      // Logic: Bạn đang ngồi đây, nhưng 3 ngày nữa bạn hết hạn.
+      // Ta cần kiểm tra xem "3 ngày nữa" bãi xe có full không?
+      dateToCheck = new Date(subscription.endDate)
+      // Nhích thêm 1 giây hoặc 1 phút để đảm bảo nó nhảy sang chu kỳ mới
+      dateToCheck.setMinutes(dateToCheck.getMinutes() + 1)
+    } else {
+      // Nếu đã Expired (hoặc Active nhưng đã quá hạn): Kiểm tra ngay bây giờ
+      dateToCheck = now
+    }
+
+    // 3. Lấy quy định sức chứa
+    const leasedCapacityRule =
+      await this.parkingLotRepository.getLeasedCapacityRule(
+        subscription.parkingLotId,
+      )
+
+    // 4. Đếm số lượng xe sẽ Active tại thời điểm `dateToCheck`
+    const activeCountAtCriticalTime =
+      await this.subscriptionRepository.countActiveOnDateByParkingLot(
+        subscription.parkingLotId,
+        dateToCheck,
+        id, // Vẫn loại trừ chính nó (để tránh tự mình chặn mình nếu logic query có overlap)
+      )
+
+    // 5. So sánh và Quyết định
+    if (activeCountAtCriticalTime >= leasedCapacityRule) {
+      // Phân biệt thông báo lỗi cho rõ ràng
+      const isFutureConflict = dateToCheck > now
+      const errorMessage = isFutureConflict
+        ? 'Rất tiếc, vào thời điểm gói hiện tại của bạn kết thúc, bãi xe đã kín chỗ (do có người đặt trước).'
+        : 'Bãi xe hiện đã hết suất thuê bao. Không thể gia hạn lại gói đã hết hạn.'
+
+      throw new ConflictException(errorMessage)
+    }
+
+    const pricingPolicy =
+      await this.pricingPolicyRepository.findPolicyByIdForCheckRenew(
+        subscription.pricingPolicyId,
+      )
+
+    if (!pricingPolicy) {
+      // Trường hợp 1: ID không tồn tại trong hệ thống
+      throw new NotFoundException('Gói thuê bao không tồn tại.')
+    }
+
+    if (pricingPolicy.deletedAt) {
+      // Kiểm tra trường deletedAt
+      // Trường hợp 2: ID có tồn tại, nhưng đã bị xóa (Lỗi thời)
+      throw new ConflictException( // Dùng BadRequest hoặc Conflict hợp lý hơn NotFound
+        'Chính sách giá này đã ngừng hoạt động. Vui lòng đăng ký gói mới theo chính sách hiện hành.',
+      )
+    }
+
+    return {
+      canRenew: true,
+      message: 'Đủ điều kiện gia hạn.',
     }
   }
 }

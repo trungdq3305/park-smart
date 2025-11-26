@@ -25,6 +25,15 @@ namespace CoreService.API.Controllers
             var res = await _app.GetAllAsync();
             return StatusCode(res.StatusCode, res);
         }
+        [HttpGet("operator")]
+        public async Task<IActionResult> GetByOperatorId(string operatorId)
+        {
+            
+
+            var res = await _app.GetByOperatorIdAsync(operatorId);
+
+            return StatusCode(res.StatusCode, res);
+        }
 
         [HttpGet("{id}")]
         [AllowAnonymous]
@@ -36,7 +45,7 @@ namespace CoreService.API.Controllers
 
         // Admin/Operator endpoints
         [HttpPost]
-        [Authorize(Roles = "Admin,Operator")]
+        [Authorize(Roles = "Operator")]
         public async Task<IActionResult> Create([FromBody] PromotionCreateDto dto)
         {
             var accountId = User.FindFirst("id")?.Value;
@@ -78,6 +87,34 @@ namespace CoreService.API.Controllers
         {
             var accountId = User.FindFirst("id")?.Value;
             var res = await _app.RemoveRuleAsync(ruleId, accountId);
+            return StatusCode(res.StatusCode, res);
+        }
+
+        [HttpPost("calculate")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Calculate([FromBody] PromotionCalculateRequestDto dto)
+        {
+            var res = await _app.CalculateAsync(dto);
+            return StatusCode(res.StatusCode, res);
+        }
+
+        [HttpPost("use")]
+        [Authorize(Roles = "Driver,Admin,Operator")]
+        public async Task<IActionResult> Use([FromBody] PromotionCalculateRequestDto dto)
+        {
+            var userId = User.FindFirst("id")?.Value;
+            dto.AccountId = userId;
+
+            var res = await _app.UsePromotionAsync(dto);
+            return StatusCode(res.StatusCode, res);
+        }
+
+        [HttpPost("refund")]
+        [Authorize(Roles = "Admin,Operator,Driver")]
+        public async Task<IActionResult> Refund(string entityId)
+        {
+            var actorAccountId = User.FindFirst("id")?.Value;
+            var res = await _app.RefundPromotionUsageAsync(entityId, actorAccountId);
             return StatusCode(res.StatusCode, res);
         }
     }

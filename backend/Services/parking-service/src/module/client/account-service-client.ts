@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unnecessary-type-arguments */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
@@ -17,9 +18,13 @@ import {
 import { ConfigService } from '@nestjs/config' // 🔥 THÊM: Import ConfigService
 import { JwtService } from '@nestjs/jwt'
 import { AxiosError, AxiosResponse } from 'axios' // Import để gán kiểu
+import * as FormData from 'form-data'
 import { firstValueFrom } from 'rxjs'
 
-import { IAccountServiceClient } from './interfaces/iaccount-service-client'
+import {
+  IAccountServiceClient,
+  ImageResponse,
+} from './interfaces/iaccount-service-client'
 
 interface CoreServiceResponse {
   _id: string
@@ -27,8 +32,11 @@ interface CoreServiceResponse {
 
 @Injectable()
 export class AccountServiceClient implements IAccountServiceClient {
+  private readonly logger = new Logger(AccountServiceClient.name)
   // KHÔNG CẦN HARDCODE BASE URL NỮA
   private readonly CORE_SERVICE_BASE_URL: string
+
+  private readonly IMAGE_SERVICE_BASE_URL: string
 
   constructor(
     private readonly httpService: HttpService,
@@ -42,6 +50,164 @@ export class AccountServiceClient implements IAccountServiceClient {
 
     // 🔥 GIẢ ĐỊNH sử dụng JWT_SECRET làm Internal Token/Key cho Service-to-Service
     //this.INTERNAL_AUTH_TOKEN = this.configService.get<string>('JWT_SECRET') || 'default-secret';
+    this.IMAGE_SERVICE_BASE_URL = 'https://parksmarthcmc.io.vn'
+  }
+
+  async refundTransaction(
+    paymentId: string,
+    refundAmount: number,
+    reason: string,
+    userToken: string,
+    operatorId: string,
+  ): Promise<void> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/payments/refund-by-id`
+
+    try {
+      // Gọi API POST
+      await firstValueFrom(
+        this.httpService.post(
+          url,
+          // 1. Body (amount, reason)
+          {
+            amount: refundAmount,
+            reason: 'REQUESTED_BY_CUSTOMER',
+          },
+          // 2. Config (Query params + Headers)
+          {
+            params: {
+              paymentId: paymentId,
+              operatorId: operatorId,
+            },
+            headers: {
+              // Đảm bảo userToken là chuỗi sạch, cần thêm tiền tố 'Bearer '
+              Authorization: `Bearer ${userToken}`,
+            },
+          },
+        ),
+      )
+
+      this.logger.log(
+        `Hoàn tiền thành công cho PaymentId: ${paymentId}, Số tiền: ${refundAmount}`,
+      )
+    } catch (error: any) {
+      // Xử lý lỗi
+      this.logger.error(
+        `Lỗi khi gọi Refund API: ${error.message}`,
+        error.response?.data,
+      )
+
+      // Ném lại lỗi để Service gọi hàm này biết mà xử lý (rollback transaction)
+      if (error.response) {
+        // Lỗi từ phía Account Service trả về (400, 404, etc.)
+        throw new BadRequestException(
+          error.response?.data?.message ||
+            'Hoàn tiền thất bại từ phía Account Service',
+        )
+      }
+
+      // Lỗi mạng hoặc lỗi khác
+      throw new InternalServerErrorException(
+        'Lỗi kết nối tới dịch vụ thanh toán.',
+      )
+    }
+  }
+
+  async getImagesByOwner(
+    ownerType: string,
+    ownerId: string,
+  ): Promise<ImageResponse[]> {
+    // 👈 1. Sửa kiểu trả về thành mảng ImageResponse
+
+    // Lưu ý: URL của bạn trong hình có vẻ là /images/by-owner (bạn kiểm tra lại đúng endpoint nhé)
+    const url = `${this.CORE_SERVICE_BASE_URL}/images/by-owner`
+
+    try {
+      const response = await firstValueFrom(
+        // 👇 2. Truyền Generic type vào get để Axios hiểu kiểu dữ liệu trả về
+        this.httpService.get<ImageResponse[]>(url, {
+          params: { ownerType, ownerId },
+          headers: {
+            // Đảm bảo hàm getInternalToken() của bạn hoạt động đúng
+            // Nếu service này là public thì có thể không cần Authorization
+            Authorization: `Bearer ${this.getInternalToken()}`,
+          },
+        }),
+      )
+
+      // 3. Trả về data (là mảng các object ảnh)
+      if (Array.isArray(response.data)) {
+        return response.data.map((image) => ({
+          ...image, // Giữ nguyên các trường id, description...
+          // Ghép Base URL vào trước đường dẫn tương đối
+          url: `${this.IMAGE_SERVICE_BASE_URL}${image.url}`,
+        }))
+      }
+
+      return []
+    } catch (error) {
+      // Xử lý lỗi nếu không tìm thấy ảnh hoặc lỗi mạng
+      console.error(`Lỗi lấy ảnh cho ${ownerType} ${ownerId}:`, error.message)
+      return [] // Trả về mảng rỗng để không crash quy trình
+    }
+  }
+
+  async uploadImageToImageService(
+    fileBuffer: Buffer,
+    ownerType: string,
+    ownerId: string,
+    description: string,
+  ): Promise<{ id: string; url: string } | null> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/images/upload`
+
+    const formData = new FormData()
+
+    formData.append('file', fileBuffer, {
+      filename: `${ownerType}_${ownerId}.jpg`,
+      contentType: 'image/jpeg',
+    })
+    formData.append('ownerType', ownerType)
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion
+    formData.append('ownerId', ownerId.toString())
+    formData.append('description', description)
+
+    try {
+      // 3. Lấy headers (Chứa Content-Type và Boundary)
+      const headers = formData.getHeaders()
+
+      // Log thử để debug: Bạn sẽ thấy nó in ra dạng 'multipart/form-data; boundary=...'
+      // console.log('Headers:', headers);
+
+      const response = await firstValueFrom(
+        this.httpService.post(url, formData, {
+          headers: {
+            ...headers, // 4. Bắt buộc phải spread headers vào đây
+            // 'Authorization': ... (nếu cần)
+          },
+          maxContentLength: Infinity,
+          maxBodyLength: Infinity,
+        }),
+      )
+
+      return response.data as { id: string; url: string } // Trả về { id, url }
+    } catch (error) {
+      this.logger.log(`Attempting to connect to: ${url}`)
+
+      // 👇 LOG LỖI CHI TIẾT HƠN
+      if (error.response) {
+        // Server đã phản hồi nhưng báo lỗi (4xx, 5xx)
+        this.logger.error('Server Response Error:', error.response.data)
+        this.logger.error('Status:', error.response.status)
+      } else if (error.request) {
+        // Request đã gửi nhưng không nhận được phản hồi (Lỗi mạng, Timeout)
+        this.logger.error('Network Error (No response):', error.message)
+        this.logger.error('Error Code:', error.code) // Ví dụ: ECONNREFUSED
+      } else {
+        // Lỗi khi setup request (Lỗi code client, FormData)
+        this.logger.error('Client Setup Error:', error.message)
+      }
+
+      return null
+    }
   }
 
   private getInternalToken(): string {
@@ -78,7 +244,7 @@ export class AccountServiceClient implements IAccountServiceClient {
       const url = `${this.CORE_SERVICE_BASE_URL}/accounts/by-role`
       const token = this.getInternalToken() // 🔥 TẠO TOKEN
 
-      console.log(`[DEBUG S2S] Gọi URL: ${url}?role=${roleName}`)
+      this.logger.log(`[DEBUG S2S] Gọi URL: ${url}?role=${roleName}`)
 
       const response = await firstValueFrom(
         this.httpService.get(url, {
@@ -95,11 +261,11 @@ export class AccountServiceClient implements IAccountServiceClient {
       const userIds: string[] = dataArray.map(
         (user: CoreServiceResponse) => user._id,
       )
-      console.log(
+      this.logger.log(
         `[AccountServiceClient]  ${userIds} users cho role: ${roleName}`,
       )
 
-      console.log(
+      this.logger.log(
         `[AccountServiceClient] Lấy thành công ${userIds.length} users cho role: ${roleName}`,
       )
       return userIds
@@ -129,9 +295,9 @@ export class AccountServiceClient implements IAccountServiceClient {
 
   async getPaymentStatusByPaymentId(
     paymentId: string,
-    userId: string, // Tham số mới để so sánh
-    status: string, // Tham số mới để so sánh
-  ): Promise<boolean> {
+    userId?: string, // Tham số mới để so sánh
+    status?: string, // Tham số mới để so sánh
+  ): Promise<{ isValid: boolean; amount: number }> {
     const url = `${this.CORE_SERVICE_BASE_URL}/operators/payments/parking/xendit-invoice-detail?paymentId=${paymentId}`
 
     try {
@@ -148,21 +314,21 @@ export class AccountServiceClient implements IAccountServiceClient {
       // 2. ⭐️ BẮT ĐẦU SO SÁNH ⭐️
 
       // 2a. So sánh Trạng thái (Status)
-      if (responseData.status !== status) {
+      if (status && responseData.status !== status) {
         throw new ConflictException(
           `Thanh toán đang ở trạng thái "${responseData.status}", không phải "${status}".`,
         )
       }
 
       // 2b. So sánh Người dùng (User ID)
-      if (responseData.userId !== userId) {
+      if (userId && responseData.userId !== userId) {
         throw new ConflictException(
           'ID người dùng của thanh toán không khớp với người dùng đang đăng nhập.',
         )
       }
 
       // 3. Nếu tất cả đều khớp
-      return true
+      return { isValid: true, amount: responseData.amount }
     } catch (error) {
       // 4. XỬ LÝ LỖI (Quan trọng)
 

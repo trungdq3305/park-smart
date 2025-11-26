@@ -36,8 +36,7 @@ export class Reservation extends BaseEntity {
   pricingPolicyId: string
 
   @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Promotion', // (Nếu có áp dụng khuyến mãi)
+    type: String,
     default: null,
   })
   promotionId: string // Tương ứng 'promotionsid'
@@ -63,6 +62,7 @@ export class Reservation extends BaseEntity {
   @Prop({
     required: true,
     type: Number,
+    default: 0,
   })
   prepaidAmount: number // Số tiền đã trả trước (tương ứng 'total_price')
 
@@ -90,6 +90,13 @@ export class Reservation extends BaseEntity {
     index: true,
   })
   reservationIdentifier: string
+
+  @Prop({
+    required: true,
+    type: Boolean,
+    default: false,
+  })
+  inUsed: boolean
 }
 
 export const ReservationSchema = SchemaFactory.createForClass(Reservation)

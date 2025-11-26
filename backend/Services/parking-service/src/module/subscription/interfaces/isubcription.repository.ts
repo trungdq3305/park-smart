@@ -26,7 +26,7 @@ export interface ISubscriptionRepository {
    */
   findSubscriptionById(
     id: string,
-    userId: string,
+    userId?: string,
     session?: ClientSession,
   ): Promise<Subscription | null>
 
@@ -57,6 +57,7 @@ export interface ISubscriptionRepository {
    * Dùng để kiểm tra với `leasedCapacity` (Xô 1) trước khi bán gói mới.
    * @param parkingLotId ID của bãi đỗ xe.
    * @param requestedDate Ngày được yêu cầu (để kiểm tra tính hợp lệ của gói).
+   * @param subscriptionIdToExclude (Tùy chọn) ID của gói thuê bao để loại trừ khỏi đếm (dùng khi cập nhật).
    * @param session (Tùy chọn) Phiên làm việc của transaction (để đọc nhất quán).
    */
   countActiveOnDateByParkingLot(
@@ -76,6 +77,7 @@ export interface ISubscriptionRepository {
     userId: string,
     page: number,
     pageSize: number,
+    status: string,
   ): Promise<{ data: Subscription[]; total: number }>
 
   /**
@@ -87,6 +89,7 @@ export interface ISubscriptionRepository {
   updateSubscription(
     id: string,
     updateData: {
+      amountPaid?: number
       startDate?: Date
       endDate?: Date
       status?: string
@@ -123,7 +126,7 @@ export interface ISubscriptionRepository {
    */
   setExpiredSubscriptionsJob(): Promise<{
     modifiedCount: number
-    failedCount: number
+    statsByParkingLot: Record<string, number> // Trả về: { "id_bai_xe": số_lượng_hết_hạn }
   }>
 
   /**
@@ -163,6 +166,17 @@ export interface ISubscriptionRepository {
     daysRemaining: number,
     today: Date, // Date(0, 0, 0, 0)
   ): Promise<Pick<Subscription, '_id' | 'createdBy' | 'endDate' | 'status'>[]>
+
+  countPendingByUser(userId: string): Promise<number>
+
+  findActiveAndInUsedSubscriptionByIdentifier(
+    subscriptionIdentifier: string,
+  ): Promise<boolean>
+
+  setScheduledToActiveSubscriptions(): Promise<{
+    modifiedCount: number
+    statsByParkingLot: Record<string, number> // Trả về Map: { "parkingLotId": số_lượng }
+  }>
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')

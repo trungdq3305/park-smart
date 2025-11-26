@@ -29,7 +29,6 @@ export class SubscriptionLog extends BaseEntity {
   @Prop({
     required: true,
     type: String,
-    unique: true, // ⭐️ Mỗi mã giao dịch từ .NET chỉ được ghi nhận 1 lần
   })
   paymentId: string // Mã giao dịch từ hệ thống thanh toán (ví dụ: "TXN_abc123")
 
@@ -47,7 +46,12 @@ export class SubscriptionLog extends BaseEntity {
   extendedUntil: Date // ⭐️ Giao dịch này đã gia hạn gói đến ngày nào?
   // (Lưu lại snapshot của 'endDate' mới sau khi gia hạn)
 
-  // (Các trường tùy chọn khác nếu cần, ví dụ: paymentMethod, notes...)
+  @Prop({
+    type: Number,
+    required: true,
+    default: 0,
+  })
+  amountPaid: number // Số tiền đã thanh toán trong giao dịch này
 }
 
 export const SubscriptionLogSchema =

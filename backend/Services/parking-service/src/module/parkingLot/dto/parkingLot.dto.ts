@@ -273,6 +273,12 @@ export class ParkingLotResponseDto {
 
   @Expose()
   bookingSlotDurationHours: number
+
+  @Expose()
+  displayAvailableSpots: number
+
+  @Expose()
+  name: string
 }
 
 /**
@@ -380,6 +386,16 @@ export class ParkingLotSpotsUpdateDto {
   @IsNumber({}, { message: 'availableSpots phải là một số' })
   @IsNotEmpty({ message: 'availableSpots không được để trống' })
   availableSpots: number
+
+  @Expose()
+  @IsNumber({}, { message: 'realAvailableSpots phải là một số' })
+  @IsNotEmpty({ message: 'realAvailableSpots không được để trống' })
+  realAvailableSpots: number
+
+  @Expose()
+  @IsNumber({}, { message: 'walkInLimitRemaining phải là một số' })
+  @IsNotEmpty({ message: 'walkInLimitRemaining không được để trống' })
+  walkInLimitRemaining: number
 }
 
 export class RequestStatusDto {

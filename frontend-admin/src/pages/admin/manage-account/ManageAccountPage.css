@@ -130,6 +130,46 @@
   margin: 0;
 }
 
+.table-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn {
+  padding: 6px 16px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.filter-btn.active {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.filter-btn.active:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
 .table-count {
   font-size: 14px;
   color: #6b7280;
@@ -178,6 +218,13 @@
 
 .accounts-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+  font-size: 14px;
 }
 
 /* Account Info */
@@ -639,7 +686,16 @@
   .table-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 12px;
+  }
+
+  .table-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .filter-buttons {
+    flex-wrap: wrap;
   }
 
   .accounts-table th,

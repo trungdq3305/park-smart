@@ -8,10 +8,14 @@ import {
   IsEnum,
   IsMongoId,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
+  IsString,
+  Min,
 } from 'class-validator'
 import { IsAfterNow } from 'src/common/decorators/isAfterNow.decorator'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 // (Giả định Enum này đã được cập nhật để bao gồm PENDING_PAYMENT)
 import { ReservationStatusEnum } from '../enums/reservation.enum'
@@ -118,6 +122,97 @@ export class UpdateReservationStatusDto {
  * DTO lồng nhau cho ParkingLot (để hiển thị)
  */
 @Exclude()
+class LinkedBasisDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  basisName: string
+
+  @Expose()
+  description: string
+}
+
+@Exclude()
+class LinkedPackageRateDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  price: number
+
+  @Expose()
+  durationAmount: number
+
+  @Expose()
+  unit: string
+}
+
+/**
+ * DTO cho 'TieredRateSet' (Bộ giá bậc thang)
+ */
+@Exclude()
+class TierDto {
+  @Expose()
+  fromHour: string
+
+  @Expose()
+  toHour: string | null
+
+  @Expose()
+  price: number
+}
+
+@Exclude()
+class LinkedTieredRateSetDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  @Type(() => TierDto) // ⭐️ Lồng mảng DTO 'Tier' vào đây
+  tiers: TierDto[]
+}
+
+@Exclude()
+export class SubscribedPolicyDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  name: string // Tên chính sách giá, ví dụ "Gói 1 tháng"
+
+  // --- Các trường giá trị trực tiếp ---
+  @Expose()
+  pricePerHour: number
+
+  @Expose()
+  fixedPrice: number
+
+  // --- Các trường populate (lồng nhau) ---
+
+  @Expose()
+  @Type(() => LinkedBasisDto) // ⭐️ Bổ sung
+  basisId: LinkedBasisDto
+
+  @Expose()
+  @Type(() => LinkedPackageRateDto) // ⭐️ Bổ sung
+  packageRateId: LinkedPackageRateDto | null // Có thể null
+
+  @Expose()
+  @Type(() => LinkedTieredRateSetDto) // ⭐️ Bổ sung
+  tieredRateSetId: LinkedTieredRateSetDto | null // Có thể null
+}
+@Exclude()
 class ReservedParkingLotDto {
   @Expose()
   @Transform(({ obj }) => obj._id.toString())
@@ -125,6 +220,9 @@ class ReservedParkingLotDto {
 
   @Expose()
   name: string // Giả sử ParkingLot có 'name'
+
+  @Expose()
+  parkingLotOperatorId: string
 }
 
 /**
@@ -138,6 +236,27 @@ class ReservedPolicyDto {
 
   @Expose()
   name: string // Tên chính sách giá
+
+  // --- Các trường giá trị trực tiếp ---
+  @Expose()
+  pricePerHour: number
+
+  @Expose()
+  fixedPrice: number
+
+  // --- Các trường populate (lồng nhau) ---
+
+  @Expose()
+  @Type(() => LinkedBasisDto) // ⭐️ Bổ sung
+  basisId: LinkedBasisDto
+
+  @Expose()
+  @Type(() => LinkedPackageRateDto) // ⭐️ Bổ sung
+  packageRateId: LinkedPackageRateDto | null // Có thể null
+
+  @Expose()
+  @Type(() => LinkedTieredRateSetDto) // ⭐️ Bổ sung
+  tieredRateSetId: LinkedTieredRateSetDto | null // Có thể null
 }
 
 /**
@@ -169,6 +288,9 @@ export class ReservationDetailResponseDto {
   userExpectedTime: Date // Giờ khách chọn (9:15)
 
   @Expose()
+  estimatedEndTime: Date
+
+  @Expose()
   prepaidAmount: number // Số tiền đã trả trước
 
   @Expose()
@@ -185,4 +307,84 @@ export class ReservationDetailResponseDto {
 
   @Expose()
   updatedAt: Date
+}
+
+export class ReservationAvailabilitySlotDto {
+  @ApiProperty({
+    description: 'Số suất đặt trước còn lại trong khung giờ này',
+    example: 25,
+  })
+  remaining: number
+
+  @ApiProperty({
+    description: 'Có thể đặt không (remaining > 0)',
+    example: true,
+  })
+  isAvailable: boolean
+}
+
+export class ExtendReservationDto {
+  @ApiProperty({ description: 'Số giờ muốn gia hạn thêm', example: 1 })
+  @IsNumber()
+  @Min(0.5)
+  additionalHours: number
+
+  @ApiProperty({
+    description: 'Mã giao dịch thanh toán cho phần gia hạn',
+    example: 'PAY_EXT_123',
+  })
+  @IsString()
+  @IsNotEmpty()
+  paymentId: string
+}
+
+export class ReservationExtensionEligibilityResponseDto {
+  @ApiProperty()
+  canExtend: boolean
+
+  @ApiProperty()
+  newEndTime: Date
+
+  @ApiProperty({ description: 'Số tiền cần thanh toán thêm' })
+  additionalCost: number
+
+  @ApiPropertyOptional({
+    description: 'Lý do không thể gia hạn (nếu canExtend=false)',
+  })
+  reason?: string
+}
+
+export class CheckExtensionBodyDto {
+  @ApiProperty({
+    description: 'Số giờ muốn gia hạn thêm (tối thiểu 0.5 giờ)',
+    example: 1,
+    type: Number,
+  })
+  @IsNumber()
+  @Min(0.5, { message: 'Thời gian gia hạn tối thiểu là 30 phút (0.5)' })
+  additionalHours: number
+
+  @ApiProperty({
+    description: 'Số tiền dự kiến phải thanh toán cho phần gia hạn',
+    example: 100000,
+    type: Number,
+  })
+  @IsNumber()
+  additionalCost: number
+}
+
+/**
+ * DTO dùng cho Bước 2: Xác nhận gia hạn kèm Payment ID
+ * (Kế thừa từ CheckExtensionBodyDto nên đã có sẵn additionalHours)
+ */
+
+export class ReservationFilterDto extends PaginationQueryDto {
+  @ApiProperty({
+    enum: ReservationStatusEnum,
+    description: 'Lọc theo trạng thái đơn đặt chỗ',
+    example: ReservationStatusEnum.CONFIRMED,
+  })
+  @IsNotEmpty({ message: 'Trạng thái không được để trống' })
+  @IsEnum(ReservationStatusEnum)
+  status: ReservationStatusEnum
 }

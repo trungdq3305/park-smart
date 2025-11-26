@@ -20,16 +20,3 @@ export const GetCurrentUserId = createParamDecorator(
     return user.id
   },
 )
-export const GetCurrentUserRole = createParamDecorator(
-  (data: undefined, context: ExecutionContext): string => {
-    // Chuyển context sang HTTP request
-    const request = context.switchToHttp().getRequest()
-
-    // Lấy object 'user' mà JwtAuthGuard đã gắn vào request
-    const user = request.user
-
-    // Trả về trường 'sub' (subject), nơi thường lưu ID người dùng trong JWT payload
-    // Nếu bạn lưu ID trong một trường khác (ví dụ: 'id'), hãy thay 'sub' bằng 'id'
-    return user.role
-  },
-)

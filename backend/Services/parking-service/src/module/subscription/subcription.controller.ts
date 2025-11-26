@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   HttpStatus,
   Inject,
   Param,
@@ -22,6 +23,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger'
 import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { UserToken } from 'src/common/decorators/getUserToken.decorator'
 import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
@@ -35,10 +37,14 @@ import { RolesGuard } from 'src/guard/role.guard'
 import {
   AvailabilitySlotDto,
   CreateSubscriptionDto,
+  SubscriptionCancellationPreviewResponseDto,
   SubscriptionDetailResponseDto,
+  SubscriptionFilterDto,
   SubscriptionLogDto,
+  SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto' // <-- Thay đổi
+import { SubscriptionStatusEnum } from './enums/subscription.enum'
 import { ISubscriptionService } from './interfaces/isubcription.service' // <-- Thay đổi
 
 @Controller('subscriptions') // <-- Thay đổi
@@ -201,15 +207,17 @@ export class SubscriptionController {
   })
   @ApiQuery({ name: 'page', required: true, type: Number })
   @ApiQuery({ name: 'pageSize', required: true, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: SubscriptionStatusEnum })
   async findAllByUserId(
     @GetCurrentUserId() userId: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: SubscriptionFilterDto,
   ): Promise<PaginatedResponseDto<SubscriptionDetailResponseDto>> {
     // <-- Thay đổi
     const result = await this.subscriptionService.findAllByUserId(
       // <-- Thay đổi
       userId,
-      paginationQuery,
+      { page: paginationQuery.page, pageSize: paginationQuery.pageSize },
+      paginationQuery.status,
     )
     return {
       data: result.data,
@@ -340,6 +348,34 @@ export class SubscriptionController {
     }
   }
 
+  @Get(':id/cancel/preview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER) // Chỉ người dùng (Driver) mới được xem/hủy vé của mình
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bước 1: Xem trước thông tin hủy vé tháng',
+    description:
+      'Tính toán số tiền hoàn lại dựa trên chính sách thời gian ( >7 ngày, 3-7 ngày, <3 ngày). API này KHÔNG thực hiện hủy.',
+  })
+  @ApiParam({
+    type: 'string',
+    name: 'id',
+    description: 'ID của gói thuê bao cần xem trước hủy',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Thông tin chi tiết về chính sách hoàn tiền áp dụng cho vé này.',
+    type: SubscriptionCancellationPreviewResponseDto,
+  })
+  async getCancellationPreview(
+    @Param() params: IdDto, // Lấy ID từ URL
+    @GetCurrentUserId() userId: string,
+  ): Promise<SubscriptionCancellationPreviewResponseDto> {
+    return this.subscriptionService.getCancellationPreview(params, userId)
+  }
+
   @Patch('admin/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.ADMIN)
@@ -405,11 +441,13 @@ export class SubscriptionController {
   async cancelSubscription(
     @Param() id: IdDto,
     @GetCurrentUserId() userId: string,
+    @UserToken() token: string,
   ): Promise<ApiResponseDto<boolean>> {
     const isCancelled = await this.subscriptionService.cancelSubscription(
       // <-- Thay đổi
       id,
       userId,
+      token,
     )
     return {
       data: [isCancelled],
@@ -461,6 +499,46 @@ export class SubscriptionController {
       data: [availabilityMap],
       statusCode: HttpStatus.OK,
       message: 'Lấy tình trạng suất thuê bao thành công',
+      success: true,
+    }
+  }
+
+  @Get(':id/renewal-eligibility')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Kiểm tra điều kiện gia hạn (Pre-check trước khi thanh toán)',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của gói thuê bao',
+    type: 'string',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Kiểm tra điều kiện thành công',
+    type: ApiResponseDto<SubscriptionRenewalEligibilityResponseDto>,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy gói thuê bao',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Không đủ điều kiện gia hạn (Hết chỗ hoặc gói đã hủy)',
+  })
+  async checkRenewalEligibility(
+    @Param('id') id: string,
+    @GetCurrentUserId() userId: string,
+  ): Promise<ApiResponseDto<SubscriptionRenewalEligibilityResponseDto>> {
+    const result = await this.subscriptionService.checkRenewalEligibility(
+      id,
+      userId,
+    )
+    return {
+      data: [result],
+      statusCode: HttpStatus.OK,
+      message: 'Kiểm tra điều kiện gia hạn thành công',
       success: true,
     }
   }

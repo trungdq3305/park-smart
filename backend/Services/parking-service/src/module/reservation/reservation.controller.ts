@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   HttpStatus,
   Inject,
   Param,
@@ -19,6 +20,7 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger'
 import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
 import { Roles } from 'src/common/decorators/roles.decorator'
@@ -32,11 +34,17 @@ import { RolesGuard } from 'src/guard/role.guard'
 
 // --- Thay đổi DTOs và Interface ---
 import {
+  CheckExtensionBodyDto,
   ConfirmReservationPaymentDto,
   CreateReservationDto,
+  ExtendReservationDto,
+  ReservationAvailabilitySlotDto,
   ReservationDetailResponseDto,
+  ReservationExtensionEligibilityResponseDto,
+  ReservationFilterDto,
   UpdateReservationStatusDto,
 } from './dto/reservation.dto' // <-- Thay đổi
+import { ReservationStatusEnum } from './enums/reservation.enum'
 import { IReservationService } from './interfaces/ireservation.service' // <-- Thay đổi
 
 @Controller('reservations') // <-- Thay đổi
@@ -46,6 +54,57 @@ export class ReservationController {
     @Inject(IReservationService) // <-- Thay đổi
     private readonly reservationService: IReservationService, // <-- Thay đổi
   ) {}
+
+  @Get('availability/:parkingLotId')
+  @ApiOperation({
+    summary: 'Lấy tình trạng chỗ đặt trước (Xô 2) theo giờ trong ngày',
+  })
+  @ApiParam({
+    name: 'parkingLotId',
+    description: 'ID của bãi đỗ xe',
+    type: 'string',
+  })
+  @ApiQuery({
+    name: 'date',
+    description: 'Ngày cần xem (YYYY-MM-DD)',
+    required: true,
+    example: '2025-11-20',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Trả về Map tình trạng từng giờ (00:00 -> 23:00).',
+    schema: {
+      type: 'object',
+      // ⭐️ Cấu hình Dynamic Key cho Swagger
+      additionalProperties: {
+        $ref: getSchemaPath(ReservationAvailabilitySlotDto),
+      },
+      example: {
+        '08:00': { remaining: 30, isAvailable: true },
+        '09:00': { remaining: 5, isAvailable: true },
+        '10:00': { remaining: 0, isAvailable: false },
+      },
+    },
+  })
+  async getReservationAvailability(
+    @Param('parkingLotId') parkingLotId: string,
+    @Query('date') date: string,
+  ): Promise<ApiResponseDto<any>> {
+    // Trả về any/object
+
+    const availabilityMap =
+      await this.reservationService.getReservationAvailability(
+        parkingLotId,
+        date,
+      )
+
+    return {
+      data: [availabilityMap],
+      statusCode: HttpStatus.OK,
+      message: 'Lấy tình trạng đặt chỗ thành công',
+      success: true,
+    }
+  }
 
   // =================================================================
   // 1. API TẠO BẢN NHÁP (HÓA ĐƠN)
@@ -81,6 +140,71 @@ export class ReservationController {
       message: 'Hóa đơn Đặt chỗ đã được tạo (chờ thanh toán).', // <-- Thay đổi
       success: true,
     }
+  }
+
+  @Post(':id/extension/check')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER) // Chỉ Driver mới được tự gia hạn
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({
+    name: 'id',
+    description: 'ID của Đơn đặt chỗ (Reservation) cần gia hạn',
+    type: 'string',
+  })
+  @ApiBody({ type: CheckExtensionBodyDto })
+  @ApiOperation({
+    summary: 'Bước 1: Kiểm tra khả năng gia hạn và Tính phí',
+    description:
+      'Kiểm tra xem khoảng thời gian muốn gia hạn có còn slot trống không (check BookingInventory) và trả về số tiền cần thanh toán.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Kết quả kiểm tra (Có thể gia hạn hay không, giá tiền...).',
+    type: ReservationExtensionEligibilityResponseDto,
+  })
+  async checkExtensionEligibility(
+    @Param() params: IdDto, // Lấy ID Reservation từ URL
+    @GetCurrentUserId() userId: string,
+    @Body() body: CheckExtensionBodyDto, // Chỉ nhận additionalHours
+  ): Promise<ReservationExtensionEligibilityResponseDto> {
+    // Lưu ý: Service tính toán additionalCost, Controller không cần truyền vào
+    // Tôi đã bỏ tham số additionalCost ở đây vì nó là Output của hàm này
+    return this.reservationService.checkExtensionEligibility(
+      params,
+      userId,
+      body.additionalHours,
+      body.additionalCost,
+    )
+  }
+
+  @Post(':id/extension/confirm')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiParam({
+    name: 'id',
+    description: 'ID của Đơn đặt chỗ (Reservation) cần gia hạn',
+    type: 'string',
+  })
+  @ApiBody({ type: ExtendReservationDto }) // Chứa additionalHours VÀ paymentId
+  @ApiOperation({
+    summary: 'Bước 2: Xác nhận gia hạn (Sau khi thanh toán)',
+    description:
+      'Gọi API này sau khi đã thanh toán thành công số tiền được báo ở Bước 1. Hệ thống sẽ xác thực paymentId và cập nhật thời gian kết thúc.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Gia hạn thành công. Trả về thông tin vé mới.',
+    type: ReservationDetailResponseDto,
+  })
+  async extendReservation(
+    @Param() params: IdDto,
+    @GetCurrentUserId() userId: string,
+    @Body() body: ExtendReservationDto, // Chứa additionalHours VÀ paymentId
+  ): Promise<ReservationDetailResponseDto> {
+    return this.reservationService.extendReservation(params, userId, body)
   }
 
   // =================================================================
@@ -145,15 +269,22 @@ export class ReservationController {
   })
   @ApiQuery({ name: 'page', required: true, type: Number })
   @ApiQuery({ name: 'pageSize', required: true, type: Number })
+  @ApiQuery({
+    name: 'status',
+    required: true,
+    enum: ReservationStatusEnum,
+    description: 'Lọc theo trạng thái đơn đặt chỗ',
+  })
   async findAllByUserId(
     @GetCurrentUserId() userId: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: ReservationFilterDto,
   ): Promise<PaginatedResponseDto<ReservationDetailResponseDto>> {
     // <-- Thay đổi
     const result = await this.reservationService.findAllByUserId(
       // <-- Thay đổi
       userId,
-      paginationQuery,
+      { page: paginationQuery.page, pageSize: paginationQuery.pageSize },
+      paginationQuery.status,
     )
     return {
       data: result.data,

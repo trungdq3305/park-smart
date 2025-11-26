@@ -6,7 +6,10 @@ import type { IdDto } from 'src/common/dto/params.dto'
 import type {
   ConfirmReservationPaymentDto, // ⭐️ DTO cho API 2
   CreateReservationDto,
+  ExtendReservationDto,
+  ReservationAvailabilitySlotDto,
   ReservationDetailResponseDto,
+  ReservationExtensionEligibilityResponseDto,
   UpdateReservationStatusDto, // (Cho Admin)
 } from '../dto/reservation.dto' // <-- Giả định đường dẫn DTO
 
@@ -56,6 +59,7 @@ export interface IReservationService {
   findAllByUserId(
     userId: string,
     paginationQuery: PaginationQueryDto,
+    status: string,
   ): Promise<{
     data: ReservationDetailResponseDto[]
     pagination: PaginationDto
@@ -96,6 +100,52 @@ export interface IReservationService {
     updateDto: UpdateReservationStatusDto,
     userId: string,
   ): Promise<boolean>
+
+  getReservationAvailability(
+    parkingLotId: string,
+    dateStr: string, // Input dạng 'YYYY-MM-DD'
+  ): Promise<Record<string, ReservationAvailabilitySlotDto>>
+
+  /**
+   * ⭐️ BƯỚC 1: Kiểm tra xem có thể gia hạn thêm giờ không?
+   * (Logic:
+   * 1. Lấy reservation hiện tại.
+   * 2. Tính 'newEndTime' = currentEndTime + additionalHours.
+   * 3. Gọi Repo 'countConflictingReservations' trong khoảng [currentEndTime, newEndTime].
+   * 4. So sánh với 'bookableCapacity'.
+   * 5. Nếu còn chỗ -> Tính toán số tiền phải trả thêm ('estimatedCost').
+   * )
+   * @param id ID của đơn đặt chỗ.
+   * @param userId ID người dùng.
+   * @param additionalHours Số giờ muốn gia hạn thêm.
+   * @param additionalCost Số tiền dự kiến phải trả thêm.
+   * @return Thông tin về khả năng gia hạn và chi phí
+   */
+  checkExtensionEligibility(
+    id: IdDto,
+    userId: string,
+    additionalHours: number,
+    additionalCost: number,
+  ): Promise<ReservationExtensionEligibilityResponseDto>
+  // Trả về: { canExtend: boolean, newEndTime: Date, cost: number, reason?: string }
+
+  /**
+   * ⭐️ BƯỚC 2: Thực hiện gia hạn (sau khi User đã thanh toán tiền gia hạn).
+   * (Service sẽ:
+   * 1. Xác thực 'paymentId' (số tiền phải khớp với cost đã tính ở bước 1).
+   * 2. Gọi Repo 'extendReservationEndTime'.
+   * 3. Nếu Reservation đang ở trạng thái 'COMPLETED' (đã check-out sớm) -> Có thể cần logic riêng hoặc chặn.
+   * Thường chỉ cho gia hạn khi trạng thái là 'CONFIRMED' hoặc 'CHECKED_IN'.
+   * )
+   * @param id ID của đơn đặt chỗ.
+   * @param userId ID người dùng.
+   * @param extendDto DTO chứa 'paymentId' và 'additionalHours' (để validate lại lần chót).
+   */
+  extendReservation(
+    id: IdDto,
+    userId: string,
+    extendDto: ExtendReservationDto,
+  ): Promise<ReservationDetailResponseDto>
 }
 
 export const IReservationService = Symbol('IReservationService')

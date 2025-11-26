@@ -60,6 +60,33 @@ export class AnnouncementController {
     }
   }
 
+  @Post('send-now')
+  @ApiOperation({
+    summary: 'Admin: Tạo và gửi một Thông báo Công bố NGAY LẬP TỨC',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    type: ApiResponseDto<AnnouncementResponseDto>,
+    description: 'Thông báo được tạo (SENT) và gửi đi ngay qua WebSocket.',
+  })
+  async createAndSendNow(
+    @Body() createAnnouncementDto: CreateAnnouncementDto,
+    @GetCurrentUserId() adminId: string,
+  ): Promise<ApiResponseDto<AnnouncementResponseDto>> {
+    // Lưu ý: Trường scheduleAt trong DTO sẽ được bỏ qua khi gọi phương thức này.
+    const announcement = await this.announcementService.createAndSendNow(
+      createAnnouncementDto,
+      adminId,
+    )
+
+    return {
+      data: [announcement],
+      message: 'Tạo và gửi thông báo công bố thành công',
+      statusCode: HttpStatus.CREATED,
+      success: true,
+    }
+  }
+
   @Get()
   @ApiOperation({ summary: 'Admin: Lấy danh sách tất cả Thông báo Công bố' })
   @ApiResponse({

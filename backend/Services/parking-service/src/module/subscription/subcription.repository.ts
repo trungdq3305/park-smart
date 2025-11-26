@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession } from 'mongoose'
 import { Model } from 'mongoose'
@@ -12,6 +13,76 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     @InjectModel(Subscription.name)
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
+
+  async setScheduledToActiveSubscriptions(): Promise<{
+    modifiedCount: number
+    statsByParkingLot: Record<string, number> // Trả về Map: { "parkingLotId": số_lượng }
+  }> {
+    const now = new Date()
+    const criteria = {
+      status: SubscriptionStatusEnum.SCHEDULED,
+      startDate: { $lte: now },
+      endDate: { $gt: now },
+    }
+
+    // 1. Tìm các vé sẽ được kích hoạt
+    const subsToActivate = await this.subscriptionModel
+      .find(criteria)
+      .select('parkingLotId') // Chỉ cần lấy ID bãi xe
+      .lean()
+      .exec()
+
+    if (subsToActivate.length === 0) {
+      return { modifiedCount: 0, statsByParkingLot: {} }
+    }
+
+    // 2. Gom nhóm và đếm số lượng theo từng bãi xe
+    // Kết quả sẽ dạng: { "id_bai_xe_A": 5, "id_bai_xe_B": 2 }
+    const statsByParkingLot: Record<string, number> = {}
+    const idsToUpdate: string[] = []
+
+    for (const sub of subsToActivate) {
+      const pId = sub.parkingLotId.toString()
+      statsByParkingLot[pId] = (statsByParkingLot[pId] || 0) + 1
+      idsToUpdate.push(sub._id.toString())
+    }
+
+    // 3. Cập nhật trạng thái sang ACTIVE
+    const updateResult = await this.subscriptionModel.updateMany(
+      { _id: { $in: idsToUpdate } },
+      { $set: { status: SubscriptionStatusEnum.ACTIVE } },
+    )
+
+    return {
+      modifiedCount: updateResult.modifiedCount,
+      statsByParkingLot,
+    }
+  }
+
+  async findActiveAndInUsedSubscriptionByIdentifier(
+    subscriptionIdentifier: string,
+  ): Promise<boolean> {
+    const filter = {
+      subscriptionIdentifier,
+      status: SubscriptionStatusEnum.ACTIVE,
+    }
+    const data = await this.subscriptionModel
+      .findOne(filter)
+      .select('isUsed')
+      .lean()
+      .exec()
+    return data?.isUsed ?? false
+  }
+
+  async countPendingByUser(userId: string): Promise<number> {
+    return this.subscriptionModel
+      .countDocuments({
+        userId: userId,
+        status: SubscriptionStatusEnum.PENDING_PAYMENT,
+        deletedAt: null,
+      })
+      .exec()
+  }
 
   async updateExpiredPendingSubscriptions(
     cutoffTime: Date,
@@ -85,18 +156,45 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
   async setExpiredSubscriptionsJob(): Promise<{
     modifiedCount: number
-    failedCount: number
+    statsByParkingLot: Record<string, number> // Trả về: { "id_bai_xe": số_lượng_hết_hạn }
   }> {
-    const data = await this.subscriptionModel.updateMany(
-      {
-        endDate: { $lt: new Date() },
-        status: { $eq: SubscriptionStatusEnum.ACTIVE },
-      },
+    const now = new Date()
+    const criteria = {
+      status: SubscriptionStatusEnum.ACTIVE, // Chỉ tìm vé đang hoạt động
+      endDate: { $lt: now }, // Đã quá hạn (ngày kết thúc nhỏ hơn hiện tại)
+    }
+
+    // 1. Tìm danh sách vé hết hạn
+    const expiredSubs = await this.subscriptionModel
+      .find(criteria)
+      .select('parkingLotId') // Chỉ cần lấy ID bãi xe
+      .lean()
+      .exec()
+
+    if (expiredSubs.length === 0) {
+      return { modifiedCount: 0, statsByParkingLot: {} }
+    }
+
+    // 2. Thống kê số lượng theo từng bãi xe
+    const statsByParkingLot: Record<string, number> = {}
+    const idsToUpdate: string[] = []
+
+    for (const sub of expiredSubs) {
+      const pId = sub.parkingLotId.toString()
+      // Cộng dồn số lượng vé hết hạn cho bãi này
+      statsByParkingLot[pId] = (statsByParkingLot[pId] || 0) + 1
+      idsToUpdate.push(sub._id.toString())
+    }
+
+    // 3. Cập nhật trạng thái sang EXPIRED
+    const updateResult = await this.subscriptionModel.updateMany(
+      { _id: { $in: idsToUpdate } },
       { $set: { status: SubscriptionStatusEnum.EXPIRED } },
     )
+
     return {
-      modifiedCount: data.modifiedCount,
-      failedCount: data.matchedCount - data.modifiedCount,
+      modifiedCount: updateResult.modifiedCount,
+      statsByParkingLot,
     }
   }
 
@@ -107,9 +205,10 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     const filter = {
       parkingLotId: parkingLotId,
       status: {
-        $or: [
+        $in: [
           SubscriptionStatusEnum.ACTIVE,
           SubscriptionStatusEnum.PENDING_PAYMENT,
+          SubscriptionStatusEnum.SCHEDULED,
         ],
       }, // Chỉ đếm các gói đang active
       deletedAt: null, // Bỏ qua các gói đã xóa mềm
@@ -152,11 +251,12 @@ export class SubscriptionRepository implements ISubscriptionRepository {
 
   findSubscriptionById(
     id: string,
-    userId: string,
+    userId?: string,
     session?: ClientSession,
   ): Promise<Subscription | null> {
+    const query = { _id: id, ...(userId ? { createdBy: userId } : {}) }
     return this.subscriptionModel
-      .findOne({ _id: id, createdBy: userId })
+      .findOne(query)
       .session(session ?? null)
       .lean()
       .exec()
@@ -196,7 +296,13 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     return this.subscriptionModel
       .countDocuments({
         parkingLotId,
-        status: SubscriptionStatusEnum.ACTIVE,
+        status: {
+          $in: [
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.PENDING_PAYMENT, // ✅ Thêm dòng này
+            SubscriptionStatusEnum.SCHEDULED, // ✅ Thêm dòng này
+          ],
+        },
         deletedAt: null,
         startDate: { $lte: requestedDate },
         endDate: { $gte: requestedDate },
@@ -210,29 +316,35 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     userId: string,
     page: number,
     pageSize: number,
+    status: string,
   ): Promise<{ data: Subscription[]; total: number }> {
     const limit = pageSize
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.subscriptionModel
-        .find({ createdBy: userId, deletedAt: null })
+        .find({ createdBy: userId, deletedAt: null, status: status })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
         .populate([
           {
             path: 'parkingLotId',
-            select: 'name _id',
+            select: 'parkingLotOperatorId name _id',
           },
           {
-            path: 'pricingPolicyId',
-            select: 'name _id',
+            path: 'pricingPolicyId', // ⭐️ Populate chính sách giá
+            populate: [
+              { path: 'basisId' }, // Populate luôn cả basis
+              // (Populate thêm packageRateId, tieredRateSetId nếu cần)
+              { path: 'packageRateId' },
+              { path: 'tieredRateSetId' },
+            ],
           },
         ])
         .lean()
         .exec(),
       this.subscriptionModel
-        .countDocuments({ createdBy: userId, deletedAt: null })
+        .countDocuments({ createdBy: userId, deletedAt: null, status: status })
         .exec(),
     ])
     return { data, total }
@@ -241,6 +353,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   async updateSubscription(
     id: string,
     updateData: {
+      amountPaid: number
       startDate?: Date
       endDate?: Date
       status?: string

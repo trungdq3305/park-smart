@@ -6,8 +6,10 @@ import type { IdDto } from 'src/common/dto/params.dto'
 import type {
   AvailabilitySlotDto,
   CreateSubscriptionDto,
+  SubscriptionCancellationPreviewResponseDto,
   SubscriptionDetailResponseDto,
   SubscriptionLogDto,
+  SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from '../dto/subscription.dto' // <-- Giả định đường dẫn DTO
 
@@ -32,6 +34,7 @@ export interface ISubscriptionService {
   findAllByUserId(
     userId: string,
     paginationQuery: PaginationQueryDto,
+    status: string,
   ): Promise<{
     data: SubscriptionDetailResponseDto[]
     pagination: PaginationDto
@@ -64,8 +67,13 @@ export interface ISubscriptionService {
    * nếu đang có xe trong bãi 'isUsed: true').
    * @param id ID của gói thuê bao cần hủy.
    * @param userId ID của người dùng đang thực hiện.
+   * @param userToken Token của người dùng (để xác thực khi gọi dịch vụ thanh toán).
    */
-  cancelSubscription(id: IdDto, userId: string): Promise<boolean>
+  cancelSubscription(
+    id: IdDto,
+    userId: string,
+    userToken: string,
+  ): Promise<boolean>
 
   /**
    * Gia hạn một gói thuê bao (do người dùng chủ động).
@@ -125,7 +133,17 @@ export interface ISubscriptionService {
     paymentId: string,
   ): Promise<SubscriptionDetailResponseDto>
 
-  sendExpiringSubscriptionNotificationsJob(): Promise<void>;
+  sendExpiringSubscriptionNotificationsJob(): Promise<void>
+
+  checkRenewalEligibility(
+    id: string,
+    userId: string,
+  ): Promise<SubscriptionRenewalEligibilityResponseDto>
+
+  getCancellationPreview(
+    id: IdDto,
+    userId: string,
+  ): Promise<SubscriptionCancellationPreviewResponseDto>
 }
 
 export const ISubscriptionService = Symbol('ISubscriptionService')
