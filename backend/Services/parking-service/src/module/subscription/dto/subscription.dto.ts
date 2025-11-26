@@ -290,6 +290,9 @@ export class SubscriptionLogDto {
 
   @Expose()
   extendedUntil: number
+
+  @Expose()
+  createdAt: Date
 }
 
 @Exclude()
