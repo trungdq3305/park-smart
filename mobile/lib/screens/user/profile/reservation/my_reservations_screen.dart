@@ -19,7 +19,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   bool _isLoadingMore = false;
   String? _errorMessage;
   int _currentPage = 1;
-  int _pageSize = 10;
+  int _pageSize = 5;
   bool _hasMore = true;
   final Map<String, Map<String, dynamic>> _parkingLotCache = {};
 

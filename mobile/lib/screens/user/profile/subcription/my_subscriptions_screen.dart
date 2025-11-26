@@ -21,7 +21,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   bool _isLoadingMore = false;
   String? _errorMessage;
   int _currentPage = 1;
-  int _pageSize = 10;
+  int _pageSize = 5;
   bool _hasMore = true;
   final Set<String> _renewingSubscriptionIds = <String>{};
   bool _showExpired = false;
