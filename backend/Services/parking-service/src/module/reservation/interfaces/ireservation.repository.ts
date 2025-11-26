@@ -58,6 +58,7 @@ export interface IReservationRepository {
     userId: string,
     page: number,
     pageSize: number,
+    status: string,
   ): Promise<{ data: Reservation[]; total: number }>
 
   /**

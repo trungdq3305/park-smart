@@ -44,8 +44,8 @@ import {
   SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto' // <-- Thay đổi
-import { ISubscriptionService } from './interfaces/isubcription.service' // <-- Thay đổi
 import { SubscriptionStatusEnum } from './enums/subscription.enum'
+import { ISubscriptionService } from './interfaces/isubcription.service' // <-- Thay đổi
 
 @Controller('subscriptions') // <-- Thay đổi
 @ApiTags('subscriptions') // <-- Thay đổi

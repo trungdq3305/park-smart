@@ -10,9 +10,9 @@ import {
   IsNotEmpty,
   IsOptional,
 } from 'class-validator'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 import { SubscriptionStatusEnum } from '../enums/subscription.enum'
-import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies ---

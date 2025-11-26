@@ -259,11 +259,12 @@ export class ReservationRepository implements IReservationRepository {
     userId: string,
     page: number,
     pageSize: number,
+    status: string,
   ): Promise<{ data: Reservation[]; total: number }> {
     const skip = (page - 1) * pageSize
     return Promise.all([
       this.reservationModel
-        .find({ createdBy: userId })
+        .find({ createdBy: userId, status: status, deletedAt: null })
         .populate([
           {
             path: 'parkingLotId',
@@ -282,7 +283,9 @@ export class ReservationRepository implements IReservationRepository {
         .skip(skip)
         .limit(pageSize)
         .exec(),
-      this.reservationModel.countDocuments({ createdBy: userId }).exec(),
+      this.reservationModel
+        .countDocuments({ createdBy: userId, status: status, deletedAt: null })
+        .exec(),
     ]).then(([data, total]) => ({ data, total }))
   }
 
