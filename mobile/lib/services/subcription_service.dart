@@ -241,10 +241,11 @@ class SubscriptionService {
   }
 
   /// Lấy tất cả gói thuê bao của người dùng hiện tại
-  /// GET /subscriptions/my?pageSize=10&page=1
+  /// GET /subscriptions/my?pageSize=10&page=1&status=ACTIVE
   static Future<Map<String, dynamic>> getMySubscriptions({
     required int pageSize,
     required int page,
+    String? status,
   }) async {
     try {
       String? token = await _getToken();
@@ -252,12 +253,15 @@ class SubscriptionService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/parking/subscriptions/my').replace(
-        queryParameters: {
-          'pageSize': pageSize.toString(),
-          'page': page.toString(),
-        },
-      );
+      final query = <String, String>{
+        'pageSize': pageSize.toString(),
+        'page': page.toString(),
+        if (status != null && status.isNotEmpty) 'status': status,
+      };
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/my',
+      ).replace(queryParameters: query);
 
       print('📋 Getting my subscriptions:');
       print('  URL: $uri');
@@ -278,13 +282,35 @@ class SubscriptionService {
         final responseData = jsonDecode(response.body);
         print('✅ Successfully fetched my subscriptions');
         return responseData;
-      } else {
-        final errorBody = response.body;
-        print('❌ Error fetching my subscriptions: $errorBody');
-        throw Exception(
-          'Failed to fetch my subscriptions: ${response.statusCode} - $errorBody',
-        );
       }
+
+      // 409 - Không có gói phù hợp với trạng thái / bộ lọc hiện tại
+      // Trả về danh sách rỗng thay vì ném lỗi để UI hiển thị trạng thái "không có gói"
+      if (response.statusCode == 409) {
+        print('ℹ️ No subscriptions found for current filter (409).');
+        Map<String, dynamic>? body;
+        try {
+          body = jsonDecode(response.body);
+        } catch (_) {
+          body = null;
+        }
+
+        return <String, dynamic>{
+          'data': <dynamic>[],
+          'pagination': <String, dynamic>{
+            'totalItems': 0,
+            'page': page,
+            'pageSize': pageSize,
+          },
+          if (body != null) ...body,
+        };
+      }
+
+      final errorBody = response.body;
+      print('❌ Error fetching my subscriptions: $errorBody');
+      throw Exception(
+        'Failed to fetch my subscriptions: ${response.statusCode} - $errorBody',
+      );
     } catch (e) {
       print('❌ Exception in getMySubscriptions: $e');
       rethrow;

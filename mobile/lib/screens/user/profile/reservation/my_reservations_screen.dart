@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../../../services/reservation_service.dart';
 import '../../../../services/parking_lot_service.dart';
+import '../../../../services/payment_service.dart';
 import '../../../../widgets/app_scaffold.dart';
+import '../../../user/booking_reservation/payment_checkout_screen.dart';
+import 'my_reservations_screen_filter_bar.dart';
+import '../../../../widgets/reservation/my_reservation_card.dart';
 
 class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({super.key});
@@ -19,9 +24,28 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   bool _isLoadingMore = false;
   String? _errorMessage;
   int _currentPage = 1;
-  int _pageSize = 10;
+  int _pageSize = 5;
   bool _hasMore = true;
   final Map<String, Map<String, dynamic>> _parkingLotCache = {};
+  final Set<String> _extendingReservationIds = {};
+
+  // Danh sách trạng thái đặt chỗ mới
+  final List<String> _allStatuses = const [
+    'PENDING_PAYMENT',
+    'CONFIRMED',
+    'CHECKED_IN',
+    'CHECKED_OUT',
+    'CANCELLED_BY_USER',
+    'EXPIRED',
+    'CANCELLED_BY_OPERATOR',
+    'REFUND',
+    'CANCELLED_DUE_TO_NON_PAYMENT',
+    'PAYMENT_FAILED',
+  ];
+
+  String? _selectedStatusFilter;
+  // Trạng thái mặc định cho filter "Tất cả" (hiển thị các vé đang sử dụng)
+  static const String _defaultStatus = 'CHECKED_IN';
 
   @override
   void initState() {
@@ -49,6 +73,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       final response = await ReservationService.getMyReservations(
         page: _currentPage,
         pageSize: _pageSize,
+        status: _selectedStatusFilter ?? _defaultStatus,
       );
 
       final newReservations = _parseReservationResponse(response);
@@ -219,18 +244,26 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   String _getStatusText(String? status) {
     switch (status?.toUpperCase()) {
-      case 'CONFIRMED':
-        return 'Đã xác nhận';
       case 'PENDING_PAYMENT':
         return 'Chờ thanh toán';
-      case 'ACTIVE':
-        return 'Đang sử dụng';
-      case 'COMPLETED':
-        return 'Hoàn thành';
-      case 'CANCELLED':
-        return 'Đã hủy';
+      case 'CONFIRMED':
+        return 'Đã xác nhận';
+      case 'CHECKED_IN':
+        return 'Đã check-in';
+      case 'CHECKED_OUT':
+        return 'Đã check-out';
+      case 'CANCELLED_BY_USER':
+        return 'Người dùng hủy';
       case 'EXPIRED':
         return 'Đã hết hạn';
+      case 'CANCELLED_BY_OPERATOR':
+        return 'Nhà vận hành hủy';
+      case 'REFUND':
+        return 'Hoàn tiền';
+      case 'CANCELLED_DUE_TO_NON_PAYMENT':
+        return 'Hủy do không thanh toán';
+      case 'PAYMENT_FAILED':
+        return 'Thanh toán thất bại';
       default:
         return status ?? 'Không xác định';
     }
@@ -238,19 +271,391 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   Color _getStatusColor(String? status) {
     switch (status?.toUpperCase()) {
-      case 'CONFIRMED':
-      case 'ACTIVE':
-        return Colors.green;
       case 'PENDING_PAYMENT':
         return Colors.orange;
-      case 'COMPLETED':
+      case 'CONFIRMED':
+      case 'CHECKED_IN':
+      case 'CHECKED_OUT':
+        return Colors.green;
+      case 'REFUND':
         return Colors.blue;
-      case 'CANCELLED':
+      case 'CANCELLED_BY_USER':
+      case 'CANCELLED_BY_OPERATOR':
+      case 'CANCELLED_DUE_TO_NON_PAYMENT':
+      case 'PAYMENT_FAILED':
       case 'EXPIRED':
         return Colors.red;
       default:
         return Colors.grey;
     }
+  }
+
+  void _onFilterChanged(String? status) {
+    setState(() {
+      _selectedStatusFilter = status;
+    });
+    _loadReservations();
+  }
+
+  Future<void> _handleExtendReservation(
+    Map<String, dynamic> reservation,
+  ) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    final reservationId =
+        reservation['_id']?.toString() ?? reservation['id']?.toString();
+    if (reservationId == null) {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy ID đặt chỗ để gia hạn.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    int? baseCostPerHour =
+        reservation['price'] as int? ??
+        reservation['additionalCost'] as int? ??
+        reservation['hourlyRate'] as int?;
+
+    // Nếu reservation không có price trực tiếp, lấy từ pricingPolicy.tieredRateSetId.tiers[0].price
+    if (baseCostPerHour == null || baseCostPerHour <= 0) {
+      final pricingPolicy =
+          reservation['pricingPolicyId'] as Map<String, dynamic>?;
+      final tieredRateSet =
+          pricingPolicy?['tieredRateSetId'] as Map<String, dynamic>?;
+      final tiers = tieredRateSet?['tiers'];
+      if (tiers is List && tiers.isNotEmpty) {
+        final firstTier = tiers.first;
+        final dynamic tierPrice = firstTier['price'];
+        if (tierPrice is int) {
+          baseCostPerHour = tierPrice;
+        } else if (tierPrice is num) {
+          baseCostPerHour = tierPrice.round();
+        }
+      }
+    }
+
+    if (baseCostPerHour == null || baseCostPerHour <= 0) {
+      scaffoldMessenger.showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy đơn giá để gia hạn thêm giờ.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final int? additionalHours = await _showExtensionHoursDialog(
+      baseCostPerHour,
+    );
+    if (additionalHours == null || additionalHours <= 0) {
+      return;
+    }
+
+    final int additionalCost = baseCostPerHour;
+    final int totalAmount = additionalCost * additionalHours;
+
+    setState(() {
+      _extendingReservationIds.add(reservationId);
+    });
+
+    try {
+      // Step 1: Check extension eligibility
+      await ReservationService.checkReservationExtension(
+        reservationId: reservationId,
+        additionalHours: additionalHours,
+        additionalCost: additionalCost,
+      );
+
+      // Step 2: Create payment for extension
+      final parkingLot = reservation['parkingLotId'] as Map<String, dynamic>?;
+      final operatorId = parkingLot?['parkingLotOperatorId']?.toString();
+
+      final paymentResponse = await PaymentService.createPayment(
+        entityId: reservationId,
+        // Backend chỉ chấp nhận các PaymentType hợp lệ (ví dụ: Reservation, Subscription)
+        // nên dùng lại type 'Reservation' cho giao dịch gia hạn đặt chỗ
+        type: 'Reservation',
+        amount: totalAmount,
+        operatorId: operatorId,
+      );
+
+      dynamic paymentData = paymentResponse['data'];
+      if (paymentData is List && paymentData.isNotEmpty) {
+        paymentData = paymentData.first;
+      }
+
+      String? paymentId;
+      if (paymentData is Map) {
+        paymentId = paymentData['_id'] ?? paymentData['id'];
+      }
+      paymentId ??= paymentResponse['_id'] ?? paymentResponse['id'];
+
+      String? checkoutUrl;
+      if (paymentData is Map) {
+        checkoutUrl = paymentData['checkoutUrl']?.toString();
+      }
+      checkoutUrl ??= paymentResponse['checkoutUrl']?.toString();
+
+      if (checkoutUrl == null || checkoutUrl.isEmpty) {
+        throw Exception('Không nhận được đường dẫn thanh toán cho gia hạn.');
+      }
+
+      if (!mounted) return;
+
+      final completer = Completer<bool>();
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PaymentCheckoutScreen(
+            checkoutUrl: checkoutUrl!,
+            paymentId: paymentId,
+            onPaymentComplete: (success, returnedPaymentId) async {
+              await Future.delayed(const Duration(milliseconds: 300));
+
+              if (!success) {
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Thanh toán gia hạn đã bị hủy hoặc thất bại.',
+                    ),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
+                if (!completer.isCompleted) completer.complete(false);
+                return;
+              }
+
+              final finalPaymentId = returnedPaymentId ?? paymentId;
+              if (finalPaymentId == null) {
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Không nhận được mã thanh toán cho gia hạn đặt chỗ.',
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                if (!completer.isCompleted) completer.complete(false);
+                return;
+              }
+
+              try {
+                await ReservationService.confirmReservationExtension(
+                  reservationId: reservationId,
+                  additionalHours: additionalHours,
+                  paymentId: finalPaymentId,
+                );
+
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Gia hạn thêm giờ cho đặt chỗ thành công!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                if (!completer.isCompleted) completer.complete(true);
+              } catch (e) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Thanh toán thành công nhưng có lỗi khi gia hạn: $e',
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                if (!completer.isCompleted) completer.complete(false);
+              }
+            },
+          ),
+        ),
+      );
+
+      final success = await completer.future;
+      if (success && mounted) {
+        _loadReservations();
+      }
+    } catch (e) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(
+          content: Text('Không thể gia hạn thêm giờ cho đặt chỗ: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _extendingReservationIds.remove(reservationId);
+        });
+      }
+    }
+  }
+
+  Future<int?> _showExtensionHoursDialog(int baseCostPerHour) async {
+    final controller = TextEditingController(text: '1');
+    return showDialog<int>(
+      context: context,
+      builder: (ctx) {
+        String? errorText;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            int hours = int.tryParse(controller.text.trim()) ?? 1;
+            if (hours <= 0) hours = 1;
+            final totalAmount = baseCostPerHour * hours;
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+              contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+              actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    'Gia hạn thêm giờ',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 20),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Chọn số giờ muốn gia hạn thêm cho đặt chỗ hiện tại.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.attach_money,
+                          size: 20,
+                          color: Colors.green.shade700,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Đơn giá mỗi giờ: ${_formatPrice(baseCostPerHour)} đ',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green.shade800,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Số giờ muốn gia hạn',
+                      hintText: 'Ví dụ: 1, 2, 3...',
+                      errorText: errorText,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Colors.green.shade600,
+                          width: 1.5,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                    ),
+                    onChanged: (_) => setState(() {
+                      errorText = null;
+                    }),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Tổng tiền dự kiến',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '${_formatPrice(totalAmount)} đ',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text(
+                    'Hủy',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    final value = int.tryParse(controller.text.trim());
+                    if (value == null || value <= 0) {
+                      setState(() {
+                        errorText = 'Vui lòng nhập số giờ hợp lệ (> 0).';
+                      });
+                      return;
+                    }
+                    Navigator.of(ctx).pop(value);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade600,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                  ),
+                  child: const Text(
+                    'Xác nhận',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
@@ -282,7 +687,22 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       return _buildErrorState();
     }
 
-    return _reservations.isEmpty ? _buildEmptyState() : _buildReservationList();
+    return Column(
+      children: [
+        ReservationFilterBar(
+          statuses: _allStatuses,
+          selectedStatus: _selectedStatusFilter,
+          getStatusText: _getStatusText,
+          getStatusColor: _getStatusColor,
+          onStatusChanged: _onFilterChanged,
+        ),
+        Expanded(
+          child: _reservations.isEmpty
+              ? _buildEmptyState()
+              : _buildReservationList(),
+        ),
+      ],
+    );
   }
 
   Widget _buildErrorState() {
@@ -367,7 +787,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Chưa có đặt chỗ',
+              _selectedStatusFilter == null
+                  ? 'Chưa có đặt chỗ'
+                  : 'Không có đặt chỗ phù hợp',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -376,7 +798,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Bạn chưa có đặt chỗ nào. Hãy đặt chỗ để sử dụng dịch vụ.',
+              _selectedStatusFilter == null
+                  ? 'Bạn chưa có đặt chỗ nào. Hãy đặt chỗ để sử dụng dịch vụ.'
+                  : 'Không tìm thấy đặt chỗ với trạng thái "${_getStatusText(_selectedStatusFilter)}".',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade600,
@@ -427,6 +851,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final status = reservation['status'] as String?;
     final statusColor = _getStatusColor(status);
     final statusText = _getStatusText(status);
+    final isCheckedIn = status?.toUpperCase() == 'CHECKED_IN';
+
+    final reservationId =
+        reservation['_id']?.toString() ?? reservation['id']?.toString();
+    final isExtending =
+        reservationId != null &&
+        _extendingReservationIds.contains(reservationId);
 
     // Extract reservation details
     final parkingLot = reservation['parkingLotId'];
@@ -460,312 +891,25 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
 
-    return InkWell(
-      onTap: () => _showQRCodeDialog(reservation),
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.12),
-              spreadRadius: 0,
-              blurRadius: 15,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.08),
-              spreadRadius: 0,
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with gradient background
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    statusColor.withOpacity(0.15),
-                    statusColor.withOpacity(0.08),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(20),
-                  topRight: Radius.circular(20),
-                ),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Icon container
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(
-                      Icons.event_available,
-                      color: statusColor,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Title and location
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          policyName,
-                          style: TextStyle(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.grey.shade900,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.location_on,
-                                  size: 16,
-                                  color: Colors.grey.shade600,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    parkingLotName,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey.shade700,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (addressText != null &&
-                                addressText.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 20),
-                                child: Text(
-                                  addressText,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey.shade600,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Status badge
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: statusColor.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          statusText,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Content section
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // Time slot card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade200, width: 1),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            Icons.access_time,
-                            size: 20,
-                            color: Colors.green.shade700,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Thời gian vào',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatDateTime(userExpectedTime),
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey.shade900,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Amount card
-                  if (prepaidAmount != null) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.blue.shade100,
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade100,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.attach_money,
-                              size: 20,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Số tiền đã thanh toán',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blue.shade700,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${_formatPrice(prepaidAmount)} đ',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: Colors.blue.shade900,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  // Tap hint
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.touch_app,
-                        size: 16,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Chạm để xem mã QR',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade500,
-                          fontWeight: FontWeight.w500,
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+    final userExpectedTimeText = _formatDateTime(userExpectedTime);
+    final prepaidAmountText = prepaidAmount != null
+        ? '${_formatPrice(prepaidAmount)} đ'
+        : null;
+
+    return MyReservationCard(
+      statusText: statusText,
+      statusColor: statusColor,
+      isCheckedIn: isCheckedIn,
+      isExtending: isExtending,
+      policyName: policyName,
+      parkingLotName: parkingLotName,
+      addressText: addressText,
+      userExpectedTimeText: userExpectedTimeText,
+      prepaidAmountText: prepaidAmountText,
+      onTapQr: () => _showQRCodeDialog(reservation),
+      onExtend: isCheckedIn && reservationId != null
+          ? () => _handleExtendReservation(reservation)
+          : null,
     );
   }
 
