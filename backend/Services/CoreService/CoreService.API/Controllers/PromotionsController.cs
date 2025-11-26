@@ -26,12 +26,11 @@ namespace CoreService.API.Controllers
             return StatusCode(res.StatusCode, res);
         }
         [HttpGet("operator")]
-        [Authorize(Roles = "Admin,Operator")]
-        public async Task<IActionResult> GetByOperatorId()
+        public async Task<IActionResult> GetByOperatorId(string operatorId)
         {
-            var accountId = User.FindFirst("id")?.Value;
+            
 
-            var res = await _app.GetByOperatorIdAsync(accountId);
+            var res = await _app.GetByOperatorIdAsync(operatorId);
 
             return StatusCode(res.StatusCode, res);
         }
