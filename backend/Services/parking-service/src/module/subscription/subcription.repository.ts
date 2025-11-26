@@ -328,11 +328,16 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         .populate([
           {
             path: 'parkingLotId',
-            select: 'name _id',
+            select: 'parkingLotOperatorId name _id',
           },
           {
-            path: 'pricingPolicyId',
-            select: 'name _id',
+            path: 'pricingPolicyId', // ⭐️ Populate chính sách giá
+            populate: [
+              { path: 'basisId' }, // Populate luôn cả basis
+              // (Populate thêm packageRateId, tieredRateSetId nếu cần)
+              { path: 'packageRateId' },
+              { path: 'tieredRateSetId' },
+            ],
           },
         ])
         .lean()

@@ -213,14 +213,20 @@ export class ReservationRepository implements IReservationRepository {
     id: string,
     session?: ClientSession,
   ): Promise<Reservation | null> {
-    const query = this.reservationModel
-      .findById(id)
-      .populate({
+    const query = this.reservationModel.findById(id).populate([
+      {
         path: 'parkingLotId',
-      }) // Populate chi tiết bãi đỗ xe
-      .populate({
+        select: 'parkingLotOperatorId name _id',
+      },
+      {
         path: 'pricingPolicyId',
-      }) // Populate chi tiết chính sách giá
+        populate: [
+          { path: 'basisId' },
+          { path: 'packageRateId' },
+          { path: 'tieredRateSetId' },
+        ],
+      },
+    ]) // Populate chi tiết bãi đỗ xe
     if (session) {
       query.session(session)
     }
@@ -258,14 +264,20 @@ export class ReservationRepository implements IReservationRepository {
     return Promise.all([
       this.reservationModel
         .find({ createdBy: userId })
-        .populate({
-          path: 'parkingLotId',
-          select: 'name',
-        })
-        .populate({
-          path: 'pricingPolicyId',
-          select: 'name',
-        })
+        .populate([
+          {
+            path: 'parkingLotId',
+            select: 'parkingLotOperatorId name _id',
+          },
+          {
+            path: 'pricingPolicyId',
+            populate: [
+              { path: 'basisId' },
+              { path: 'packageRateId' },
+              { path: 'tieredRateSetId' },
+            ],
+          },
+        ])
         .sort({ createdAt: -1 }) // Mới nhất trước
         .skip(skip)
         .limit(pageSize)

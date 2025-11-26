@@ -121,6 +121,97 @@ export class UpdateReservationStatusDto {
  * DTO lồng nhau cho ParkingLot (để hiển thị)
  */
 @Exclude()
+class LinkedBasisDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  basisName: string
+
+  @Expose()
+  description: string
+}
+
+@Exclude()
+class LinkedPackageRateDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  price: number
+
+  @Expose()
+  durationAmount: number
+
+  @Expose()
+  unit: string
+}
+
+/**
+ * DTO cho 'TieredRateSet' (Bộ giá bậc thang)
+ */
+@Exclude()
+class TierDto {
+  @Expose()
+  fromHour: string
+
+  @Expose()
+  toHour: string | null
+
+  @Expose()
+  price: number
+}
+
+@Exclude()
+class LinkedTieredRateSetDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  @Type(() => TierDto) // ⭐️ Lồng mảng DTO 'Tier' vào đây
+  tiers: TierDto[]
+}
+
+@Exclude()
+export class SubscribedPolicyDto {
+  @Expose()
+  @Transform(({ obj }) => obj._id.toString())
+  _id: string
+
+  @Expose()
+  name: string // Tên chính sách giá, ví dụ "Gói 1 tháng"
+
+  // --- Các trường giá trị trực tiếp ---
+  @Expose()
+  pricePerHour: number
+
+  @Expose()
+  fixedPrice: number
+
+  // --- Các trường populate (lồng nhau) ---
+
+  @Expose()
+  @Type(() => LinkedBasisDto) // ⭐️ Bổ sung
+  basisId: LinkedBasisDto
+
+  @Expose()
+  @Type(() => LinkedPackageRateDto) // ⭐️ Bổ sung
+  packageRateId: LinkedPackageRateDto | null // Có thể null
+
+  @Expose()
+  @Type(() => LinkedTieredRateSetDto) // ⭐️ Bổ sung
+  tieredRateSetId: LinkedTieredRateSetDto | null // Có thể null
+}
+@Exclude()
 class ReservedParkingLotDto {
   @Expose()
   @Transform(({ obj }) => obj._id.toString())
@@ -128,6 +219,9 @@ class ReservedParkingLotDto {
 
   @Expose()
   name: string // Giả sử ParkingLot có 'name'
+
+  @Expose()
+  parkingLotOperatorId: string
 }
 
 /**
@@ -141,6 +235,27 @@ class ReservedPolicyDto {
 
   @Expose()
   name: string // Tên chính sách giá
+
+  // --- Các trường giá trị trực tiếp ---
+  @Expose()
+  pricePerHour: number
+
+  @Expose()
+  fixedPrice: number
+
+  // --- Các trường populate (lồng nhau) ---
+
+  @Expose()
+  @Type(() => LinkedBasisDto) // ⭐️ Bổ sung
+  basisId: LinkedBasisDto
+
+  @Expose()
+  @Type(() => LinkedPackageRateDto) // ⭐️ Bổ sung
+  packageRateId: LinkedPackageRateDto | null // Có thể null
+
+  @Expose()
+  @Type(() => LinkedTieredRateSetDto) // ⭐️ Bổ sung
+  tieredRateSetId: LinkedTieredRateSetDto | null // Có thể null
 }
 
 /**

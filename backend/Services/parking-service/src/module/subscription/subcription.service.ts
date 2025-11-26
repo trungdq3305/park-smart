@@ -701,7 +701,7 @@ export class SubscriptionService implements ISubscriptionService {
           userToken,
           parkingLotOperatorId,
         )
-        
+
         await this.subscriptionLogRepository.createLog(
           {
             paymentId: subscription.paymentId || '',
@@ -749,7 +749,7 @@ export class SubscriptionService implements ISubscriptionService {
         userId,
         'PAID',
       )
-    if (!checkPaymentStatus) {
+    if (!checkPaymentStatus.isValid) {
       throw new ConflictException('Vé chưa được thanh toán')
     }
     const checkLog =
