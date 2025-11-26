@@ -5,6 +5,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import '../../../../services/reservation_service.dart';
 import '../../../../services/parking_lot_service.dart';
 import '../../../../widgets/app_scaffold.dart';
+import 'my_reservations_screen_filter_bar.dart';
 
 class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({super.key});
@@ -22,6 +23,23 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   int _pageSize = 5;
   bool _hasMore = true;
   final Map<String, Map<String, dynamic>> _parkingLotCache = {};
+
+  // Danh sách trạng thái đặt chỗ mới
+  final List<String> _allStatuses = const [
+    'PENDING_PAYMENT',
+    'CONFIRMED',
+    'CHECKED_IN',
+    'CHECKED_OUT',
+    'CANCELLED_BY_USER',
+    'EXPIRED',
+    'CANCELLED_BY_OPERATOR',
+    'REFUND',
+    'CANCELLED_DUE_TO_NON_PAYMENT',
+    'PAYMENT_FAILED',
+  ];
+
+  String? _selectedStatusFilter;
+  static const String _defaultStatus = 'CONFIRMED';
 
   @override
   void initState() {
@@ -49,6 +67,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       final response = await ReservationService.getMyReservations(
         page: _currentPage,
         pageSize: _pageSize,
+        status: _selectedStatusFilter ?? _defaultStatus,
       );
 
       final newReservations = _parseReservationResponse(response);
@@ -219,18 +238,26 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   String _getStatusText(String? status) {
     switch (status?.toUpperCase()) {
-      case 'CONFIRMED':
-        return 'Đã xác nhận';
       case 'PENDING_PAYMENT':
         return 'Chờ thanh toán';
-      case 'ACTIVE':
-        return 'Đang sử dụng';
-      case 'COMPLETED':
-        return 'Hoàn thành';
-      case 'CANCELLED':
-        return 'Đã hủy';
+      case 'CONFIRMED':
+        return 'Đã xác nhận';
+      case 'CHECKED_IN':
+        return 'Đã check-in';
+      case 'CHECKED_OUT':
+        return 'Đã check-out';
+      case 'CANCELLED_BY_USER':
+        return 'Người dùng hủy';
       case 'EXPIRED':
         return 'Đã hết hạn';
+      case 'CANCELLED_BY_OPERATOR':
+        return 'Nhà vận hành hủy';
+      case 'REFUND':
+        return 'Hoàn tiền';
+      case 'CANCELLED_DUE_TO_NON_PAYMENT':
+        return 'Hủy do không thanh toán';
+      case 'PAYMENT_FAILED':
+        return 'Thanh toán thất bại';
       default:
         return status ?? 'Không xác định';
     }
@@ -238,19 +265,30 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   Color _getStatusColor(String? status) {
     switch (status?.toUpperCase()) {
-      case 'CONFIRMED':
-      case 'ACTIVE':
-        return Colors.green;
       case 'PENDING_PAYMENT':
         return Colors.orange;
-      case 'COMPLETED':
+      case 'CONFIRMED':
+      case 'CHECKED_IN':
+      case 'CHECKED_OUT':
+        return Colors.green;
+      case 'REFUND':
         return Colors.blue;
-      case 'CANCELLED':
+      case 'CANCELLED_BY_USER':
+      case 'CANCELLED_BY_OPERATOR':
+      case 'CANCELLED_DUE_TO_NON_PAYMENT':
+      case 'PAYMENT_FAILED':
       case 'EXPIRED':
         return Colors.red;
       default:
         return Colors.grey;
     }
+  }
+
+  void _onFilterChanged(String? status) {
+    setState(() {
+      _selectedStatusFilter = status;
+    });
+    _loadReservations();
   }
 
   @override
@@ -282,7 +320,22 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       return _buildErrorState();
     }
 
-    return _reservations.isEmpty ? _buildEmptyState() : _buildReservationList();
+    return Column(
+      children: [
+        ReservationFilterBar(
+          statuses: _allStatuses,
+          selectedStatus: _selectedStatusFilter,
+          getStatusText: _getStatusText,
+          getStatusColor: _getStatusColor,
+          onStatusChanged: _onFilterChanged,
+        ),
+        Expanded(
+          child: _reservations.isEmpty
+              ? _buildEmptyState()
+              : _buildReservationList(),
+        ),
+      ],
+    );
   }
 
   Widget _buildErrorState() {
@@ -367,7 +420,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Chưa có đặt chỗ',
+              _selectedStatusFilter == null
+                  ? 'Chưa có đặt chỗ'
+                  : 'Không có đặt chỗ phù hợp',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -376,7 +431,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Bạn chưa có đặt chỗ nào. Hãy đặt chỗ để sử dụng dịch vụ.',
+              _selectedStatusFilter == null
+                  ? 'Bạn chưa có đặt chỗ nào. Hãy đặt chỗ để sử dụng dịch vụ.'
+                  : 'Không tìm thấy đặt chỗ với trạng thái "${_getStatusText(_selectedStatusFilter)}".',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade600,

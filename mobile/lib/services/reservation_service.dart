@@ -255,21 +255,24 @@ class ReservationService {
     }
   }
 
-  /// GET /reservations/my?page=&pageSize=
+  /// GET /reservations/my?page=&pageSize=&status=
   static Future<Map<String, dynamic>> getMyReservations({
     int page = 1,
     int pageSize = 10,
+    String? status,
   }) async {
     try {
       final token = await _getToken();
       if (token == null) throw Exception('Authentication token not found');
 
-      final uri = Uri.parse('$baseUrl/parking/reservations/my').replace(
-        queryParameters: {
-          'page': page.toString(),
-          'pageSize': pageSize.toString(),
-        },
-      );
+      final query = <String, String>{
+        'page': page.toString(),
+        'pageSize': pageSize.toString(),
+        if (status != null && status.isNotEmpty) 'status': status,
+      };
+
+      final uri = Uri.parse('$baseUrl/parking/reservations/my')
+          .replace(queryParameters: query);
 
       print('📋 Fetching my reservations page=$page size=$pageSize');
 
@@ -281,6 +284,29 @@ class ReservationService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       }
+
+      // 409: Không có đặt chỗ phù hợp với trạng thái / bộ lọc hiện tại
+      // Trả về danh sách rỗng để UI hiển thị trạng thái "không có đặt chỗ"
+      if (response.statusCode == 409) {
+        print('ℹ️ No reservations found for current filter (409).');
+        Map<String, dynamic>? body;
+        try {
+          body = jsonDecode(response.body);
+        } catch (_) {
+          body = null;
+        }
+
+        return <String, dynamic>{
+          'data': <dynamic>[],
+          'pagination': <String, dynamic>{
+            'totalItems': 0,
+            'page': page,
+            'pageSize': pageSize,
+          },
+          if (body != null) ...body,
+        };
+      }
+
       throw Exception(
         'Failed to fetch my reservations: ${response.statusCode} - ${response.body}',
       );
