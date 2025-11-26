@@ -12,6 +12,7 @@ import {
 } from 'class-validator'
 
 import { SubscriptionStatusEnum } from '../enums/subscription.enum'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies ---
@@ -327,4 +328,15 @@ export class SubscriptionCancellationPreviewResponseDto {
     example: 'Bạn hủy sát ngày nên chỉ được hoàn 50%.',
   })
   warningMessage: string
+}
+
+export class SubscriptionFilterDto extends PaginationQueryDto {
+  @ApiProperty({
+    enum: SubscriptionStatusEnum,
+    description: 'Lọc theo trạng thái gói thuê bao',
+    example: SubscriptionStatusEnum.ACTIVE,
+  })
+  @IsNotEmpty({ message: 'Trạng thái không được để trống' })
+  @IsEnum(SubscriptionStatusEnum)
+  status: SubscriptionStatusEnum
 }

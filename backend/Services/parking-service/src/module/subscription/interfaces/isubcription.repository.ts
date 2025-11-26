@@ -77,6 +77,7 @@ export interface ISubscriptionRepository {
     userId: string,
     page: number,
     pageSize: number,
+    status: string,
   ): Promise<{ data: Subscription[]; total: number }>
 
   /**

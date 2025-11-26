@@ -316,12 +316,13 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     userId: string,
     page: number,
     pageSize: number,
+    status: string,
   ): Promise<{ data: Subscription[]; total: number }> {
     const limit = pageSize
     const skip = (page - 1) * pageSize
     const [data, total] = await Promise.all([
       this.subscriptionModel
-        .find({ createdBy: userId, deletedAt: null })
+        .find({ createdBy: userId, deletedAt: null, status: status })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
@@ -343,7 +344,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         .lean()
         .exec(),
       this.subscriptionModel
-        .countDocuments({ createdBy: userId, deletedAt: null })
+        .countDocuments({ createdBy: userId, deletedAt: null, status: status })
         .exec(),
     ])
     return { data, total }
