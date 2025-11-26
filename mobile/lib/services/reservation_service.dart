@@ -165,6 +165,96 @@ class ReservationService {
     }
   }
 
+  /// POST /reservations/{id}/extension/check
+  /// Step 1: Check extension availability & calculate cost
+  static Future<Map<String, dynamic>> checkReservationExtension({
+    required String reservationId,
+    required int additionalHours,
+    required int additionalCost,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) throw Exception('Authentication token not found');
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/reservations/$reservationId/extension/check',
+      );
+
+      final payload = {
+        'additionalHours': additionalHours,
+        'additionalCost': additionalCost,
+      };
+
+      print(
+        '⏱️ Checking reservation extension for $reservationId: $payload',
+      );
+
+      final response = await http.post(
+        uri,
+        headers: _buildHeaders(token, hasBody: true),
+        body: jsonEncode(payload),
+      );
+
+      print('📡 Extension check status: ${response.statusCode}');
+      print('📡 Extension check body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception(
+        'Failed to check reservation extension: '
+        '${response.statusCode} - ${response.body}',
+      );
+    } catch (e) {
+      print('❌ Exception in checkReservationExtension: $e');
+      rethrow;
+    }
+  }
+
+  /// POST /reservations/{id}/extension/confirm
+  /// Step 2: Confirm extension after payment
+  static Future<Map<String, dynamic>> confirmReservationExtension({
+    required String reservationId,
+    required int additionalHours,
+    required String paymentId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) throw Exception('Authentication token not found');
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/reservations/$reservationId/extension/confirm',
+      );
+
+      final payload = {
+        'additionalHours': additionalHours,
+        'paymentId': paymentId,
+      };
+
+      print('✅ Confirming reservation extension: $payload');
+
+      final response = await http.post(
+        uri,
+        headers: _buildHeaders(token, hasBody: true),
+        body: jsonEncode(payload),
+      );
+
+      print('📡 Extension confirm status: ${response.statusCode}');
+      print('📡 Extension confirm body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      throw Exception(
+        'Failed to confirm reservation extension: '
+        '${response.statusCode} - ${response.body}',
+      );
+    } catch (e) {
+      print('❌ Exception in confirmReservationExtension: $e');
+      rethrow;
+    }
+  }
+
   /// GET /reservations/my?page=&pageSize=
   static Future<Map<String, dynamic>> getMyReservations({
     int page = 1,
