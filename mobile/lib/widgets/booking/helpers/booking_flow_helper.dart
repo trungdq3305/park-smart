@@ -152,8 +152,9 @@ class BookingFlowHelper {
       // Step 4: Open payment checkout WebView
       if (!context.mounted) return false;
 
+      final bookingContext = context;
       await Navigator.push(
-        context,
+        bookingContext,
         MaterialPageRoute(
           builder: (webViewContext) => PaymentCheckoutScreen(
             checkoutUrl: checkoutUrl!,
@@ -180,8 +181,8 @@ class BookingFlowHelper {
                     // Navigate to result screen
                     // After WebView closes, we're back at booking screen
                     // Use pushReplacement to replace booking screen with result screen
-                    if (context.mounted) {
-                      Navigator.of(context).pushReplacement(
+                    if (bookingContext.mounted) {
+                      Navigator.of(bookingContext).pushReplacement(
                         MaterialPageRoute(
                           builder: (ctx) => PaymentResultScreen(
                             isSuccess: true,
@@ -195,8 +196,8 @@ class BookingFlowHelper {
                   } catch (confirmError) {
                     print('⚠️ Error confirming reservation payment: $confirmError');
                     // Navigate to result screen with error
-                    if (context.mounted) {
-                      Navigator.of(context).pushReplacement(
+                    if (bookingContext.mounted) {
+                      Navigator.of(bookingContext).pushReplacement(
                         MaterialPageRoute(
                           builder: (ctx) => PaymentResultScreen(
                             isSuccess: false,
@@ -212,8 +213,8 @@ class BookingFlowHelper {
                   }
                 } else {
                   // Missing information
-                  if (context.mounted) {
-                    Navigator.of(context).pushReplacement(
+                  if (bookingContext.mounted) {
+                    Navigator.of(bookingContext).pushReplacement(
                       MaterialPageRoute(
                         builder: (ctx) => PaymentResultScreen(
                           isSuccess: false,
@@ -227,8 +228,8 @@ class BookingFlowHelper {
                 }
               } else {
                 // Payment failed or cancelled
-                if (context.mounted) {
-                  Navigator.of(context).pushReplacement(
+                if (bookingContext.mounted) {
+                  Navigator.of(bookingContext).pushReplacement(
                     MaterialPageRoute(
                       builder: (ctx) => PaymentResultScreen(
                         isSuccess: false,
@@ -376,7 +377,7 @@ class BookingFlowHelper {
 
       final bookingContext = context;
       await Navigator.push(
-        context,
+        bookingContext,
         MaterialPageRoute(
           builder: (context) => PaymentCheckoutScreen(
             checkoutUrl: checkoutUrl!,
@@ -384,7 +385,7 @@ class BookingFlowHelper {
             onPaymentComplete: (success, returnedPaymentId) async {
               await Future.delayed(const Duration(milliseconds: 300));
 
-              if (success) {
+              if (success && bookingContext.mounted) {
                 final finalPaymentId = returnedPaymentId ?? paymentId;
                 if (subscriptionId != null && finalPaymentId != null) {
                   try {
@@ -393,7 +394,7 @@ class BookingFlowHelper {
                       paymentId: finalPaymentId,
                     );
 
-                    if (context.mounted && bookingContext.mounted) {
+                    if (bookingContext.mounted) {
                       Navigator.of(bookingContext).pushReplacement(
                         MaterialPageRoute(
                           builder: (context) => PaymentResultScreen(
@@ -407,7 +408,7 @@ class BookingFlowHelper {
                       );
                     }
                   } catch (confirmError) {
-                    if (context.mounted && bookingContext.mounted) {
+                    if (bookingContext.mounted) {
                       Navigator.of(bookingContext).pushReplacement(
                         MaterialPageRoute(
                           builder: (context) => PaymentResultScreen(
@@ -422,35 +423,31 @@ class BookingFlowHelper {
                       );
                     }
                   }
-                } else {
-                  if (context.mounted && bookingContext.mounted) {
-                    Navigator.of(bookingContext).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (context) => PaymentResultScreen(
-                          isSuccess: false,
-                          message: returnedPaymentId == null
-                              ? 'Không nhận được Payment ID từ URL callback.'
-                              : 'Thiếu thông tin để kích hoạt gói thuê bao.',
-                          paymentId: returnedPaymentId ?? paymentId,
-                          subscriptionId: subscriptionId,
-                        ),
-                      ),
-                    );
-                  }
-                }
-              } else {
-                if (context.mounted && bookingContext.mounted) {
+                } else if (bookingContext.mounted) {
                   Navigator.of(bookingContext).pushReplacement(
                     MaterialPageRoute(
                       builder: (context) => PaymentResultScreen(
                         isSuccess: false,
-                        message: 'Thanh toán đã bị hủy hoặc thất bại.',
+                        message: returnedPaymentId == null
+                            ? 'Không nhận được Payment ID từ URL callback.'
+                            : 'Thiếu thông tin để kích hoạt gói thuê bao.',
                         paymentId: returnedPaymentId ?? paymentId,
                         subscriptionId: subscriptionId,
                       ),
                     ),
                   );
                 }
+              } else if (bookingContext.mounted) {
+                Navigator.of(bookingContext).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => PaymentResultScreen(
+                      isSuccess: false,
+                      message: 'Thanh toán đã bị hủy hoặc thất bại.',
+                      paymentId: returnedPaymentId ?? paymentId,
+                      subscriptionId: subscriptionId,
+                    ),
+                  ),
+                );
               }
             },
           ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -20,6 +22,9 @@ class PaymentCheckoutScreen extends StatefulWidget {
 class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
   late final WebViewController _controller;
   bool _isLoading = true;
+  bool _isRecovering = false;
+  Timer? _retryTimer;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -48,12 +53,16 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
               print('📄 Page started loading: $url');
               setState(() {
                 _isLoading = true;
+                _isRecovering = false;
+                _errorMessage = null;
               });
             },
             onPageFinished: (String url) {
               print('✅ Page finished loading: $url');
               setState(() {
                 _isLoading = false;
+                _isRecovering = false;
+                _errorMessage = null;
               });
 
               // Check for payment completion indicators
@@ -64,15 +73,7 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
               print('  Description: ${error.description}');
               print('  Error Code: ${error.errorCode}');
               print('  Error Type: ${error.errorType}');
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Lỗi tải trang: ${error.description}'),
-                    backgroundColor: Colors.red,
-                    duration: const Duration(seconds: 5),
-                  ),
-                );
-              }
+              _handleLoadError(error);
             },
             onNavigationRequest: (NavigationRequest request) {
               final url = request.url;
@@ -150,13 +151,11 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
     } catch (e) {
       print('❌ Error initializing WebView: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khởi tạo WebView: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
-          ),
-        );
+        setState(() {
+          _isLoading = false;
+          _errorMessage =
+              'Không thể khởi tạo trang thanh toán. Vui lòng thử lại.';
+        });
       }
     }
   }
@@ -246,6 +245,34 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
     }
   }
 
+  void _handleLoadError(WebResourceError error) {
+    if (!mounted) return;
+
+    // Log once and show a stable error state instead of auto-retrying in a loop
+    setState(() {
+      _isLoading = false;
+      _isRecovering = false;
+      _errorMessage =
+          'Không thể tải trang thanh toán (lỗi mạng hoặc chứng chỉ SSL). '
+          'Vui lòng kiểm tra kết nối và thử lại.';
+    });
+  }
+
+  void _manualReload() {
+    setState(() {
+      _isLoading = true;
+      _isRecovering = false;
+      _errorMessage = null;
+    });
+    _controller.reload();
+  }
+
+  @override
+  void dispose() {
+    _retryTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     print('🏗️ Building PaymentCheckoutScreen widget');
@@ -305,6 +332,49 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
                       'Đang tải trang thanh toán...',
                       style: TextStyle(color: Colors.grey, fontSize: 14),
                     ),
+                  ],
+                ),
+              ),
+            ),
+          if (_errorMessage != null)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: double.infinity,
+                color: Colors.black.withOpacity(0.7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isRecovering)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      ),
+                    Text(
+                      _errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                    ),
+                    if (!_isRecovering)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: OutlinedButton(
+                          onPressed: _manualReload,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white),
+                          ),
+                          child: const Text('Thử tải lại'),
+                        ),
+                      ),
                   ],
                 ),
               ),

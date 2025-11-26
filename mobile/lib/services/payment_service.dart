@@ -267,9 +267,15 @@ class PaymentService {
       print('📡 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
+        final decodedBody = jsonDecode(response.body);
         print('✅ Successfully fetched my payments');
-        return responseData;
+        if (decodedBody is Map<String, dynamic>) {
+          return decodedBody;
+        }
+        if (decodedBody is List) {
+          return {'data': decodedBody};
+        }
+        return {'data': decodedBody};
       } else {
         final errorBody = response.body;
         print('❌ Error fetching my payments: $errorBody');

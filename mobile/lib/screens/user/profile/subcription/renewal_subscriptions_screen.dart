@@ -50,6 +50,7 @@ class _RenewalSubscriptionsScreenState
       final response = await SubscriptionService.getMySubscriptions(
         pageSize: _pageSize,
         page: _currentPage,
+        status: 'EXPIRED',
       );
 
       final parsed = _parseSubscriptionResponse(response);
@@ -118,7 +119,9 @@ class _RenewalSubscriptionsScreenState
 
   Future<void> _handleRenew(Map<String, dynamic> subscription) async {
     final dynamic subscriptionIdValue =
-        subscription['_id'] ?? subscription['id'] ?? subscription['subscriptionId'];
+        subscription['_id'] ??
+        subscription['id'] ??
+        subscription['subscriptionId'];
     final String? subscriptionId = subscriptionIdValue?.toString();
 
     if (subscriptionId == null) {
@@ -326,7 +329,8 @@ class _RenewalSubscriptionsScreenState
   }
 
   Widget _buildRenewalCard(Map<String, dynamic> subscription) {
-    final subscriptionId = (subscription['_id'] ?? subscription['id']).toString();
+    final subscriptionId = (subscription['_id'] ?? subscription['id'])
+        .toString();
     final pricingPolicy = subscription['pricingPolicyId'];
     final parkingLot = subscription['parkingLotId'];
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
@@ -364,10 +368,7 @@ class _RenewalSubscriptionsScreenState
                     color: Colors.orange.shade50,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.refresh,
-                    color: Colors.orange.shade600,
-                  ),
+                  child: Icon(Icons.refresh, color: Colors.orange.shade600),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -413,8 +414,7 @@ class _RenewalSubscriptionsScreenState
             _buildInfoRow(
               icon: Icons.calendar_today,
               label: 'Thời hạn',
-              value:
-                  '${_formatDate(startDate)} - ${_formatDate(endDate)}',
+              value: '${_formatDate(startDate)} - ${_formatDate(endDate)}',
             ),
             const SizedBox(height: 12),
             Container(
@@ -447,7 +447,9 @@ class _RenewalSubscriptionsScreenState
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: isProcessing ? null : () => _handleRenew(subscription),
+                onPressed: isProcessing
+                    ? null
+                    : () => _handleRenew(subscription),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange.shade600,
                   foregroundColor: Colors.white,
@@ -498,11 +500,7 @@ class _RenewalSubscriptionsScreenState
               color: Colors.green.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              size: 18,
-              color: Colors.green.shade700,
-            ),
+            child: Icon(icon, size: 18, color: Colors.green.shade700),
           ),
           const SizedBox(width: 12),
           Column(
@@ -542,4 +540,3 @@ class _RenewalSubscriptionsScreenState
     }
   }
 }
-
