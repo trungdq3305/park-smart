@@ -11,8 +11,8 @@ import { IsInt, IsOptional, Max, Min } from 'class-validator'
  */
 export class PaginationQueryDto {
   @ApiProperty({
-    description: 'Số lượng bản ghi mỗi trang',
-    example: 10,
+    description: 'Số trang hiện tại',
+    example: 1,
     type: Number,
   })
   @IsOptional()
@@ -22,8 +22,8 @@ export class PaginationQueryDto {
   page: number
 
   @ApiProperty({
-    description: 'Số trang hiện tại',
-    example: 1,
+    description: 'Số lượng bản ghi mỗi trang',
+    example: 10,
     type: Number,
   })
   @IsOptional()
