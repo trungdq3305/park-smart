@@ -541,6 +541,7 @@ export class SubscriptionService implements ISubscriptionService {
   async findAllByUserId(
     userId: string,
     paginationQuery: PaginationQueryDto,
+    status: string,
   ): Promise<{
     data: SubscriptionDetailResponseDto[]
     pagination: PaginationDto
@@ -550,10 +551,13 @@ export class SubscriptionService implements ISubscriptionService {
       userId,
       page,
       pageSize,
+      status,
     )
 
     if (data.data.length === 0) {
-      throw new ConflictException('Người dùng chưa có gói đăng ký nào')
+      throw new ConflictException(
+        `Không có gói thuê bao nào với trạng thái ${status}.`,
+      )
     }
 
     return {

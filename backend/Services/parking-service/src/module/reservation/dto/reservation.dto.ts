@@ -15,6 +15,7 @@ import {
 } from 'class-validator'
 import { IsAfterNow } from 'src/common/decorators/isAfterNow.decorator'
 import { IsAfterTime } from 'src/common/decorators/validTime.decorator'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 // (Giả định Enum này đã được cập nhật để bao gồm PENDING_PAYMENT)
 import { ReservationStatusEnum } from '../enums/reservation.enum'
@@ -376,3 +377,14 @@ export class CheckExtensionBodyDto {
  * DTO dùng cho Bước 2: Xác nhận gia hạn kèm Payment ID
  * (Kế thừa từ CheckExtensionBodyDto nên đã có sẵn additionalHours)
  */
+
+export class ReservationFilterDto extends PaginationQueryDto {
+  @ApiProperty({
+    enum: ReservationStatusEnum,
+    description: 'Lọc theo trạng thái đơn đặt chỗ',
+    example: ReservationStatusEnum.CONFIRMED,
+  })
+  @IsNotEmpty({ message: 'Trạng thái không được để trống' })
+  @IsEnum(ReservationStatusEnum)
+  status: ReservationStatusEnum
+}

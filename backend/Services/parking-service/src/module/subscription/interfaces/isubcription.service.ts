@@ -34,6 +34,7 @@ export interface ISubscriptionService {
   findAllByUserId(
     userId: string,
     paginationQuery: PaginationQueryDto,
+    status: string,
   ): Promise<{
     data: SubscriptionDetailResponseDto[]
     pagination: PaginationDto

@@ -41,8 +41,10 @@ import {
   ReservationAvailabilitySlotDto,
   ReservationDetailResponseDto,
   ReservationExtensionEligibilityResponseDto,
+  ReservationFilterDto,
   UpdateReservationStatusDto,
 } from './dto/reservation.dto' // <-- Thay đổi
+import { ReservationStatusEnum } from './enums/reservation.enum'
 import { IReservationService } from './interfaces/ireservation.service' // <-- Thay đổi
 
 @Controller('reservations') // <-- Thay đổi
@@ -267,15 +269,22 @@ export class ReservationController {
   })
   @ApiQuery({ name: 'page', required: true, type: Number })
   @ApiQuery({ name: 'pageSize', required: true, type: Number })
+  @ApiQuery({
+    name: 'status',
+    required: true,
+    enum: ReservationStatusEnum,
+    description: 'Lọc theo trạng thái đơn đặt chỗ',
+  })
   async findAllByUserId(
     @GetCurrentUserId() userId: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: ReservationFilterDto,
   ): Promise<PaginatedResponseDto<ReservationDetailResponseDto>> {
     // <-- Thay đổi
     const result = await this.reservationService.findAllByUserId(
       // <-- Thay đổi
       userId,
-      paginationQuery,
+      { page: paginationQuery.page, pageSize: paginationQuery.pageSize },
+      paginationQuery.status,
     )
     return {
       data: result.data,

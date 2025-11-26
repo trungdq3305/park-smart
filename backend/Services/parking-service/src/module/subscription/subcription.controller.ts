@@ -39,10 +39,12 @@ import {
   CreateSubscriptionDto,
   SubscriptionCancellationPreviewResponseDto,
   SubscriptionDetailResponseDto,
+  SubscriptionFilterDto,
   SubscriptionLogDto,
   SubscriptionRenewalEligibilityResponseDto,
   UpdateSubscriptionDto,
 } from './dto/subscription.dto' // <-- Thay đổi
+import { SubscriptionStatusEnum } from './enums/subscription.enum'
 import { ISubscriptionService } from './interfaces/isubcription.service' // <-- Thay đổi
 
 @Controller('subscriptions') // <-- Thay đổi
@@ -205,15 +207,17 @@ export class SubscriptionController {
   })
   @ApiQuery({ name: 'page', required: true, type: Number })
   @ApiQuery({ name: 'pageSize', required: true, type: Number })
+  @ApiQuery({ name: 'status', required: false, enum: SubscriptionStatusEnum })
   async findAllByUserId(
     @GetCurrentUserId() userId: string,
-    @Query() paginationQuery: PaginationQueryDto,
+    @Query() paginationQuery: SubscriptionFilterDto,
   ): Promise<PaginatedResponseDto<SubscriptionDetailResponseDto>> {
     // <-- Thay đổi
     const result = await this.subscriptionService.findAllByUserId(
       // <-- Thay đổi
       userId,
-      paginationQuery,
+      { page: paginationQuery.page, pageSize: paginationQuery.pageSize },
+      paginationQuery.status,
     )
     return {
       data: result.data,

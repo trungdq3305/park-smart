@@ -59,6 +59,7 @@ export interface IReservationService {
   findAllByUserId(
     userId: string,
     paginationQuery: PaginationQueryDto,
+    status: string,
   ): Promise<{
     data: ReservationDetailResponseDto[]
     pagination: PaginationDto
