@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-conversion */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
- 
- 
+
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
@@ -455,6 +454,7 @@ export class ReservationService implements IReservationService {
   async findAllByUserId(
     userId: string,
     paginationQuery: PaginationQueryDto,
+    status: string,
   ): Promise<{
     data: ReservationDetailResponseDto[]
     pagination: PaginationDto
@@ -464,6 +464,7 @@ export class ReservationService implements IReservationService {
       userId,
       page,
       pageSize,
+      status,
     )
 
     return {

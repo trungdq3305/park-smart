@@ -10,6 +10,7 @@ import {
   IsNotEmpty,
   IsOptional,
 } from 'class-validator'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 import { SubscriptionStatusEnum } from '../enums/subscription.enum'
 
@@ -327,4 +328,15 @@ export class SubscriptionCancellationPreviewResponseDto {
     example: 'Bạn hủy sát ngày nên chỉ được hoàn 50%.',
   })
   warningMessage: string
+}
+
+export class SubscriptionFilterDto extends PaginationQueryDto {
+  @ApiProperty({
+    enum: SubscriptionStatusEnum,
+    description: 'Lọc theo trạng thái gói thuê bao',
+    example: SubscriptionStatusEnum.ACTIVE,
+  })
+  @IsNotEmpty({ message: 'Trạng thái không được để trống' })
+  @IsEnum(SubscriptionStatusEnum)
+  status: SubscriptionStatusEnum
 }
