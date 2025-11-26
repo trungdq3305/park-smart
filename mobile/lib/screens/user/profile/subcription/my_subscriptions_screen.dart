@@ -276,7 +276,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       showBottomNav: false,
       body: Scaffold(
         appBar: AppBar(
-          title: const Text('Vé của tôi'),
+          title: const Text('Gói thuê bao đã đăng ký'),
           backgroundColor: Colors.green,
           foregroundColor: Colors.white,
           elevation: 0,
