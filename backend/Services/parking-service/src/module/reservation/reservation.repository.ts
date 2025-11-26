@@ -220,6 +220,11 @@ export class ReservationRepository implements IReservationRepository {
       },
       {
         path: 'pricingPolicyId',
+        populate: [
+          { path: 'basisId' },
+          { path: 'packageRateId' },
+          { path: 'tieredRateSetId' },
+        ],
       },
     ]) // Populate chi tiết bãi đỗ xe
     if (session) {
@@ -266,7 +271,11 @@ export class ReservationRepository implements IReservationRepository {
           },
           {
             path: 'pricingPolicyId',
-            select: 'name _id',
+            populate: [
+              { path: 'basisId' },
+              { path: 'packageRateId' },
+              { path: 'tieredRateSetId' },
+            ],
           },
         ])
         .sort({ createdAt: -1 }) // Mới nhất trước
