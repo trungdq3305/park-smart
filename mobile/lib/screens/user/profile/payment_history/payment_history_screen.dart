@@ -96,54 +96,20 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   Widget build(BuildContext context) {
     return AppScaffold(
       showBottomNav: false,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () => _loadPayments(isRefresh: true),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: _buildContent(),
-                ),
-              ),
-            ),
-          ],
+      body: Scaffold(
+        appBar: AppBar(
+          title: const Text('Lịch sử thanh toán'),
+          backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
+          elevation: 0,
         ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [const Color(0xFF2E7D32), const Color(0xFF66BB6A)],
+        body: RefreshIndicator(
+          onRefresh: () => _loadPayments(isRefresh: true),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: _buildContent(),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          const Expanded(
-            child: Text(
-              'Lịch sử thanh toán',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(width: 48),
-        ],
       ),
     );
   }
