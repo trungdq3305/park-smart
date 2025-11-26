@@ -39,11 +39,12 @@ class SubscriptionRenewalFlow {
     dynamic amountValue =
         packageRate?['price'] ??
         pricingPolicy?['price'] ??
-        subscription['price'];
-    final operatorId =
-        subscription['parkingLotOperatorId'] ??
-        subscription['operatorId'] ??
-        subscription['parkingLotId']?['parkingLotOperatorId'];
+        subscription['price'] ??
+        subscription['amountPaid'];
+    String? operatorId =
+        subscription['parkingLotOperatorId']?.toString() ??
+        subscription['operatorId']?.toString() ??
+        subscription['parkingLotId']?['parkingLotOperatorId']?.toString();
 
     if (entityId == null || amountValue == null) {
       final detail = await _fetchSubscriptionDetail(subscription);
@@ -54,7 +55,14 @@ class SubscriptionRenewalFlow {
         packageRate ??= _ensureMap(pricingPolicy?['packageRateId']);
         entityId ??= pricingPolicy?['_id'] ?? pricingPolicy?['id'];
         amountValue ??=
-            packageRate?['price'] ?? pricingPolicy?['price'] ?? detail['price'];
+            packageRate?['price'] ??
+            pricingPolicy?['price'] ??
+            detail['price'] ??
+            detail['amountPaid'];
+        operatorId ??=
+            detail['parkingLotOperatorId']?.toString() ??
+            detail['operatorId']?.toString() ??
+            detail['parkingLotId']?['parkingLotOperatorId']?.toString();
       }
     }
 
@@ -101,6 +109,9 @@ class SubscriptionRenewalFlow {
     }
 
     try {
+      if (operatorId == null || operatorId.isEmpty) {
+        throw Exception('Thiếu operatorId để tạo thanh toán.');
+      }
       final paymentResponse = await PaymentService.createPayment(
         entityId: entityId,
         type: 'Subscription',
