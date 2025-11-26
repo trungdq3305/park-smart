@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   HttpStatus,
   Inject,
   Param,
@@ -22,6 +23,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger'
 import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { UserToken } from 'src/common/decorators/getUserToken.decorator'
 import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
@@ -35,6 +37,7 @@ import { RolesGuard } from 'src/guard/role.guard'
 import {
   AvailabilitySlotDto,
   CreateSubscriptionDto,
+  SubscriptionCancellationPreviewResponseDto,
   SubscriptionDetailResponseDto,
   SubscriptionLogDto,
   SubscriptionRenewalEligibilityResponseDto,
@@ -341,6 +344,34 @@ export class SubscriptionController {
     }
   }
 
+  @Get(':id/cancel/preview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER) // Chỉ người dùng (Driver) mới được xem/hủy vé của mình
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bước 1: Xem trước thông tin hủy vé tháng',
+    description:
+      'Tính toán số tiền hoàn lại dựa trên chính sách thời gian ( >7 ngày, 3-7 ngày, <3 ngày). API này KHÔNG thực hiện hủy.',
+  })
+  @ApiParam({
+    type: 'string',
+    name: 'id',
+    description: 'ID của gói thuê bao cần xem trước hủy',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Thông tin chi tiết về chính sách hoàn tiền áp dụng cho vé này.',
+    type: SubscriptionCancellationPreviewResponseDto,
+  })
+  async getCancellationPreview(
+    @Param() params: IdDto, // Lấy ID từ URL
+    @GetCurrentUserId() userId: string,
+  ): Promise<SubscriptionCancellationPreviewResponseDto> {
+    return this.subscriptionService.getCancellationPreview(params, userId)
+  }
+
   @Patch('admin/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.ADMIN)
@@ -406,11 +437,13 @@ export class SubscriptionController {
   async cancelSubscription(
     @Param() id: IdDto,
     @GetCurrentUserId() userId: string,
+    @UserToken() token: string,
   ): Promise<ApiResponseDto<boolean>> {
     const isCancelled = await this.subscriptionService.cancelSubscription(
       // <-- Thay đổi
       id,
       userId,
+      token,
     )
     return {
       data: [isCancelled],
