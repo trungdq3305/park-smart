@@ -127,6 +127,9 @@ class ParkingLotSimpleDto {
 
   @Expose()
   name: string
+
+  @Expose()
+  parkingLotOperatorId: string
 }
 
 @Exclude()

@@ -128,6 +128,9 @@ class ReservedParkingLotDto {
 
   @Expose()
   name: string // Giả sử ParkingLot có 'name'
+
+  @Expose()
+  parkingLotOperatorId: string
 }
 
 /**

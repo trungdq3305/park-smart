@@ -328,7 +328,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
         .populate([
           {
             path: 'parkingLotId',
-            select: 'name _id',
+            select: 'parkingLotOperatorId name _id',
           },
           {
             path: 'pricingPolicyId',
