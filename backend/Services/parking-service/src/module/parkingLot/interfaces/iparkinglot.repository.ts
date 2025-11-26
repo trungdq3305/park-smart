@@ -67,6 +67,11 @@ export interface IParkingLotRepository {
   ): Promise<boolean>
 
   getLeasedCapacityRule(id: string, session?: ClientSession): Promise<number>
+
+  getParkingLotOperatorId(
+    id: string,
+    session?: ClientSession,
+  ): Promise<string | null>
 }
 
 export const IParkingLotRepository = Symbol('IParkingLotRepository')
