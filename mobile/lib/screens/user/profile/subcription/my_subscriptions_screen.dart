@@ -163,58 +163,6 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     _loadSubscriptions(reset: true);
   }
 
-  Widget _buildFilterChips() {
-    return SizedBox(
-      height: 48,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-        child: Row(
-          children: [
-            _buildStatusChip(
-              label: 'Tất cả',
-              statusCode: null,
-              color: Colors.green,
-            ),
-            const SizedBox(width: 8),
-            for (final status in _allStatuses) ...[
-              _buildStatusChip(
-                label: _getStatusText(status),
-                statusCode: status,
-                color: _getStatusColor(status),
-              ),
-              const SizedBox(width: 8),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusChip({
-    required String label,
-    required String? statusCode,
-    required Color color,
-  }) {
-    final bool isSelected = _selectedStatusFilter == statusCode;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      selectedColor: color,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.grey.shade700,
-        fontWeight: FontWeight.w600,
-      ),
-      backgroundColor: Colors.grey.shade100,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: isSelected ? color : Colors.grey.shade300),
-      ),
-      onSelected: (_) => _onFilterChanged(statusCode),
-    );
-  }
-
   String _formatDate(String? dateString) {
     if (dateString == null) return 'N/A';
     try {
@@ -271,6 +219,20 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   Future<void> _handleRenewSubscription(
     Map<String, dynamic> subscription,
   ) async {
+    final currentStatus =
+        (subscription['status'] as String?)?.toUpperCase() ?? '';
+    if (currentStatus != 'ACTIVE') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Chỉ có thể gia hạn khi gói đang ở trạng thái ĐANG HOẠT ĐỘNG.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
     final dynamic subscriptionIdValue =
         subscription['_id'] ??
         subscription['id'] ??
@@ -359,7 +321,13 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
 
     return Column(
       children: [
-        _buildFilterChips(),
+        SubscriptionFilterBar(
+          statuses: _allStatuses,
+          selectedStatus: _selectedStatusFilter,
+          getStatusText: _getStatusText,
+          getStatusColor: _getStatusColor,
+          onStatusChanged: _onFilterChanged,
+        ),
         Expanded(
           child: _subscriptions.isEmpty
               ? _buildEmptyState()
@@ -547,7 +515,9 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final dynamic subscriptionIdValue =
         subscription['_id'] ?? subscription['id'];
     final String? subscriptionId = subscriptionIdValue?.toString();
-    final isRenewalStatus = status?.toUpperCase() == 'RENEWAL';
+    final statusUpper = status?.toUpperCase() ?? '';
+    final isRenewalStatus = statusUpper == 'RENEWAL';
+    final isActiveStatus = statusUpper == 'ACTIVE';
     final isProcessingRenewal =
         subscriptionId != null &&
         _renewingSubscriptionIds.contains(subscriptionId);
@@ -560,6 +530,23 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
     final startDate = subscription['startDate'];
     final endDate = subscription['endDate'];
+
+    // Tính toán trạng thái "sắp hết hạn" cho gói ACTIVE (còn <= 3 ngày)
+    bool isNearExpiry = false;
+    if (isActiveStatus && endDate is String) {
+      final end = DateTime.tryParse(endDate);
+      if (end != null) {
+        final now = DateTime.now();
+        final diff = end.difference(now);
+        if (!diff.isNegative && diff.inDays <= 3) {
+          isNearExpiry = true;
+        }
+      }
+    }
+
+    final Color effectiveStatusColor = isNearExpiry
+        ? Colors.orange.shade600
+        : statusColor;
 
     return InkWell(
       onTap: () => _showQRCodeDialog(subscription),
@@ -593,8 +580,8 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    statusColor.withOpacity(0.15),
-                    statusColor.withOpacity(0.08),
+                    effectiveStatusColor.withOpacity(0.15),
+                    effectiveStatusColor.withOpacity(0.08),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -611,12 +598,12 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
+                      color: effectiveStatusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
                       Icons.confirmation_number,
-                      color: statusColor,
+                      color: effectiveStatusColor,
                       size: 24,
                     ),
                   ),
@@ -669,11 +656,11 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor,
+                      color: effectiveStatusColor,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: statusColor.withOpacity(0.3),
+                          color: effectiveStatusColor.withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -762,6 +749,40 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  // Nút gia hạn thêm cho gói ACTIVE sắp hết hạn
+                  if (isNearExpiry && isActiveStatus && !isRenewalStatus)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: isProcessingRenewal
+                            ? null
+                            : () => _handleRenewSubscription(subscription),
+                        icon: isProcessingRenewal
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.refresh),
+                        label: Text(
+                          isProcessingRenewal
+                              ? 'Đang xử lý...'
+                              : 'Gia hạn thêm',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade600,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -1238,6 +1259,73 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Thanh filter trạng thái subscription (hàng ngang, scroll được)
+class SubscriptionFilterBar extends StatelessWidget {
+  final List<String> statuses;
+  final String? selectedStatus;
+  final String Function(String?) getStatusText;
+  final Color Function(String?) getStatusColor;
+  final ValueChanged<String?> onStatusChanged;
+
+  const SubscriptionFilterBar({
+    super.key,
+    required this.statuses,
+    required this.selectedStatus,
+    required this.getStatusText,
+    required this.getStatusColor,
+    required this.onStatusChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Row(
+          children: [
+            _buildChip(label: 'Tất cả', statusCode: null, color: Colors.green),
+            const SizedBox(width: 8),
+            for (final status in statuses) ...[
+              _buildChip(
+                label: getStatusText(status),
+                statusCode: status,
+                color: getStatusColor(status),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChip({
+    required String label,
+    required String? statusCode,
+    required Color color,
+  }) {
+    final bool isSelected = selectedStatus == statusCode;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: color,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.grey.shade700,
+        fontWeight: FontWeight.w600,
+      ),
+      backgroundColor: Colors.grey.shade100,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: isSelected ? color : Colors.grey.shade300),
+      ),
+      onSelected: (_) => onStatusChanged(statusCode),
     );
   }
 }

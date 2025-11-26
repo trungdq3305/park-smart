@@ -97,14 +97,26 @@ class SubscriptionRenewalFlow {
       );
       print('✅ Renewal eligibility check passed');
     } catch (e) {
-      scaffoldMessenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            'Không thể gia hạn gói thuê bao: ${_extractErrorMessage(e)}',
+      final message = _extractErrorMessage(e);
+
+      // Hiển thị popup thay vì snackbar để người dùng dễ đọc
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text(
+            'Không thể gia hạn gói thuê bao',
+            style: TextStyle(fontWeight: FontWeight.w700),
           ),
-          backgroundColor: Colors.red,
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Đóng'),
+            ),
+          ],
         ),
       );
+
       return false;
     }
 
