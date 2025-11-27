@@ -18,5 +18,6 @@ namespace CoreService.Repository.Interfaces
 
         // Phương thức truy vấn nghiệp vụ
         Task<SubscriptionPlan?> GetDefaultActivePlanAsync();
+
     }
 }

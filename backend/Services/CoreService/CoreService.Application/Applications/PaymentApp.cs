@@ -804,7 +804,8 @@ namespace CoreService.Application.Applications
             PaymentType.Reservation,
             PaymentType.Subscription,
             PaymentType.ParkingLotSession,
-            PaymentType.OperatorCharge
+            PaymentType.OperatorCharge,
+            PaymentType.PenaltyCharge
         };
 
             // Các loại mặc định dành cho Operator Dashboard (tiền Driver trả)
@@ -1047,7 +1048,7 @@ namespace CoreService.Application.Applications
                 success_redirect_url = successUrl,
                 failure_redirect_url = failureUrl,
                 should_send_email = false,
-                invoice_duration = 600,
+                invoice_duration = 100000000,
                 // Chuyển toàn bộ tiền về Master Account
                 fees = new[]
                 {
