@@ -71,6 +71,14 @@ export const accountAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['account'],
     }),
+    accountDetails: builder.query({
+      query: (id: string) => ({
+        url: `/core/accounts/${id}`,
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['account'],
+    }),
   }),
 })
 
@@ -83,4 +91,5 @@ export const {
   useCreateAccountMutation,
   useGetInactiveAccountQuery,
   useConfirmOperatorMutation,
+  useAccountDetailsQuery,
 } = accountAPI

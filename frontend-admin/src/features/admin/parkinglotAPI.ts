@@ -11,7 +11,16 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['parkingLot'],
     }),
+    parkingLotDetails: builder.query({
+      query: ({parkingLotOperatorId,status,type}) => ({
+        url: `/parking/parking-lots/requests-by-operator/${parkingLotOperatorId}`,
+        method: 'GET',
+        params: { status, type },
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['parkingLot'],
+    }),
   }),
 })
 
-export const { useGetParkingLotsAdminQuery } = parkingLotAPI
+export const { useGetParkingLotsAdminQuery, useParkingLotDetailsQuery } = parkingLotAPI

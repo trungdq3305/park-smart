@@ -1,7 +1,8 @@
 import React from 'react'
 import { Modal, Button, Descriptions, Tag, message } from 'antd'
 import type { Account } from '../../types/Account'
-import { useConfirmOperatorMutation } from '../../features/admin/accountAPI'
+import { useAccountDetailsQuery, useConfirmOperatorMutation } from '../../features/admin/accountAPI'
+import { useParkingLotDetailsQuery } from '../../features/admin/parkinglotAPI'
 
 interface AccountDetailsModalProps {
   open: boolean
@@ -11,7 +12,11 @@ interface AccountDetailsModalProps {
 
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
   const [confirmOperator, { isLoading: isConfirmingOperator }] = useConfirmOperatorMutation()
-
+  const { data: accountDetails } = useAccountDetailsQuery(account?._id || '')
+  const operatorId =accountDetails?.data?.operatorDetail?._id || ''
+  const { data: parkingLotDetails } = useParkingLotDetailsQuery({parkingLotOperatorId: operatorId, status: 'PENDING', type: 'CREATE'})
+const parkingLotDetailsData = parkingLotDetails?.data?.[0] || []
+console.log(parkingLotDetailsData)
   const handleConfirmOperator = async () => {
     if (account?._id) {
       await confirmOperator(account._id).unwrap()

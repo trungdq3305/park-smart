@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Card, Col, Empty, Row, Skeleton, Typography } from 'antd'
+import { Card, Col, Empty, Row, Skeleton, Typography, Button } from 'antd'
 import { skipToken } from '@reduxjs/toolkit/query'
 import {
   CarOutlined,
   CheckCircleOutlined,
   ThunderboltOutlined,
   UserOutlined,
+  EditOutlined,
 } from '@ant-design/icons'
-import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parkingLotAPI'
+import { useGetParkingLotsOperatorQuery, useUpdateParkingLotRequestMutation } from '../../../features/operator/parkingLotAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -20,6 +21,7 @@ import ParkingLotDetails from './components/ParkingLotDetails'
 import StatCard from './components/StatCard'
 import PricingPolicyList from './components/PricingPolicyList'
 import CreatePricingPolicyModal from './components/CreatePricingPolicyModal'
+import UpdateParkingLotModal from './components/UpdateParkingLotModal'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 import type { Basis } from '../../../types/Basis'
 import { useGetBasisQuery } from '../../../features/operator/basisAPI'
@@ -54,8 +56,10 @@ const OperatorParkingLot: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedPolicyForEdit, setSelectedPolicyForEdit] = useState<PricingPolicyLink | null>(null)
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
 
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
+  const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] = useUpdateParkingLotRequestMutation()
   const parkingLot = data?.data?.[0] ?? null
   const { data: pricingPoliciesData, isLoading: isPricingLoading } =
     useGetPricingPoliciesOperatorQuery<PricingPoliciesListResponse>(
@@ -102,13 +106,16 @@ const OperatorParkingLot: React.FC = () => {
 
   const handleEditPricingPolicy = async (values: any) => {
     try {
+
+            // Tự động disable pricing policy cũ bằng cách delete
+            if (selectedPolicyForEdit?._id) {
+              await deletePricingPolicyLink(selectedPolicyForEdit._id).unwrap()
+            }
+
       // Tạo mới pricing policy với dữ liệu đã chỉnh sửa
       await createPricingPolicyLink(values).unwrap()
 
-      // Tự động disable pricing policy cũ bằng cách delete
-      if (selectedPolicyForEdit?._id) {
-        await deletePricingPolicyLink(selectedPolicyForEdit._id).unwrap()
-      }
+
 
       message.success('Cập nhật chính sách giá thành công')
       setIsEditModalOpen(false)
@@ -121,6 +128,21 @@ const OperatorParkingLot: React.FC = () => {
   const handleOpenEditModal = (policy: PricingPolicyLink) => {
     setSelectedPolicyForEdit(policy)
     setIsEditModalOpen(true)
+  }
+
+  const handleUpdateParkingLot = async (values: any) => {
+    if (!parkingLot?._id) return
+
+    try {
+      await updateParkingLotRequest({
+        parkingLotId: parkingLot._id,
+        updateRequestDto: values,
+      }).unwrap()
+      message.success('Gửi yêu cầu cập nhật thành công!')
+      setIsUpdateModalOpen(false)
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Gửi yêu cầu cập nhật thất bại')
+    }
   }
 
   const summary = useMemo(() => {
@@ -175,6 +197,15 @@ const OperatorParkingLot: React.FC = () => {
           </Title>
           <Text type="secondary">Theo dõi hiệu suất vận hành và tình trạng bãi đỗ của bạn</Text>
         </div>
+        {parkingLot && (
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => setIsUpdateModalOpen(true)}
+          >
+            Gửi yêu cầu cập nhật
+          </Button>
+        )}
       </div>
 
       <Row gutter={[16, 16]} className="overview-grid">
@@ -236,6 +267,13 @@ const OperatorParkingLot: React.FC = () => {
             loading={isCreatePricingLoading || isDeletePricingLoading}
             initialData={selectedPolicyForEdit}
             isEditMode={true}
+          />
+          <UpdateParkingLotModal
+            open={isUpdateModalOpen}
+            onCancel={() => setIsUpdateModalOpen(false)}
+            onSubmit={handleUpdateParkingLot}
+            parkingLot={parkingLot}
+            loading={isUpdateParkingLotRequestLoading}
           />
         </>
       )}
