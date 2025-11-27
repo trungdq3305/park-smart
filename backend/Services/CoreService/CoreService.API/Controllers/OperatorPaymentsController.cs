@@ -48,26 +48,6 @@ namespace CoreService.API.Controllers
         public async Task<IActionResult> GetTotals(string operatorId, DateTime? from, DateTime? to)
             => Ok(await _payment.GetOperatorTotalsAsync(operatorId, from, to));
 
-        [HttpPost("parking-lot-fee-invoice")]
-        public async Task<IActionResult> CreateSubscriptionInvoice(
-        string operatorId,
-        [FromBody] SubscriptionInvoiceDto dto)
-        {
-
-
-            var pr = await _payment.CreateSubscriptionInvoiceAsync(
-                operatorId,
-                dto.Amount,
-                dto.DueDate); // Truyền DueDate
-
-            return Ok(new
-            {
-                pr.XenditInvoiceId,
-                pr.Status,
-                pr.CheckoutUrl
-            });
-        }
-
         // Endpoint 2: Lấy danh sách hóa đơn chưa thanh toán (Báo đỏ)
         //[HttpGet("subscriptions/pending")]
         //[Authorize(Roles = "Operator,Admin")]
