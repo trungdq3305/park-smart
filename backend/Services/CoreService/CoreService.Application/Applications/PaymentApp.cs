@@ -964,6 +964,136 @@ namespace CoreService.Application.Applications
 
             return statusCounts;
         }
+
+        // Đây là hàm được gọi bởi Scheduler và Onboarding
+        public async Task<PaymentRecord> CreateInvoiceAsync(
+            string operatorId,
+            long amount,
+            DateTime dueDate,
+            PaymentType type,
+            DateTime invoiceMonth, // <-- Trường mới: Tháng tính phí
+            string? relatedInvoiceId = null) // <-- Trường mới: Dùng cho PenaltyCharge
+        {
+            // Dùng lại logic từ CreateSubscriptionInvoiceAsync nhưng với tham số linh hoạt hơn
+
+            string externalIdPrefix;
+            string description;
+
+            // Đảm bảo chỉ chấp nhận OPR và PEN
+            switch (type)
+            {
+                case PaymentType.OperatorCharge:
+                    externalIdPrefix = "OPR";
+                    description = $"Subscription Fee for {operatorId} ({invoiceMonth:yyyy-MM})";
+                    break;
+                case PaymentType.PenaltyCharge:
+                    externalIdPrefix = "PEN";
+                    description = $"Late Payment Penalty for Invoice #{relatedInvoiceId}";
+                    break;
+                default:
+                    throw new ArgumentException("Loại thanh toán định kỳ không hợp lệ.");
+            }
+
+            // ... (logic kiểm tra sub-account, tạo externalId, tạo PaymentRecord ban đầu) ...
+
+            var acc = await _accRepo.GetByOperatorAsync(operatorId)
+                                 ?? throw new ApiException("Operator chưa có tài khoản thanh toán");
+            var account = await _accountApp.GetByOperatorIdAsync(operatorId) ?? throw new ApiException("không tìm thấy tài khoản của operator");
+            var accountId = account.Data.Id;
+
+            // Bỏ qua logic kiểm tra ACTIVE/REGISTERED ở đây (để tiết kiệm code, nhưng nên giữ trong code thật)
+
+            // **BƯỚC 2a: Tạo PaymentRecord ban đầu (Lưu trước để lấy ID)**
+            var externalId = $"{externalIdPrefix}-{operatorId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            var baseReturn = "https://parksmart.vn/pay-result";
+
+            var pr = new PaymentRecord
+            {
+                // ... (các trường cơ bản)
+                OperatorId = operatorId,
+                ExternalId = externalId,
+                Amount = amount,
+                XenditUserId = acc.XenditUserId,
+                CreatedBy = accountId,
+                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+
+                // GÁN LOẠI THANH TOÁN & ID LIÊN QUAN
+                PaymentType = type,
+                SubscriptionId = operatorId, // Dùng OperatorId làm SubscriptionId
+                DueDate = dueDate,
+
+                // TRƯỜNG MỚI ĐỂ HỖ TRỢ LOGIC SCHEDULER
+                InvoiceMonth = invoiceMonth, // Lưu tháng tính phí
+                RelatedInvoiceId = relatedInvoiceId, // Lưu ID hóa đơn chính nếu là hóa đơn phạt
+
+                Status = "CREATED",
+            };
+            await _payRepo.AddAsync(pr);
+            var paymentId = pr.Id;
+
+            // **BƯỚC 2b: Tạo URL và Payload Xendit**
+            // ... (Logic tạo successUrl và failureUrl, nhớ THÊM &type={type} và &paymentId={paymentId}) ...
+
+            var successUrl = $"{baseReturn}?result=success&entityId={Uri.EscapeDataString(operatorId)}&operatorId={Uri.EscapeDataString(operatorId)}&externalId={Uri.EscapeDataString(externalId)}&accountId={Uri.EscapeDataString(accountId)}&paymentId={Uri.EscapeDataString(paymentId)}&type={type}";
+            var failureUrl = $"{baseReturn}?result=failure&entityId={Uri.EscapeDataString(operatorId)}&operatorId={Uri.EscapeDataString(operatorId)}&externalId={Uri.EscapeDataString(externalId)}&accountId={Uri.EscapeDataString(accountId)}&paymentId={Uri.EscapeDataString(paymentId)}&type={type}";
+
+            // Payload Xendit. Phí chuyển về Master Account (Master Account Fee)
+            var body = new
+            {
+                external_id = externalId,
+                amount = amount,
+                currency = "VND",
+                description = description,
+                success_redirect_url = successUrl,
+                failure_redirect_url = failureUrl,
+                should_send_email = false,
+                invoice_duration = 600,
+                // Chuyển toàn bộ tiền về Master Account
+                fees = new[]
+                {
+            new { type = "TRANSFER", value = amount }
+        }
+            };
+
+            // ... (Logic gọi Xendit API, kiểm tra lỗi, parse JSON) ...
+            var res = await _x.PostAsync("/v2/invoices", body, forUserId: acc.XenditUserId);
+            var json = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+                throw new ApiException($"Xendit tạo invoice lỗi: {(int)res.StatusCode} {res.ReasonPhrase}. Body: {json}");
+
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var invoiceId = doc.RootElement.GetProperty("id").GetString();
+            var status = doc.RootElement.GetProperty("status").GetString();
+            var url = doc.RootElement.GetProperty("invoice_url").GetString();
+
+            // 3. Cập nhật PaymentRecord trong DB
+            pr.XenditInvoiceId = invoiceId;
+            pr.Status = status;
+            pr.CheckoutUrl = url;
+            await _payRepo.UpdateAsync(pr);
+
+            return pr;
+        }
+
+        public async Task<PaymentRecord> CreatePenaltyInvoiceAsync(
+    string operatorId,
+    long penaltyAmount,
+    DateTime dueDate,
+    PaymentRecord overdueMainInvoice)
+        {
+            var invoiceMonth = overdueMainInvoice.InvoiceMonth ?? overdueMainInvoice.CreatedAt;
+            var relatedInvoiceId = overdueMainInvoice.Id;
+
+            return await CreateInvoiceAsync(
+                operatorId,
+                penaltyAmount,
+                dueDate,
+                PaymentType.PenaltyCharge,
+                invoiceMonth.Date,
+                relatedInvoiceId
+            );
+        }
     }
     
     }
