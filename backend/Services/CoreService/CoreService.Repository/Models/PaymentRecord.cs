@@ -15,6 +15,11 @@ namespace CoreService.Repository.Models
         public string Id { get; set; }
         [BsonRepresentation(BsonType.String)] // Lưu Enum dưới dạng String trong MongoDB
         public PaymentType PaymentType { get; set; }
+        public DateTime? InvoiceMonth { get; set; }
+
+        // ID của hóa đơn chính bị quá hạn. Chỉ có giá trị khi Type = PenaltyCharge.
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? RelatedInvoiceId { get; set; }
 
         // --- CÁC TRƯỜNG ĐỊNH DANH ĐỐI TƯỢNG (Chỉ một trong 3 trường này được điền) ---
 
@@ -54,6 +59,9 @@ namespace CoreService.Repository.Models
         ParkingLotSession, // Phiên đỗ xe
 
         [BsonElement("OPR")]
-        OperatorCharge // Phí nhà điều hành
+        OperatorCharge, // Phí nhà điều hành
+
+        [BsonElement("PEN")]
+        PenaltyCharge
     }
 }
