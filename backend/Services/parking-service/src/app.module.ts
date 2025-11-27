@@ -16,6 +16,7 @@ import { AddressModule } from './module/address/address.module'
 import { AnnouncementModule } from './module/announcement/announcement.module'
 import { BasisModule } from './module/basis/basis.module'
 import { BookingInventoryModule } from './module/bookingInventory/bookingInventory.module'
+import { DashboardModule } from './module/dasboard/dashboard.module'
 import { GuestCardModule } from './module/guestCard/guestCard.module'
 import { NotificationModule } from './module/notification/notification.module'
 import { PackageRateModule } from './module/packageRate/packageRate.module'
@@ -72,6 +73,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     ReservationModule,
     ParkingLotSessionModule,
     GuestCardModule,
+    DashboardModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
