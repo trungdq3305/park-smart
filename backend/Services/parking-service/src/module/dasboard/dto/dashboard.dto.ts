@@ -72,6 +72,9 @@ export class ReportSummaryDto {
 
   @ApiProperty()
   revenueBySubscription: number
+
+  @ApiProperty({ description: 'Thời gian đỗ xe trung bình (phút)' })
+  avgParkingDurationMinutes: number
 }
 
 // Object trả về cuối cùng

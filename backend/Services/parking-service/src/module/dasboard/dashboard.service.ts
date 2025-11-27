@@ -1,27 +1,26 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 /* eslint-disable @typescript-eslint/restrict-plus-operands */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import 'dayjs/locale/vi' // Import locale trực tiếp
+import 'dayjs/locale/vi'
 
 import { ConflictException, Injectable, Logger } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Cron } from '@nestjs/schedule'
-// --- FIX IMPORT DAYJS ---
 import * as dayjs from 'dayjs'
 import * as isoWeek from 'dayjs/plugin/isoWeek'
 import * as quarterOfYear from 'dayjs/plugin/quarterOfYear'
 import * as timezone from 'dayjs/plugin/timezone'
 import * as utc from 'dayjs/plugin/utc'
-import mongoose, { Model } from 'mongoose'
+import mongoose, { Model, PipelineStage } from 'mongoose'
 
-// Kích hoạt plugin NGAY SAU KHI IMPORT
 dayjs.extend(utc)
 dayjs.extend(timezone)
 dayjs.extend(isoWeek)
 dayjs.extend(quarterOfYear)
-dayjs.locale('vi') // Set locale toàn cục
+dayjs.locale('vi')
 dayjs.tz.setDefault('Asia/Ho_Chi_Minh')
 
 import { ParkingLot } from '../parkingLot/schemas/parkingLot.schema'
@@ -51,13 +50,11 @@ export class DashboardService implements IDashboardService {
     @InjectModel(Reservation.name) private reservationModel: Model<Reservation>,
   ) {}
 
-  // Hàm private tính toán dữ liệu Real-time cho ngày hôm nay
   private async getRealTimeStatsForToday(parkingLotId: string) {
     const startOfToday = dayjs().startOf('day').toDate()
     const now = new Date()
     const lotIdObj = new mongoose.Types.ObjectId(parkingLotId)
 
-    // 1. Tính doanh thu Vé tháng hôm nay (Subscription)
     const subStats = await this.subscriptionModel.aggregate([
       {
         $match: {
@@ -74,7 +71,6 @@ export class DashboardService implements IDashboardService {
       },
     ])
 
-    // 2. Tính doanh thu Đặt chỗ hôm nay (Reservation)
     const resStats = await this.reservationModel.aggregate([
       {
         $match: {
@@ -92,7 +88,6 @@ export class DashboardService implements IDashboardService {
       },
     ])
 
-    // 3. Tính Vãng lai & Check-in/out hôm nay (Session)
     const sessionStats = await this.sessionModel.aggregate([
       {
         $match: {
@@ -108,6 +103,9 @@ export class DashboardService implements IDashboardService {
             $sum: { $add: ['$amountPaid', '$amountPayAfterCheckOut'] },
           },
           totalCheckOuts: { $sum: 1 },
+          avgDuration: {
+            $avg: { $subtract: ['$checkOutTime', '$checkInTime'] },
+          },
         },
       },
     ])
@@ -117,7 +115,8 @@ export class DashboardService implements IDashboardService {
       checkInTime: { $gte: startOfToday, $lte: now },
     })
 
-    // 4. Tổng hợp lại thành object giống cấu trúc ParkingDailyReport
+    const avgDurationMs = sessionStats[0]?.avgDuration ?? 0
+
     return {
       reportDate: startOfToday,
       totalRevenue:
@@ -130,22 +129,21 @@ export class DashboardService implements IDashboardService {
         walkIn: sessionStats[0]?.totalWalkInRevenue ?? 0,
       },
       totalCheckIns: checkInCount,
+      avgParkingDurationMinutes: Math.round(avgDurationMs / 60000),
       totalCheckOuts: sessionStats[0]?.totalCheckOuts ?? 0,
       totalReservationsCreated: resStats[0]?.count ?? 0,
       newSubscriptions: subStats[0]?.count ?? 0,
+      isRealTime: true,
     }
   }
 
-  // Chạy lúc 00:05 mỗi ngày
   @Cron('5 0 * * *')
   async generateDailyReports() {
     this.logger.log('📊 Bắt đầu tổng hợp báo cáo doanh thu...')
 
-    // 1. Xác định khung thời gian "Hôm qua"
     const startOfDay = dayjs().tz().subtract(1, 'day').startOf('day').toDate()
     const endOfDay = dayjs().tz().subtract(1, 'day').endOf('day').toDate()
 
-    // 2. Lấy danh sách bãi xe
     const parkingLots = await this.parkingLotModel
       .find()
       .select('_id totalCapacity')
@@ -165,7 +163,6 @@ export class DashboardService implements IDashboardService {
   private async processOneParkingLot(lot: any, start: Date, end: Date) {
     const lotId = lot._id.toString()
 
-    // --- A. TÍNH DOANH THU VÉ THÁNG (SUBSCRIPTION) ---
     const subStats = await this.subscriptionModel.aggregate([
       {
         $match: {
@@ -184,7 +181,6 @@ export class DashboardService implements IDashboardService {
     const subRevenue: number = subStats[0]?.totalAmount ?? 0
     const subCount: number = subStats[0]?.count ?? 0
 
-    // --- B. TÍNH DOANH THU ĐẶT CHỖ (RESERVATION) ---
     const resStats = await this.reservationModel.aggregate([
       {
         $match: {
@@ -204,7 +200,6 @@ export class DashboardService implements IDashboardService {
     const resRevenue: number = resStats[0]?.totalAmount ?? 0
     const resCount: number = resStats[0]?.count ?? 0
 
-    // --- C. TÍNH DOANH THU VÃNG LAI & LƯU LƯỢNG (SESSION) ---
     const sessionStats = await this.sessionModel.aggregate([
       {
         $match: {
@@ -236,7 +231,6 @@ export class DashboardService implements IDashboardService {
     const checkOutCount: number = sessionStats[0]?.totalCheckOuts ?? 0
     const avgDurationMs: number = sessionStats[0]?.avgDuration ?? 0
 
-    // --- D. TÍNH GIỜ CAO ĐIỂM (PEAK HOUR) ---
     const peakHourStats = await this.sessionModel.aggregate([
       {
         $match: {
@@ -259,7 +253,6 @@ export class DashboardService implements IDashboardService {
       { $limit: 1 },
     ])
 
-    // --- E. LƯU VÀO DB REPORT ---
     await this.reportModel.updateOne(
       { parkingLotId: lotId, reportDate: start },
       {
@@ -318,33 +311,48 @@ export class DashboardService implements IDashboardService {
         startDate = date.startOf('isoWeek')
         endDate = date.endOf('isoWeek')
         groupByFormat = {
-          $dateToString: { format: '%Y-%m-%d', date: '$reportDate' },
+          $dateToString: {
+            format: '%Y-%m-%d',
+            date: '$reportDate',
+            timezone: 'Asia/Ho_Chi_Minh',
+          },
         }
         break
       case ReportTimeRangeEnum.MONTH:
         startDate = date.startOf('month')
         endDate = date.endOf('month')
         groupByFormat = {
-          $dateToString: { format: '%Y-%m-%d', date: '$reportDate' },
+          $dateToString: {
+            format: '%Y-%m-%d',
+            date: '$reportDate',
+            timezone: 'Asia/Ho_Chi_Minh',
+          },
         }
         break
       case ReportTimeRangeEnum.QUARTER:
         startDate = date.startOf('quarter')
         endDate = date.endOf('quarter')
         groupByFormat = {
-          $dateToString: { format: '%Y-%m', date: '$reportDate' },
+          $dateToString: {
+            format: '%Y-%m',
+            date: '$reportDate',
+            timezone: 'Asia/Ho_Chi_Minh',
+          },
         }
         break
       case ReportTimeRangeEnum.YEAR:
         startDate = date.startOf('year')
         endDate = date.endOf('year')
         groupByFormat = {
-          $dateToString: { format: '%Y-%m', date: '$reportDate' },
+          $dateToString: {
+            format: '%Y-%m',
+            date: '$reportDate',
+            timezone: 'Asia/Ho_Chi_Minh',
+          },
         }
         break
     }
 
-    // A. Lấy dữ liệu Lịch sử (Chỉ lấy TRƯỚC hôm nay)
     const aggregation = [
       {
         $match: {
@@ -352,12 +360,14 @@ export class DashboardService implements IDashboardService {
           reportDate: {
             $gte: startDate.toDate(),
             $lte: endDate.toDate(),
+            $lt: today.toDate(),
           },
         },
       },
       {
         $group: {
           _id: groupByFormat ?? '$_id',
+          // Các chỉ số cộng dồn bình thường
           chartRevenue: { $sum: '$totalRevenue' },
           chartCheckIns: { $sum: '$totalCheckIns' },
           labelDate: { $first: '$reportDate' },
@@ -368,27 +378,56 @@ export class DashboardService implements IDashboardService {
           sumRevWalkIn: { $sum: '$revenueBreakdown.walkIn' },
           sumRevRes: { $sum: '$revenueBreakdown.reservation' },
           sumRevSub: { $sum: '$revenueBreakdown.subscription' },
+
+          // 👇 SỬA 1: Cộng dồn tổng số lượt xe ra
+          totalCheckOuts: { $sum: '$totalCheckOuts' },
+
+          // 👇 SỬA 2: Tính tổng số phút tích lũy (Avg * Count) của từng ngày
+          accumulatedDurationMinutes: {
+            $sum: {
+              $multiply: [
+                { $ifNull: ['$avgParkingDurationMinutes', 0] },
+                { $ifNull: ['$totalCheckOuts', 0] },
+              ],
+            },
+          },
+        },
+      },
+      // 👇 SỬA 3: Thêm bước tính toán cuối cùng để chia lại
+      {
+        $addFields: {
+          avgParkingDurationMinutes: {
+            $cond: [
+              { $eq: ['$totalCheckOuts', 0] },
+              0,
+              // Công thức: Tổng phút tích lũy / Tổng xe ra -> Làm tròn
+              {
+                $round: [
+                  {
+                    $divide: ['$accumulatedDurationMinutes', '$totalCheckOuts'],
+                  },
+                  0,
+                ],
+              },
+            ],
+          },
         },
       },
       { $sort: { _id: 1 } },
     ]
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const historicalData = await this.reportModel.aggregate(aggregation as any)
+    const historicalData = await this.reportModel.aggregate(
+      aggregation as PipelineStage[],
+    )
 
-    // B. Kiểm tra và Gộp dữ liệu Hôm nay (Real-time)
     const combinedData = [...historicalData]
 
-    // B. Logic gộp Realtime
     if (
       date.isSame(today, 'day') ||
       (startDate.isBefore(today) && endDate.isAfter(today))
     ) {
       const todayStats = await this.getRealTimeStatsForToday(parkingLotId)
 
-      // 1. Xác định ID định danh cho "Hôm nay" dựa trên timeRange
-      // - Nếu xem NĂM/QUÝ: ID là "YYYY-MM" (để khớp với historicalData)
-      // - Nếu xem THÁNG/TUẦN: ID là "YYYY-MM-DD"
       let todayGroupId: string | null = null
 
       if (
@@ -397,25 +436,20 @@ export class DashboardService implements IDashboardService {
       ) {
         todayGroupId = today.format('YYYY-MM')
       } else if (timeRange === ReportTimeRangeEnum.DAY) {
-        todayGroupId = null // Xem ngày thì ko quan trọng group ID
+        todayGroupId = null
       } else {
         todayGroupId = today.format('YYYY-MM-DD')
       }
 
-      // 2. Tìm xem trong historicalData đã có ID này chưa
       const existingItemIndex = combinedData.findIndex(
         (item) => item._id === todayGroupId,
       )
 
       if (existingItemIndex > -1) {
-        // ==> CASE 1: ĐÃ CÓ (Ví dụ đã có tháng 11 trong lịch sử) -> CỘNG DỒN
         const existing = combinedData[existingItemIndex]
 
-        // Cộng dồn các chỉ số Chart
         existing.chartRevenue += todayStats.totalRevenue
         existing.chartCheckIns += todayStats.totalCheckIns
-
-        // Cộng dồn các chỉ số Summary (để tí nữa reduce cho đúng)
         existing.sumRevenue += todayStats.totalRevenue
         existing.sumCheckIns += todayStats.totalCheckIns
         existing.sumReservations += todayStats.totalReservationsCreated
@@ -424,10 +458,22 @@ export class DashboardService implements IDashboardService {
         existing.sumRevRes += todayStats.revenueBreakdown.reservation
         existing.sumRevSub += todayStats.revenueBreakdown.subscription
 
-        // Cập nhật lại vào mảng
+        // Tính lại Weighted Average cho Duration
+        const oldCheckOuts = existing.totalCheckOuts ?? 0
+        const newCheckOuts = todayStats.totalCheckOuts ?? 0
+        const oldAvg = existing.avgParkingDurationMinutes ?? 0
+        const newAvg = todayStats.avgParkingDurationMinutes
+        const totalCheckOuts = oldCheckOuts + newCheckOuts
+
+        if (totalCheckOuts > 0) {
+          existing.avgParkingDurationMinutes = Math.round(
+            (oldAvg * oldCheckOuts + newAvg * newCheckOuts) / totalCheckOuts,
+          )
+        }
+        existing.totalCheckOuts = totalCheckOuts
+
         combinedData[existingItemIndex] = existing
       } else {
-        // ==> CASE 2: CHƯA CÓ (Tháng mới hoặc Ngày mới) -> PUSH MỚI
         const todayFormatted = {
           _id: todayGroupId,
           chartRevenue: todayStats.totalRevenue,
@@ -440,22 +486,53 @@ export class DashboardService implements IDashboardService {
           sumRevWalkIn: todayStats.revenueBreakdown.walkIn,
           sumRevRes: todayStats.revenueBreakdown.reservation,
           sumRevSub: todayStats.revenueBreakdown.subscription,
+          avgParkingDurationMinutes: todayStats.avgParkingDurationMinutes,
+          totalCheckOuts: todayStats.totalCheckOuts,
         }
         combinedData.push(todayFormatted)
       }
     }
 
-    // C. MAP DỮ LIỆU RA DTO
     const summary = combinedData.reduce(
-      (acc, curr) => ({
-        totalRevenue: acc.totalRevenue + curr.sumRevenue,
-        totalCheckIns: acc.totalCheckIns + curr.sumCheckIns,
-        totalReservations: acc.totalReservations + curr.sumReservations,
-        newSubscriptions: acc.newSubscriptions + curr.sumNewSubs,
-        revenueByWalkIn: acc.revenueByWalkIn + curr.sumRevWalkIn,
-        revenueByReservation: acc.revenueByReservation + curr.sumRevRes,
-        revenueBySubscription: acc.revenueBySubscription + curr.sumRevSub,
-      }),
+      (acc, curr) => {
+        const totalRevenue = acc.totalRevenue + (curr.sumRevenue ?? 0)
+        const totalCheckIns = acc.totalCheckIns + (curr.sumCheckIns ?? 0)
+        const totalReservations =
+          acc.totalReservations + (curr.sumReservations ?? 0)
+        const newSubscriptions = acc.newSubscriptions + (curr.sumNewSubs ?? 0)
+        const revenueByWalkIn = acc.revenueByWalkIn + (curr.sumRevWalkIn ?? 0)
+        const revenueByReservation =
+          acc.revenueByReservation + (curr.sumRevRes ?? 0)
+        const revenueBySubscription =
+          acc.revenueBySubscription + (curr.sumRevSub ?? 0)
+
+        const accCheckOuts = acc.totalCheckOuts ?? 0
+        const currCheckOuts = curr.totalCheckOuts ?? 0
+        const accAvg = acc.avgParkingDurationMinutes ?? 0
+        const currAvg = curr.avgParkingDurationMinutes ?? 0
+
+        const newTotalCheckOuts = accCheckOuts + currCheckOuts
+        let newAvgDuration = 0
+
+        if (newTotalCheckOuts > 0) {
+          newAvgDuration = Math.round(
+            (accAvg * accCheckOuts + currAvg * currCheckOuts) /
+              newTotalCheckOuts,
+          )
+        }
+
+        return {
+          totalRevenue,
+          totalCheckIns,
+          totalReservations,
+          newSubscriptions,
+          revenueByWalkIn,
+          revenueByReservation,
+          revenueBySubscription,
+          totalCheckOuts: newTotalCheckOuts,
+          avgParkingDurationMinutes: newAvgDuration,
+        }
+      },
       {
         totalRevenue: 0,
         totalCheckIns: 0,
@@ -464,21 +541,34 @@ export class DashboardService implements IDashboardService {
         revenueByWalkIn: 0,
         revenueByReservation: 0,
         revenueBySubscription: 0,
+        totalCheckOuts: 0,
+        avgParkingDurationMinutes: 0,
       },
     )
 
     const chartData = combinedData.map((item) => {
       let label = ''
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const d = dayjs(item.labelDate)
 
-      if (
-        timeRange === ReportTimeRangeEnum.YEAR ||
-        timeRange === ReportTimeRangeEnum.QUARTER
-      ) {
-        label = `Tháng ${d.format('M')}`
+      // item._id là chuỗi Group Key (VD: "2025-11-27" hoặc "2025-11")
+      // Dùng nó để format sẽ chuẩn hơn là dùng labelDate (vốn là Date object có giờ giấc)
+
+      if (item._id) {
+        const d = dayjs(item._id) // Parse chuỗi YYYY-MM-DD hoặc YYYY-MM
+
+        if (
+          timeRange === ReportTimeRangeEnum.YEAR ||
+          timeRange === ReportTimeRangeEnum.QUARTER
+        ) {
+          label = `Tháng ${d.format('M')}`
+        } else if (timeRange === ReportTimeRangeEnum.DAY) {
+          // Với DAY, _id là null (do group null), lúc này mới dùng labelDate
+          label = dayjs(item.labelDate).tz('Asia/Ho_Chi_Minh').format('DD/MM')
+        } else {
+          label = d.format('DD/MM')
+        }
       } else {
-        label = d.format('DD/MM')
+        // Fallback cho trường hợp _id null (View DAY)
+        label = dayjs(item.labelDate).tz('Asia/Ho_Chi_Minh').format('DD/MM')
       }
 
       return {
@@ -488,7 +578,6 @@ export class DashboardService implements IDashboardService {
       }
     })
 
-    // D. Populate thông tin bãi xe
     const parkingLotInfo = await this.parkingLotModel
       .findById(parkingLotId)
       .select('name addressId -_id')
