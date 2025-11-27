@@ -67,7 +67,6 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
   const notifications: Notification[] = responseData.data || []
   const totalCount = notifications.length
   // 🔥🔥🔥 CONSOLE LOG THÔNG BÁO ĐỂ KIỂM TRA DỮ LIỆU 🔥🔥🔥
-  console.log('[NotificationDropdown] Fetched Notifications:', notifications) // Mutation để đánh dấu đã đọc
   // 🔥🔥🔥 END CONSOLE LOG 🔥🔥🔥
   const [markAllAsRead, { isLoading: isMarkingRead }] = useMarkAllAsReadMutation()
   const [markAsReadSingle] = useMarkAsReadSingleMutation()

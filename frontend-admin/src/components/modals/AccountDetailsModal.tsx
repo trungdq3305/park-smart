@@ -3,26 +3,51 @@ import { Modal, Button, Descriptions, Tag, message } from 'antd'
 import type { Account } from '../../types/Account'
 import { useAccountDetailsQuery, useConfirmOperatorMutation } from '../../features/admin/accountAPI'
 import { useParkingLotDetailsQuery } from '../../features/admin/parkinglotAPI'
+import type { ParkingLotRequest } from '../../types/ParkingLotRequest'
+import type { Address } from '../../types/Address'
+import { useGetAddressByIdQuery } from '../../features/operator/addressAPI'
 
 interface AccountDetailsModalProps {
   open: boolean
   onClose: () => void
   account: Account | null
 }
-
+interface ParkingLotRequestReponse {
+  data :{
+    data : ParkingLotRequest[]
+  }
+}
+interface AddressResponse{
+  data:{
+    data:Address[]
+  }
+  isLoading:boolean
+}
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
+
   const [confirmOperator, { isLoading: isConfirmingOperator }] = useConfirmOperatorMutation()
   const { data: accountDetails } = useAccountDetailsQuery(account?._id || '')
   const operatorId =accountDetails?.data?.operatorDetail?._id || ''
-  const { data: parkingLotDetails } = useParkingLotDetailsQuery({parkingLotOperatorId: operatorId, status: 'PENDING', type: 'CREATE'})
-const parkingLotDetailsData = parkingLotDetails?.data?.[0] || []
-console.log(parkingLotDetailsData)
+
+  const { data: parkingLotDetails } = useParkingLotDetailsQuery<ParkingLotRequestReponse>({
+    parkingLotOperatorId: operatorId,
+    status: 'PENDING',
+    type: 'CREATE',
+  })
+  
+  const parkingLotDetailsData = parkingLotDetails?.data?.[0]
+  const addressId = parkingLotDetailsData?.payload?.addressId
+  const { data: addressDetails } = useGetAddressByIdQuery<AddressResponse>({id: addressId})
+
+  const addressDetailsData = addressDetails?.data?.[0] || null
+
   const handleConfirmOperator = async () => {
     if (account?._id) {
       await confirmOperator(account._id).unwrap()
       message.success('Xác nhận tài khoản operator thành công')
     }
   }
+
   const getRoleBadgeColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {
       case 'admin':
@@ -124,6 +149,46 @@ console.log(parkingLotDetailsData)
             </Descriptions>
           )}
 
+          {account.operatorDetail && parkingLotDetailsData && (
+            <Descriptions title="Bãi xe đăng ký" bordered column={2} style={{ marginTop: 16 }}>
+              <Descriptions.Item label="Tên bãi xe">
+                {parkingLotDetailsData.payload?.name || 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Loại yêu cầu">
+                {parkingLotDetailsData.requestType}
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái yêu cầu">
+                <Tag color="blue">{parkingLotDetailsData.status}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Địa chỉ" span={2}>
+                {addressDetailsData?.fullAddress || 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Tổng tầng">
+                {parkingLotDetailsData.payload?.totalLevel ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa mỗi tầng">
+                {parkingLotDetailsData.payload?.totalCapacityEachLevel ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa đặt trước">
+                {parkingLotDetailsData.payload?.bookableCapacity ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa thuê dài hạn">
+                {parkingLotDetailsData.payload?.leasedCapacity ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa vãng lai">
+                {parkingLotDetailsData.payload?.walkInCapacity ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Thời lượng slot (giờ)">
+                {parkingLotDetailsData.payload?.bookingSlotDurationHours ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày hiệu lực">
+                {parkingLotDetailsData.effectiveDate
+                  ? new Date(parkingLotDetailsData.effectiveDate).toLocaleDateString('vi-VN')
+                  : 'Chưa xác định'}
+              </Descriptions.Item>
+            </Descriptions>
+          )}
+
           {account.adminDetail && (
             <Descriptions title="Thông tin Admin" bordered column={2} style={{ marginTop: 16 }}>
               <Descriptions.Item label="Tên đầy đủ">
@@ -135,6 +200,7 @@ console.log(parkingLotDetailsData)
               <Descriptions.Item label="Chức vụ">{account.adminDetail.position}</Descriptions.Item>
             </Descriptions>
           )}
+          
         </div>
       )}
     </Modal>

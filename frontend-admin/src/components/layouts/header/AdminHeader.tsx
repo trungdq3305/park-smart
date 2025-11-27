@@ -47,7 +47,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
           sentAt: new Date().toISOString(),
         },
       }
-      console.log(payload)
       await sendTestNotification(payload).unwrap()
     } catch (error) {
       message.error('Gửi thông báo test thất bại. Kiểm tra console và Backend log.')
