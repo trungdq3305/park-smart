@@ -119,20 +119,19 @@ export class DashboardService implements IDashboardService {
 
     return {
       reportDate: startOfToday,
-      totalRevenue:
-        (subStats[0]?.totalAmount ?? 0) +
+      totalRevenue: ((subStats[0]?.totalAmount ?? 0) +
         (resStats[0]?.totalAmount ?? 0) +
-        (sessionStats[0]?.totalWalkInRevenue ?? 0),
+        sessionStats[0]?.totalWalkInRevenue) as number,
       revenueBreakdown: {
-        subscription: subStats[0]?.totalAmount ?? 0,
-        reservation: resStats[0]?.totalAmount ?? 0,
-        walkIn: sessionStats[0]?.totalWalkInRevenue ?? 0,
+        subscription: subStats[0]?.totalAmount ?? (0 as number),
+        reservation: resStats[0]?.totalAmount ?? (0 as number),
+        walkIn: sessionStats[0]?.totalWalkInRevenue ?? (0 as number),
       },
       totalCheckIns: checkInCount,
       avgParkingDurationMinutes: Math.round(avgDurationMs / 60000),
-      totalCheckOuts: sessionStats[0]?.totalCheckOuts ?? 0,
-      totalReservationsCreated: resStats[0]?.count ?? 0,
-      newSubscriptions: subStats[0]?.count ?? 0,
+      totalCheckOuts: sessionStats[0]?.totalCheckOuts as number,
+      totalReservationsCreated: resStats[0]?.count as number,
+      newSubscriptions: subStats[0]?.count as number,
       isRealTime: true,
     }
   }
@@ -459,9 +458,9 @@ export class DashboardService implements IDashboardService {
         existing.sumRevSub += todayStats.revenueBreakdown.subscription
 
         // Tính lại Weighted Average cho Duration
-        const oldCheckOuts = existing.totalCheckOuts ?? 0
-        const newCheckOuts = todayStats.totalCheckOuts ?? 0
-        const oldAvg = existing.avgParkingDurationMinutes ?? 0
+        const oldCheckOuts = existing.totalCheckOuts
+        const newCheckOuts = todayStats.totalCheckOuts
+        const oldAvg = existing.avgParkingDurationMinutes
         const newAvg = todayStats.avgParkingDurationMinutes
         const totalCheckOuts = oldCheckOuts + newCheckOuts
 
