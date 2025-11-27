@@ -2,7 +2,7 @@ import React from 'react'
 import { Modal, Button, Descriptions, Tag, message } from 'antd'
 import type { Account } from '../../types/Account'
 import { useAccountDetailsQuery, useConfirmOperatorMutation } from '../../features/admin/accountAPI'
-import { useParkingLotDetailsQuery } from '../../features/admin/parkinglotAPI'
+import { useParkingLotDetailsQuery, useReviewParkingLotRequestMutation } from '../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../types/ParkingLotRequest'
 import type { Address } from '../../types/Address'
 import { useGetAddressByIdQuery } from '../../features/operator/addressAPI'
@@ -37,17 +37,33 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
   
   const parkingLotDetailsData = parkingLotDetails?.data?.[0]
   const addressId = parkingLotDetailsData?.payload?.addressId
+  const requestId = parkingLotDetailsData?._id
+
   const { data: addressDetails } = useGetAddressByIdQuery<AddressResponse>({id: addressId})
+
+  const [reviewParkingLotRequest, { isLoading: isReviewingParkingLotRequest }] = useReviewParkingLotRequestMutation()
 
   const addressDetailsData = addressDetails?.data?.[0] || null
 
   const handleConfirmOperator = async () => {
-    if (account?._id) {
+    if (!account?._id) return
+    try {
       await confirmOperator(account._id).unwrap()
       message.success('Xác nhận tài khoản operator thành công')
+    } catch (error) {
+      const backendMessage =
+        (error as { data?: { message?: string; error?: string } })?.data?.message ||
+        (error as { data?: { message?: string; error?: string } })?.data?.error
+      message.error(backendMessage || 'Xác nhận tài khoản operator thất bại')
     }
   }
 
+  const handleReviewParkingLotRequest = async () => {
+    if (requestId) {
+      await reviewParkingLotRequest({requestId}).unwrap()
+      message.success('Duyệt bãi đỗ xe thành công')
+    }
+  }
   const getRoleBadgeColor = (roleName: string) => {
     switch (roleName.toLowerCase()) {
       case 'admin':
@@ -186,6 +202,15 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                   ? new Date(parkingLotDetailsData.effectiveDate).toLocaleDateString('vi-VN')
                   : 'Chưa xác định'}
               </Descriptions.Item>
+              <Descriptions.Item label="Duyệt bãi đỗ xe">
+                <Button
+                  type="primary"
+                  onClick={handleReviewParkingLotRequest}
+                  loading={isReviewingParkingLotRequest}
+                >
+                  {isReviewingParkingLotRequest ? 'Đang duyệt...' : 'Duyệt'}
+                </Button>
+              </Descriptions.Item>
             </Descriptions>
           )}
 
@@ -200,7 +225,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
               <Descriptions.Item label="Chức vụ">{account.adminDetail.position}</Descriptions.Item>
             </Descriptions>
           )}
-          
+
         </div>
       )}
     </Modal>

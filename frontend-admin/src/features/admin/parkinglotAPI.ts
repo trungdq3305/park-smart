@@ -20,7 +20,15 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['parkingLot'],
     }),
+    reviewParkingLotRequest: builder.mutation({
+      query: ({requestId}) => ({
+        url: `/parking/parking-lots/requests/${requestId}/review`,
+        method: 'PATCH',
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['parkingLot'],
+    }),
   }),
 })
 
-export const { useGetParkingLotsAdminQuery, useParkingLotDetailsQuery } = parkingLotAPI
+export const { useGetParkingLotsAdminQuery, useParkingLotDetailsQuery, useReviewParkingLotRequestMutation } = parkingLotAPI
