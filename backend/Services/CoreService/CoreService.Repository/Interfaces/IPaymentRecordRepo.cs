@@ -46,5 +46,13 @@ namespace CoreService.Repository.Interfaces
             DateTime? fromDate,
             DateTime? toDate
         );
+        Task<PaymentRecord?> GetUnpaidMainInvoiceForMonth(string operatorId, DateTime invoiceMonth);
+
+        // 2. Dùng cho Pha Suspension (Kiểm tra điều kiện Khóa)
+        Task<PaymentRecord?> GetPenaltyInvoiceForRelatedInvoice(string relatedInvoiceId);
+
+        // 3. Dùng cho Webhook (Kiểm tra Mở Khóa)
+        Task<bool> HasUnpaidOverdueInvoices(string operatorId);
+        Task<PaymentRecord?> GetMainInvoiceForMonth(string operatorId, DateTime invoiceMonth);
     }
 }
