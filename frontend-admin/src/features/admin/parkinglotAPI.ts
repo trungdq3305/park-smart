@@ -12,7 +12,7 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       providesTags: ['parkingLot'],
     }),
     parkingLotDetails: builder.query({
-      query: ({parkingLotOperatorId,status,type}) => ({
+      query: ({ parkingLotOperatorId, status, type }) => ({
         url: `/parking/parking-lots/requests-by-operator/${parkingLotOperatorId}`,
         method: 'GET',
         params: { status, type },
@@ -21,15 +21,19 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       providesTags: ['parkingLot'],
     }),
     reviewParkingLotRequest: builder.mutation({
-      query: ({requestId, status, rejectionReason}) => ({
+      query: ({ requestId, status, rejectionReason }) => ({
         url: `/parking/parking-lots/requests/${requestId}/review`,
         method: 'PATCH',
         body: { status, rejectionReason },
       }),
       transformResponse: (res) => res,
-      invalidatesTags: ['parkingLot','parkingLotRequest'],
+      invalidatesTags: ['parkingLot', 'parkingLotRequest'],
     }),
   }),
 })
 
-export const { useGetParkingLotsAdminQuery, useParkingLotDetailsQuery, useReviewParkingLotRequestMutation } = parkingLotAPI
+export const {
+  useGetParkingLotsAdminQuery,
+  useParkingLotDetailsQuery,
+  useReviewParkingLotRequestMutation,
+} = parkingLotAPI

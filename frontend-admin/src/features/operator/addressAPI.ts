@@ -12,7 +12,7 @@ export const addressAPI = apiSlice.injectEndpoints({
       invalidatesTags: ['address'],
     }),
     getAddressById: builder.query({
-      query: ({id}) => ({
+      query: ({ id }) => ({
         url: `/parking/addresses/${id}`,
         method: 'GET',
       }),

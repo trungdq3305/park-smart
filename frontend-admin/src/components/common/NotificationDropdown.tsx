@@ -178,7 +178,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
                 disabled={unreadCount === 0 || isMarkingRead}
                 loading={isMarkingRead}
               >
-               Đọc tất cả 
+                Đọc tất cả
               </Button>
               <Button type="link" onClick={() => console.log('Go to notification page')}>
                 Xem tất cả
@@ -190,7 +190,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
     >
       <Button type="text" className="header-action-btn notification-btn" aria-label="Notifications">
         <Badge count={unreadCount} size="small" offset={[isMobile ? -2 : 0, 2]}>
- <BellOutlined style={{ fontSize: isMobile ? 16 : 18 }} />
+          <BellOutlined style={{ fontSize: isMobile ? 16 : 18 }} />
         </Badge>
       </Button>
     </Dropdown>

@@ -97,11 +97,7 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
           label="Sức chứa mỗi tầng"
           rules={[{ required: true, message: 'Vui lòng nhập sức chứa mỗi tầng' }]}
         >
-          <InputNumber
-            min={1}
-            placeholder="Nhập sức chứa mỗi tầng"
-            style={{ width: '100%' }}
-          />
+          <InputNumber min={1} placeholder="Nhập sức chứa mỗi tầng" style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item
@@ -109,11 +105,7 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
           label="Tổng số tầng"
           rules={[{ required: true, message: 'Vui lòng nhập tổng số tầng' }]}
         >
-          <InputNumber
-            min={1}
-            placeholder="Nhập tổng số tầng"
-            style={{ width: '100%' }}
-          />
+          <InputNumber min={1} placeholder="Nhập tổng số tầng" style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item
@@ -121,11 +113,7 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
           label="Thời lượng đặt chỗ (giờ)"
           rules={[{ required: true, message: 'Vui lòng nhập thời lượng đặt chỗ' }]}
         >
-          <InputNumber
-            min={1}
-            placeholder="Nhập thời lượng đặt chỗ"
-            style={{ width: '100%' }}
-          />
+          <InputNumber min={1} placeholder="Nhập thời lượng đặt chỗ" style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item
@@ -133,11 +121,7 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
           label="Sức chứa có thể đặt"
           rules={[{ required: true, message: 'Vui lòng nhập sức chứa có thể đặt' }]}
         >
-          <InputNumber
-            min={0}
-            placeholder="Nhập sức chứa có thể đặt"
-            style={{ width: '100%' }}
-          />
+          <InputNumber min={0} placeholder="Nhập sức chứa có thể đặt" style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item
@@ -145,11 +129,7 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
           label="Sức chứa cho thuê"
           rules={[{ required: true, message: 'Vui lòng nhập sức chứa cho thuê' }]}
         >
-          <InputNumber
-            min={0}
-            placeholder="Nhập sức chứa cho thuê"
-            style={{ width: '100%' }}
-          />
+          <InputNumber min={0} placeholder="Nhập sức chứa cho thuê" style={{ width: '100%' }} />
         </Form.Item>
 
         <Form.Item
@@ -169,4 +149,3 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
 }
 
 export default UpdateParkingLotModal
-

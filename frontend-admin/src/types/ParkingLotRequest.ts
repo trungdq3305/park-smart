@@ -1,9 +1,9 @@
-import type { ParkingLot } from "./ParkingLot"
+import type { ParkingLot } from './ParkingLot'
 
 export interface ParkingLotRequest {
   _id: string
   createdAt: string
-  payload :ParkingLot
+  payload: ParkingLot
   effectiveDate: string
   requestType: string
   status: string

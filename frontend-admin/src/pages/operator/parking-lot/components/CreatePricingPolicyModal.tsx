@@ -20,7 +20,7 @@ const Unit = {
   DAY: 'DAY',
   WEEK: 'WEEK',
   MONTH: 'MONTH',
-} 
+}
 
 interface CreatePricingPolicyModalProps {
   open: boolean

@@ -12,7 +12,7 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       invalidatesTags: ['parkingLot'],
     }),
     updateParkingLotRequest: builder.mutation({
-      query: ({parkingLotId, updateRequestDto}) => ({
+      query: ({ parkingLotId, updateRequestDto }) => ({
         url: `/parking/parking-lots/send-update-requests/${parkingLotId}`,
         method: 'POST',
         body: updateRequestDto,
@@ -31,4 +31,8 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const { useCreateParkingLotMutation, useGetParkingLotsOperatorQuery, useUpdateParkingLotRequestMutation } = parkingLotAPI
+export const {
+  useCreateParkingLotMutation,
+  useGetParkingLotsOperatorQuery,
+  useUpdateParkingLotRequestMutation,
+} = parkingLotAPI

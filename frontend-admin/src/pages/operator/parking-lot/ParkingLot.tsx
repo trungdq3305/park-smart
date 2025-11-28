@@ -8,7 +8,10 @@ import {
   UserOutlined,
   EditOutlined,
 } from '@ant-design/icons'
-import { useGetParkingLotsOperatorQuery, useUpdateParkingLotRequestMutation } from '../../../features/operator/parkingLotAPI'
+import {
+  useGetParkingLotsOperatorQuery,
+  useUpdateParkingLotRequestMutation,
+} from '../../../features/operator/parkingLotAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -59,7 +62,8 @@ const OperatorParkingLot: React.FC = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
 
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
-  const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] = useUpdateParkingLotRequestMutation()
+  const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
+    useUpdateParkingLotRequestMutation()
   const parkingLot = data?.data?.[0] ?? null
   const { data: pricingPoliciesData, isLoading: isPricingLoading } =
     useGetPricingPoliciesOperatorQuery<PricingPoliciesListResponse>(
@@ -106,16 +110,13 @@ const OperatorParkingLot: React.FC = () => {
 
   const handleEditPricingPolicy = async (values: any) => {
     try {
-
-            // Tự động disable pricing policy cũ bằng cách delete
-            if (selectedPolicyForEdit?._id) {
-              await deletePricingPolicyLink(selectedPolicyForEdit._id).unwrap()
-            }
+      // Tự động disable pricing policy cũ bằng cách delete
+      if (selectedPolicyForEdit?._id) {
+        await deletePricingPolicyLink(selectedPolicyForEdit._id).unwrap()
+      }
 
       // Tạo mới pricing policy với dữ liệu đã chỉnh sửa
       await createPricingPolicyLink(values).unwrap()
-
-
 
       message.success('Cập nhật chính sách giá thành công')
       setIsEditModalOpen(false)
@@ -198,11 +199,7 @@ const OperatorParkingLot: React.FC = () => {
           <Text type="secondary">Theo dõi hiệu suất vận hành và tình trạng bãi đỗ của bạn</Text>
         </div>
         {parkingLot && (
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => setIsUpdateModalOpen(true)}
-          >
+          <Button type="primary" icon={<EditOutlined />} onClick={() => setIsUpdateModalOpen(true)}>
             Gửi yêu cầu cập nhật
           </Button>
         )}

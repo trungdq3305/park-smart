@@ -2,7 +2,10 @@ import React from 'react'
 import { Modal, Button, Descriptions, Tag, message, Input } from 'antd'
 import type { Account } from '../../types/Account'
 import { useAccountDetailsQuery, useConfirmOperatorMutation } from '../../features/admin/accountAPI'
-import { useParkingLotDetailsQuery, useReviewParkingLotRequestMutation } from '../../features/admin/parkinglotAPI'
+import {
+  useParkingLotDetailsQuery,
+  useReviewParkingLotRequestMutation,
+} from '../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../types/ParkingLotRequest'
 import type { Address } from '../../types/Address'
 import { useGetAddressByIdQuery } from '../../features/operator/addressAPI'
@@ -13,36 +16,36 @@ interface AccountDetailsModalProps {
   account: Account | null
 }
 interface ParkingLotRequestReponse {
-  data :{
-    data : ParkingLotRequest[]
+  data: {
+    data: ParkingLotRequest[]
   }
 }
-interface AddressResponse{
-  data:{
-    data:Address[]
+interface AddressResponse {
+  data: {
+    data: Address[]
   }
-  isLoading:boolean
+  isLoading: boolean
 }
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
-
   const [confirmOperator, { isLoading: isConfirmingOperator }] = useConfirmOperatorMutation()
   const [rejectionReason, setRejectionReason] = React.useState('')
   const { data: accountDetails } = useAccountDetailsQuery(account?._id || '')
-  const operatorId =accountDetails?.data?.operatorDetail?._id || ''
+  const operatorId = accountDetails?.data?.operatorDetail?._id || ''
 
   const { data: parkingLotDetails } = useParkingLotDetailsQuery<ParkingLotRequestReponse>({
     parkingLotOperatorId: operatorId,
     status: 'PENDING',
     type: 'CREATE',
   })
-  
+
   const parkingLotDetailsData = parkingLotDetails?.data?.[0]
   const addressId = parkingLotDetailsData?.payload?.addressId
   const requestId = parkingLotDetailsData?._id
 
-  const { data: addressDetails } = useGetAddressByIdQuery<AddressResponse>({id: addressId})
+  const { data: addressDetails } = useGetAddressByIdQuery<AddressResponse>({ id: addressId })
 
-  const [reviewParkingLotRequest, { isLoading: isReviewingParkingLotRequest }] = useReviewParkingLotRequestMutation()
+  const [reviewParkingLotRequest, { isLoading: isReviewingParkingLotRequest }] =
+    useReviewParkingLotRequestMutation()
 
   const addressDetailsData = addressDetails?.data?.[0] || null
 
@@ -273,7 +276,6 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
               <Descriptions.Item label="Chức vụ">{account.adminDetail.position}</Descriptions.Item>
             </Descriptions>
           )}
-
         </div>
       )}
     </Modal>
