@@ -16,7 +16,9 @@ const ManageParkingLots = lazy(() => import('../pages/admin/manage-parking-lots/
 const OperatorParkingLot = lazy(() => import('../pages/operator/parking-lot/ParkingLot'))
 const BulkImportPage = lazy(() => import('../pages/operator/import-card/BulkImportPage'))
 const KioskPage = lazy(() => import('../pages/operator/parking-lot-operate/KioskPage'))
-const ParkingLotSessionHistory = lazy(() => import('../pages/operator/parking-lot-session-history/ParkingLotSessionHistory'))
+const ParkingLotSessionHistory = lazy(
+  () => import('../pages/operator/parking-lot-session-history/ParkingLotSessionHistory')
+)
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -94,7 +96,7 @@ const routes: LayoutRoute[] = [
         path: '/operator/parking-lot-session-history',
         component: ParkingLotSessionHistory,
         role: ['Operator'],
-      }
+      },
     ],
   },
 ]

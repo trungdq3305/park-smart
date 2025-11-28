@@ -65,7 +65,7 @@ const OperatorParkingLot: React.FC = () => {
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
   const parkingLot = data?.data?.[0] ?? null
-  console.log(parkingLot)
+
   const { data: pricingPoliciesData, isLoading: isPricingLoading } =
     useGetPricingPoliciesOperatorQuery<PricingPoliciesListResponse>(
       parkingLot?._id
