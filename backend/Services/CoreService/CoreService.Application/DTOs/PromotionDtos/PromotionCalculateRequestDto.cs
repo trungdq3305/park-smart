@@ -10,7 +10,7 @@ namespace CoreService.Application.DTOs.PromotionDtos
     {
         public string PromotionCode { get; set; }
         public decimal OriginalAmount { get; set; }
-        public string AccountId { get; set; }
+        //public string AccountId { get; set; }
         public string EntiTyId { get; set; }
     }
 
