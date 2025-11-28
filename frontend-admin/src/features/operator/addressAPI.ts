@@ -11,7 +11,15 @@ export const addressAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['address'],
     }),
+    getAddressById: builder.query({
+      query: ({ id }) => ({
+        url: `/parking/addresses/${id}`,
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['address'],
+    }),
   }),
 })
 
-export const { useCreateAddressMutation } = addressAPI
+export const { useCreateAddressMutation, useGetAddressByIdQuery } = addressAPI

@@ -1,20 +1,10 @@
-// src/components/layout/AdminHeader/AdminHeader.tsx
-
 import React from 'react'
-import { Layout, Button, Dropdown, Avatar, Space, message } from 'antd'
-import {
-  SettingOutlined,
-  UserOutlined,
-  LogoutOutlined,
-  MenuOutlined,
-  SendOutlined,
-} from '@ant-design/icons'
+import { Layout, Button, Dropdown, Avatar, Space } from 'antd'
+import { SettingOutlined, UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
 import './AdminHeader.css'
 import { getUserFullName } from '../../../utils/userData'
 import { useLogout } from '../../../hooks/useLogout'
 import { NotificationDropdown } from '../../common'
-import { useAuth } from '../../../hooks/useAuth'
-import { useSendTestNotificationMutation } from '../../../features/notification/notificationAPI'
 const { Header } = Layout
 
 interface AdminHeaderProps {
@@ -25,35 +15,6 @@ interface AdminHeaderProps {
 const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
   const fullName = getUserFullName('Quản trị viên')
   const logout = useLogout()
-  const { userId, userRole } = useAuth()
-
-  const [sendTestNotification, { isLoading: isSending }] = useSendTestNotificationMutation()
-
-  // --- XỬ LÝ GỬI THÔNG BÁO MẪU ---
-  const handleSendTestNotification = async () => {
-    if (!userId || !userRole) {
-      message.error('Không có thông tin người dùng (ID/Role) để gửi.')
-      return
-    }
-
-    try {
-      const payload = {
-        recipientId: userId,
-        recipientRole: userRole,
-        type: 'ADMIN_SYSTEM_WIDE_ALERT',
-        title: `THÔNG BÁO TỪ FE lúc ${new Date().toLocaleTimeString()}`,
-        body: 'Thông báo kiểm thử. Nếu thấy real-time là đã kết nối WebSocket thành công!',
-        data: {
-          sentAt: new Date().toISOString(),
-        },
-      }
-      console.log(payload)
-      await sendTestNotification(payload).unwrap()
-    } catch (error) {
-      message.error('Gửi thông báo test thất bại. Kiểm tra console và Backend log.')
-      console.error('Error sending test notification:', error)
-    }
-  }
 
   const userMenuItems = [
     {
@@ -100,15 +61,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
       </div>
       <div className="header-right">
         <Space size="middle">
-          Gửi thông báo thử
-          <Button
-            type="text"
-            className="header-action-btn notification-btn"
-            onClick={handleSendTestNotification}
-            aria-label="Send test notification"
-            icon={<SendOutlined />}
-            loading={isSending}
-          />
           {/* NotificationDropdown */}
           <NotificationDropdown isMobile={!!isMobile} />
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">

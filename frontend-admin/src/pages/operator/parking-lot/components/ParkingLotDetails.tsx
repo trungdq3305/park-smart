@@ -32,9 +32,9 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
           <Space direction="vertical" className="area-card__content" size={16}>
             <div className="area-card__header">
               <div>
-                <Text type="secondary">Tên khu vực</Text>
+                <Text type="secondary">Tên bãi đỗ xe</Text>
                 <Title level={4} className="area-card__title">
-                  {lot.addressId?.wardId?.wardName || 'N/A'}
+                  {lot.name || 'N/A'}
                 </Title>
               </div>
               <Button size="small" icon={<ClockCircleOutlined />}>

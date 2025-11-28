@@ -15,6 +15,13 @@ import type { Basis } from '../../../../types/Basis'
 import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
 import dayjs from 'dayjs'
 
+// Định nghĩa các hằng số cho trạng thái và loại yêu cầu để dễ quản lý
+const Unit = {
+  DAY: 'DAY',
+  WEEK: 'WEEK',
+  MONTH: 'MONTH',
+}
+
 interface CreatePricingPolicyModalProps {
   open: boolean
   onCancel: () => void
@@ -368,14 +375,12 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
               name={['packageRate', 'unit']}
               label="Đơn vị"
               rules={[{ required: true, message: 'Vui lòng chọn đơn vị' }]}
-              initialValue="month"
+              initialValue={Unit.MONTH}
             >
               <Select placeholder="Chọn đơn vị">
-                <Select.Option value="hour">Giờ</Select.Option>
-                <Select.Option value="day">Ngày</Select.Option>
-                <Select.Option value="week">Tuần</Select.Option>
-                <Select.Option value="month">Tháng</Select.Option>
-                <Select.Option value="year">Năm</Select.Option>
+                <Select.Option value={Unit.DAY}>Ngày</Select.Option>
+                <Select.Option value={Unit.WEEK}>Tuần</Select.Option>
+                <Select.Option value={Unit.MONTH}>Tháng</Select.Option>
               </Select>
             </Form.Item>
           </>

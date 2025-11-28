@@ -3,6 +3,7 @@ import type { Address } from './Address'
 export interface ParkingLot {
   _id: string
   addressId: Address
+  name: string
   totalCapacityEachLevel: number
   totalLevel: number
   availableSpots: number

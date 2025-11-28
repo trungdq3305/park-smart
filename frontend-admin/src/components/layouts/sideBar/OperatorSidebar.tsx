@@ -50,11 +50,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Bảng điều khiển',
     },
     {
-      key: '/parking-spots',
+      key: '/operator/parking-lot-session-history',
       icon: <EnvironmentOutlined />,
-      label: 'Điểm đỗ xe',
-      badge: '12/15',
-      active: true,
+      label: 'Lịch sử phiên đỗ xe',
     },
     {
       key: '/analytics',
@@ -149,11 +147,6 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
               label: (
                 <div className="menu-item-content">
                   <span className="menu-label">{item.label}</span>
-                  {item.badge && (
-                    <span className={`menu-badge ${item.active ? 'active' : ''}`}>
-                      {item.badge}
-                    </span>
-                  )}
                 </div>
               ),
             }))}
