@@ -15,6 +15,8 @@ import {
   Statistic,
   Button,
   Empty,
+  Modal,
+  Spin,
 } from 'antd'
 import {
   CarOutlined,
@@ -24,12 +26,16 @@ import {
 } from '@ant-design/icons'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parkingLotAPI'
-import { useGetParkingSessionHistoryQuery } from '../../../features/operator/parkingSessionAPI'
+import {
+  useGetParkingSessionHistoryDetailQuery,
+  useGetParkingSessionHistoryQuery,
+} from '../../../features/operator/parkingSessionAPI'
 import type { Pagination } from '../../../types/Pagination'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import type { ParkingLotSession } from '../../../types/ParkingLotSession'
 import PaginationLoading from '../../../components/common/PaginationLoading'
 import './ParkingLotSessionHistory.css'
+import type { SessionImage } from '../../../types/Session.images'
 
 const { Title, Text } = Typography
 const { RangePicker } = DatePicker
@@ -37,6 +43,10 @@ const { RangePicker } = DatePicker
 interface ParkingLotSessionHistoryResponse {
   data: ParkingLotSession[]
   pagination: Pagination
+}
+
+interface ParkingLotSessionHistoryDetailResponse {
+  data: Array<ParkingLotSession & { images?: SessionImage[] }>
 }
 interface ParkingLotsListResponse {
   data: ParkingLot[]
@@ -59,6 +69,8 @@ const ParkingLotSessionHistory: React.FC = () => {
   const [selectedLotId, setSelectedLotId] = useState<string>()
   const [page, setPage] = useState<number>(() => getPageFromParams())
   const [pageSize, setPageSize] = useState(5)
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(() => {
     const end = dayjs()
     const start = end.subtract(7, 'day')
@@ -119,6 +131,19 @@ const typedParkingSessions =(parkingSessionHistoryResponse as ParkingLotSessionH
 const parkingSessions: ParkingLotSession[] = typedParkingSessions?.data ?? []
 console.log(parkingSessions)
 const paginationInfo: Pagination | undefined = typedParkingSessions?.pagination
+
+const {
+  data: parkingSessionHistoryDetailResponse,
+  isFetching: isFetchingSessionDetail,
+} = useGetParkingSessionHistoryDetailQuery(
+  selectedSessionId ? { sessionId: selectedSessionId } : skipToken
+)
+
+const sessionDetailData = parkingSessionHistoryDetailResponse as
+  | ParkingLotSessionHistoryDetailResponse
+  | undefined
+const sessionDetail = sessionDetailData?.data?.[0]
+const sessionImages = sessionDetail?.images ?? []
 
   const summary = useMemo(() => {
     if (!parkingSessions.length) {
@@ -206,6 +231,15 @@ const columns: ColumnsType<ParkingLotSession> = [
       align: 'right' as const,
       render: (value: number) => formatCurrency(value),
     },
+    {
+      title: 'Hình ảnh',
+      key: 'images',
+      render: (_, record) => (
+        <Button type="link" onClick={() => handleViewSessionImages(record._id)}>
+          Xem ảnh
+        </Button>
+      ),
+    },
   ]
 
   const handleLotChange = (value: string) => {
@@ -222,6 +256,16 @@ const handleDateChange = (value: [Dayjs | null, Dayjs | null] | null) => {
 const handleTableChange = (pagination: TablePaginationConfig) => {
     if (pagination.current) setPage(pagination.current)
     if (pagination.pageSize) setPageSize(pagination.pageSize)
+  }
+
+const handleViewSessionImages = (sessionId: string) => {
+    setSelectedSessionId(sessionId)
+    setIsImageModalOpen(true)
+  }
+
+const handleCloseImageModal = () => {
+    setIsImageModalOpen(false)
+    setSelectedSessionId(null)
   }
 
   const handleRefresh = () => {
@@ -320,6 +364,30 @@ const handleTableChange = (pagination: TablePaginationConfig) => {
             )}
           </PaginationLoading>
         </Card>
+        <Modal
+          open={isImageModalOpen}
+          title="Ảnh check-in / check-out"
+          onCancel={handleCloseImageModal}
+          footer={null}
+          width={720}
+        >
+          {isFetchingSessionDetail ? (
+            <div className="image-modal__loading">
+              <Spin />
+            </div>
+          ) : sessionImages.length === 0 ? (
+            <Empty description="Không có ảnh cho phiên này" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+          ) : (
+            <div className="session-images-grid">
+              {sessionImages.map((image) => (
+                <div key={image.id} className="session-image-card">
+                  <img src={image.url} alt={image.description || 'Ảnh phiên gửi xe'} />
+                  <Text type="secondary">{image.description || 'Không có mô tả'}</Text>
+                </div>
+              ))}
+            </div>
+          )}
+        </Modal>
       </Card>
     </div>
   )
