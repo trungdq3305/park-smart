@@ -13,6 +13,26 @@ export class ReservationRepository implements IReservationRepository {
     private reservationModel: Model<Reservation>,
   ) {}
 
+  async updateReservationRefundAmount(
+    id: string,
+    refundAmount: number,
+    session: ClientSession,
+  ): Promise<boolean> {
+    const result = await this.reservationModel
+      .updateOne(
+        { _id: id },
+        {
+          $set: {
+            refundedAmount: refundAmount,
+            updatedAt: new Date(),
+          },
+        },
+        { session },
+      )
+      .exec()
+    return result.modifiedCount > 0
+  }
+
   findReservationByIdWithoutPopulate(
     id: string,
     session?: ClientSession,

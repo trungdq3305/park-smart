@@ -665,6 +665,7 @@ export class SubscriptionService implements ISubscriptionService {
       const cancelResult = await this.subscriptionRepository.cancelSubscription(
         id.id,
         userId,
+        refundAmount,
         session,
       )
 
@@ -690,7 +691,6 @@ export class SubscriptionService implements ISubscriptionService {
           subscriptionId: subscription._id,
           extendedUntil: subscription.endDate,
           transactionType: SubscriptionTransactionType.CANCELLATION,
-          amountPaid: -refundAmount, // Số tiền hoàn (âm)
         },
         session,
       )
@@ -712,7 +712,7 @@ export class SubscriptionService implements ISubscriptionService {
             subscriptionId: subscription._id,
             extendedUntil: subscription.endDate,
             transactionType: SubscriptionTransactionType.REFUND,
-            amountPaid: -refundAmount, // Số tiền hoàn (âm)
+            refundedAmount: refundAmount, // Số tiền hoàn (âm)
           },
           session,
         )

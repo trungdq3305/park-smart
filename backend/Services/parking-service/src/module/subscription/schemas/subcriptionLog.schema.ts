@@ -52,6 +52,13 @@ export class SubscriptionLog extends BaseEntity {
     default: 0,
   })
   amountPaid: number // Số tiền đã thanh toán trong giao dịch này
+
+  @Prop({
+    type: Number,
+    required: true,
+    default: 0,
+  })
+  refundedAmount: number // Số tiền đã được hoàn lại trong giao dịch này (nếu có)
 }
 
 export const SubscriptionLogSchema =

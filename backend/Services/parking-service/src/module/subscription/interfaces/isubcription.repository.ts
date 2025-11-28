@@ -133,11 +133,13 @@ export interface ISubscriptionRepository {
    * Hủy một gói thuê bao.
    * @param id ID của gói thuê bao.
    * @param userId ID của người dùng thực hiện hủy.
+   * @param refundedAmount Số tiền hoàn trả cho người dùng.
    * @param session Phiên làm việc của transaction.
    */
   cancelSubscription(
     id: string,
     userId: string, // Giữ lại để ghi log 'updatedBy'
+    refundedAmount: number,
     session: ClientSession,
   ): Promise<boolean>
 

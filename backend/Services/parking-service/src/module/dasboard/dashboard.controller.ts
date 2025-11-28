@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -10,6 +11,7 @@ import {
 } from '@nestjs/common'
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -20,6 +22,7 @@ import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
 import { RolesGuard } from 'src/guard/role.guard'
 
 import {
+  BackfillReportDto,
   DashboardReportResponseDto,
   GetReportQueryDto,
 } from './dto/dashboard.dto'
@@ -68,5 +71,20 @@ export class DashboardController {
   })
   async generateDailyReports(): Promise<void> {
     return this.dashboardService.generateDailyReports()
+  }
+
+  @Post('backfill')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: BackfillReportDto })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.ADMIN) // Chỉ Admin được chạy
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Admin: Chạy lại báo cáo cho quá khứ (Backfill)',
+    description:
+      'Dùng để tạo lại dữ liệu báo cáo nếu bị thiếu hoặc sau khi fix lỗi logic tính toán.',
+  })
+  async backfillReports(@Body() body: BackfillReportDto) {
+    return this.dashboardService.backfillReports(body)
   }
 }

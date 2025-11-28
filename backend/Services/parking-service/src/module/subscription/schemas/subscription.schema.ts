@@ -90,6 +90,9 @@ export class Subscription extends BaseEntity {
     required: false,
   })
   amountPaid: number // Số tiền đã thanh toán cho gói này
+
+  @Prop({ type: Number, default: 0 })
+  refundedAmount: number
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(Subscription)
