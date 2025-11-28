@@ -3,6 +3,7 @@ using CoreService.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace CoreService.API.Controllers
 {
@@ -54,7 +55,14 @@ namespace CoreService.API.Controllers
         public async Task<IActionResult> Create([FromBody] EventCreateDto dto)
         {
             var accountId = User.FindFirst("id")?.Value;
-            var role = User.FindFirst("role")?.Value;
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            // Nếu role vẫn là null, hãy thử lấy tất cả các claim để debug
+            if (string.IsNullOrEmpty(role))
+            {
+                // Thử lấy claim bằng tên "role" mà không có ánh xạ
+                role = User.FindFirst("role")?.Value;
+            }
             var res = await _app.CreateAsync(dto, accountId, role);
             return StatusCode(res.StatusCode, res);
         }

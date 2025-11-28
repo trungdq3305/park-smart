@@ -91,21 +91,20 @@ namespace CoreService.API.Controllers
         }
 
         [HttpPost("calculate")]
-        [AllowAnonymous]
+        [Authorize(Roles = "Driver")]
         public async Task<IActionResult> Calculate([FromBody] PromotionCalculateRequestDto dto)
         {
-            var res = await _app.CalculateAsync(dto);
+            var userId = User.FindFirst("id")?.Value;
+            var res = await _app.CalculateAsync(dto, userId);
             return StatusCode(res.StatusCode, res);
         }
 
         [HttpPost("use")]
-        [Authorize(Roles = "Driver,Admin,Operator")]
+        [Authorize(Roles = "Driver")]
         public async Task<IActionResult> Use([FromBody] PromotionCalculateRequestDto dto)
         {
             var userId = User.FindFirst("id")?.Value;
-            dto.AccountId = userId;
-
-            var res = await _app.UsePromotionAsync(dto);
+            var res = await _app.UsePromotionAsync(dto, userId);
             return StatusCode(res.StatusCode, res);
         }
 
