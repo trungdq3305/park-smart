@@ -23,6 +23,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger'
 import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorator'
+import { UserToken } from 'src/common/decorators/getUserToken.decorator'
 import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
@@ -38,6 +39,7 @@ import {
   CreateReservationDto,
   ExtendReservationDto,
   ReservationAvailabilitySlotDto,
+  ReservationCancellationPreviewResponseDto,
   ReservationDetailResponseDto,
   ReservationExtensionEligibilityResponseDto,
   ReservationFilterDto,
@@ -45,7 +47,6 @@ import {
 } from './dto/reservation.dto' // <-- Thay đổi
 import { ReservationStatusEnum } from './enums/reservation.enum'
 import { IReservationService } from './interfaces/ireservation.service' // <-- Thay đổi
-import { UserToken } from 'src/common/decorators/getUserToken.decorator'
 
 @Controller('reservations') // <-- Thay đổi
 @ApiTags('reservations') // <-- Thay đổi
@@ -205,6 +206,22 @@ export class ReservationController {
     @Body() body: ExtendReservationDto, // Chứa additionalHours VÀ paymentId
   ): Promise<ReservationDetailResponseDto> {
     return this.reservationService.extendReservation(params, userId, body)
+  }
+
+  @Get(':id/cancel/preview')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(RoleEnum.DRIVER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bước 1: Xem trước thông tin hủy đặt chỗ' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ReservationCancellationPreviewResponseDto,
+  })
+  async getCancellationPreview(
+    @Param() params: IdDto,
+    @GetCurrentUserId() userId: string,
+  ): Promise<ReservationCancellationPreviewResponseDto> {
+    return this.reservationService.getCancellationPreview(params, userId)
   }
 
   // =================================================================
@@ -405,7 +422,7 @@ export class ReservationController {
     }
   }
 
-  @Delete(':id')
+  @Delete('cancel-confirm/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(RoleEnum.DRIVER)
   @ApiBearerAuth()
