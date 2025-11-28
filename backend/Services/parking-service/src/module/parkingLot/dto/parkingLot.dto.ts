@@ -65,7 +65,13 @@ export class BoundingBoxDto {
 @Exclude()
 export class AddressDto {
   @Expose()
-  @Transform(({ obj }) => obj._id.toString())
+  @Transform(({ obj }) => {
+    if (obj._id) {
+      return obj._id.toString()
+    } else {
+      return null
+    }
+  })
   _id: string
 
   @Expose()
