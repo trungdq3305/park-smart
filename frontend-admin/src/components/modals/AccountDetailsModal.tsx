@@ -1,5 +1,5 @@
 import React from 'react'
-import { Modal, Button, Descriptions, Tag, message } from 'antd'
+import { Modal, Button, Descriptions, Tag, message, Input } from 'antd'
 import type { Account } from '../../types/Account'
 import { useAccountDetailsQuery, useConfirmOperatorMutation } from '../../features/admin/accountAPI'
 import { useParkingLotDetailsQuery, useReviewParkingLotRequestMutation } from '../../features/admin/parkinglotAPI'
@@ -26,6 +26,7 @@ interface AddressResponse{
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
 
   const [confirmOperator, { isLoading: isConfirmingOperator }] = useConfirmOperatorMutation()
+  const [rejectionReason, setRejectionReason] = React.useState('')
   const { data: accountDetails } = useAccountDetailsQuery(account?._id || '')
   const operatorId =accountDetails?.data?.operatorDetail?._id || ''
 
@@ -45,23 +46,51 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
 
   const addressDetailsData = addressDetails?.data?.[0] || null
 
+  const extractBackendMessage = (error: unknown) =>
+    (error as { data?: { message?: string; error?: string } })?.data?.message ||
+    (error as { data?: { message?: string; error?: string } })?.data?.error
+
   const handleConfirmOperator = async () => {
     if (!account?._id) return
     try {
       await confirmOperator(account._id).unwrap()
       message.success('Xác nhận tài khoản operator thành công')
     } catch (error) {
-      const backendMessage =
-        (error as { data?: { message?: string; error?: string } })?.data?.message ||
-        (error as { data?: { message?: string; error?: string } })?.data?.error
+      const backendMessage = extractBackendMessage(error)
       message.error(backendMessage || 'Xác nhận tài khoản operator thất bại')
     }
   }
 
-  const handleReviewParkingLotRequest = async () => {
-    if (requestId) {
-      await reviewParkingLotRequest({requestId}).unwrap()
+  const handleApproveParkingLotRequest = async () => {
+    if (!requestId) return
+    try {
+      await reviewParkingLotRequest({ requestId, status: 'APPROVED' }).unwrap()
       message.success('Duyệt bãi đỗ xe thành công')
+      onClose()
+    } catch (error) {
+      const backendMessage = extractBackendMessage(error)
+      message.error(backendMessage || 'Duyệt bãi đỗ xe thất bại')
+    }
+  }
+
+  const handleRejectParkingLotRequest = async () => {
+    if (!requestId) return
+    if (!rejectionReason.trim()) {
+      message.warning('Vui lòng nhập lý do từ chối')
+      return
+    }
+    try {
+      await reviewParkingLotRequest({
+        requestId,
+        status: 'REJECTED',
+        rejectionReason: rejectionReason.trim(),
+      }).unwrap()
+      message.success('Đã từ chối bãi đỗ xe')
+      setRejectionReason('')
+      onClose()
+    } catch (error) {
+      const backendMessage = extractBackendMessage(error)
+      message.error(backendMessage || 'Từ chối bãi đỗ xe thất bại')
     }
   }
   const getRoleBadgeColor = (roleName: string) => {
@@ -158,6 +187,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                   type="primary"
                   onClick={handleConfirmOperator}
                   loading={isConfirmingOperator}
+                  disabled={account.isActive}
                 >
                   {isConfirmingOperator ? 'Đang duyệt...' : 'Duyệt'}
                 </Button>
@@ -202,14 +232,32 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                   ? new Date(parkingLotDetailsData.effectiveDate).toLocaleDateString('vi-VN')
                   : 'Chưa xác định'}
               </Descriptions.Item>
-              <Descriptions.Item label="Duyệt bãi đỗ xe">
-                <Button
-                  type="primary"
-                  onClick={handleReviewParkingLotRequest}
-                  loading={isReviewingParkingLotRequest}
-                >
-                  {isReviewingParkingLotRequest ? 'Đang duyệt...' : 'Duyệt'}
-                </Button>
+              <Descriptions.Item label="Lý do từ chối" span={2}>
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Nhập lý do từ chối (nếu có)"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  disabled={isReviewingParkingLotRequest}
+                />
+              </Descriptions.Item>
+              <Descriptions.Item label="Hành động" span={2}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <Button
+                    type="primary"
+                    onClick={handleApproveParkingLotRequest}
+                    loading={isReviewingParkingLotRequest}
+                  >
+                    Duyệt
+                  </Button>
+                  <Button
+                    danger
+                    onClick={handleRejectParkingLotRequest}
+                    loading={isReviewingParkingLotRequest}
+                  >
+                    Từ chối
+                  </Button>
+                </div>
               </Descriptions.Item>
             </Descriptions>
           )}
