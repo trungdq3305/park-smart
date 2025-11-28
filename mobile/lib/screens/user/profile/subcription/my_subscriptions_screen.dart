@@ -23,6 +23,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   final int _pageSize = 5;
   int _totalItems = 0;
   final Set<String> _renewingSubscriptionIds = <String>{};
+  final Set<String> _cancellingSubscriptionIds = <String>{};
   String? _selectedStatusFilter; // null = tất cả
 
   @override
@@ -41,6 +42,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
         _currentPage = page;
       }
       _renewingSubscriptionIds.clear();
+      _cancellingSubscriptionIds.clear();
       _allSubscriptions = [];
       _subscriptions = [];
     });
@@ -212,6 +214,14 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     }
   }
 
+  String _formatCurrency(num? amount) {
+    if (amount == null) return '0';
+    final value = amount.toInt();
+    final regex = RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))');
+    final str = value.toString().replaceAllMapped(regex, (m) => '${m[1]},');
+    return '$str đ';
+  }
+
   Future<void> _handleRenewSubscription(
     Map<String, dynamic> subscription,
   ) async {
@@ -264,6 +274,167 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     if (success) {
       _loadSubscriptions();
     }
+  }
+
+  Future<void> _handleCancelSubscription(
+    Map<String, dynamic> subscription,
+  ) async {
+    final subscriptionId = (subscription['_id'] ?? subscription['id'])
+        ?.toString();
+    if (subscriptionId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy ID của gói để hủy.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _cancellingSubscriptionIds.add(subscriptionId);
+    });
+
+    try {
+      final preview = await SubscriptionService.previewCancelSubscription(
+        subscriptionId: subscriptionId,
+      );
+      final bool canCancel = preview['canCancel'] == true;
+
+      if (!mounted) return;
+
+      if (!canCancel) {
+        final warningMessage =
+            preview['warningMessage']?.toString() ?? 'Gói này không thể hủy.';
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text(
+              'Không thể hủy gói',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            content: Text(warningMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Đóng'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        final refundAmount = preview['refundAmount'] as num?;
+        final refundPercentage = preview['refundPercentage'] as num?;
+        final policyApplied = preview['policyApplied']?.toString();
+        final daysUntilActivation = preview['daysUntilActivation'];
+
+        final bool? confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'Xác nhận hủy gói',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Sau khi hủy, gói thuê bao sẽ bị vô hiệu hóa ngay lập tức.',
+                ),
+                const SizedBox(height: 12),
+                _buildPreviewRow(
+                  'Chính sách áp dụng',
+                  policyApplied ?? 'Không xác định',
+                ),
+                _buildPreviewRow(
+                  'Số ngày tới khi kích hoạt',
+                  '$daysUntilActivation',
+                ),
+                _buildPreviewRow(
+                  'Tỷ lệ hoàn tiền',
+                  '${refundPercentage?.toStringAsFixed(0) ?? '0'}%',
+                ),
+                _buildPreviewRow(
+                  'Tiền hoàn dự kiến',
+                  _formatCurrency(refundAmount),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Đóng'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Xác nhận hủy'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed == true && mounted) {
+          final cancelResponse = await SubscriptionService.cancelSubscription(
+            subscriptionId: subscriptionId,
+          );
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                cancelResponse['message']?.toString() ??
+                    'Hủy gói thuê bao thành công.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          _loadSubscriptions();
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể hủy gói thuê bao: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _cancellingSubscriptionIds.remove(subscriptionId);
+        });
+      }
+    }
+  }
+
+  Widget _buildPreviewRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -514,9 +685,13 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final statusUpper = status?.toUpperCase() ?? '';
     final isRenewalStatus = statusUpper == 'RENEWAL';
     final isActiveStatus = statusUpper == 'ACTIVE';
+    final isScheduledStatus = statusUpper == 'SCHEDULED';
     final isProcessingRenewal =
         subscriptionId != null &&
         _renewingSubscriptionIds.contains(subscriptionId);
+    final isProcessingCancel =
+        subscriptionId != null &&
+        _cancellingSubscriptionIds.contains(subscriptionId);
 
     // Extract subscription details
     final pricingPolicy = subscription['pricingPolicyId'];
@@ -543,6 +718,9 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final Color effectiveStatusColor = isNearExpiry
         ? Colors.orange.shade600
         : statusColor;
+
+    final bool canShowCancelButton =
+        (isActiveStatus || isScheduledStatus) && !isRenewalStatus;
 
     return InkWell(
       onTap: () => _showQRCodeDialog(subscription),
@@ -779,6 +957,41 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                         ),
                       ),
                     ),
+                  if (canShowCancelButton) ...[
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: isProcessingCancel
+                            ? null
+                            : () => _handleCancelSubscription(subscription),
+                        icon: isProcessingCancel
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : const Icon(Icons.cancel_schedule_send_outlined),
+                        label: Text(
+                          isProcessingCancel
+                              ? 'Đang hủy...'
+                              : 'Hủy gói đăng ký',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red.shade700,
+                          side: BorderSide(color: Colors.red.shade300),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
