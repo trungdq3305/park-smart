@@ -23,7 +23,7 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
   useEffect(() => {
     if (open && parkingLot) {
       form.setFieldsValue({
-        name: parkingLot.addressId?.wardId?.wardName || '',
+        name: parkingLot.name || '',
         totalCapacityEachLevel: parkingLot.totalCapacityEachLevel,
         totalLevel: parkingLot.totalLevel,
         bookingSlotDurationHours: parkingLot.bookingSlotDurationHours,

@@ -28,6 +28,7 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['parkingLot'],
     }),
+    
   }),
 })
 
