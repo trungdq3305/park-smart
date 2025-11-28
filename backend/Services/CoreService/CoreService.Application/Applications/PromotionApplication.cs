@@ -247,7 +247,7 @@ namespace CoreService.Application.Applications
                 }).ToList()
             };
         }
-        public async Task<ApiResponse<PromotionCalculateResponseDto>> CalculateAsync(PromotionCalculateRequestDto dto)
+        public async Task<ApiResponse<PromotionCalculateResponseDto>> CalculateAsync(PromotionCalculateRequestDto dto, string accId)
         {
             var promo = await _promoRepo.GetByCodeAsync(dto.PromotionCode)
                 ?? throw new ApiException("Mã khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
@@ -302,12 +302,12 @@ namespace CoreService.Application.Applications
                 200
             );
         }
-        public async Task<ApiResponse<object>> UsePromotionAsync(PromotionCalculateRequestDto dto)
+        public async Task<ApiResponse<object>> UsePromotionAsync(PromotionCalculateRequestDto dto, string accId)
         {
             var promo = await _promoRepo.GetByCodeAsync(dto.PromotionCode)
                 ?? throw new ApiException("Mã khuyến mãi không tồn tại", 404);
 
-            var calc = await CalculateAsync(dto);
+            var calc = await CalculateAsync(dto,  accId);
             var amountFinal = calc.Data.FinalAmount;
 
             // Check total usage
@@ -315,14 +315,14 @@ namespace CoreService.Application.Applications
                 throw new ApiException("Mã đã được sử dụng tối đa số lần cho phép", 400);
 
             // Check user usage
-            var userUsed = await _usageRepo.CountUserUsageAsync(dto.AccountId, promo.Id);
+            var userUsed = await _usageRepo.CountUserUsageAsync(accId, promo.Id);
             if (userUsed >= 1)
                 throw new ApiException("Bạn đã sử dụng mã này rồi", 400);
 
             // Lưu lịch sử sử dụng
             var usage = new UserPromotionUsage
             {
-                AccountId = dto.AccountId,
+                AccountId = accId,
                 PromotionId = promo.Id,
                 EntityId = dto.EntiTyId, // Đơn hàng hoặc booking id sau này
                 UsedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
