@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { skipToken } from '@reduxjs/toolkit/query'
 import dayjs, { type Dayjs } from 'dayjs'
 import {
@@ -48,8 +49,15 @@ const formatCurrency = (value?: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
 
 const ParkingLotSessionHistory: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const getPageFromParams = () => {
+    const pageParam = parseInt(searchParams.get('page') || '1', 10)
+    return Number.isNaN(pageParam) || pageParam <= 0 ? 1 : pageParam
+  }
+
   const [selectedLotId, setSelectedLotId] = useState<string>()
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState<number>(() => getPageFromParams())
   const [pageSize, setPageSize] = useState(5)
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(() => {
     const end = dayjs()
@@ -71,6 +79,23 @@ const ParkingLotSessionHistory: React.FC = () => {
       setSelectedLotId(singleParkingLotId)
     }
   }, [singleParkingLotId, selectedLotId])
+
+  useEffect(() => {
+    const pageFromParams = getPageFromParams()
+    if (pageFromParams !== page) {
+      setPage(pageFromParams)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    const currentParam = searchParams.get('page')
+    const normalizedPage = page.toString()
+    if (currentParam !== normalizedPage) {
+      const nextParams = new URLSearchParams(searchParams)
+      nextParams.set('page', normalizedPage)
+      setSearchParams(nextParams, { replace: true })
+    }
+  }, [page, searchParams, setSearchParams])
 
 const {
   data: parkingSessionHistoryResponse,
