@@ -240,6 +240,104 @@ class SubscriptionService {
     }
   }
 
+  /// Xem trước thông tin hoàn tiền khi hủy gói (chính sách thời gian)
+  /// GET /subscriptions/{id}/cancel/preview
+  static Future<Map<String, dynamic>> previewCancelSubscription({
+    required String subscriptionId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/$subscriptionId/cancel/preview',
+      );
+
+      print('👀 Preview cancel subscription:');
+      print('  URL: $uri');
+      print('  Subscription ID: $subscriptionId');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully previewed cancel subscription');
+        return responseData;
+      }
+
+      final errorBody = response.body;
+      print('❌ Error previewing cancel subscription: $errorBody');
+      throw Exception(
+        'Failed to preview cancel subscription: ${response.statusCode} - $errorBody',
+      );
+    } catch (e) {
+      print('❌ Exception in previewCancelSubscription: $e');
+      rethrow;
+    }
+  }
+
+  /// Hủy một gói thuê bao (do người dùng thực hiện)
+  /// DELETE /subscriptions/{id}
+  static Future<Map<String, dynamic>> cancelSubscription({
+    required String subscriptionId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse('$baseUrl/parking/subscriptions/$subscriptionId');
+
+      print('🛑 Cancelling subscription:');
+      print('  URL: $uri');
+      print('  Subscription ID: $subscriptionId');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.delete(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body)
+            : <String, dynamic>{};
+        print('✅ Successfully cancelled subscription');
+        return responseData;
+      }
+
+      final errorBody = response.body;
+      print('❌ Error cancelling subscription: $errorBody');
+      throw Exception(
+        'Failed to cancel subscription: ${response.statusCode} - $errorBody',
+      );
+    } catch (e) {
+      print('❌ Exception in cancelSubscription: $e');
+      rethrow;
+    }
+  }
+
   /// Lấy tất cả gói thuê bao của người dùng hiện tại
   /// GET /subscriptions/my?pageSize=10&page=1&status=ACTIVE
   static Future<Map<String, dynamic>> getMySubscriptions({
