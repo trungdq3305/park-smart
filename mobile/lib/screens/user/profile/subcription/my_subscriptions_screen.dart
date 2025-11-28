@@ -134,7 +134,6 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   // Danh sách enum trạng thái subscription theo backend
   static const List<String> _allStatuses = <String>[
     'ACTIVE',
-    'PENDING_PAYMENT',
     'PAYMENT_FAILED',
     'SCHEDULED',
     'EXPIRED',
@@ -177,8 +176,6 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     switch (status?.toUpperCase()) {
       case 'ACTIVE':
         return 'Đang hoạt động';
-      case 'PENDING_PAYMENT':
-        return 'Chờ thanh toán';
       case 'PAYMENT_FAILED':
         return 'Thanh toán thất bại';
       case 'SCHEDULED':
@@ -198,8 +195,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     switch (status?.toUpperCase()) {
       case 'ACTIVE':
         return Colors.green;
-      case 'PENDING_PAYMENT':
-        return Colors.orange;
+
       case 'PAYMENT_FAILED':
         return Colors.red;
       case 'SCHEDULED':

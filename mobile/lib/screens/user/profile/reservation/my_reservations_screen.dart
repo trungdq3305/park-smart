@@ -31,7 +31,6 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   // Danh sách trạng thái đặt chỗ mới
   final List<String> _allStatuses = const [
-    'PENDING_PAYMENT',
     'CONFIRMED',
     'CHECKED_IN',
     'CHECKED_OUT',
@@ -244,8 +243,6 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   String _getStatusText(String? status) {
     switch (status?.toUpperCase()) {
-      case 'PENDING_PAYMENT':
-        return 'Chờ thanh toán';
       case 'CONFIRMED':
         return 'Đã xác nhận';
       case 'CHECKED_IN':
@@ -271,8 +268,6 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   Color _getStatusColor(String? status) {
     switch (status?.toUpperCase()) {
-      case 'PENDING_PAYMENT':
-        return Colors.orange;
       case 'CONFIRMED':
       case 'CHECKED_IN':
       case 'CHECKED_OUT':
