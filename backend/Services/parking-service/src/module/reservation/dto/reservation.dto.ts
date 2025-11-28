@@ -388,3 +388,20 @@ export class ReservationFilterDto extends PaginationQueryDto {
   @IsEnum(ReservationStatusEnum)
   status: ReservationStatusEnum
 }
+
+export class ReservationCancellationPreviewResponseDto {
+  @ApiProperty({ description: 'Có được phép hủy không', example: true })
+  canCancel: boolean
+
+  @ApiProperty({ description: 'Số tiền sẽ được hoàn lại', example: 50000 })
+  refundAmount: number
+
+  @ApiProperty({
+    description: 'Thời gian còn lại đến giờ đặt (phút)',
+    example: 75,
+  })
+  minutesUntilStart: number
+
+  @ApiProperty({ description: 'Thông báo/Cảnh báo cho người dùng' })
+  warningMessage: string
+}

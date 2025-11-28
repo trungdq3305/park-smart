@@ -26,7 +26,6 @@ import { GetCurrentUserId } from 'src/common/decorators/getCurrentUserId.decorat
 import { Roles } from 'src/common/decorators/roles.decorator'
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
-import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
 import { RoleEnum } from 'src/common/enum/role.enum'
 import { JwtAuthGuard } from 'src/guard/jwtAuth.guard'
@@ -46,6 +45,7 @@ import {
 } from './dto/reservation.dto' // <-- Thay đổi
 import { ReservationStatusEnum } from './enums/reservation.enum'
 import { IReservationService } from './interfaces/ireservation.service' // <-- Thay đổi
+import { UserToken } from 'src/common/decorators/getUserToken.decorator'
 
 @Controller('reservations') // <-- Thay đổi
 @ApiTags('reservations') // <-- Thay đổi
@@ -435,11 +435,13 @@ export class ReservationController {
   async cancelReservationByUser(
     @Param() id: IdDto,
     @GetCurrentUserId() userId: string,
+    @UserToken() userToken: string,
   ): Promise<ApiResponseDto<boolean>> {
     const isCancelled = await this.reservationService.cancelReservationByUser(
       // <-- Thay đổi
       id,
       userId,
+      userToken,
     )
     return {
       data: [isCancelled],
