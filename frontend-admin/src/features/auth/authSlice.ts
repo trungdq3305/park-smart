@@ -50,7 +50,7 @@ const authSlice = createSlice({
       if (state.userData.role === 'Admin') {
         window.location.href = '/admin/manage-account'
       } else {
-        window.location.href = `/${state.userData.role.toLowerCase().replace(/ /g, '-')}`
+        window.location.href = '/operator/parking-lot'
       }
     },
     logout: (state) => {
