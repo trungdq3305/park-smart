@@ -35,6 +35,7 @@ namespace CoreService.API.Controllers
         //    // Luồng 1
         //    return Ok(await _accountApp.GetAllAsync(page, pageSize));
         //}
+
         [HttpGet("operator/payments")]
         [Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> GetOperatorPayments(
