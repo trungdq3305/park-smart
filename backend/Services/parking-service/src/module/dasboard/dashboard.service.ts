@@ -65,7 +65,9 @@ export class DashboardService implements IDashboardService {
       {
         $group: {
           _id: null,
-          totalAmount: { $sum: '$amountPaid' },
+          totalAmount: {
+            $sum: { $subtract: ['$amountPaid', '$refundedAmount'] },
+          },
           count: { $sum: 1 },
         },
       },
@@ -82,7 +84,9 @@ export class DashboardService implements IDashboardService {
       {
         $group: {
           _id: null,
-          totalAmount: { $sum: '$prepaidAmount' },
+          totalAmount: {
+            $sum: { $subtract: ['$prepaidAmount', '$refundedAmount'] },
+          },
           count: { $sum: 1 },
         },
       },
@@ -172,7 +176,9 @@ export class DashboardService implements IDashboardService {
       {
         $group: {
           _id: null,
-          totalAmount: { $sum: '$amountPaid' },
+          totalAmount: {
+            $sum: { $subtract: ['$amountPaid', '$refundedAmount'] },
+          },
           count: { $sum: 1 },
         },
       },
@@ -191,7 +197,9 @@ export class DashboardService implements IDashboardService {
       {
         $group: {
           _id: null,
-          totalAmount: { $sum: '$prepaidAmount' },
+          totalAmount: {
+            $sum: { $subtract: ['$prepaidAmount', '$refundedAmount'] },
+          },
           count: { $sum: 1 },
         },
       },
