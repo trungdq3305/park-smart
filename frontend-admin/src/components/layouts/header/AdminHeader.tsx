@@ -99,15 +99,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
       </div>
       <div className="header-right">
         <Space size="middle">
-          Gửi thông báo thử
-          <Button
-            type="text"
-            className="header-action-btn notification-btn"
-            onClick={handleSendTestNotification}
-            aria-label="Send test notification"
-            icon={<SendOutlined />}
-            loading={isSending}
-          />
           {/* NotificationDropdown */}
           <NotificationDropdown isMobile={!!isMobile} />
           <Dropdown menu={{ items: userMenuItems }} trigger={['click']} placement="bottomRight">
