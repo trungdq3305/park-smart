@@ -2,9 +2,20 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import {
+  ApiProperty,
+  ApiPropertyOptional,
+  IntersectionType,
+} from '@nestjs/swagger'
 import { Exclude, Expose, Transform, Type } from 'class-transformer'
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import {
+  IsDateString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 // -----------------------------------------------------------------
 // --- DTO for Request Bodies (Yêu cầu) ---
@@ -181,8 +192,61 @@ export class ParkingLotSessionResponseDto {
   amountPaid: number // Tiền đã trả (cho Xô 3 hoặc phụ thu Xô 2)
 
   @Expose()
+  amountPayAfterCheckOut: number | null // Tiền phải trả sau khi check-out
+
+  @Expose()
   createdAt: Date
 
   @Expose()
   updatedAt: Date
+}
+
+export class HistoryFilterDto {
+  @ApiProperty({
+    description: 'Ngày bắt đầu (ISO 8601)',
+    example: new Date().toISOString(),
+    type: String,
+  })
+  @IsDateString() // Tự động validate format ngày
+  startDate: string
+
+  @ApiProperty({
+    description: 'Ngày kết thúc (ISO 8601)',
+    example: new Date().toISOString(),
+    type: String,
+  })
+  @IsDateString()
+  endDate: string
+}
+
+export class GetHistorySessionDto extends IntersectionType(
+  PaginationQueryDto,
+  HistoryFilterDto,
+) {}
+
+export class ConfirmCheckoutDto {
+  @ApiPropertyOptional({
+    description: 'ID giao dịch thanh toán (nếu có)',
+    example: 'TXN_123456',
+  })
+  @IsOptional()
+  @IsString()
+  paymentId?: string
+
+  @ApiPropertyOptional({
+    description: 'ID chính sách giá áp dụng',
+    example: '6910...',
+  })
+  @IsOptional()
+  @IsString()
+  pricingPolicyId?: string
+
+  @ApiPropertyOptional({
+    description: 'Số tiền thanh toán (sẽ tự ép kiểu từ chuỗi sang số)',
+    example: 50000,
+    type: Number,
+  })
+  @Type(() => Number) // 👈 QUAN TRỌNG: Tự động chuyển chuỗi "50000" -> số 50000
+  @IsNumber()
+  amountPayAfterCheckOut: number
 }

@@ -77,7 +77,19 @@ export class Subscription extends BaseEntity {
     default: () => randomUUID(), // ⭐️ Tự động tạo
     index: true,
   })
-  subscriptionIdentifier: string // (Mã QR hoặc mã định danh duy nhất cho gói này)
+  subscriptionIdentifier: string // (Mã QR hoặc mã định danh duy nhất cho gói này)\
+
+  @Prop({
+    type: String,
+    required: false,
+  })
+  promtionId: string // Mã khuyến mãi áp dụng cho gói này
+
+  @Prop({
+    type: Number,
+    required: false,
+  })
+  amountPaid: number // Số tiền đã thanh toán cho gói này
 }
 
 export const SubscriptionSchema = SchemaFactory.createForClass(Subscription)

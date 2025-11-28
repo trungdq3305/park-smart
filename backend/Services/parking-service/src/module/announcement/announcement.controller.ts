@@ -60,7 +60,7 @@ export class AnnouncementController {
     }
   }
 
-@Post('send-now')
+  @Post('send-now')
   @ApiOperation({
     summary: 'Admin: Tạo và gửi một Thông báo Công bố NGAY LẬP TỨC',
   })

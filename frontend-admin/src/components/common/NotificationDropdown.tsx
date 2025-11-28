@@ -54,7 +54,8 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
     refetch: refetchCount,
   } = useGetUnreadCountQuery(userId || '', {
     skip: !userId,
-    pollingInterval: 30000,
+    // 🔥 SỬA: BỎ pollingInterval: 30000,
+    // Bỏ hẳn pollingInterval để chỉ cập nhật khi có sự kiện (Socket hoặc Mutation)
   }) // Lấy danh sách thông báo & refetch
 
   const {
@@ -66,8 +67,6 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ isMobile = 
   })
   const notifications: Notification[] = responseData.data || []
   const totalCount = notifications.length
-  // 🔥🔥🔥 CONSOLE LOG THÔNG BÁO ĐỂ KIỂM TRA DỮ LIỆU 🔥🔥🔥
-  // 🔥🔥🔥 END CONSOLE LOG 🔥🔥🔥
   const [markAllAsRead, { isLoading: isMarkingRead }] = useMarkAllAsReadMutation()
   const [markAsReadSingle] = useMarkAsReadSingleMutation()
   const handleMarkAsReadSingle = async (notificationId: string, isCurrentlyRead: boolean) => {

@@ -13,6 +13,20 @@ export class ParkingLotSessionRepository
     private parkingLotSessionModel: Model<ParkingLotSession>,
   ) {}
 
+  findActiveSessionByReservationId(
+    reservationId: string,
+    parkingLotId?: string,
+  ): Promise<ParkingLotSession | null> {
+    return this.parkingLotSessionModel
+      .findOne({
+        reservationId: reservationId,
+        parkingLotId: parkingLotId,
+        status: ParkingSessionStatusEnum.ACTIVE,
+      })
+      .lean()
+      .exec()
+  }
+
   findActiveSessionBySubscriptionId(
     subscriptionId: string,
     parkingLotId?: string,
@@ -33,6 +47,10 @@ export class ParkingLotSessionRepository
   ): Promise<ParkingLotSession | null> {
     return this.parkingLotSessionModel
       .findById(sessionId)
+      .populate({
+        path: 'parkingLotId',
+        select: '_id name',
+      })
       .session(session ?? null)
       .lean()
       .exec()
@@ -42,30 +60,33 @@ export class ParkingLotSessionRepository
     parkingLotId: string,
     page: number,
     pageSize: number,
-    startTime?: Date,
-    endTime?: Date,
+    startTime: Date,
+    endTime: Date,
     session?: ClientSession,
   ): Promise<{ data: ParkingLotSession[]; total: number }> {
+    const filter = {
+      parkingLotId: parkingLotId,
+      createdAt: {
+        $gte: startTime, // Lớn hơn hoặc bằng Start
+        $lte: endTime, // Nhỏ hơn hoặc bằng End
+      },
+    }
+
     const [data, total] = await Promise.all([
       this.parkingLotSessionModel
-        .find({
-          parkingLotId: parkingLotId,
-          ...(startTime ? { createdAt: { $gte: startTime } } : {}),
-          ...(endTime ? { createdAt: { $lte: endTime } } : {}),
-        })
+        .find(filter)
+        .sort({ createdAt: -1 }) // 👈 QUAN TRỌNG: Sắp xếp mới nhất lên đầu
         .skip((page - 1) * pageSize)
         .limit(pageSize)
+        .lean()
         .session(session ?? null)
         .exec(),
       this.parkingLotSessionModel
-        .countDocuments({
-          parkingLotId: parkingLotId,
-          ...(startTime ? { createdAt: { $gte: startTime } } : {}),
-          ...(endTime ? { createdAt: { $lte: endTime } } : {}),
-        })
+        .countDocuments(filter)
         .session(session ?? null)
         .exec(),
     ])
+
     return { data, total }
   }
 

@@ -3,6 +3,7 @@ using CoreService.Application.DTOs.DashboardDtos;
 using CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Application.DTOs.PaymentDtos.CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,7 +39,7 @@ namespace CoreService.Application.Interfaces
         Task<PaymentRecord> GetByIdAsync(string Id);
         Task<IEnumerable<RefundRecord>> GetRefundsByCreatedByAsync(string accountId, int take = 50);
         Task<PaymentRecord> CreateSubscriptionInvoiceAsync(
-        string operatorId, string entityId,
+        string operatorId,
         long amount, DateTime dueDate);
 
         // Method mới để lấy các hóa đơn phí định kỳ theo trạng thái
@@ -71,5 +72,19 @@ namespace CoreService.Application.Interfaces
             IEnumerable<PaymentType>? paymentTypes,
             DateTime? fromDate,
             DateTime? toDate);
+        Task<PaymentRecord> CreateInvoiceAsync(
+            string operatorId,
+            long amount,
+            DateTime dueDate,
+            PaymentType type,
+            DateTime invoiceMonth, // <-- Trường mới: Tháng tính phí
+            string? relatedInvoiceId = null);
+        
+
+        Task<PaymentRecord> CreatePenaltyInvoiceAsync(
+    string operatorId,
+    long penaltyAmount,
+    DateTime dueDate,
+    PaymentRecord overdueMainInvoice);
     }
 }

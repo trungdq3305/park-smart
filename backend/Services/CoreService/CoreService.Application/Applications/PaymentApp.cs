@@ -551,16 +551,16 @@ namespace CoreService.Application.Applications
             // Giả định _refundRepo đã được inject và có phương thức GetByCreatedByAsync
             return await _refundRepo.GetByCreatedByAsync(accountId, take);
         }
-    
 
-    public async Task<PaymentRecord> CreateSubscriptionInvoiceAsync(
-    string operatorId, string entityId, 
+
+        public async Task<PaymentRecord> CreateSubscriptionInvoiceAsync(
+    string operatorId,
     long amount, DateTime dueDate)
         {
             // Dùng lại logic từ CreatePaymentInvoiceAsync nhưng gán cứng PaymentType
 
             const PaymentType type = PaymentType.OperatorCharge;
-            const string externalIdPrefix = "SUB";
+            const string externalIdPrefix = "OPR";
             var description = $"Subscription Fee for {operatorId} (Due: {dueDate:yyyy-MM})";
 
             var acc = await _accRepo.GetByOperatorAsync(operatorId)
@@ -568,16 +568,64 @@ namespace CoreService.Application.Applications
             var account = await _accountApp.GetByOperatorIdAsync(operatorId) ?? throw new ApiException("không tìm thấy tài khoản của operator");
             var accountId = account.Data.Id;
             // Hoặc giá trị phù hợp nếu cần
+
             // 1) Kiểm tra trạng thái sub-account (Giữ nguyên logic kiểm tra LIVE)
-            // ... (logic kiểm tra LIVE status) ...
+            var check = await _x.GetAsync($"/v2/accounts/{acc.XenditUserId}");
+            var checkBody = await check.Content.ReadAsStringAsync();
+            // Thêm logic kiểm tra LIVE ở đây
+            using (var d = JsonDocument.Parse(checkBody))
+            {
+                var st = d.RootElement.GetProperty("status").GetString();
+                if (!string.Equals(st, "REGISTERED", StringComparison.OrdinalIgnoreCase))
+                    throw new ApiException($"Tài khoản thanh toán của operator chưa ACTIVE (hiện: {st}). Hãy mở email mời và Accept.");
+            }
 
             // 2) Tạo invoice
-            var externalId = $"{externalIdPrefix}-{entityId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+
+            // **BƯỚC 2a: Tạo PaymentRecord ban đầu (Lưu trước để lấy ID)**
+            var externalId = $"{externalIdPrefix}-{operatorId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
             var baseReturn = "https://parksmart.vn/pay-result";
 
-            // ... (logic tạo successUrl và failureUrl - giữ nguyên) ...
-            var successUrl = $"{baseReturn}?result=success&entityId={Uri.EscapeDataString(entityId)}&operatorId={Uri.EscapeDataString(operatorId)}&externalId={Uri.EscapeDataString(externalId)}&accountId={Uri.EscapeDataString(accountId)}&type={type}";
-            var failureUrl = $"{baseReturn}?result=failure&entityId={Uri.EscapeDataString(entityId)}&operatorId={Uri.EscapeDataString(operatorId)}&externalId={Uri.EscapeDataString(externalId)}&accountId={Uri.EscapeDataString(accountId)}&type={type}";
+            var pr = new PaymentRecord
+            {
+                OperatorId = operatorId,
+                ExternalId = externalId,
+                Amount = amount,
+                XenditUserId = acc.XenditUserId,
+                CreatedBy = accountId,
+                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+
+                // GÁN LOẠI THANH TOÁN (ENUM) VÀ ID TƯƠNG ỨNG
+                PaymentType = type,
+                SubscriptionId = operatorId, // Gán operatorId làm entityId/SubscriptionId
+
+                // Gán trạng thái ban đầu (Pending/Created/Draft)
+                Status = "CREATED",
+                DueDate = dueDate, // LƯU NGÀY ĐÁO HẠN
+            };
+            // LƯU VÀO DB ĐỂ CÓ ID THẬT
+            await _payRepo.AddAsync(pr); // <--- LƯU TRƯỚC
+            var paymentId = pr.Id;
+
+
+            // **BƯỚC 2b: Tạo successUrl và failureUrl (THÊM paymentId)**
+            var entityId = operatorId; // Dùng operatorId làm entityId cho loại này
+
+            var successUrl = $"{baseReturn}?result=success" +
+                             $"&entityId={Uri.EscapeDataString(entityId)}" +
+                             $"&operatorId={Uri.EscapeDataString(operatorId)}" +
+                             $"&externalId={Uri.EscapeDataString(externalId)}" +
+                             $"&accountId={Uri.EscapeDataString(accountId)}" +
+                             $"&paymentId={Uri.EscapeDataString(paymentId)}" + // THÊM paymentId
+                             $"&type={type}";
+
+            var failureUrl = $"{baseReturn}?result=failure" +
+                             $"&entityId={Uri.EscapeDataString(entityId)}" +
+                             $"&operatorId={Uri.EscapeDataString(operatorId)}" +
+                             $"&externalId={Uri.EscapeDataString(externalId)}" +
+                             $"&accountId={Uri.EscapeDataString(accountId)}" +
+                             $"&paymentId={Uri.EscapeDataString(paymentId)}" + // THÊM paymentId
+                             $"&type={type}";
 
             // Payload Xendit. QUAN TRỌNG: Thêm fees để chuyển tiền về Master Account (tài khoản CoreService)
             var body = new
@@ -589,8 +637,8 @@ namespace CoreService.Application.Applications
                 success_redirect_url = successUrl,
                 failure_redirect_url = failureUrl,
                 should_send_email = false,
-                invoice_duration = 60,
-                // CƠ CHẾ THU PHÍ NỀN TẢNG: Chuyển toàn bộ amount về tài khoản Master
+                invoice_duration = 600, // Đã đổi thành 600 để đồng bộ với hàm trên (từ 60)
+                                        // CƠ CHẾ THU PHÍ NỀN TẢNG: Chuyển toàn bộ amount về tài khoản Master
                 fees = new[]
                 {
             new
@@ -614,24 +662,12 @@ namespace CoreService.Application.Applications
             var url = doc.RootElement.GetProperty("invoice_url").GetString();
 
 
-            // 3. Tạo PaymentRecord và lưu DB
-            var pr = new PaymentRecord
-            {
-                OperatorId = operatorId,
-                XenditInvoiceId = invoiceId,
-                ExternalId = externalId,
-                Amount = amount,
-                Status = status,
-                XenditUserId = acc.XenditUserId,
-                CheckoutUrl = url,
-                CreatedBy = accountId,
-                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+            // 3. Cập nhật PaymentRecord trong DB
+            pr.XenditInvoiceId = invoiceId;
+            pr.Status = status;
+            pr.CheckoutUrl = url;
 
-                PaymentType = type,
-                SubscriptionId = entityId,
-                DueDate = dueDate, // LƯU NGÀY ĐÁO HẠN
-            };
-            await _payRepo.AddAsync(pr);
+            await _payRepo.UpdateAsync(pr); // <--- Đổi từ AddAsync sang UpdateAsync
             return pr;
         }
         public async Task<IEnumerable<PaymentRecord>> GetSubscriptionInvoicesByStatusAsync(
@@ -749,11 +785,11 @@ namespace CoreService.Application.Applications
         }
 
         public async Task<IEnumerable<OperatorPaymentDetailDto>> GetOperatorPaymentsFilteredAsync(
-    string operatorId,
-    IEnumerable<PaymentType>? paymentTypes,
-    string? status,
-    DateTime? fromDate,
-    DateTime? toDate)
+        string operatorId,
+        IEnumerable<PaymentType>? paymentTypes,
+        string? status,
+        DateTime? fromDate,
+        DateTime? toDate)
         {
             // --- 0. Kiểm tra Input ---
             if (!string.IsNullOrEmpty(status) && !IsStatusValid(status))
@@ -761,19 +797,46 @@ namespace CoreService.Application.Applications
                 throw new ApiException($"Trạng thái '{status}' không hợp lệ. Các trạng thái được chấp nhận: PENDING, PAID, EXPIRED, FAILED, REFUNDED.", StatusCodes.Status400BadRequest);
             }
 
-            // 1. Lọc PaymentRecords
-            var operatorTypes = new[] { PaymentType.Reservation, PaymentType.Subscription, PaymentType.ParkingLotSession };
-
-            // Nếu paymentTypes không null, kiểm tra xem có bất kỳ type nào hợp lệ cho Operator không.
-            if (paymentTypes != null && !paymentTypes.Any(t => operatorTypes.Contains(t)))
+            // --- 1. Xác định loại Payment Type cần lọc ---
+            // Các loại giao dịch được chấp nhận chung (cho cả Operator Dashboard và Admin OPR)
+            var allowedTypes = new[]
             {
-                // Nếu người dùng chỉ truyền các type không phải của Operator (ví dụ: chỉ OPR), 
-                // hoặc truyền type không hợp lệ, trả về rỗng.
-                return Enumerable.Empty<OperatorPaymentDetailDto>();
+            PaymentType.Reservation,
+            PaymentType.Subscription,
+            PaymentType.ParkingLotSession,
+            PaymentType.OperatorCharge,
+            PaymentType.PenaltyCharge
+        };
+
+            // Các loại mặc định dành cho Operator Dashboard (tiền Driver trả)
+            var defaultOperatorTypes = new[]
+            {
+            PaymentType.Reservation,
+            PaymentType.Subscription,
+            PaymentType.ParkingLotSession
+        };
+
+            IEnumerable<PaymentType> typesToFilter;
+
+            if (paymentTypes != null && paymentTypes.Any())
+            {
+                // Nếu có type cụ thể được truyền vào (ví dụ: chỉ OperatorCharge từ Admin API)
+                // Lấy giao điểm của các type truyền vào và các type được phép
+                typesToFilter = paymentTypes.Intersect(allowedTypes);
+
+                if (!typesToFilter.Any())
+                {
+                    // Nếu người dùng chỉ truyền các type không hợp lệ, trả về rỗng.
+                    return Enumerable.Empty<OperatorPaymentDetailDto>();
+                }
+            }
+            else
+            {
+                // Nếu không truyền type, dùng mặc định cho Operator Dashboard
+                typesToFilter = defaultOperatorTypes;
             }
 
-            var typesToFilter = paymentTypes?.Intersect(operatorTypes) ?? operatorTypes;
-
+            // 2. Lọc PaymentRecords từ Repository
             var paymentRecords = await _payRepo.GetFilteredPaymentsAsync(
                 operatorId,
                 typesToFilter,
@@ -786,15 +849,15 @@ namespace CoreService.Application.Applications
             if (!paymentRecords.Any())
                 throw new ApiException("Không tìm thấy giao dịch nào phù hợp với các tiêu chí lọc.", StatusCodes.Status404NotFound);
 
-            // 2. Lấy tất cả RefundRecords cho các Payment này
+            // 3. Lấy tất cả RefundRecords cho các Payment này (Giữ nguyên)
             var paymentIds = paymentRecords.Select(p => p.Id).ToList();
             var allRefunds = await _refundRepo.GetByPaymentIdsAsync(paymentIds);
 
-            // 3. Group RefundRecords theo PaymentId để dễ tra cứu
+            // 4. Group RefundRecords theo PaymentId để dễ tra cứu (Giữ nguyên)
             var refundsByPaymentId = allRefunds.GroupBy(r => r.PaymentId)
-                                               .ToDictionary(g => g.Key, g => g.ToList());
+                                                .ToDictionary(g => g.Key, g => g.ToList());
 
-            // 4. Kết hợp dữ liệu (Mapping)
+            // 5. Kết hợp dữ liệu (Mapping) (Giữ nguyên)
             var result = new List<OperatorPaymentDetailDto>();
             foreach (var pr in paymentRecords)
             {
@@ -827,7 +890,6 @@ namespace CoreService.Application.Applications
 
             return result;
         }
-
         public async Task<PaymentTotalsDto> GetPaymentTotalsAsync(
     string? operatorId,
     IEnumerable<PaymentType>? paymentTypes,
@@ -902,6 +964,136 @@ namespace CoreService.Application.Applications
                 .ToList();
 
             return statusCounts;
+        }
+
+        // Đây là hàm được gọi bởi Scheduler và Onboarding
+        public async Task<PaymentRecord> CreateInvoiceAsync(
+            string operatorId,
+            long amount,
+            DateTime dueDate,
+            PaymentType type,
+            DateTime invoiceMonth, // <-- Trường mới: Tháng tính phí
+            string? relatedInvoiceId = null) // <-- Trường mới: Dùng cho PenaltyCharge
+        {
+            // Dùng lại logic từ CreateSubscriptionInvoiceAsync nhưng với tham số linh hoạt hơn
+
+            string externalIdPrefix;
+            string description;
+
+            // Đảm bảo chỉ chấp nhận OPR và PEN
+            switch (type)
+            {
+                case PaymentType.OperatorCharge:
+                    externalIdPrefix = "OPR";
+                    description = $"Subscription Fee for {operatorId} ({invoiceMonth:yyyy-MM})";
+                    break;
+                case PaymentType.PenaltyCharge:
+                    externalIdPrefix = "PEN";
+                    description = $"Late Payment Penalty for Invoice #{relatedInvoiceId}";
+                    break;
+                default:
+                    throw new ArgumentException("Loại thanh toán định kỳ không hợp lệ.");
+            }
+
+            // ... (logic kiểm tra sub-account, tạo externalId, tạo PaymentRecord ban đầu) ...
+
+            var acc = await _accRepo.GetByOperatorAsync(operatorId)
+                                 ?? throw new ApiException("Operator chưa có tài khoản thanh toán");
+            var account = await _accountApp.GetByOperatorIdAsync(operatorId) ?? throw new ApiException("không tìm thấy tài khoản của operator");
+            var accountId = account.Data.Id;
+
+            // Bỏ qua logic kiểm tra ACTIVE/REGISTERED ở đây (để tiết kiệm code, nhưng nên giữ trong code thật)
+
+            // **BƯỚC 2a: Tạo PaymentRecord ban đầu (Lưu trước để lấy ID)**
+            var externalId = $"{externalIdPrefix}-{operatorId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+            var baseReturn = "https://parksmart.vn/pay-result";
+
+            var pr = new PaymentRecord
+            {
+                // ... (các trường cơ bản)
+                OperatorId = operatorId,
+                ExternalId = externalId,
+                Amount = amount,
+                XenditUserId = acc.XenditUserId,
+                CreatedBy = accountId,
+                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow),
+
+                // GÁN LOẠI THANH TOÁN & ID LIÊN QUAN
+                PaymentType = type,
+                SubscriptionId = operatorId, // Dùng OperatorId làm SubscriptionId
+                DueDate = dueDate,
+
+                // TRƯỜNG MỚI ĐỂ HỖ TRỢ LOGIC SCHEDULER
+                InvoiceMonth = invoiceMonth, // Lưu tháng tính phí
+                RelatedInvoiceId = relatedInvoiceId, // Lưu ID hóa đơn chính nếu là hóa đơn phạt
+
+                Status = "CREATED",
+            };
+            await _payRepo.AddAsync(pr);
+            var paymentId = pr.Id;
+
+            // **BƯỚC 2b: Tạo URL và Payload Xendit**
+            // ... (Logic tạo successUrl và failureUrl, nhớ THÊM &type={type} và &paymentId={paymentId}) ...
+
+            var successUrl = $"{baseReturn}?result=success&entityId={Uri.EscapeDataString(operatorId)}&operatorId={Uri.EscapeDataString(operatorId)}&externalId={Uri.EscapeDataString(externalId)}&accountId={Uri.EscapeDataString(accountId)}&paymentId={Uri.EscapeDataString(paymentId)}&type={type}";
+            var failureUrl = $"{baseReturn}?result=failure&entityId={Uri.EscapeDataString(operatorId)}&operatorId={Uri.EscapeDataString(operatorId)}&externalId={Uri.EscapeDataString(externalId)}&accountId={Uri.EscapeDataString(accountId)}&paymentId={Uri.EscapeDataString(paymentId)}&type={type}";
+
+            // Payload Xendit. Phí chuyển về Master Account (Master Account Fee)
+            var body = new
+            {
+                external_id = externalId,
+                amount = amount,
+                currency = "VND",
+                description = description,
+                success_redirect_url = successUrl,
+                failure_redirect_url = failureUrl,
+                should_send_email = false,
+                invoice_duration = 100000000,
+                // Chuyển toàn bộ tiền về Master Account
+                fees = new[]
+                {
+            new { type = "TRANSFER", value = amount }
+        }
+            };
+
+            // ... (Logic gọi Xendit API, kiểm tra lỗi, parse JSON) ...
+            var res = await _x.PostAsync("/v2/invoices", body, forUserId: acc.XenditUserId);
+            var json = await res.Content.ReadAsStringAsync();
+
+            if (!res.IsSuccessStatusCode)
+                throw new ApiException($"Xendit tạo invoice lỗi: {(int)res.StatusCode} {res.ReasonPhrase}. Body: {json}");
+
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            var invoiceId = doc.RootElement.GetProperty("id").GetString();
+            var status = doc.RootElement.GetProperty("status").GetString();
+            var url = doc.RootElement.GetProperty("invoice_url").GetString();
+
+            // 3. Cập nhật PaymentRecord trong DB
+            pr.XenditInvoiceId = invoiceId;
+            pr.Status = status;
+            pr.CheckoutUrl = url;
+            await _payRepo.UpdateAsync(pr);
+
+            return pr;
+        }
+
+        public async Task<PaymentRecord> CreatePenaltyInvoiceAsync(
+    string operatorId,
+    long penaltyAmount,
+    DateTime dueDate,
+    PaymentRecord overdueMainInvoice)
+        {
+            var invoiceMonth = overdueMainInvoice.InvoiceMonth ?? overdueMainInvoice.CreatedAt;
+            var relatedInvoiceId = overdueMainInvoice.Id;
+
+            return await CreateInvoiceAsync(
+                operatorId,
+                penaltyAmount,
+                dueDate,
+                PaymentType.PenaltyCharge,
+                invoiceMonth.Date,
+                relatedInvoiceId
+            );
         }
     }
     

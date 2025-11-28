@@ -35,6 +35,13 @@ export interface IParkingLotRequestRepository {
   findAllRequests(status: string, type: string): Promise<ParkingLotRequest[]>
 
   hardDeleteById(id: string, session?: ClientSession): Promise<boolean>
+
+  findByOperatorId(
+    operatorId: string,
+    status: string,
+    type: string,
+    session?: ClientSession,
+  ): Promise<ParkingLotRequest[]>
 }
 
 export const IParkingLotRequestRepository = Symbol(

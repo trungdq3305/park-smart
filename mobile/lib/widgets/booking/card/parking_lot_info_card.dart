@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class ParkingLotInfoCard extends StatelessWidget {
   final Map<String, dynamic> parkingLot;
 
-  const ParkingLotInfoCard({
-    super.key,
-    required this.parkingLot,
-  });
+  const ParkingLotInfoCard({super.key, required this.parkingLot});
 
   @override
   Widget build(BuildContext context) {
@@ -18,8 +15,6 @@ class ParkingLotInfoCard extends StatelessWidget {
     final totalSlots = totalCapacityEachLevel * totalLevel;
     final address = addressId?['fullAddress'] ?? 'Không có địa chỉ';
     final wardName = addressId?['wardId']?['wardName'] ?? '';
-    final openTime = parkingLot['openTime'] ?? 'N/A';
-    final closeTime = parkingLot['closeTime'] ?? 'N/A';
     final is24Hours = parkingLot['is24Hours'] ?? false;
     final maxVehicleHeight = parkingLot['maxVehicleHeight'] ?? 0;
     final maxVehicleWidth = parkingLot['maxVehicleWidth'] ?? 0;
@@ -46,18 +41,11 @@ class ParkingLotInfoCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.local_parking,
-                color: Colors.green.shade600,
-                size: 24,
-              ),
+              Icon(Icons.local_parking, color: Colors.green.shade600, size: 24),
               const SizedBox(width: 8),
               const Text(
                 'Thông tin bãi đỗ xe',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -67,11 +55,7 @@ class ParkingLotInfoCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                Icons.location_on,
-                color: Colors.grey.shade600,
-                size: 20,
-              ),
+              Icon(Icons.location_on, color: Colors.grey.shade600, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Column(
@@ -101,28 +85,6 @@ class ParkingLotInfoCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          // Operating hours
-          Row(
-            children: [
-              Icon(
-                Icons.access_time,
-                color: Colors.grey.shade600,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                is24Hours
-                    ? 'Mở cửa 24/7'
-                    : 'Giờ mở cửa: $openTime - $closeTime',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
           // Availability
           Container(
             padding: const EdgeInsets.all(12),
@@ -140,12 +102,8 @@ class ParkingLotInfoCard extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  availableSpots > 0
-                      ? Icons.check_circle
-                      : Icons.warning,
-                  color: availableSpots > 0
-                      ? Colors.green
-                      : Colors.red,
+                  availableSpots > 0 ? Icons.check_circle : Icons.warning,
+                  color: availableSpots > 0 ? Colors.green : Colors.red,
                   size: 20,
                 ),
                 const SizedBox(width: 8),
@@ -163,26 +121,6 @@ class ParkingLotInfoCard extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 12),
-
-          // Vehicle size limits
-          Row(
-            children: [
-              Icon(
-                Icons.directions_car,
-                color: Colors.grey.shade600,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Giới hạn kích thước: ${maxVehicleHeight}m x ${maxVehicleWidth}m',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
-              ),
-            ],
           ),
           const SizedBox(height: 12),
 
@@ -212,46 +150,15 @@ class ParkingLotInfoCard extends StatelessWidget {
           // Total levels info
           Row(
             children: [
-              Icon(
-                Icons.layers,
-                color: Colors.grey.shade600,
-                size: 20,
-              ),
+              Icon(Icons.layers, color: Colors.grey.shade600, size: 20),
               const SizedBox(width: 8),
               Text(
                 'Tổng số tầng: $totalLevel',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade700,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
               ),
             ],
           ),
           const SizedBox(height: 12),
-
-          // Parking lot status
-          Row(
-            children: [
-              Icon(
-                Icons.verified,
-                color: parkingLotStatus == 'Đã duyệt'
-                    ? Colors.green
-                    : Colors.orange,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Trạng thái: $parkingLotStatus',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: parkingLotStatus == 'Đã duyệt'
-                      ? Colors.green.shade700
-                      : Colors.orange.shade700,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );

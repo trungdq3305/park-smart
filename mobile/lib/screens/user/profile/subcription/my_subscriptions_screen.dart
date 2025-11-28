@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+
 import '../../../../services/subcription_service.dart';
 import '../../../../widgets/app_scaffold.dart';
+import 'renewal_subscriptions_screen.dart';
+import 'subscription_renewal_flow.dart';
 
 class MySubscriptionsScreen extends StatefulWidget {
   const MySubscriptionsScreen({super.key});
@@ -12,13 +15,15 @@ class MySubscriptionsScreen extends StatefulWidget {
 }
 
 class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
+  List<Map<String, dynamic>> _allSubscriptions = [];
   List<Map<String, dynamic>> _subscriptions = [];
   bool _isLoading = true;
-  bool _isLoadingMore = false;
   String? _errorMessage;
   int _currentPage = 1;
-  int _pageSize = 10;
-  bool _hasMore = true;
+  final int _pageSize = 5;
+  int _totalItems = 0;
+  final Set<String> _renewingSubscriptionIds = <String>{};
+  String? _selectedStatusFilter; // null = tất cả
 
   @override
   void initState() {
@@ -26,102 +31,43 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     _loadSubscriptions();
   }
 
-  Future<void> _loadSubscriptions({bool loadMore = false}) async {
-    if (loadMore) {
-      if (!_hasMore || _isLoadingMore) return;
-      setState(() {
-        _isLoadingMore = true;
-      });
-    } else {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
+  Future<void> _loadSubscriptions({int? page, bool reset = false}) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+      if (reset) {
         _currentPage = 1;
-        _hasMore = true;
-      });
-    }
+      } else if (page != null) {
+        _currentPage = page;
+      }
+      _renewingSubscriptionIds.clear();
+      _allSubscriptions = [];
+      _subscriptions = [];
+    });
 
     try {
       final response = await SubscriptionService.getMySubscriptions(
         page: _currentPage,
         pageSize: _pageSize,
+        status: _selectedStatusFilter ?? 'ACTIVE',
       );
 
-      // Safely extract subscriptions data
-      dynamic subscriptionsData = response['data'];
-      if (subscriptionsData is List) {
-        final newSubscriptions = subscriptionsData
-            .map((item) => Map<String, dynamic>.from(item as Map))
-            .toList();
+      final newSubscriptions = _parseSubscriptionResponse(response);
 
-        // Filter only ACTIVE subscriptions
-        final activeSubscriptions = newSubscriptions
-            .where(
-              (sub) => (sub['status'] as String?)?.toUpperCase() == 'ACTIVE',
-            )
-            .toList();
-
-        setState(() {
-          if (loadMore) {
-            _subscriptions.addAll(activeSubscriptions);
-          } else {
-            _subscriptions = activeSubscriptions;
-          }
-
-          // Check if there are more pages
-          final total = response['total'] ?? response['totalCount'] ?? 0;
-          final currentTotal = _subscriptions.length;
-          _hasMore =
-              currentTotal < total && newSubscriptions.length == _pageSize;
-
-          if (_hasMore) {
-            _currentPage++;
-          }
-
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-      } else if (subscriptionsData is Map) {
-        // If data is a single object, check if ACTIVE
-        final subscriptionMap = Map<String, dynamic>.from(subscriptionsData);
-        final status = subscriptionMap['status'] as String?;
-
-        if (status?.toUpperCase() == 'ACTIVE') {
-          setState(() {
-            if (loadMore) {
-              _subscriptions.add(subscriptionMap);
-            } else {
-              _subscriptions = [subscriptionMap];
-            }
-            _hasMore = false;
-            _isLoading = false;
-            _isLoadingMore = false;
-          });
-        } else {
-          setState(() {
-            _subscriptions = [];
-            _hasMore = false;
-            _isLoading = false;
-            _isLoadingMore = false;
-          });
-        }
-      } else {
-        setState(() {
-          _subscriptions = [];
-          _hasMore = false;
-          _isLoading = false;
-          _isLoadingMore = false;
-        });
-      }
+      setState(() {
+        _allSubscriptions = newSubscriptions;
+        _subscriptions = _filterSubscriptionsList();
+        _totalItems = _extractTotalItems(response) ?? newSubscriptions.length;
+        _isLoading = false;
+      });
     } catch (e) {
       print('❌ Error loading subscriptions: $e');
       setState(() {
         _errorMessage = e.toString();
         _isLoading = false;
-        _isLoadingMore = false;
       });
 
-      if (mounted && !loadMore) {
+      if (mounted && !reset) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi tải danh sách gói thuê bao: ${e.toString()}'),
@@ -130,6 +76,91 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
         );
       }
     }
+  }
+
+  List<Map<String, dynamic>> _parseSubscriptionResponse(
+    Map<String, dynamic> response,
+  ) {
+    final List<Map<String, dynamic>> results = [];
+    final dynamic data = response['data'];
+
+    void addList(dynamic listData) {
+      final list = listData
+          .map<Map<String, dynamic>>(
+            (item) => Map<String, dynamic>.from(item as Map),
+          )
+          .toList();
+      results.addAll(list);
+    }
+
+    if (data is List) {
+      addList(data);
+    } else if (data is Map) {
+      if (data['data'] is List) {
+        addList(data['data']);
+      } else if (data.containsKey('_id') || data.containsKey('id')) {
+        results.add(Map<String, dynamic>.from(data));
+      }
+    }
+
+    return results;
+  }
+
+  int? _extractTotalItems(Map<String, dynamic> response) {
+    final pagination = response['pagination'];
+    if (pagination is Map) {
+      final totalItems = pagination['totalItems'] ?? pagination['total'];
+      if (totalItems is int) return totalItems;
+    }
+
+    final data = response['data'];
+    if (data is Map) {
+      final innerPagination = data['pagination'];
+      if (innerPagination is Map) {
+        final total = innerPagination['totalItems'] ?? innerPagination['total'];
+        if (total is int) return total;
+      }
+
+      final totalInside = data['totalItems'] ?? data['total'];
+      if (totalInside is int) return totalInside;
+    }
+
+    final total =
+        response['totalItems'] ?? response['total'] ?? response['totalCount'];
+    if (total is int) return total;
+    return null;
+  }
+
+  // Danh sách enum trạng thái subscription theo backend
+  static const List<String> _allStatuses = <String>[
+    'ACTIVE',
+    'PENDING_PAYMENT',
+    'PAYMENT_FAILED',
+    'SCHEDULED',
+    'EXPIRED',
+    'CANCELLED',
+    'CANCELLED_DUE_TO_NON_PAYMENT',
+  ];
+
+  List<Map<String, dynamic>> _filterSubscriptionsList() {
+    return _allSubscriptions.where((sub) {
+      final status = (sub['status'] as String?)?.toUpperCase();
+      if (status == null) return false;
+      if (_selectedStatusFilter == null) {
+        // Không chọn filter -> hiển thị tất cả status hợp lệ
+        return _allStatuses.contains(status);
+      }
+      return status == _selectedStatusFilter;
+    }).toList();
+  }
+
+  void _onFilterChanged(String? statusCode) {
+    if (_selectedStatusFilter == statusCode) return;
+    setState(() {
+      _selectedStatusFilter = statusCode;
+    });
+    // Khi đổi filter, luôn quay về trang 1 và gọi lại API
+    _loadSubscriptions(reset: true);
   }
 
   String _formatDate(String? dateString) {
@@ -145,14 +176,19 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   String _getStatusText(String? status) {
     switch (status?.toUpperCase()) {
       case 'ACTIVE':
-      case 'ACTIVATED':
         return 'Đang hoạt động';
-      case 'PENDING':
+      case 'PENDING_PAYMENT':
         return 'Chờ thanh toán';
+      case 'PAYMENT_FAILED':
+        return 'Thanh toán thất bại';
+      case 'SCHEDULED':
+        return 'Đã lên lịch';
       case 'EXPIRED':
         return 'Đã hết hạn';
       case 'CANCELLED':
         return 'Đã hủy';
+      case 'CANCELLED_DUE_TO_NON_PAYMENT':
+        return 'Hủy do chưa thanh toán';
       default:
         return status ?? 'Không xác định';
     }
@@ -161,15 +197,76 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   Color _getStatusColor(String? status) {
     switch (status?.toUpperCase()) {
       case 'ACTIVE':
-      case 'ACTIVATED':
         return Colors.green;
-      case 'PENDING':
+      case 'PENDING_PAYMENT':
         return Colors.orange;
-      case 'EXPIRED':
-      case 'CANCELLED':
+      case 'PAYMENT_FAILED':
         return Colors.red;
+      case 'SCHEDULED':
+        return Colors.blue;
+
+      case 'EXPIRED':
+        return Colors.grey;
+      case 'CANCELLED':
+      case 'CANCELLED_DUE_TO_NON_PAYMENT':
+        return Colors.red.shade700;
+
       default:
         return Colors.grey;
+    }
+  }
+
+  Future<void> _handleRenewSubscription(
+    Map<String, dynamic> subscription,
+  ) async {
+    final currentStatus =
+        (subscription['status'] as String?)?.toUpperCase() ?? '';
+    if (currentStatus != 'ACTIVE') {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Chỉ có thể gia hạn khi gói đang ở trạng thái ĐANG HOẠT ĐỘNG.',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    final dynamic subscriptionIdValue =
+        subscription['_id'] ??
+        subscription['id'] ??
+        subscription['subscriptionId'];
+    final String? subscriptionId = subscriptionIdValue?.toString();
+
+    if (subscriptionId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy ID của gói thuê bao để gia hạn.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _renewingSubscriptionIds.add(subscriptionId);
+    });
+
+    final success = await SubscriptionRenewalFlow.start(
+      context: context,
+      subscription: subscription,
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _renewingSubscriptionIds.remove(subscriptionId);
+    });
+
+    if (success) {
+      _loadSubscriptions();
     }
   }
 
@@ -179,10 +276,28 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       showBottomNav: false,
       body: Scaffold(
         appBar: AppBar(
-          title: const Text('Vé của tôi'),
+          title: const Text('Gói thuê bao đã đăng ký'),
           backgroundColor: Colors.green,
           foregroundColor: Colors.white,
           elevation: 0,
+          actions: [
+            IconButton(
+              tooltip: 'Gói cần gia hạn',
+              icon: const Icon(Icons.refresh),
+              onPressed: () async {
+                final bool? shouldRefresh = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const RenewalSubscriptionsScreen(),
+                  ),
+                );
+                if (!mounted) return;
+                if (shouldRefresh == true) {
+                  _loadSubscriptions();
+                }
+              },
+            ),
+          ],
         ),
         body: _buildBody(),
       ),
@@ -198,142 +313,198 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       );
     }
 
-    if (_errorMessage != null && _subscriptions.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red.shade400,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Không thể tải danh sách',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton.icon(
-                onPressed: () => _loadSubscriptions(),
-                icon: const Icon(Icons.refresh, size: 20),
-                label: const Text(
-                  'Thử lại',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade600,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 14,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 0,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+    if (_errorMessage != null &&
+        _subscriptions.isEmpty &&
+        _allSubscriptions.isEmpty) {
+      return _buildErrorState();
     }
 
-    if (_subscriptions.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.confirmation_number_outlined,
-                  size: 64,
-                  color: Colors.green.shade400,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Chưa có gói thuê bao',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.grey.shade800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Bạn chưa có gói thuê bao nào đang hoạt động.\nHãy đăng ký gói thuê bao để sử dụng dịch vụ.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+    return Column(
+      children: [
+        SubscriptionFilterBar(
+          statuses: _allStatuses,
+          selectedStatus: _selectedStatusFilter,
+          getStatusText: _getStatusText,
+          getStatusColor: _getStatusColor,
+          onStatusChanged: _onFilterChanged,
         ),
-      );
-    }
+        Expanded(
+          child: _subscriptions.isEmpty
+              ? _buildEmptyState()
+              : _buildSubscriptionList(),
+        ),
+      ],
+    );
+  }
 
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red.shade400,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Không thể tải danh sách',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage!,
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => _loadSubscriptions(),
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text(
+                'Thử lại',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final title = 'Không có gói phù hợp';
+    final description = _selectedStatusFilter == null
+        ? 'Bạn chưa có gói thuê bao nào. Hãy đăng ký gói thuê bao để sử dụng dịch vụ.'
+        : 'Không tìm thấy gói thuê bao với trạng thái \"${_getStatusText(_selectedStatusFilter)}\".';
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.confirmation_number_outlined,
+                size: 64,
+                color: Colors.green.shade400,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Colors.grey.shade800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSubscriptionList() {
     return RefreshIndicator(
-      onRefresh: () => _loadSubscriptions(),
+      onRefresh: () => _loadSubscriptions(reset: true),
       color: Colors.green.shade600,
       backgroundColor: Colors.white,
-      child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-        itemCount: _subscriptions.length + (_hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == _subscriptions.length) {
-            // Load more indicator
-            if (_isLoadingMore) {
-              return const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                  ),
-                ),
-              );
-            }
-            // Load more trigger
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _loadSubscriptions(loadMore: true);
-            });
-            return const SizedBox.shrink();
-          }
-
-          final subscription = _subscriptions[index];
-          return _buildSubscriptionCard(subscription);
-        },
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+              itemCount: _subscriptions.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final subscription = _subscriptions[index];
+                return _buildSubscriptionCard(subscription);
+              },
+            ),
+          ),
+          const SizedBox(height: 4),
+          _buildPaginationControls(),
+          const SizedBox(height: 12),
+        ],
       ),
+    );
+  }
+
+  int get _totalPages {
+    if (_totalItems <= 0) return 1;
+    return (_totalItems / _pageSize).ceil();
+  }
+
+  void _changePage(int delta) {
+    final newPage = (_currentPage + delta).clamp(1, _totalPages);
+    if (newPage == _currentPage) return;
+    _loadSubscriptions(page: newPage);
+  }
+
+  Widget _buildPaginationControls() {
+    if (_totalPages <= 1) return const SizedBox.shrink();
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left),
+          color: Colors.green,
+          onPressed: _currentPage > 1 ? () => _changePage(-1) : null,
+        ),
+        Text(
+          'Trang $_currentPage/$_totalPages',
+          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right),
+          color: Colors.green,
+          onPressed: _currentPage < _totalPages ? () => _changePage(1) : null,
+        ),
+      ],
     );
   }
 
@@ -341,18 +512,41 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final status = subscription['status'] as String?;
     final statusColor = _getStatusColor(status);
     final statusText = _getStatusText(status);
+    final dynamic subscriptionIdValue =
+        subscription['_id'] ?? subscription['id'];
+    final String? subscriptionId = subscriptionIdValue?.toString();
+    final statusUpper = status?.toUpperCase() ?? '';
+    final isRenewalStatus = statusUpper == 'RENEWAL';
+    final isActiveStatus = statusUpper == 'ACTIVE';
+    final isProcessingRenewal =
+        subscriptionId != null &&
+        _renewingSubscriptionIds.contains(subscriptionId);
 
     // Extract subscription details
     final pricingPolicy = subscription['pricingPolicyId'];
     final parkingLot = subscription['parkingLotId'];
-    final packageRate = pricingPolicy?['packageRateId'];
 
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
     final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
     final startDate = subscription['startDate'];
     final endDate = subscription['endDate'];
-    final durationAmount = packageRate?['durationAmount'] ?? 0;
-    final unit = packageRate?['unit'] ?? '';
+
+    // Tính toán trạng thái "sắp hết hạn" cho gói ACTIVE (còn <= 3 ngày)
+    bool isNearExpiry = false;
+    if (isActiveStatus && endDate is String) {
+      final end = DateTime.tryParse(endDate);
+      if (end != null) {
+        final now = DateTime.now();
+        final diff = end.difference(now);
+        if (!diff.isNegative && diff.inDays <= 3) {
+          isNearExpiry = true;
+        }
+      }
+    }
+
+    final Color effectiveStatusColor = isNearExpiry
+        ? Colors.orange.shade600
+        : statusColor;
 
     return InkWell(
       onTap: () => _showQRCodeDialog(subscription),
@@ -386,8 +580,8 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    statusColor.withOpacity(0.15),
-                    statusColor.withOpacity(0.08),
+                    effectiveStatusColor.withOpacity(0.15),
+                    effectiveStatusColor.withOpacity(0.08),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -404,12 +598,12 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.2),
+                      color: effectiveStatusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Icon(
                       Icons.confirmation_number,
-                      color: statusColor,
+                      color: effectiveStatusColor,
                       size: 24,
                     ),
                   ),
@@ -462,11 +656,11 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: statusColor,
+                      color: effectiveStatusColor,
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: statusColor.withOpacity(0.3),
+                          color: effectiveStatusColor.withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -554,64 +748,41 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                       ],
                     ),
                   ),
-                  // Duration info
-                  if (packageRate != null) ...[
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: Colors.blue.shade100,
-                          width: 1,
+                  const SizedBox(height: 16),
+                  // Nút gia hạn thêm cho gói ACTIVE sắp hết hạn
+                  if (isNearExpiry && isActiveStatus && !isRenewalStatus)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: isProcessingRenewal
+                            ? null
+                            : () => _handleRenewSubscription(subscription),
+                        icon: isProcessingRenewal
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.refresh),
+                        label: Text(
+                          isProcessingRenewal
+                              ? 'Đang xử lý...'
+                              : 'Gia hạn thêm',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade600,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.blue.shade100,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.access_time,
-                              size: 20,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Thời lượng',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blue.shade700,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '$durationAmount $unit',
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    color: Colors.blue.shade900,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                  ],
-                  // Tap hint
-                  const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -635,6 +806,78 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                 ],
               ),
             ),
+            if (isRenewalStatus) ...[
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.orange.shade600,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Gói thuê bao đã đến hạn. Vui lòng gia hạn để tiếp tục sử dụng.',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.orange.shade900,
+                                fontWeight: FontWeight.w600,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: isProcessingRenewal
+                            ? null
+                            : () => _handleRenewSubscription(subscription),
+                        icon: isProcessingRenewal
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.refresh),
+                        label: Text(
+                          isProcessingRenewal
+                              ? 'Đang xử lý...'
+                              : 'Gia hạn ngay',
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade600,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1016,6 +1259,73 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Thanh filter trạng thái subscription (hàng ngang, scroll được)
+class SubscriptionFilterBar extends StatelessWidget {
+  final List<String> statuses;
+  final String? selectedStatus;
+  final String Function(String?) getStatusText;
+  final Color Function(String?) getStatusColor;
+  final ValueChanged<String?> onStatusChanged;
+
+  const SubscriptionFilterBar({
+    super.key,
+    required this.statuses,
+    required this.selectedStatus,
+    required this.getStatusText,
+    required this.getStatusColor,
+    required this.onStatusChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        child: Row(
+          children: [
+            _buildChip(label: 'Tất cả', statusCode: null, color: Colors.green),
+            const SizedBox(width: 8),
+            for (final status in statuses) ...[
+              _buildChip(
+                label: getStatusText(status),
+                statusCode: status,
+                color: getStatusColor(status),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChip({
+    required String label,
+    required String? statusCode,
+    required Color color,
+  }) {
+    final bool isSelected = selectedStatus == statusCode;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      selectedColor: color,
+      labelPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.grey.shade700,
+        fontWeight: FontWeight.w600,
+      ),
+      backgroundColor: Colors.grey.shade100,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: isSelected ? color : Colors.grey.shade300),
+      ),
+      onSelected: (_) => onStatusChanged(statusCode),
     );
   }
 }

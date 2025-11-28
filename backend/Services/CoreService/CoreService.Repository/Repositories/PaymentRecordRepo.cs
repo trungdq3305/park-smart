@@ -179,5 +179,64 @@ namespace CoreService.Repository.Repositories
 
             return await _col.CountDocumentsAsync(combinedFilter);
         }
+        public async Task<PaymentRecord?> GetUnpaidMainInvoiceForMonth(string operatorId, DateTime invoiceMonth)
+        {
+            // Trạng thái UNPAID bao gồm "CREATED", "PENDING", "EXPIRED"
+            var unpaidStatuses = new[] { "CREATED", "PENDING", "EXPIRED" };
+
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),
+                Builders<PaymentRecord>.Filter.Eq(p => p.PaymentType, PaymentType.OperatorCharge),
+                Builders<PaymentRecord>.Filter.Eq(p => p.InvoiceMonth, invoiceMonth.Date), // Khớp tháng tính phí (chỉ cần so sánh ngày 1)
+                Builders<PaymentRecord>.Filter.In(p => p.Status, unpaidStatuses)
+            );
+
+            return await _col.Find(filter).FirstOrDefaultAsync();
+        }
+        public async Task<PaymentRecord?> GetMainInvoiceForMonth(string operatorId, DateTime invoiceMonth)
+        {
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),
+                Builders<PaymentRecord>.Filter.Eq(p => p.PaymentType, PaymentType.OperatorCharge),
+                // So sánh chính xác ngày 1 của tháng tính phí
+                Builders<PaymentRecord>.Filter.Eq(p => p.InvoiceMonth, invoiceMonth.Date)
+            );
+
+            return await _col.Find(filter).FirstOrDefaultAsync();
+        }
+        /// <summary>
+        /// 2. Tìm hóa đơn Phạt (PEN) liên quan đến một hóa đơn chính bị quá hạn.
+        /// </summary>
+        public async Task<PaymentRecord?> GetPenaltyInvoiceForRelatedInvoice(string relatedInvoiceId)
+        {
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.Eq(p => p.PaymentType, PaymentType.PenaltyCharge),
+                Builders<PaymentRecord>.Filter.Eq(p => p.RelatedInvoiceId, relatedInvoiceId)
+            );
+
+            // Ta chỉ cần một bản ghi duy nhất, vì chỉ tạo 1 hóa đơn phạt cho 1 hóa đơn chính
+            return await _col.Find(filter).FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// 3. Kiểm tra xem Operator có bất kỳ hóa đơn (OPR/PEN) nào chưa thanh toán và đã quá hạn không.
+        /// </summary>
+        public async Task<bool> HasUnpaidOverdueInvoices(string operatorId)
+        {
+            var unpaidStatuses = new[] { "CREATED", "PENDING", "EXPIRED" };
+            var now = DateTime.UtcNow; // Hoặc dùng TimeConverter.ToVietnamTime(DateTime.UtcNow);
+
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),
+                // Chỉ check OPR và PEN
+                Builders<PaymentRecord>.Filter.In(p => p.PaymentType, new[] { PaymentType.OperatorCharge, PaymentType.PenaltyCharge }),
+                Builders<PaymentRecord>.Filter.In(p => p.Status, unpaidStatuses),
+                // Chỉ kiểm tra những hóa đơn đã quá ngày đáo hạn
+                Builders<PaymentRecord>.Filter.Lte(p => p.DueDate, now)
+            );
+
+            // Trả về true nếu tồn tại bất kỳ bản ghi nào khớp
+            return await _col.Find(filter).AnyAsync();
+        }
     }
 }

@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
-import { ClientSession, Model } from 'mongoose'
+import { ClientSession, FilterQuery, Model, Types } from 'mongoose'
 
 import { ReservationStatusEnum } from './enums/reservation.enum'
 import { IReservationRepository } from './interfaces/ireservation.repository'
-import { Reservation } from './schemas/reservation.schema'
+import { Reservation, ReservationDocument } from './schemas/reservation.schema'
 
 @Injectable()
 export class ReservationRepository implements IReservationRepository {
@@ -12,6 +12,109 @@ export class ReservationRepository implements IReservationRepository {
     @InjectModel(Reservation.name)
     private reservationModel: Model<Reservation>,
   ) {}
+
+  findReservationByIdWithoutPopulate(
+    id: string,
+    session?: ClientSession,
+  ): Promise<Reservation | null> {
+    const query = this.reservationModel.findById(id).lean()
+    if (session) {
+      query.session(session)
+    }
+    return query.exec()
+  }
+
+  async updateExpiredReservationsToExpiredStatus(
+    cutoffTime: Date,
+  ): Promise<{ modifiedCount: number; matchedCount: number }> {
+    const filter = {
+      status: {
+        $in: [
+          ReservationStatusEnum.CONFIRMED, // Chỉ xử lý những vé ĐÃ ĐẶT mà KHÔNG ĐẾN
+        ],
+      },
+      estimatedEndTime: { $lt: cutoffTime }, // Đã quá giờ kết thúc
+      deletedAt: null,
+    }
+
+    // 2. Dữ liệu cập nhật
+    const update = {
+      $set: {
+        status: ReservationStatusEnum.EXPIRED,
+        updatedAt: new Date(),
+        // Có thể thêm log ghi chú
+        cancelReason: 'System Auto-expire (No-show)',
+      },
+    }
+
+    // 3. Thực thi
+    const result = await this.reservationModel.updateMany(filter, update)
+
+    return {
+      modifiedCount: result.modifiedCount,
+      matchedCount: result.matchedCount,
+    }
+  }
+
+  async countConflictingReservations(
+    parkingLotId: string,
+    start: Date,
+    end: Date,
+    excludeReservationId: string,
+  ): Promise<number> {
+    /**
+     * Logic tìm Booking trùng giờ:
+     * (StartA < EndB) AND (EndA > StartB)
+     *
+     * A: Booking trong DB
+     * B: Khoảng thời gian muốn kiểm tra (start, end)
+     */
+    const filter: FilterQuery<ReservationDocument> = {
+      parkingLotId: new Types.ObjectId(parkingLotId),
+      // Loại trừ chính booking đang gia hạn
+      _id: { $ne: new Types.ObjectId(excludeReservationId) },
+      // Chỉ tính các booking đang chiếm chỗ
+      status: {
+        $in: [
+          ReservationStatusEnum.CONFIRMED,
+          ReservationStatusEnum.CHECKED_IN,
+          ReservationStatusEnum.PENDING_PAYMENT, // Tính cả những ông đang trả tiền
+        ],
+      },
+      $or: [
+        {
+          userExpectedTime: { $lt: end }, // Start DB < End Request
+          estimatedEndTime: { $gt: start }, // End DB > Start Request
+        },
+      ],
+    }
+
+    return this.reservationModel.countDocuments(filter).exec()
+  }
+
+  async extendReservationEndTime(
+    id: string,
+    newEndTime: Date,
+    additionalAmount: number,
+    session: ClientSession,
+  ): Promise<Reservation | null> {
+    return this.reservationModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            estimatedEndTime: newEndTime, // Cập nhật giờ ra mới
+            updatedAt: new Date(),
+          },
+          $inc: {
+            prepaidAmount: additionalAmount, // Cộng dồn tiền vào tổng tiền đã trả
+            // Hoặc nếu bạn có field 'totalAmount', hãy update nó
+          },
+        },
+        { new: true, session },
+      )
+      .exec()
+  }
 
   async checkReservationStatusByIdentifier(
     reservationIdentifier: string,
@@ -79,12 +182,19 @@ export class ReservationRepository implements IReservationRepository {
   async updateReservationPaymentId(
     id: string,
     paymentId: string,
+    prepaidAmount: number,
     session: ClientSession,
   ): Promise<boolean> {
     const result = await this.reservationModel
       .updateOne(
         { _id: id },
-        { $set: { paymentId, status: ReservationStatusEnum.CONFIRMED } },
+        {
+          $set: {
+            paymentId,
+            status: ReservationStatusEnum.CONFIRMED,
+            prepaidAmount: prepaidAmount,
+          },
+        },
         { session }, // 'new: true' để trả về document mới
       )
       .exec()
@@ -103,10 +213,20 @@ export class ReservationRepository implements IReservationRepository {
     id: string,
     session?: ClientSession,
   ): Promise<Reservation | null> {
-    const query = this.reservationModel
-      .findById(id)
-      .populate('parkingLotId') // Populate chi tiết bãi đỗ xe
-      .populate('pricingPolicyId') // Populate chi tiết chính sách giá
+    const query = this.reservationModel.findById(id).populate([
+      {
+        path: 'parkingLotId',
+        select: 'parkingLotOperatorId name _id',
+      },
+      {
+        path: 'pricingPolicyId',
+        populate: [
+          { path: 'basisId' },
+          { path: 'packageRateId' },
+          { path: 'tieredRateSetId' },
+        ],
+      },
+    ]) // Populate chi tiết bãi đỗ xe
     if (session) {
       query.session(session)
     }
@@ -139,24 +259,33 @@ export class ReservationRepository implements IReservationRepository {
     userId: string,
     page: number,
     pageSize: number,
+    status: string,
   ): Promise<{ data: Reservation[]; total: number }> {
     const skip = (page - 1) * pageSize
     return Promise.all([
       this.reservationModel
-        .find({ createdBy: userId })
-        .populate({
-          path: 'parkingLotId',
-          select: 'name',
-        })
-        .populate({
-          path: 'pricingPolicyId',
-          select: 'name',
-        })
+        .find({ createdBy: userId, status: status, deletedAt: null })
+        .populate([
+          {
+            path: 'parkingLotId',
+            select: 'parkingLotOperatorId name _id',
+          },
+          {
+            path: 'pricingPolicyId',
+            populate: [
+              { path: 'basisId' },
+              { path: 'packageRateId' },
+              { path: 'tieredRateSetId' },
+            ],
+          },
+        ])
         .sort({ createdAt: -1 }) // Mới nhất trước
         .skip(skip)
         .limit(pageSize)
         .exec(),
-      this.reservationModel.countDocuments({ createdBy: userId }).exec(),
+      this.reservationModel
+        .countDocuments({ createdBy: userId, status: status, deletedAt: null })
+        .exec(),
     ]).then(([data, total]) => ({ data, total }))
   }
 

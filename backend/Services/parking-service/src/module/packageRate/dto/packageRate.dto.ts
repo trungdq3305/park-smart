@@ -29,15 +29,15 @@ export class CreatePackageRateDto {
   durationAmount: number
 
   @ApiProperty({
-    example: 'month',
+    example: 'MONTH',
     enum: Unit,
     description: 'Đơn vị thời hạn',
   })
   @IsEnum(Unit, {
-    message: 'Đơn vị thời hạn phải là "hour", "day", hoặc "month"', // <-- Lỗi tiếng Việt
+    message: 'Đơn vị thời hạn phải là "HOUR", "DAY", hoặc "MONTH"', // <-- Lỗi tiếng Việt
   })
   @IsNotEmpty({ message: 'Đơn vị thời hạn không được để trống' })
-  unit: string
+  unit: Unit
 }
 
 export class UpdatePackageRateDto {
@@ -61,15 +61,15 @@ export class UpdatePackageRateDto {
   durationAmount: number
 
   @ApiProperty({
-    example: 'month',
+    example: 'MONTH',
     enum: Unit,
     description: 'Đơn vị thời hạn',
   })
   @IsEnum(Unit, {
-    message: 'Đơn vị thời hạn phải là "hour", "day", hoặc "month"', // <-- Lỗi tiếng Việt
+    message: 'Đơn vị thời hạn phải là "HOUR", "DAY", hoặc "MONTH"', // <-- Lỗi tiếng Việt
   })
   @IsNotEmpty({ message: 'Đơn vị thời hạn không được để trống' })
-  durationUnit: Unit
+  unit: Unit
 }
 
 // --- DTO for Response (sử dụng với ClassSerializerInterceptor) ---

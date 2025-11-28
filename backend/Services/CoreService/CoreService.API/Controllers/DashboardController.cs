@@ -28,17 +28,16 @@ namespace CoreService.API.Controllers
 
         // --- ADMIN DASHBOARD ---
 
-        [HttpGet("admin/account-stats")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAdminAccountStats([FromQuery] int? page, [FromQuery] int? pageSize)
-        {
-            // Luồng 1
-            return Ok(await _accountApp.GetAllAsync(page, pageSize));
-        }
-        [HttpGet("operator/{operatorId}/payments")]
+        //[HttpGet("admin/account-stats")]
+        //[Authorize(Roles = "Admin")]
+        //public async Task<IActionResult> GetAdminAccountStats([FromQuery] int? page, [FromQuery] int? pageSize)
+        //{
+        //    // Luồng 1
+        //    return Ok(await _accountApp.GetAllAsync(page, pageSize));
+        //}
+        [HttpGet("operator/payments")]
         [Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> GetOperatorPayments(
-    string operatorId,
     [FromQuery] OperatorDashboardRequest request)
         {
             // Tùy chọn: nếu là Operator thì dùng operatorId từ token
@@ -52,7 +51,7 @@ namespace CoreService.API.Controllers
 
             // Sửa đổi kiểu trả về tại đây:
             var records = await _paymentApp.GetOperatorPaymentsFilteredAsync(
-                operatorId,
+                request.OperatorId,
                 paymentTypes,
                 request.Status,
                 request.FromDate,
@@ -65,17 +64,16 @@ namespace CoreService.API.Controllers
         /// <summary>
         /// Tổng hợp doanh thu và Refund của Operator
         /// </summary>
-        [HttpGet("operator/{operatorId}/financial-totals")]
+        [HttpGet("operator/financial-totals")]
         [Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> GetOperatorFinancialTotals(
-            string operatorId,
             [FromQuery] OperatorDashboardRequest request)
         {
             // Chỉ tính các giao dịch Driver trả tiền cho Operator
             var operatorTypes = new[] { PaymentType.Reservation, PaymentType.Subscription, PaymentType.ParkingLotSession };
 
             var totals = await _paymentApp.GetPaymentTotalsAsync(
-                operatorId,
+                request.OperatorId,
                 operatorTypes,
                 request.FromDate,
                 request.ToDate);
@@ -86,18 +84,74 @@ namespace CoreService.API.Controllers
         /// <summary>
         /// Thống kê số lượng giao dịch theo Status (PAID, PENDING, EXPIRED,...)
         /// </summary>
-        [HttpGet("operator/{operatorId}/status-counts")]
+        [HttpGet("operator/status-counts")]
         [Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> GetOperatorPaymentStatusCounts(
-            string operatorId,
             [FromQuery] OperatorDashboardRequest request)
         {
             // Chỉ tính các giao dịch Driver trả tiền cho Operator
             var operatorTypes = new[] { PaymentType.Reservation, PaymentType.Subscription, PaymentType.ParkingLotSession };
 
             var counts = await _paymentApp.GetPaymentCountByStatusAsync(
-                operatorId,
+                request.OperatorId,
                 operatorTypes,
+                request.FromDate,
+                request.ToDate);
+
+            return Ok(counts);
+        }
+        [HttpGet("admin/payments")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAdminOperatorCharges(
+                [FromQuery] OperatorDashboardRequest request)
+        {
+            // Lọc cứng PaymentType chỉ là OperatorCharge (OPR)
+            var paymentTypes = new[] { PaymentType.OperatorCharge };
+
+            var records = await _paymentApp.GetOperatorPaymentsFilteredAsync(
+                request.OperatorId, // Admin có thể lọc theo OperatorId cụ thể
+                paymentTypes,
+                request.Status,
+                request.FromDate,
+                request.ToDate);
+
+            return Ok(records);
+        }
+
+        /// <summary>
+        /// Tổng hợp doanh thu và Refund của các giao dịch OperatorCharge (phí thu từ Operator) cho Admin.
+        /// </summary>
+        [HttpGet("admin/financial-totals")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAdminFinancialTotals(
+            [FromQuery] OperatorDashboardRequest request)
+        {
+            // Chỉ tính các giao dịch thu phí từ Operator (OPR)
+            var adminTypes = new[] { PaymentType.OperatorCharge };
+
+            var totals = await _paymentApp.GetPaymentTotalsAsync(
+                request.OperatorId, // Admin có thể lọc theo OperatorId cụ thể
+                adminTypes,
+                request.FromDate,
+                request.ToDate);
+
+            return Ok(totals);
+        }
+
+        /// <summary>
+        /// Thống kê số lượng giao dịch OperatorCharge theo Status cho Admin.
+        /// </summary>
+        [HttpGet("admin/status-counts")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAdminPaymentStatusCounts(
+            [FromQuery] OperatorDashboardRequest request)
+        {
+            // Chỉ tính các giao dịch thu phí từ Operator (OPR)
+            var adminTypes = new[] { PaymentType.OperatorCharge };
+
+            var counts = await _paymentApp.GetPaymentCountByStatusAsync(
+                request.OperatorId, // Admin có thể lọc theo OperatorId cụ thể
+                adminTypes,
                 request.FromDate,
                 request.ToDate);
 

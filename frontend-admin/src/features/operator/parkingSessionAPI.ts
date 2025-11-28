@@ -5,7 +5,7 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
     // 1. Check-in (Có upload ảnh)
     checkIn: builder.mutation({
       query: ({ parkingLotId, formData }) => ({
-        url: `/parking-sessions/check-in/${parkingLotId}`,
+        url: `/parking/parking-sessions/check-in/${parkingLotId}`,
         method: 'POST',
         body: formData,
         // Lưu ý: Khi gửi FormData, không cần set Content-Type header,
@@ -18,7 +18,7 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
     // 2. Tính phí Check-out
     calculateCheckoutFee: builder.mutation({
       query: ({ parkingLotId, data }) => ({
-        url: `/parking-sessions/check-out/calculate-fee/${parkingLotId}`,
+        url: `/parking/parking-sessions/check-out/calculate-fee/${parkingLotId}`,
         method: 'POST',
         body: data, // { identifier, uidCard, pricingPolicyId }
       }),
@@ -29,7 +29,7 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
     confirmCheckout: builder.mutation({
       query: ({ sessionId, formData }) => ({
         // 👈 Đổi tham số thành formData
-        url: `/parking-sessions/check-out/confirm/${sessionId}`,
+        url: `/parking/parking-sessions/check-out/confirm/${sessionId}`,
         method: 'POST',
         body: formData, // 👈 Gửi body là FormData
       }),
@@ -53,7 +53,7 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
         }
 
         return {
-          url: '/parking-sessions/status/check', // Đảm bảo đúng prefix /parking nếu bạn có dùng global prefix
+          url: '/parking/parking-sessions/status/check', // Đảm bảo đúng prefix /parking nếu bạn có dùng global prefix
           method: 'GET',
           params: params, // Gửi object đã lọc sạch
         }
@@ -65,7 +65,7 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
     // 5. Lịch sử cá nhân (Driver)
     getMyParkingHistory: builder.query({
       query: (params) => ({
-        url: '/parking-sessions/my-history',
+        url: '/parking/parking-sessions/my-history',
         method: 'GET',
         params: params, // { page, pageSize }
       }),
@@ -76,7 +76,7 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
     // 6. Lịch sử bãi xe (Admin/Operator)
     getParkingLotHistory: builder.query({
       query: ({ parkingLotId, params }) => ({
-        url: `/parking-sessions/history/${parkingLotId}`,
+        url: `/parking/parking-sessions/history/${parkingLotId}`,
         method: 'GET',
         params: params, // { page, pageSize }
       }),
@@ -87,7 +87,7 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
     // 7. Chi tiết phiên (Kèm ảnh)
     getSessionDetails: builder.query({
       query: (sessionId) => ({
-        url: `/parking-sessions/${sessionId}/details`,
+        url: `/parking/parking-sessions/${sessionId}/details`,
         method: 'GET',
       }),
       transformResponse: (res) => res,
@@ -96,7 +96,7 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
 
     getActivePricingPolicies: builder.query({
       query: (parkingLotId) => ({
-        url: `/parking-lot-links/active/by-parking-lot/${parkingLotId}`,
+        url: `/parking/parking-lot-links/active/by-parking-lot/${parkingLotId}`,
         method: 'GET',
       }),
       transformResponse: (res: any) => res.data, // Chỉ lấy mảng data[]

@@ -46,6 +46,9 @@ namespace CoreService.Application
             services.AddScoped<IReportApplication, ReportApplication>();
             services.AddScoped<IAddressApiService, AddressApiService>();
             services.AddScoped<IParkingLotApiService, ParkingLotApiService>();
+            services.AddScoped<IBillingService, BillingService>();
+            services.AddHostedService<MonthlyBillingWorker>();
+            services.AddScoped<ISubscriptionPlanApplication, SubscriptionPlanApplication>();
             return services;
         }
     }

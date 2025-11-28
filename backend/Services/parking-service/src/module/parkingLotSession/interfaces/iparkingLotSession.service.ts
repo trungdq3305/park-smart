@@ -62,6 +62,7 @@ export interface IParkingLotSessionService {
     file: Express.Multer.File,
     paymentId?: string,
     pricingPolicyId?: string,
+    amountPayAfterCheckOut?: number,
   ): Promise<boolean>
 
   /**
@@ -85,6 +86,8 @@ export interface IParkingLotSessionService {
   findAllSessionsByParkingLot(
     parkingLotId: string,
     paginationQuery: PaginationQueryDto,
+    startDate: string,
+    endDate: string,
   ): Promise<{
     data: ParkingLotSessionResponseDto[]
     pagination: PaginationDto
@@ -104,7 +107,7 @@ export interface IParkingLotSessionService {
     identifier?: string,
     nfcUid?: string,
   ): Promise<{
-    session: boolean
+    session: ParkingLotSessionResponseDto | null
     images: any[]
     type: 'SUBSCRIPTION' | 'RESERVATION' | 'WALK_IN' | null
   }>

@@ -10,6 +10,7 @@ import {
   IsNotEmpty,
   IsOptional,
 } from 'class-validator'
+import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 
 import { SubscriptionStatusEnum } from '../enums/subscription.enum'
 
@@ -48,6 +49,14 @@ export class CreateSubscriptionDto {
   )
   @IsNotEmpty({ message: 'Ngày bắt đầu không được để trống' })
   startDate: string
+
+  @ApiPropertyOptional({
+    example: '605e3f5f4f3e8c1d4c9f1e1c',
+    description: 'ID của Khuyến mãi (Promotion) nếu có',
+  })
+  @IsOptional()
+  @IsMongoId({ message: 'ID khuyến mãi phải là một MongoID hợp lệ' })
+  promotionId: string
 
   // Lưu ý: userId sẽ được lấy từ @GetCurrentUserId() trong controller.
   // endDate, status, isUsed, subscriptionIdentifier sẽ được set bởi server.
@@ -97,6 +106,71 @@ export class UpdateSubscriptionDto {
 /**
  * DTO lồng nhau cho PricingPolicy (để hiển thị thông tin gói đã mua)
  */
+
+@Exclude()
+class LinkedBasisDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  basisName: string
+
+  @Expose()
+  description: string
+}
+
+/**
+ * DTO cho 'PackageRate' (Gói giá)
+ */
+@Exclude()
+class LinkedPackageRateDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  price: number
+
+  @Expose()
+  durationAmount: number
+
+  @Expose()
+  unit: string
+}
+
+/**
+ * DTO cho 'TieredRateSet' (Bộ giá bậc thang)
+ */
+@Exclude()
+class TierDto {
+  @Expose()
+  fromHour: string
+
+  @Expose()
+  toHour: string | null
+
+  @Expose()
+  price: number
+}
+
+@Exclude()
+class LinkedTieredRateSetDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  name: string
+
+  @Expose()
+  @Type(() => TierDto) // ⭐️ Lồng mảng DTO 'Tier' vào đây
+  tiers: TierDto[]
+}
+
 @Exclude()
 export class SubscribedPolicyDto {
   @Expose()
@@ -105,6 +179,27 @@ export class SubscribedPolicyDto {
 
   @Expose()
   name: string // Tên chính sách giá, ví dụ "Gói 1 tháng"
+
+  // --- Các trường giá trị trực tiếp ---
+  @Expose()
+  pricePerHour: number
+
+  @Expose()
+  fixedPrice: number
+
+  // --- Các trường populate (lồng nhau) ---
+
+  @Expose()
+  @Type(() => LinkedBasisDto) // ⭐️ Bổ sung
+  basisId: LinkedBasisDto
+
+  @Expose()
+  @Type(() => LinkedPackageRateDto) // ⭐️ Bổ sung
+  packageRateId: LinkedPackageRateDto | null // Có thể null
+
+  @Expose()
+  @Type(() => LinkedTieredRateSetDto) // ⭐️ Bổ sung
+  tieredRateSetId: LinkedTieredRateSetDto | null // Có thể null
 }
 
 /**
@@ -119,6 +214,9 @@ class ParkingLotSimpleDto {
 
   @Expose()
   name: string
+
+  @Expose()
+  parkingLotOperatorId: string
 }
 
 @Exclude()
@@ -139,7 +237,7 @@ export class SubscriptionDetailResponseDto {
   pricingPolicyId: SubscribedPolicyDto
 
   @Expose()
-  status: string
+  status: SubscriptionStatusEnum
 
   @Expose()
   startDate: Date
@@ -158,6 +256,12 @@ export class SubscriptionDetailResponseDto {
 
   @Expose()
   subscriptionIdentifier: string // Mã QR hoặc mã định danh gói
+
+  @Expose()
+  promotionId: string
+
+  @Expose()
+  amountPaid: number
 }
 
 export class AvailabilitySlotDto {
@@ -186,6 +290,9 @@ export class SubscriptionLogDto {
 
   @Expose()
   extendedUntil: number
+
+  @Expose()
+  createdAt: Date
 }
 
 @Exclude()
@@ -198,4 +305,41 @@ export class SubscriptionIdResponseDto {
 export class SubscriptionRenewalEligibilityResponseDto {
   canRenew: boolean
   message?: string
+}
+
+export class SubscriptionCancellationPreviewResponseDto {
+  @ApiProperty({ description: 'Có được phép hủy không', example: true })
+  canCancel: boolean
+
+  @ApiProperty({ description: 'Số tiền sẽ được hoàn lại', example: 500000 })
+  refundAmount: number
+
+  @ApiProperty({ description: 'Tỷ lệ hoàn tiền (%)', example: 50 })
+  refundPercentage: number
+
+  @ApiProperty({ description: 'Số ngày còn lại đến khi kích hoạt', example: 4 })
+  daysUntilActivation: number
+
+  @ApiProperty({
+    description: 'Tên chính sách áp dụng',
+    example: '3-7 Days Policy',
+  })
+  policyApplied: string
+
+  @ApiProperty({
+    description: 'Thông báo/Cảnh báo cho người dùng',
+    example: 'Bạn hủy sát ngày nên chỉ được hoàn 50%.',
+  })
+  warningMessage: string
+}
+
+export class SubscriptionFilterDto extends PaginationQueryDto {
+  @ApiProperty({
+    enum: SubscriptionStatusEnum,
+    description: 'Lọc theo trạng thái gói thuê bao',
+    example: SubscriptionStatusEnum.ACTIVE,
+  })
+  @IsNotEmpty({ message: 'Trạng thái không được để trống' })
+  @IsEnum(SubscriptionStatusEnum)
+  status: SubscriptionStatusEnum
 }
