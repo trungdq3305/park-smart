@@ -161,6 +161,12 @@ export interface IReservationRepository {
     id: string,
     session?: ClientSession,
   ): Promise<Reservation | null>
+
+  updateReservationRefundAmount(
+    id: string,
+    refundAmount: number,
+    session: ClientSession,
+  ): Promise<boolean>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')

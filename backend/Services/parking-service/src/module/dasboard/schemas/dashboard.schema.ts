@@ -66,6 +66,19 @@ export class ParkingDailyDashboard {
     hour: number // Giờ cao điểm (0-23)
     count: number // Số lượng xe vào trong giờ đó
   }
+
+  @Prop({ default: 0 })
+  totalRefunded: number
+
+  @Prop({
+    type: Object,
+    default: { subscription: 0, reservation: 0, walkIn: 0 },
+  })
+  refundBreakdown: {
+    subscription: number // Tổng tiền đã hoàn cho vé tháng
+    reservation: number // Tổng tiền đã hoàn cho đặt chỗ
+    walkIn: number // Thường là 0 (vãng lai ít khi hoàn, nhưng giữ cho đồng bộ)
+  }
 }
 
 export const ParkingDailyDashboardSchema = SchemaFactory.createForClass(

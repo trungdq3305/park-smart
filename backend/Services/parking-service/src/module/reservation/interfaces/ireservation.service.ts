@@ -8,6 +8,7 @@ import type {
   CreateReservationDto,
   ExtendReservationDto,
   ReservationAvailabilitySlotDto,
+  ReservationCancellationPreviewResponseDto,
   ReservationDetailResponseDto,
   ReservationExtensionEligibilityResponseDto,
   UpdateReservationStatusDto, // (Cho Admin)
@@ -87,8 +88,14 @@ export interface IReservationService {
    * hoặc 'PENDING_PAYMENT').
    * @param id ID của đơn đặt chỗ cần hủy.
    * @param userId ID của người dùng đang thực hiện.
+   * @param userToken Token của người dùng (để gọi Refund API).
+   * @return Trả về true nếu hủy thành công.
    */
-  cancelReservationByUser(id: IdDto, userId: string): Promise<boolean>
+  cancelReservationByUser(
+    id: IdDto,
+    userId: string,
+    userToken: string,
+  ): Promise<boolean>
 
   /**
    * (Dùng cho Admin) Cập nhật trạng thái (ví dụ: hủy do vận hành).
@@ -146,6 +153,11 @@ export interface IReservationService {
     userId: string,
     extendDto: ExtendReservationDto,
   ): Promise<ReservationDetailResponseDto>
+
+  getCancellationPreview(
+    id: IdDto,
+    userId: string,
+  ): Promise<ReservationCancellationPreviewResponseDto>
 }
 
 export const IReservationService = Symbol('IReservationService')

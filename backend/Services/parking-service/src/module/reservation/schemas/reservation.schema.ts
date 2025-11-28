@@ -97,6 +97,9 @@ export class Reservation extends BaseEntity {
     default: false,
   })
   inUsed: boolean
+
+  @Prop({ type: Number, default: 0 })
+  refundedAmount: number
 }
 
 export const ReservationSchema = SchemaFactory.createForClass(Reservation)

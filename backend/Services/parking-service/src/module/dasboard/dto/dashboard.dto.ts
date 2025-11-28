@@ -11,9 +11,18 @@ import { ReportTimeRangeEnum } from '../enums/dashboard.enum'
 
 // Enum các loại báo cáo
 
+export class BreakdownDto {
+  @ApiProperty() subscription: number
+  @ApiProperty() reservation: number
+  @ApiProperty() walkIn: number
+}
+
 // 1. DTO REQUEST (Gửi lên)
 export class GetReportQueryDto {
-  @ApiProperty({ description: 'ID bãi xe', example: '65f2...' })
+  @ApiProperty({
+    description: 'ID bãi xe',
+    example: '6910bdd67ed4c382df23de4e',
+  })
   @IsString()
   @IsNotEmpty()
   parkingLotId: string
@@ -75,6 +84,16 @@ export class ReportSummaryDto {
 
   @ApiProperty({ description: 'Thời gian đỗ xe trung bình (phút)' })
   avgParkingDurationMinutes: number
+
+  @ApiProperty({ description: 'Doanh thu thực nhận (Revenue - Refunded)' })
+  netRevenue: number // Nếu muốn tiện cho FE
+
+  @ApiProperty({ type: BreakdownDto })
+  revenueBreakdown: BreakdownDto
+
+  // 👇 Thêm vào DTO trả về
+  @ApiProperty({ type: BreakdownDto })
+  refundBreakdown: BreakdownDto
 }
 
 // Object trả về cuối cùng
@@ -115,4 +134,27 @@ export class DashboardReportResponseDto {
 
   @ApiProperty({ type: [ChartDataPointDto] })
   chartData: ChartDataPointDto[]
+}
+
+export class BackfillReportDto {
+  @ApiProperty({
+    description: 'Ngày bắt đầu (YYYY-MM-DD)',
+    example: '2025-11-01',
+  })
+  @IsDateString()
+  fromDate: string
+
+  @ApiProperty({
+    description: 'Ngày kết thúc (YYYY-MM-DD)',
+    example: '2025-11-28',
+  })
+  @IsDateString()
+  toDate: string
+
+  @ApiPropertyOptional({
+    description: 'ID bãi xe (Nếu không gửi sẽ chạy cho tất cả)',
+  })
+  @IsOptional()
+  @IsString()
+  parkingLotId?: string
 }
