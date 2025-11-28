@@ -135,6 +135,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   async cancelSubscription(
     id: string,
     userId: string,
+    refundedAmount: number,
     session: ClientSession,
   ): Promise<boolean> {
     const result = await this.subscriptionModel
@@ -145,6 +146,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
             status: SubscriptionStatusEnum.CANCELLED,
             updatedBy: userId,
             updatedAt: new Date(),
+            refundedAmount: refundedAmount,
           },
         },
         { session, new: true },
