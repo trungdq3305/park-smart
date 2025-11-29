@@ -56,5 +56,20 @@ namespace CoreService.Application.Applications
 
             return new ApiResponse<DriverUpdateDto>(dto, true, "Cập nhật thông tin driver thành công", StatusCodes.Status200OK);
         }
+        public async Task<ApiResponse<bool>> UpdateCreditPointAsync(string targetAccountId, int newCreditPoint, string modifierAccountId)
+        {
+            var success = await _driverRepo.UpdateCreditPointByAccountIdAsync(
+                targetAccountId,
+                newCreditPoint,
+                modifierAccountId // Truyền AccountId của người thực hiện cập nhật (ví dụ: Admin)
+            );
+
+            if (!success)
+            {
+                throw new ApiException("Không tìm thấy tài xế hoặc không thể cập nhật.", StatusCodes.Status404NotFound);
+                
+            }
+            return new ApiResponse<bool>(true, true, "Cập nhật điểm tín dụng thành công.", StatusCodes.Status200OK);
+        }
     }
 }
