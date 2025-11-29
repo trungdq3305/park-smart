@@ -15,6 +15,6 @@ namespace CoreService.Repository.Interfaces
         Task UpdateAsync(Driver entity);
         Task DeleteAsync(string id);
         Task<Driver?> GetByAccountIdAsync(string accountId);
-        Task<bool> UpdateCreditPointByAccountIdAsync(string accountId, int newCreditPoint, string? updatedBy = null);
+        Task<bool> UpdateCreditPointByAccountIdAsync(string accountId, int newCreditPoint);
     }
 }
