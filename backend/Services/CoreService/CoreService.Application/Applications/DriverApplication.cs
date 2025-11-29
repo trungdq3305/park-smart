@@ -56,12 +56,11 @@ namespace CoreService.Application.Applications
 
             return new ApiResponse<DriverUpdateDto>(dto, true, "Cập nhật thông tin driver thành công", StatusCodes.Status200OK);
         }
-        public async Task<ApiResponse<bool>> UpdateCreditPointAsync(string targetAccountId, int newCreditPoint, string modifierAccountId)
+        public async Task<ApiResponse<bool>> UpdateCreditPointAsync(string targetAccountId, int newCreditPoint)
         {
             var success = await _driverRepo.UpdateCreditPointByAccountIdAsync(
                 targetAccountId,
-                newCreditPoint,
-                modifierAccountId // Truyền AccountId của người thực hiện cập nhật (ví dụ: Admin)
+                newCreditPoint
             );
 
             if (!success)
