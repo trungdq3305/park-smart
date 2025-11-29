@@ -1,8 +1,9 @@
 ﻿using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
+using Dotnet.Shared.Mongo;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using Dotnet.Shared.Mongo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -38,6 +39,21 @@ namespace CoreService.Repository.Repositories
             await _collection.DeleteOneAsync(e => e.Id == id);
         public async Task<Driver?> GetByAccountIdAsync(string accountId) =>
     await _collection.Find(d => d.AccountId == accountId && d.DeletedAt == null).FirstOrDefaultAsync();
+        public async Task<bool> UpdateCreditPointByAccountIdAsync(string accountId, int newCreditPoint, string? updatedBy = null)
+        {
+            var filter = Builders<Driver>.Filter.Eq(d => d.AccountId, accountId) &
+                         Builders<Driver>.Filter.Eq(d => d.DeletedAt, null);
 
+            // Tạo các cập nhật cho CreditPoint, UpdatedAt, và UpdatedBy (người thực hiện cập nhật)
+            var update = Builders<Driver>.Update
+                .Set(d => d.CreditPoint, newCreditPoint)
+                .Set(d => d.UpdatedAt, TimeConverter.ToVietnamTime(DateTime.UtcNow))
+                .Set(d => d.UpdatedBy, updatedBy); // Ghi lại người đã cập nhật
+
+            var result = await _collection.UpdateOneAsync(filter, update);
+
+            // Trả về true nếu có 1 tài liệu được tìm thấy và cập nhật
+            return result.IsAcknowledged && result.ModifiedCount > 0;
+        }
     }
 }
