@@ -12,5 +12,6 @@ namespace CoreService.Application.Interfaces
     public interface IDriverApplication
     {
         Task<ApiResponse<DriverUpdateDto>> UpdateAsync(DriverUpdateDto dto, string accountId);
+        Task<ApiResponse<bool>> UpdateCreditPointAsync(string targetAccountId, int newCreditPoint, string modifierAccountId);
     }
 }
