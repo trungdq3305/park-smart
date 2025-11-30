@@ -640,12 +640,23 @@ export class ReservationService implements IReservationService {
           session,
         )
 
+        const reservationOperatorId =
+          await this.parkingLotRepository.getParkingLotOperatorId(
+            reservation.parkingLotId,
+          )
+
+        if (reservationOperatorId === null) {
+          throw new InternalServerErrorException(
+            'Không tìm thấy operator của bãi đỗ xe.',
+          )
+        }
+
         await this.accountServiceClient.refundTransaction(
           reservation.paymentId,
           refundAmount,
           'REQUESTED_BY_CUSTOMER', // Lý do chuẩn của Xendit
           userToken, // Token lấy từ Controller
-          reservation.parkingLotId.toString(),
+          reservationOperatorId,
         )
       }
 
