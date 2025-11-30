@@ -41,14 +41,38 @@ namespace CoreService.Repository.Repositories
     await _collection.Find(d => d.AccountId == accountId && d.DeletedAt == null).FirstOrDefaultAsync();
         public async Task<bool> UpdateCreditPointByAccountIdAsync(string accountId, int creditPointDelta)
         {
-            // Tìm tài xế chưa bị xóa dựa trên AccountId
+            // 1. Tìm tài xế chưa bị xóa dựa trên AccountId và lấy tài liệu hiện tại
             var filter = Builders<Driver>.Filter.Eq(d => d.AccountId, accountId) &
                          Builders<Driver>.Filter.Eq(d => d.DeletedAt, null);
 
-            // Sử dụng .Inc() để TĂNG điểm CreditPoint hiện tại lên một lượng là creditPointDelta
-            // Đồng thời cập nhật trường UpdatedAt
+            // Lấy tài liệu hiện tại
+            var driver = await _collection.Find(filter).FirstOrDefaultAsync();
+
+            if (driver == null)
+            {
+                // Không tìm thấy tài xế
+                return false;
+            }
+
+            // 2. Tính toán điểm mới và áp dụng giới hạn 100
+            int currentCreditPoint = driver.CreditPoint;
+            int newCreditPoint = currentCreditPoint + creditPointDelta;
+
+            // Áp dụng quy tắc: điểm mới không được vượt quá 100
+            if (newCreditPoint > 100)
+            {
+                newCreditPoint = 100;
+            }
+
+            // Nếu điểm mới không thay đổi, ta không cần cập nhật
+            if (newCreditPoint == currentCreditPoint)
+            {
+                return true;
+            }
+
+            // 3. Cập nhật điểm CreditPoint đã được giới hạn
             var update = Builders<Driver>.Update
-                .Inc(d => d.CreditPoint, creditPointDelta) // <-- Thay đổi ở đây: Dùng Inc() để cộng
+                .Set(d => d.CreditPoint, newCreditPoint) // <-- Set điểm mới đã được giới hạn
                 .Set(d => d.UpdatedAt, TimeConverter.ToVietnamTime(DateTime.UtcNow));
 
             var result = await _collection.UpdateOneAsync(filter, update);
