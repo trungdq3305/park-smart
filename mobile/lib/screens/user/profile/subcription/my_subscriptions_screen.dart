@@ -601,8 +601,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final Color effectiveStatusColor = isNearExpiry
         ? Colors.orange.shade600
         : statusColor;
-    final bool canShowCancelButton =
-        (isActiveStatus || isScheduledStatus) && !isRenewalStatus;
+    final bool canShowCancelButton = isScheduledStatus && !isRenewalStatus;
     final bool shouldShowRenewButton =
         isNearExpiry && isActiveStatus && !isRenewalStatus;
     final String dateRangeText =
@@ -614,7 +613,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       statusText: statusText,
       statusColor: effectiveStatusColor,
       dateRangeText: dateRangeText,
-      onTap: () => _showQRCodeDialog(subscription),
+      onTap: isActiveStatus ? () => _showQRCodeDialog(subscription) : null,
       showRenewButton: shouldShowRenewButton,
       isProcessingRenew: isProcessingRenewal,
       renewButtonLabel: 'Gia hạn thêm',

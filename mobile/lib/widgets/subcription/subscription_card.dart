@@ -28,7 +28,7 @@ class SubscriptionCard extends StatelessWidget {
   final String statusText;
   final Color statusColor;
   final String dateRangeText;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   final bool showRenewButton;
   final bool isProcessingRenew;
