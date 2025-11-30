@@ -57,6 +57,11 @@ export interface IAccountServiceClient {
     userToken: string,
     operatorId: string,
   ): Promise<void>
+
+  updateUserCreditPoints(
+    userId: string,
+    points: number,
+  ): Promise<void>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')

@@ -213,6 +213,11 @@ export class ReservationController {
   @Roles(RoleEnum.DRIVER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Bước 1: Xem trước thông tin hủy đặt chỗ' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của Đơn đặt chỗ (Reservation) cần hủy',
+    type: 'string',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     type: ReservationCancellationPreviewResponseDto,

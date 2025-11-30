@@ -18,6 +18,7 @@ import {
 import { ModuleRef } from '@nestjs/core'
 import { InjectConnection } from '@nestjs/mongoose'
 import { plainToInstance } from 'class-transformer'
+import * as dayjs from 'dayjs'
 import { Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
@@ -197,6 +198,41 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         // Trường hợp không xác định basis
         return 0
     }
+  }
+
+  private calculateReputationDelta(
+    estimatedEndTime: Date,
+    actualCheckOutTime: Date,
+  ): { change: number; reason: string } {
+    const end = dayjs(estimatedEndTime)
+    const actual = dayjs(actualCheckOutTime)
+
+    // Tính số phút chênh lệch (Dương = Trễ, Âm = Sớm)
+    const diffMinutes = actual.diff(end, 'minute')
+    const GRACE_PERIOD = 15
+
+    // 1. ĐÚNG GIỜ HOẶC SỚM (hoặc trễ trong ân hạn) => THƯỞNG
+    if (diffMinutes <= GRACE_PERIOD) {
+      return { change: 1, reason: 'Checkout đúng giờ/sớm' }
+    }
+
+    // 2. TRỄ => PHẠT
+    const lateMinutes = diffMinutes - GRACE_PERIOD
+
+    if (lateMinutes <= 60) {
+      return { change: -2, reason: 'Trễ dưới 1 giờ' }
+    }
+    if (lateMinutes <= 180) {
+      // 3 tiếng
+      return { change: -5, reason: 'Trễ 1-3 giờ' }
+    }
+    if (lateMinutes <= 1440) {
+      // 24 tiếng
+      return { change: -10, reason: 'Trễ quá 3 giờ' }
+    }
+
+    // Trễ quá 24h
+    return { change: -50, reason: 'Trễ nghiêm trọng (>24h)' }
   }
 
   /**
@@ -645,7 +681,32 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           'SYSTEM',
           session,
         )
+
+        if (res.createdBy) {
+          const pointChange = this.calculateReputationDelta(
+            res.estimatedEndTime,
+            new Date(),
+          )
+
+          if (pointChange.change !== 0) {
+            // 3. Gọi bất đồng bộ (KHÔNG await) để không chặn luồng check-out
+            // Kèm theo catch lỗi để không crash app nếu service kia chết
+            this.accountServiceClient
+              .updateUserCreditPoints(res.createdBy, pointChange.change)
+              .then(() => {
+                this.logger.log(
+                  `Đã cập nhật điểm uy tín cho user ${res.createdBy}: ${pointChange.change}`,
+                )
+              })
+              .catch((err) => {
+                this.logger.error(
+                  `Lỗi cập nhật điểm uy tín (Background task): ${err.message}`,
+                )
+              })
+          }
+        }
       }
+
       if (paymentId) {
         const paymentData =
           await this.accountServiceClient.getPaymentStatusByPaymentId(
