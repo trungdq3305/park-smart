@@ -53,6 +53,40 @@ export class AccountServiceClient implements IAccountServiceClient {
     this.IMAGE_SERVICE_BASE_URL = 'https://parksmarthcmc.io.vn'
   }
 
+  async updateUserCreditPoints(userId: string, points: number): Promise<void> {
+    const url = `${this.CORE_SERVICE_BASE_URL}/api/drivers/parking/credit-point` // Đảm bảo có /api nếu cần
+
+    try {
+      await firstValueFrom(
+        this.httpService.patch(
+          url,
+          // 👇 Payload đúng theo Swagger
+          {
+            accountId: userId, // Swagger yêu cầu 'accountId'
+            addCreditPoint: points, // Swagger yêu cầu 'addCreditPoint'
+          },
+          {
+            headers: {
+              // Nếu API này cần System Token thì thêm vào đây
+              Authorization: `Bearer ${this.getInternalToken()}`,
+            },
+          },
+        ),
+      )
+
+      this.logger.log(
+        `Cập nhật điểm tín dụng thành công cho UserId: ${userId}, Points: ${points}`,
+      )
+    } catch (error: any) {
+      this.logger.error(
+        `Lỗi khi cập nhật điểm tín dụng: ${error.message}`,
+        error.response?.data,
+      )
+      // Không throw lỗi để không làm gián đoạn luồng chính (Check-out)
+      // Hoặc throw tùy nghiệp vụ của bạn
+    }
+  }
+
   async refundTransaction(
     paymentId: string,
     refundAmount: number,
