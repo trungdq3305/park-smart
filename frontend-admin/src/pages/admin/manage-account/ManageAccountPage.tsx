@@ -358,70 +358,91 @@ const ManageAccountPage: React.FC = () => {
 
           <div className="table-wrapper">
             <PaginationLoading isLoading={isPageLoading} loadingText="Đang tải trang...">
-              <table className="accounts-table">
-                <thead>
-                  <tr>
-                    <th>Thông tin tài khoản</th>
-                    <th>Vai trò</th>
-                    <th>Trạng thái</th>
-                    <th>Lần đăng nhập cuối</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {accounts.map((account: Account) => (
-                    <tr key={account._id}>
-                      <td>
-                        <div className="account-info">
-                          <div className="account-avatar">
-                            {account.email.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="account-details">
-                            <h4>{account.email}</h4>
-                            <p>{account.phoneNumber}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
-                          {translateRoleName(account.roleName)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`status-badge ${getStatusBadge(account.isActive)}`}>
-                          {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                        </span>
-                      </td>
-                      <td>
-                        {account.lastLoginAt
-                          ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
-                          : 'Chưa đăng nhập'}
-                      </td>
-                      <td>
-                        <div className="action-cell">
-                          <Dropdown
-                            menu={{ items: getMenuItems(account) }}
-                            trigger={['click']}
-                            placement="bottomRight"
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined />}
-                              className="action-dropdown-trigger"
-                              title="Thao tác"
-                            />
-                          </Dropdown>
-                        </div>
-                      </td>
+              {accounts.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">📭</div>
+                  <h3 className="empty-state-title">
+                    {showBannedAccounts
+                      ? 'Không có tài khoản bị cấm'
+                      : showInactiveAccounts
+                      ? 'Không có tài khoản không hoạt động'
+                      : 'Không có tài khoản hoạt động'}
+                  </h3>
+                  <p className="empty-state-message">
+                    {showBannedAccounts
+                      ? 'Hiện tại không có tài khoản nào bị cấm trong hệ thống.'
+                      : showInactiveAccounts
+                      ? 'Hiện tại không có tài khoản nào không hoạt động trong hệ thống.'
+                      : 'Hiện tại không có tài khoản nào đang hoạt động trong hệ thống.'}
+                  </p>
+                </div>
+              ) : (
+                <table className="accounts-table">
+                  <thead>
+                    <tr>
+                      <th>Thông tin tài khoản</th>
+                      <th>Vai trò</th>
+                      <th>Trạng thái</th>
+                      <th>Lần đăng nhập cuối</th>
+                      <th>Thao tác</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {accounts.map((account: Account) => (
+                      <tr key={account._id}>
+                        <td>
+                          <div className="account-info">
+                            <div className="account-avatar">
+                              {account.email.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="account-details">
+                              <h4>{account.email}</h4>
+                              <p>{account.phoneNumber}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
+                            {translateRoleName(account.roleName)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${getStatusBadge(account.isActive)}`}>
+                            {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                          </span>
+                        </td>
+                        <td>
+                          {account.lastLoginAt
+                            ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
+                            : 'Chưa đăng nhập'}
+                        </td>
+                        <td>
+                          <div className="action-cell">
+                            <Dropdown
+                              menu={{ items: getMenuItems(account) }}
+                              trigger={['click']}
+                              placement="bottomRight"
+                            >
+                              <Button
+                                type="text"
+                                icon={<MoreOutlined />}
+                                className="action-dropdown-trigger"
+                                title="Thao tác"
+                              />
+                            </Dropdown>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </PaginationLoading>
           </div>
 
           {/* Pagination */}
-          <div className="pagination">
+          {accounts.length > 0 && (
+            <div className="pagination">
             <button
               className="pagination-btn"
               disabled={currentPage === 1 || isPageLoading}
@@ -451,6 +472,7 @@ const ManageAccountPage: React.FC = () => {
               {isPageLoading ? '...' : 'Sau'}
             </button>
           </div>
+          )}
         </div>
       </div>
 
