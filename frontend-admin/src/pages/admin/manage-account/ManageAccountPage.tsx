@@ -17,6 +17,7 @@ import {
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
   useGetInactiveAccountQuery,
+  useBannedAccountListQuery,
 } from '../../../features/admin/accountAPI'
 import type { Account } from '../../../types/Account'
 import './ManageAccountPage.css'
@@ -52,6 +53,17 @@ interface ListInactiveAccountResponse {
   isLoading: boolean
 }
 
+interface ListBannedAccountResponse {
+  data: {
+    data: Account[]
+    totalItems: number
+    pageSize: number
+    totalPages: number
+    currentPage: number
+  }
+  isLoading: boolean
+}
+
 const translateRoleName = (roleName: string) => {
   switch (roleName.toLowerCase()) {
     case 'admin':
@@ -80,6 +92,7 @@ const ManageAccountPage: React.FC = () => {
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
   const [isPageLoading, setIsPageLoading] = useState(false)
   const [showInactiveAccounts, setShowInactiveAccounts] = useState(false)
+  const [showBannedAccounts, setShowBannedAccounts] = useState(false)
 
   const { data, isLoading } = useGetAccountQuery<ListAccountResponse>({
     page: currentPage,
@@ -92,18 +105,32 @@ const ManageAccountPage: React.FC = () => {
       pageSize,
     }) as { data: ListInactiveAccountResponse | undefined; isLoading: boolean }
 
+    const { data: bannedAccountData, isLoading: isBannedAccountLoading } = useBannedAccountListQuery({
+      page: currentPage,
+      pageSize,
+    }) as { data: ListBannedAccountResponse | undefined; isLoading: boolean }
+
   const [deleteAccount] = useDeleteAccountMutation()
   const [toggleAccountStatus] = useToggleAccountStatusMutation()
 
   const activeAccounts = data?.data?.pagedAccounts?.data || []
   const inActiveAccounts = inactiveAccountData?.data?.data || []
+  const bannedAccounts = bannedAccountData?.data?.data || []
 
   // Determine which accounts to display based on toggle state
-  const accounts = showInactiveAccounts ? inActiveAccounts : activeAccounts
-  const totalItems = showInactiveAccounts
+  const accounts = showBannedAccounts
+    ? bannedAccounts
+    : showInactiveAccounts
+    ? inActiveAccounts
+    : activeAccounts
+  const totalItems = showBannedAccounts
+    ? bannedAccountData?.data?.totalItems || 0
+    : showInactiveAccounts
     ? inactiveAccountData?.data?.totalItems || 0
     : data?.data?.pagedAccounts?.totalItems || 0
-  const totalPages = showInactiveAccounts
+  const totalPages = showBannedAccounts
+    ? bannedAccountData?.data?.totalPages || 0
+    : showInactiveAccounts
     ? inactiveAccountData?.data?.totalPages || 0
     : Math.ceil(totalItems / pageSize)
 
@@ -229,11 +256,23 @@ const ManageAccountPage: React.FC = () => {
 
   const handleToggleView = () => {
     setShowInactiveAccounts(!showInactiveAccounts)
+    setShowBannedAccounts(false)
     // Reset to page 1 when switching views
     updateSearchParams({ page: 1 })
   }
 
-  const isLoadingData = showInactiveAccounts ? isInactiveAccountLoading : isLoading
+  const handleToggleBannedView = () => {
+    setShowBannedAccounts(!showBannedAccounts)
+    setShowInactiveAccounts(false)
+    // Reset to page 1 when switching views
+    updateSearchParams({ page: 1 })
+  }
+
+  const isLoadingData = showBannedAccounts
+    ? isBannedAccountLoading
+    : showInactiveAccounts
+    ? isInactiveAccountLoading
+    : isLoading
 
   if (isLoadingData && !isPageLoading) {
     return (
@@ -292,10 +331,26 @@ const ManageAccountPage: React.FC = () => {
             <h3>Danh sách tài khoản</h3>
             <div className="table-controls">
               <button
+                className={`filter-btn ${!showInactiveAccounts && !showBannedAccounts ? 'active' : ''}`}
+                onClick={() => {
+                  setShowInactiveAccounts(false)
+                  setShowBannedAccounts(false)
+                  updateSearchParams({ page: 1 })
+                }}
+              >
+                Tài khoản hoạt động
+              </button>
+              <button
                 className={`filter-btn ${showInactiveAccounts ? 'active' : ''}`}
                 onClick={handleToggleView}
               >
-                {showInactiveAccounts ? 'Tài khoản không hoạt động' : 'Tài khoản hoạt động'}
+                Tài khoản không hoạt động
+              </button>
+              <button
+                className={`filter-btn ${showBannedAccounts ? 'active' : ''}`}
+                onClick={handleToggleBannedView}
+              >
+                Tài khoản bị cấm
               </button>
               <span className="table-count">{accounts.length} tài khoản</span>
             </div>

@@ -170,6 +170,17 @@
   border-color: #2563eb;
 }
 
+.filter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f3f4f6;
+}
+
+.filter-btn:disabled:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
 .table-count {
   font-size: 14px;
   color: #6b7280;
