@@ -185,9 +185,7 @@ class ReservationService {
         'additionalCost': additionalCost,
       };
 
-      print(
-        '⏱️ Checking reservation extension for $reservationId: $payload',
-      );
+      print('⏱️ Checking reservation extension for $reservationId: $payload');
 
       final response = await http.post(
         uri,
@@ -271,8 +269,9 @@ class ReservationService {
         if (status != null && status.isNotEmpty) 'status': status,
       };
 
-      final uri = Uri.parse('$baseUrl/parking/reservations/my')
-          .replace(queryParameters: query);
+      final uri = Uri.parse(
+        '$baseUrl/parking/reservations/my',
+      ).replace(queryParameters: query);
 
       print('📋 Fetching my reservations page=$page size=$pageSize');
 
@@ -373,6 +372,47 @@ class ReservationService {
       );
     } catch (e) {
       print('❌ Exception in getReservationById: $e');
+      rethrow;
+    }
+  }
+
+  /// GET /reservations/{id}/cancel/preview
+  /// Step 1: Preview cancellation information
+  static Future<Map<String, dynamic>> previewCancelReservation({
+    required String reservationId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('Authentication token not found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/reservations/$reservationId/cancel/preview',
+      );
+
+      print('👀 Preview cancel reservation:');
+      print('  URL: $uri');
+      print('  Reservation ID: $reservationId');
+
+      final response = await http.get(uri, headers: _buildHeaders(token));
+
+      print('📡 Preview cancel status: ${response.statusCode}');
+      print('📡 Preview cancel body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully previewed cancel reservation');
+        return responseData;
+      }
+
+      final errorBody = response.body;
+      print('❌ Error previewing cancel reservation: $errorBody');
+      throw Exception(
+        'Failed to preview cancel reservation: ${response.statusCode} - $errorBody',
+      );
+    } catch (e) {
+      print('❌ Exception in previewCancelReservation: $e');
       rethrow;
     }
   }
