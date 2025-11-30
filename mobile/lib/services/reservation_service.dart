@@ -425,7 +425,9 @@ class ReservationService {
       final token = await _getToken();
       if (token == null) throw Exception('Authentication token not found');
 
-      final uri = Uri.parse('$baseUrl/parking/reservations/$reservationId');
+      final uri = Uri.parse(
+        '$baseUrl/parking/reservations/cancel-confirm/$reservationId',
+      );
 
       print('🗑️ Cancelling reservation: $reservationId');
 

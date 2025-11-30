@@ -14,6 +14,8 @@ class MyReservationCard extends StatelessWidget {
     required this.prepaidAmountText,
     required this.onTapQr,
     this.onExtend,
+    this.onCancel,
+    this.isProcessingCancel = false,
   });
 
   final String statusText;
@@ -29,6 +31,8 @@ class MyReservationCard extends StatelessWidget {
 
   final VoidCallback onTapQr;
   final VoidCallback? onExtend;
+  final VoidCallback? onCancel;
+  final bool isProcessingCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -219,6 +223,10 @@ class MyReservationCard extends StatelessWidget {
             const SizedBox(height: 16),
             _buildExtendButton(),
           ],
+          if (onCancel != null) ...[
+            const SizedBox(height: 12),
+            _buildCancelButton(),
+          ],
           const SizedBox(height: 16),
           _buildTapHint(),
         ],
@@ -355,6 +363,37 @@ class MyReservationCard extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.orange.shade600,
           foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCancelButton() {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: isProcessingCancel ? null : onCancel,
+        icon: isProcessingCancel
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.red,
+                ),
+              )
+            : const Icon(Icons.cancel_schedule_send_outlined),
+        label: Text(
+          isProcessingCancel ? 'Đang hủy...' : 'Hủy đặt lịch',
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.red.shade700,
+          side: BorderSide(color: Colors.red.shade300),
           padding: const EdgeInsets.symmetric(vertical: 12),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
