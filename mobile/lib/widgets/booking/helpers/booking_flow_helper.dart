@@ -37,8 +37,12 @@ class BookingFlowHelper {
       );
 
       // Format to ISO 8601 for API
-      final userExpectedTimeISO = userExpectedDateTime.toUtc().toIso8601String();
-      final estimatedEndTimeISO = estimatedEndDateTime.toUtc().toIso8601String();
+      final userExpectedTimeISO = userExpectedDateTime
+          .toUtc()
+          .toIso8601String();
+      final estimatedEndTimeISO = estimatedEndDateTime
+          .toUtc()
+          .toIso8601String();
 
       print('📝 Creating reservation:');
       print('  Parking Lot ID: $parkingLotId');
@@ -159,7 +163,7 @@ class BookingFlowHelper {
           builder: (webViewContext) => PaymentCheckoutScreen(
             checkoutUrl: checkoutUrl!,
             paymentId: paymentId,
-            onPaymentComplete: (success, returnedPaymentId) async {
+            onPaymentComplete: (success, returnedPaymentId, type) async {
               // Wait for WebView to close
               await Future.delayed(const Duration(milliseconds: 500));
 
@@ -167,7 +171,34 @@ class BookingFlowHelper {
                 final finalPaymentId = returnedPaymentId ?? paymentId;
                 if (reservationId != null && finalPaymentId != null) {
                   try {
-                    print('💳 Confirming reservation payment:');
+                    // Step 0: Validate IDs
+                    if (finalPaymentId.isEmpty || finalPaymentId.length < 20) {
+                      throw Exception(
+                        'Payment ID không hợp lệ: $finalPaymentId',
+                      );
+                    }
+
+                    if (reservationId.isEmpty || reservationId.length < 20) {
+                      throw Exception(
+                        'Reservation ID không hợp lệ: $reservationId',
+                      );
+                    }
+
+                    // Step 1: Confirm payment first
+                    print('💳 Step 1: Confirming payment:');
+                    print('  Payment ID: $finalPaymentId');
+
+                    await PaymentService.confirmPayment(
+                      paymentId: finalPaymentId,
+                    );
+
+                    print('✅ Payment confirmed successfully');
+
+                    // Small delay to ensure backend processes payment confirmation
+                    await Future.delayed(const Duration(milliseconds: 500));
+
+                    // Step 2: Confirm reservation payment
+                    print('💳 Step 2: Confirming reservation payment:');
                     print('  Reservation ID: $reservationId');
                     print('  Payment ID: $finalPaymentId');
 
@@ -186,7 +217,8 @@ class BookingFlowHelper {
                         MaterialPageRoute(
                           builder: (ctx) => PaymentResultScreen(
                             isSuccess: true,
-                            message: 'Đặt chỗ của bạn đã được xác nhận thành công.',
+                            message:
+                                'Đặt chỗ của bạn đã được xác nhận thành công.',
                             paymentId: finalPaymentId,
                             reservationId: reservationId,
                           ),
@@ -194,7 +226,20 @@ class BookingFlowHelper {
                       );
                     }
                   } catch (confirmError) {
-                    print('⚠️ Error confirming reservation payment: $confirmError');
+                    print('❌ Error in reservation confirmation flow:');
+                    print('  Error: $confirmError');
+                    print('  Reservation ID: $reservationId');
+                    print('  Payment ID: $finalPaymentId');
+
+                    // Extract error message
+                    String errorMessage = confirmError.toString();
+                    if (errorMessage.contains('Exception:')) {
+                      errorMessage = errorMessage.replaceFirst(
+                        'Exception: ',
+                        '',
+                      );
+                    }
+
                     // Navigate to result screen with error
                     if (bookingContext.mounted) {
                       Navigator.of(bookingContext).pushReplacement(
@@ -203,7 +248,7 @@ class BookingFlowHelper {
                             isSuccess: false,
                             message:
                                 'Thanh toán thành công nhưng có lỗi khi xác nhận đặt chỗ.',
-                            errorMessage: confirmError.toString(),
+                            errorMessage: errorMessage,
                             paymentId: finalPaymentId,
                             reservationId: reservationId,
                           ),
@@ -332,22 +377,27 @@ class BookingFlowHelper {
       // Step 2: Create subscription
       DateTime startDateTime;
       if (selectedStartDate != null) {
-        startDateTime = selectedStartDate;
+        // Create UTC DateTime directly to avoid timezone conversion issues
+        // This ensures the selected date (e.g., Dec 13) stays as Dec 13 in UTC
+        startDateTime = DateTime.utc(
+          selectedStartDate.year,
+          selectedStartDate.month,
+          selectedStartDate.day,
+        );
       } else {
         final now = DateTime.now();
-        startDateTime = DateTime(now.year, now.month, now.day);
+        // Use UTC to avoid timezone issues
+        startDateTime = DateTime.utc(now.year, now.month, now.day);
       }
 
-      final startDate = DateTime(
-        startDateTime.year,
-        startDateTime.month,
-        startDateTime.day,
-      ).toUtc().toIso8601String();
+      final startDate = startDateTime.toIso8601String();
 
       print('📝 Creating subscription:');
       print('  Parking Lot ID: $parkingLotId');
       print('  Pricing Policy ID: $pricingPolicyId');
-      print('  Start Date: $startDate');
+      print('  Selected Start Date (local): ${selectedStartDate?.toString()}');
+      print('  Start DateTime (UTC): ${startDateTime.toString()}');
+      print('  Start Date (ISO): $startDate');
 
       final subscriptionResponse = await SubscriptionService.createSubscription(
         parkingLotId: parkingLotId,
@@ -382,17 +432,85 @@ class BookingFlowHelper {
           builder: (context) => PaymentCheckoutScreen(
             checkoutUrl: checkoutUrl!,
             paymentId: paymentId,
-            onPaymentComplete: (success, returnedPaymentId) async {
+            onPaymentComplete: (success, returnedPaymentId, type) async {
               await Future.delayed(const Duration(milliseconds: 300));
 
               if (success && bookingContext.mounted) {
                 final finalPaymentId = returnedPaymentId ?? paymentId;
                 if (subscriptionId != null && finalPaymentId != null) {
                   try {
-                    await SubscriptionService.confirmPayment(
+                    // Step 1: Check subscription status before confirming
+                    print('🔍 Step 0: Checking subscription status:');
+                    print('  Subscription ID: $subscriptionId');
+
+                    try {
+                      final subscriptionDetail =
+                          await SubscriptionService.getSubscriptionById(
+                            subscriptionId: subscriptionId,
+                          );
+                      final subscriptionData = subscriptionDetail['data'];
+                      dynamic subData = subscriptionData;
+                      if (subscriptionData is List &&
+                          subscriptionData.isNotEmpty) {
+                        subData = subscriptionData[0];
+                      }
+                      final status = subData?['status']?.toString();
+                      print('  Current Subscription Status: $status');
+
+                      if (status != null &&
+                          status.toUpperCase() != 'PENDING_PAYMENT') {
+                        print(
+                          '⚠️ Warning: Subscription status is $status, expected PENDING_PAYMENT',
+                        );
+                        // Still try to confirm, but log the warning
+                      } else if (status != null) {
+                        print(
+                          '✅ Subscription is in PENDING_PAYMENT status, ready to confirm',
+                        );
+                      }
+                    } catch (e) {
+                      print('⚠️ Could not check subscription status: $e');
+                      // Continue anyway - subscription might be ready
+                    }
+
+                    // Step 1: Validate payment ID format
+                    if (finalPaymentId.isEmpty || finalPaymentId.length < 20) {
+                      throw Exception(
+                        'Payment ID không hợp lệ: $finalPaymentId',
+                      );
+                    }
+
+                    // Step 2: Validate subscription ID format
+                    if (subscriptionId.isEmpty || subscriptionId.length < 20) {
+                      throw Exception(
+                        'Subscription ID không hợp lệ: $subscriptionId',
+                      );
+                    }
+
+                    // Step 3: Confirm payment first
+                    print('💳 Step 1: Confirming payment:');
+                    print('  Payment ID: $finalPaymentId');
+
+                    await PaymentService.confirmPayment(
+                      paymentId: finalPaymentId,
+                    );
+
+                    print('✅ Payment confirmed successfully');
+
+                    // Small delay to ensure backend processes payment confirmation
+                    await Future.delayed(const Duration(milliseconds: 500));
+
+                    // Step 4: Confirm subscription payment
+                    print('💳 Step 2: Confirming subscription payment:');
+                    print('  Subscription ID: $subscriptionId');
+                    print('  Payment ID: $finalPaymentId');
+
+                    await SubscriptionService.confirmSubcriptionPayment(
                       subscriptionId: subscriptionId,
                       paymentId: finalPaymentId,
                     );
+
+                    print('✅ Payment confirmed and subscription activated');
 
                     if (bookingContext.mounted) {
                       Navigator.of(bookingContext).pushReplacement(
@@ -408,6 +526,20 @@ class BookingFlowHelper {
                       );
                     }
                   } catch (confirmError) {
+                    print('❌ Error in subscription confirmation flow:');
+                    print('  Error: $confirmError');
+                    print('  Subscription ID: $subscriptionId');
+                    print('  Payment ID: $finalPaymentId');
+
+                    // Extract error message
+                    String errorMessage = confirmError.toString();
+                    if (errorMessage.contains('Exception:')) {
+                      errorMessage = errorMessage.replaceFirst(
+                        'Exception: ',
+                        '',
+                      );
+                    }
+
                     if (bookingContext.mounted) {
                       Navigator.of(bookingContext).pushReplacement(
                         MaterialPageRoute(
@@ -415,7 +547,7 @@ class BookingFlowHelper {
                             isSuccess: false,
                             message:
                                 'Thanh toán thành công nhưng có lỗi khi kích hoạt gói.',
-                            errorMessage: confirmError.toString(),
+                            errorMessage: errorMessage,
                             paymentId: finalPaymentId,
                             subscriptionId: subscriptionId,
                           ),

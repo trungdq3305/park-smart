@@ -122,14 +122,37 @@ class PaymentService {
       print('📡 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        print('✅ Successfully confirmed payment');
-        return responseData;
+        // Response might be plain text or JSON
+        try {
+          final responseData = jsonDecode(response.body);
+          print('✅ Successfully confirmed payment (JSON response)');
+          return responseData;
+        } catch (e) {
+          // If not JSON, treat as plain text success message
+          print('✅ Successfully confirmed payment (text response)');
+          print('  Message: ${response.body}');
+          return {'success': true, 'message': response.body, 'statusCode': 200};
+        }
       } else {
         final errorBody = response.body;
         print('❌ Error confirming payment: $errorBody');
+
+        // Try to parse error as JSON, otherwise use plain text
+        String errorMessage = errorBody;
+        try {
+          final errorData = jsonDecode(errorBody);
+          if (errorData is Map) {
+            errorMessage =
+                errorData['message']?.toString() ??
+                errorData['error']?.toString() ??
+                errorBody;
+          }
+        } catch (_) {
+          // Use plain text error message
+        }
+
         throw Exception(
-          'Failed to confirm payment: ${response.statusCode} - $errorBody',
+          'Failed to confirm payment: ${response.statusCode} - $errorMessage',
         );
       }
     } catch (e) {

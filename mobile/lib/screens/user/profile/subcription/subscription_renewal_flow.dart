@@ -166,7 +166,7 @@ class SubscriptionRenewalFlow {
           builder: (_) => PaymentCheckoutScreen(
             checkoutUrl: checkoutUrl!,
             paymentId: paymentId,
-            onPaymentComplete: (success, returnedPaymentId) async {
+            onPaymentComplete: (success, returnedPaymentId, type) async {
               await Future.delayed(const Duration(milliseconds: 300));
 
               if (success) {
@@ -185,10 +185,27 @@ class SubscriptionRenewalFlow {
                 }
 
                 try {
+                  // Step 1: Confirm payment first
+                  print('💳 Step 1: Confirming payment:');
+                  print('  Payment ID: $finalPaymentId');
+
+                  await PaymentService.confirmPayment(
+                    paymentId: finalPaymentId,
+                  );
+
+                  print('✅ Payment confirmed successfully');
+
+                  // Step 2: Renew subscription
+                  print('💳 Step 2: Renewing subscription:');
+                  print('  Subscription ID: $subscriptionId');
+                  print('  Payment ID: $finalPaymentId');
+
                   await SubscriptionService.renewSubscription(
                     subscriptionId: subscriptionId,
                     paymentId: finalPaymentId,
                   );
+
+                  print('✅ Subscription renewal confirmed successfully');
 
                   scaffoldMessenger.showSnackBar(
                     const SnackBar(

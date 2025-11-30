@@ -12,7 +12,7 @@ class MyReservationCard extends StatelessWidget {
     required this.addressText,
     required this.userExpectedTimeText,
     required this.prepaidAmountText,
-    required this.onTapQr,
+    this.onTapQr,
     this.onExtend,
     this.onCancel,
     this.isProcessingCancel = false,
@@ -29,7 +29,7 @@ class MyReservationCard extends StatelessWidget {
   final String userExpectedTimeText;
   final String? prepaidAmountText;
 
-  final VoidCallback onTapQr;
+  final VoidCallback? onTapQr;
   final VoidCallback? onExtend;
   final VoidCallback? onCancel;
   final bool isProcessingCancel;
@@ -39,6 +39,8 @@ class MyReservationCard extends StatelessWidget {
     return InkWell(
       onTap: onTapQr,
       borderRadius: BorderRadius.circular(20),
+      splashColor: onTapQr != null ? null : Colors.transparent,
+      highlightColor: onTapQr != null ? null : Colors.transparent,
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
         decoration: BoxDecoration(
@@ -61,10 +63,7 @@ class MyReservationCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            _buildContent(context),
-          ],
+          children: [_buildHeader(), _buildContent(context)],
         ),
       ),
     );
@@ -96,11 +95,7 @@ class MyReservationCard extends StatelessWidget {
               color: statusColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(
-              Icons.event_available,
-              color: statusColor,
-              size: 24,
-            ),
+            child: Icon(Icons.event_available, color: statusColor, size: 24),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -165,10 +160,7 @@ class MyReservationCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: statusColor,
               borderRadius: BorderRadius.circular(20),
@@ -227,8 +219,7 @@ class MyReservationCard extends StatelessWidget {
             const SizedBox(height: 12),
             _buildCancelButton(),
           ],
-          const SizedBox(height: 16),
-          _buildTapHint(),
+          if (onTapQr != null) ...[const SizedBox(height: 16), _buildTapHint()],
         ],
       ),
     );
@@ -292,10 +283,7 @@ class MyReservationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.blue.shade50,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Colors.blue.shade100,
-          width: 1,
-        ),
+        border: Border.all(color: Colors.blue.shade100, width: 1),
       ),
       child: Row(
         children: [
@@ -407,11 +395,7 @@ class MyReservationCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(
-          Icons.touch_app,
-          size: 16,
-          color: Colors.grey.shade400,
-        ),
+        Icon(Icons.touch_app, size: 16, color: Colors.grey.shade400),
         const SizedBox(width: 6),
         Text(
           'Chạm để xem mã QR',
@@ -426,5 +410,3 @@ class MyReservationCard extends StatelessWidget {
     );
   }
 }
-
-

@@ -409,7 +409,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
           builder: (_) => PaymentCheckoutScreen(
             checkoutUrl: checkoutUrl!,
             paymentId: paymentId,
-            onPaymentComplete: (success, returnedPaymentId) async {
+            onPaymentComplete: (success, returnedPaymentId, type) async {
               await Future.delayed(const Duration(milliseconds: 300));
 
               if (!success) {
@@ -440,11 +440,41 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
               }
 
               try {
+                // Step 0: Validate IDs
+                if (finalPaymentId.isEmpty || finalPaymentId.length < 20) {
+                  throw Exception('Payment ID không hợp lệ: $finalPaymentId');
+                }
+
+                if (reservationId.isEmpty || reservationId.length < 20) {
+                  throw Exception(
+                    'Reservation ID không hợp lệ: $reservationId',
+                  );
+                }
+
+                // Step 1: Confirm payment first
+                print('💳 Step 1: Confirming payment:');
+                print('  Payment ID: $finalPaymentId');
+
+                await PaymentService.confirmPayment(paymentId: finalPaymentId);
+
+                print('✅ Payment confirmed successfully');
+
+                // Small delay to ensure backend processes payment confirmation
+                await Future.delayed(const Duration(milliseconds: 500));
+
+                // Step 2: Confirm reservation extension
+                print('💳 Step 2: Confirming reservation extension:');
+                print('  Reservation ID: $reservationId');
+                print('  Payment ID: $finalPaymentId');
+                print('  Additional Hours: $additionalHours');
+
                 await ReservationService.confirmReservationExtension(
                   reservationId: reservationId,
                   additionalHours: additionalHours,
                   paymentId: finalPaymentId,
                 );
+
+                print('✅ Reservation extension confirmed successfully');
 
                 scaffoldMessenger.showSnackBar(
                   const SnackBar(
@@ -1030,8 +1060,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final status = reservation['status'] as String?;
     final statusColor = _getStatusColor(status);
     final statusText = _getStatusText(status);
-    final isCheckedIn = status?.toUpperCase() == 'CHECKED_IN';
-    final isConfirmed = status?.toUpperCase() == 'CONFIRMED';
+    final statusUpper = status?.toUpperCase() ?? '';
+    final isCheckedIn = statusUpper == 'CHECKED_IN';
+    final isConfirmed = statusUpper == 'CONFIRMED';
+    final isCheckedOut = statusUpper == 'CHECKED_OUT';
+
+    // Chỉ cho phép xem QR code với các status: CONFIRMED, CHECKED_IN, CHECKED_OUT
+    final canViewQr = isConfirmed || isCheckedIn || isCheckedOut;
 
     final reservationId =
         reservation['_id']?.toString() ?? reservation['id']?.toString();
@@ -1089,7 +1124,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       addressText: addressText,
       userExpectedTimeText: userExpectedTimeText,
       prepaidAmountText: prepaidAmountText,
-      onTapQr: () => _showQRCodeDialog(reservation),
+      onTapQr: canViewQr ? () => _showQRCodeDialog(reservation) : null,
       onExtend: isCheckedIn && reservationId != null
           ? () => _handleExtendReservation(reservation)
           : null,

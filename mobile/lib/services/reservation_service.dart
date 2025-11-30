@@ -229,24 +229,54 @@ class ReservationService {
         'paymentId': paymentId,
       };
 
-      print('✅ Confirming reservation extension: $payload');
+      print('✅ Confirming reservation extension:');
+      print('  URL: $uri');
+      print('  Reservation ID: $reservationId');
+      print('  Payment ID: $paymentId');
+      print('  Additional Hours: $additionalHours');
+      print('  Payload: $payload');
+
+      final payloadJson = jsonEncode(payload);
+      print('  Payload JSON: $payloadJson');
 
       final response = await http.post(
         uri,
         headers: _buildHeaders(token, hasBody: true),
-        body: jsonEncode(payload),
+        body: payloadJson,
       );
 
       print('📡 Extension confirm status: ${response.statusCode}');
+      print('📡 Extension confirm headers: ${response.headers}');
       print('📡 Extension confirm body: ${response.body}');
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully confirmed reservation extension');
+        return responseData;
+      } else {
+        final errorBody = response.body;
+        print('❌ Error confirming reservation extension:');
+        print('  Status Code: ${response.statusCode}');
+        print('  Error Body: $errorBody');
+
+        // Try to parse error message from response
+        String errorMessage = 'Failed to confirm reservation extension';
+        try {
+          final errorData = jsonDecode(errorBody);
+          if (errorData is Map) {
+            errorMessage =
+                errorData['message']?.toString() ??
+                errorData['error']?.toString() ??
+                errorData['errorMessage']?.toString() ??
+                errorMessage;
+          }
+        } catch (_) {
+          // If parsing fails, use raw error body
+          errorMessage = errorBody.isNotEmpty ? errorBody : errorMessage;
+        }
+
+        throw Exception('$errorMessage (${response.statusCode})');
       }
-      throw Exception(
-        'Failed to confirm reservation extension: '
-        '${response.statusCode} - ${response.body}',
-      );
     } catch (e) {
       print('❌ Exception in confirmReservationExtension: $e');
       rethrow;
