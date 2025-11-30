@@ -58,16 +58,35 @@ namespace CoreService.Application.Applications
         }
         public async Task<ApiResponse<bool>> UpdateCreditPointAsync(string targetAccountId, int newCreditPoint)
         {
-            var success = await _driverRepo.UpdateCreditPointByAccountIdAsync(
-                targetAccountId,
-                newCreditPoint
-            );
+            var success = await _driverRepo.UpdateCreditPointByAccountIdAsync(targetAccountId,newCreditPoint);
 
             if (!success)
             {
                 throw new ApiException("Không tìm thấy tài xế hoặc không thể cập nhật.", StatusCodes.Status404NotFound);
-                
             }
+            
+            // 2. Lấy lại thông tin tài xế để kiểm tra điểm mới
+            var driver = await _driverRepo.GetByAccountIdAsync(targetAccountId); // Giả sử có hàm này
+
+            if (driver != null && driver.CreditPoint <= 0) // <-- Kiểm tra điều kiện
+            {
+
+                var banSuccess = await _accountRepo.BanAccountAsync(
+                    targetAccountId
+                );
+
+                if (banSuccess)
+                {
+                    return new ApiResponse<bool>(true, true, "Cập nhật điểm tín dụng thành công và Tài khoản đã bị cấm.", StatusCodes.Status200OK);
+                }
+                else
+                {
+                    // Xử lý nếu cập nhật điểm thành công nhưng không cấm được tài khoản
+                    // (Thường là lỗi nghiêm trọng, cần log lại)
+                    return new ApiResponse<bool>(true, true, "Cập nhật điểm tín dụng thành công nhưng không thể cấm tài khoản.", StatusCodes.Status200OK);
+                }
+            }
+
             return new ApiResponse<bool>(true, true, "Cập nhật điểm tín dụng thành công.", StatusCodes.Status200OK);
         }
     }

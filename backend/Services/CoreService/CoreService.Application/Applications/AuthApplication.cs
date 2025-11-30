@@ -61,6 +61,10 @@ namespace CoreService.Application.Applications
             {
                 throw new ApiException("Tài khoản đang chờ được Admin xác thực ", StatusCodes.Status401Unauthorized);
             }
+            else if (account.IsBanned)
+            {
+                throw new ApiException("Tài khoản đã bị khóa vì sai phạm nhiều", StatusCodes.Status401Unauthorized);
+            }
             var activedAccount = await _accountRepo.GetActivedByEmailAsync(request.Email);
             if (activedAccount == null)
             {
@@ -712,6 +716,10 @@ namespace CoreService.Application.Applications
                     "Đây là mật khẩu để đăng nhập vào hệ thống nếu bạn không muốn đăng nhập bằng Google. " +
                     "Hãy đổi mật khẩu ngay sau khi đăng nhập để đảm bảo an toàn."
                 );
+            }
+            else if (account.IsBanned)
+            {
+                throw new ApiException("Tài khoản đã bị khóa vì sai phạm nhiều", StatusCodes.Status401Unauthorized);
             }
             else if (!account.IsActive)
             {

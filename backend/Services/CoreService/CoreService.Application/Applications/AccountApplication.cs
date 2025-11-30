@@ -439,5 +439,76 @@ namespace CoreService.Application.Applications
                 StatusCodes.Status200OK
             );
         }
+        // Trong CoreService.Application.Applications/AccountApplication.cs
+
+        // ... (các phương thức khác) ...
+
+        public async Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetAllBannedAccountsAsync(int? page, int? pageSize)
+        {
+            // 1. Lấy tất cả tài khoản bị cấm từ database.
+            var bannedAccountsTask = _accountRepo.GetAllBannedAccountsAsync();
+
+            // Đồng thời lấy tất cả Drivers, Operators, Admins để xác định Role
+            var driversTask = _driverRepo.GetAllAsync();
+            var operatorsTask = _operatorRepo.GetAllAsync();
+            var adminsTask = _adminRepo.GetAllAsync();
+
+            await Task.WhenAll(bannedAccountsTask, driversTask, operatorsTask, adminsTask);
+
+            var bannedAccounts = await bannedAccountsTask;
+
+            if (bannedAccounts == null || !bannedAccounts.Any())
+            {
+                // Trả về kết quả rỗng nếu không có tài khoản nào bị cấm, với Status 200 OK
+                var emptyPagedResult = PaginationDto<AccountDetailDto>.Create(Enumerable.Empty<AccountDetailDto>(), page, pageSize);
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status404NotFound);
+            }
+
+            // 2. Tạo Dictionary để tra cứu nhanh thông tin role theo AccountId
+            var driversByAccountId = (await driversTask).ToDictionary(d => d.AccountId);
+            var operatorsByAccountId = (await operatorsTask).ToDictionary(o => o.AccountId);
+            var adminsByAccountId = (await adminsTask).ToDictionary(a => a.AccountId);
+
+            var result = new List<AccountDetailDto>();
+
+            // 3. Map Account bị cấm sang DTO và xác định Role
+            foreach (var account in bannedAccounts)
+            {
+                var dto = _mapper.Map<AccountDetailDto>(account);
+
+                // Xác định Role (Ưu tiên Driver/Operator/Admin)
+                if (driversByAccountId.TryGetValue(account.Id, out var driver))
+                {
+                    dto.RoleName = "Driver";
+                    dto.DriverDetail = _mapper.Map<DriverDto>(driver);
+                }
+                else if (operatorsByAccountId.TryGetValue(account.Id, out var op))
+                {
+                    dto.RoleName = "Operator";
+                    dto.OperatorDetail = _mapper.Map<OperatorDto>(op);
+                }
+                else if (adminsByAccountId.TryGetValue(account.Id, out var admin))
+                {
+                    dto.RoleName = "Admin";
+                    dto.AdminDetail = _mapper.Map<AdminDto>(admin);
+                }
+                else
+                {
+                    dto.RoleName = "Unknown"; // Không tìm thấy trong bảng vai trò nào
+                }
+
+                result.Add(dto);
+            }
+
+            // 4. Phân trang kết quả
+            var pagedResult = PaginationDto<AccountDetailDto>.Create(result, page, pageSize);
+
+            return new ApiResponse<PaginationDto<AccountDetailDto>>(
+                pagedResult,
+                true,
+                "Lấy danh sách tài khoản bị cấm thành công",
+                StatusCodes.Status200OK
+            );
+        }
     }
 }

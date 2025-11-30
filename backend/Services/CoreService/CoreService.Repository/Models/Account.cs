@@ -26,6 +26,7 @@ namespace CoreService.Repository.Models
         public bool IsActive { get; set; }
 
         public bool IsAgreeToP { get; set; }
+        public bool IsBanned { get; set; }
 
         public DateTime? LastLoginAt { get; set; }
 

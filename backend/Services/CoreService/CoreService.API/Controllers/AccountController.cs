@@ -104,5 +104,17 @@ namespace CoreService.API.Controllers
             var response = await _accountApplication.GetInactiveOperatorsAsync(page, pageSize);
             return StatusCode(response.StatusCode, response);
         }
+        // Trong CoreService.API.Controllers/AccountController.cs
+
+        // ... (các phương thức khác) ...
+
+        [HttpGet("banned")] // Endpoint mới: api/accounts/banned
+        //[Authorize(Roles = "Admin")] // Yêu cầu quyền Admin để xem danh sách này
+        public async Task<IActionResult> GetAllBannedAccounts([FromQuery] int? page, [FromQuery] int? pageSize)
+        {
+            var response = await _accountApplication.GetAllBannedAccountsAsync(page, pageSize);
+            return StatusCode(response.StatusCode, response);
+        }
     }
 }
+
