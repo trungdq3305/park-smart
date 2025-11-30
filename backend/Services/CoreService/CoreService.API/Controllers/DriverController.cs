@@ -33,16 +33,16 @@ namespace CoreService.API.Controllers
 
             // Gọi logic nghiệp vụ (Application Layer)
             var response = await _driverApplication.UpdateCreditPointAsync(
-                dto.TargetAccountId, // AccountId của tài xế cần cập nhật
-                dto.CreditPoint
+                dto.AccountId, // AccountId của tài xế cần cập nhật
+                dto.AddCreditPoint
             );
 
             return StatusCode(response.StatusCode, response);
         }
         public class CreditPointUpdateDto
         {
-            public string TargetAccountId { get; set; } // AccountId của tài xế cần cập nhật
-            public int CreditPoint { get; set; }
+            public string AccountId { get; set; } // AccountId của tài xế cần cập nhật
+            public int AddCreditPoint { get; set; }
         }
     }
 }

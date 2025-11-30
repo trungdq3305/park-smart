@@ -21,5 +21,7 @@ namespace CoreService.Repository.Interfaces
         Task<Account?> GetByPasswordResetTokenAsync(string token);
         Task<IEnumerable<Account>> GetInactiveAccountsAsync();
         Task<Account?> GetByPhoneNumberAsync(string phoneNumber);
+        Task<bool> BanAccountAsync(string accountIdy);
+        Task<IEnumerable<Account>> GetAllBannedAccountsAsync(); // Thêm dòng này
     }
 }
