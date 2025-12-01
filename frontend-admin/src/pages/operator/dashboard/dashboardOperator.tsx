@@ -330,7 +330,7 @@ const DashboardOperator: React.FC = () => {
         </Row>
         <Row gutter={[16, 16]} className="chart-section">
           <Col xs={24} md={12}>
-            <Card title="Cơ cấu doanh thu" bordered={false} className="pie-card">
+            <Card title="Cơ cấu doanh thu"  className="pie-card">
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
@@ -357,7 +357,7 @@ const DashboardOperator: React.FC = () => {
             </Card>
           </Col>
           <Col xs={24} md={12}>
-            <Card title="Cơ cấu hoàn tiền" bordered={false} className="pie-card">
+            <Card title="Cơ cấu hoàn tiền"  className="pie-card">
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
