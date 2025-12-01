@@ -42,11 +42,11 @@ namespace CoreService.Application.Applications
             _logger.LogInformation("Bắt đầu Job thanh toán định kỳ và giám sát khóa tài khoản.");
 
             var today = DateTime.Today.Date; // Ngày 1 của tháng hiện tại (Ví dụ: 01/12/2025)
-
+            var firstDayOfCurrentMonth = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
             // XÁC ĐỊNH MỐC THỜI GIAN
-            var currentMonth = today;                 // T
-            var penaltyCheckMonth = today.AddMonths(-1);  // T-1 (Tháng quá hạn 1 tháng)
-            var suspensionCheckMonth = today.AddMonths(-2); // T-2 (Tháng quá hạn 2 tháng)
+            var currentMonth = DateTime.SpecifyKind(firstDayOfCurrentMonth, DateTimeKind.Utc); // <--- SỬA Ở ĐÂY               // T
+            var penaltyCheckMonth = firstDayOfCurrentMonth.AddMonths(-1);  // T-1 (Tháng quá hạn 1 tháng)
+            var suspensionCheckMonth = firstDayOfCurrentMonth.AddMonths(-2); // T-2 (Tháng quá hạn 2 tháng)
             var currentDueDate = new DateTime(today.Year, today.Month, DateTime.DaysInMonth(today.Year, today.Month));
 
             // Lấy tất cả Operator để xử lý (chủ yếu là Active hoặc chưa bị khóa)

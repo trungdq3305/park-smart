@@ -8,9 +8,11 @@ using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
 using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -40,9 +42,9 @@ namespace CoreService.Application.Applications
     string operatorId, string entityId, string accountId, long amount, PaymentType type)
         {
             // 1. Chuẩn bị dữ liệu định danh (PREFIX và DESCRIPTION)
-
             string externalIdPrefix;
             string description;
+            // ... (Logic switch case giữ nguyên)
 
             switch (type)
             {
@@ -68,7 +70,7 @@ namespace CoreService.Application.Applications
             // 1) Kiểm tra trạng thái sub-account (Giữ nguyên logic kiểm tra LIVE)
             var check = await _x.GetAsync($"/v2/accounts/{acc.XenditUserId}");
             var checkBody = await check.Content.ReadAsStringAsync();
-            // Thêm logic kiểm tra LIVE ở đây
+
             using (var d = JsonDocument.Parse(checkBody))
             {
                 var st = d.RootElement.GetProperty("status").GetString();
@@ -76,7 +78,7 @@ namespace CoreService.Application.Applications
                     throw new ApiException($"Tài khoản thanh toán của operator chưa ACTIVE (hiện: {st}). Hãy mở email mời và Accept.");
             }
 
-            // 2) Tạo invoice
+            // 2) Tạo PaymentRecord local
             var externalId = $"{externalIdPrefix}-{entityId}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
             var baseReturn = "https://parksmart.vn/pay-result"; // <-- đổi theo project
             var pr = new PaymentRecord
@@ -95,11 +97,50 @@ namespace CoreService.Application.Applications
                 ParkingLotSessionId = (type == PaymentType.ParkingLotSession) ? entityId : null,
 
                 // Gán trạng thái ban đầu (Pending/Created/Draft)
-                Status = "CREATED", // Tùy thuộc vào cấu trúc dữ liệu của bạn
+                Status = "CREATED",
             };
-            // LƯU VÀO DB ĐỂ CÓ ID THẬT
-            await _payRepo.AddAsync(pr); // <--- LƯU TRƯỚC
+
+            // BƯỚC QUAN TRỌNG: XỬ LÝ LỖI DUPLICATE KEY 11000
+            try
+            {
+                // LƯU VÀO DB ĐỂ CÓ ID THẬT
+                await _payRepo.AddAsync(pr); // <--- LƯU TRƯỚC
+            }
+            catch (MongoBulkWriteException ex)
+            {
+                // Tìm lỗi Duplicate Key (Code 11000)
+                var duplicateKeyError = ex.WriteErrors.FirstOrDefault(e => e.Code == 11000);
+
+                if (duplicateKeyError != null)
+                {
+                    // Kiểm tra cụ thể lỗi trùng lặp key là do XenditInvoiceId = null
+                    if (duplicateKeyError.Message.Contains("XenditInvoiceId_1") && duplicateKeyError.Message.Contains("dup key: { XenditInvoiceId: null }"))
+                    {
+                        // Ném ra ApiException với HTTP Status Code 409 (Conflict)
+                        throw new ApiException(
+                            "Đã tồn tại một bản ghi thanh toán đang ở trạng thái tạo nháp. Vui lòng thử lại sau hoặc kiểm tra cấu hình Index của MongoDB.",
+                            (int)HttpStatusCode.Conflict
+                        );
+                    }
+
+                    // Nếu là lỗi trùng lặp key khác, ném ApiException chung
+                    throw new ApiException(
+                        $"Lỗi trùng lặp dữ liệu trong DB (Code: 11000): {duplicateKeyError.Message}",
+                        (int)HttpStatusCode.Conflict
+                    );
+                }
+
+                // Nếu là lỗi MongoBulkWriteException khác, ném ApiException
+                throw new ApiException($"Lỗi khi ghi dữ liệu vào Database: {ex.Message}", (int)HttpStatusCode.InternalServerError);
+            }
+            catch (Exception ex)
+            {
+                // Bắt các lỗi khác (ví dụ: SerializationException, lỗi kết nối, v.v.)
+                throw new ApiException($"Lỗi không xác định khi tạo Payment Record: {ex.Message}", (int)HttpStatusCode.InternalServerError);
+            }
+
             var paymentId = pr.Id;
+
             // Tạo successUrl và failureUrl (truyền cả PaymentType qua URL)
             var successUrl = $"{baseReturn}?result=success" +
                              $"&entityId={Uri.EscapeDataString(entityId)}" +
@@ -134,14 +175,15 @@ namespace CoreService.Application.Applications
 
             // Log lỗi rõ ràng nếu 4xx/5xx
             if (!res.IsSuccessStatusCode)
-                throw new ApiException($"Xendit tạo invoice lỗi: {(int)res.StatusCode} {res.ReasonPhrase}. Body: {json}");
+                // Ném ra ApiException với thông báo chi tiết từ Xendit
+                throw new ApiException($"Xendit tạo invoice lỗi: {(int)res.StatusCode} {res.ReasonPhrase}. Body: {json}", (int)res.StatusCode);
 
             using var doc = JsonDocument.Parse(json);
             var invoiceId = doc.RootElement.GetProperty("id").GetString();
             var status = doc.RootElement.GetProperty("status").GetString();
             var url = doc.RootElement.GetProperty("invoice_url").GetString();
 
-            // 3. Tạo PaymentRecord (CẬP NHẬT GÁN ID và TYPE)
+            // 3. Cập nhật PaymentRecord với Xendit ID và URL
             pr.XenditInvoiceId = invoiceId;
             pr.Status = status; // Trạng thái ban đầu từ Xendit thường là PENDING/ACTIVE
             pr.CheckoutUrl = url;
@@ -149,7 +191,6 @@ namespace CoreService.Application.Applications
             await _payRepo.UpdateAsync(pr);
             return pr;
         }
-
         //    public async Task<PaymentRecord> CreateReservationInvoiceAsync(
         //string operatorId, string reservationId, string accountId, long amount)
         //    {
@@ -1048,7 +1089,7 @@ namespace CoreService.Application.Applications
                 success_redirect_url = successUrl,
                 failure_redirect_url = failureUrl,
                 should_send_email = false,
-                invoice_duration = 100000000,
+                invoice_duration = 10000000,
                 // Chuyển toàn bộ tiền về Master Account
                 fees = new[]
                 {
