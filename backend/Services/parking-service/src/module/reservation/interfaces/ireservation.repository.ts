@@ -167,6 +167,11 @@ export interface IReservationRepository {
     refundAmount: number,
     session: ClientSession,
   ): Promise<boolean>
+
+  getParkingLotIdByReservationId(
+    reservationId: string,
+    session: ClientSession,
+  ): Promise<string | null>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')
