@@ -61,7 +61,8 @@
 
 .chart-card,
 .insights-card,
-.breakdown-card {
+.breakdown-card,
+.pie-card {
   border-radius: 18px;
   box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }

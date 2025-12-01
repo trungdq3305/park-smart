@@ -40,6 +40,9 @@ import {
   Legend,
   Bar,
   Line,
+  Pie,
+  PieChart,
+  Cell,
 } from 'recharts'
 import { useGetDashboardAdminQuery } from '../../../features/operator/dashboardAPI'
 import './dashboardOperator.css'
@@ -100,7 +103,6 @@ const getErrorMessage = (err: FetchBaseQueryError | SerializedError | undefined)
 
 const DashboardOperator: React.FC = () => {
   const parkingLotId = Cookies.get('parkingLotId') || ''
-  console.log(parkingLotId)
   const [timeRange, setTimeRange] = useState<TimeRange>('DAY')
   const [targetDate, setTargetDate] = useState<Dayjs>(dayjs())
 
@@ -123,6 +125,42 @@ const DashboardOperator: React.FC = () => {
 
   const summary = data?.summary
   const chartData = data?.chartData ?? []
+
+  const revenuePieData = [
+    {
+      name: 'Gửi lượt',
+      value: summary?.revenueBreakdown?.walkIn ?? 0,
+      color: '#5b8def',
+    },
+    {
+      name: 'Đặt chỗ',
+      value: summary?.revenueBreakdown?.reservation ?? 0,
+      color: '#9254de',
+    },
+    {
+      name: 'Gói tháng',
+      value: summary?.revenueBreakdown?.subscription ?? 0,
+      color: '#13c2c2',
+    },
+  ]
+
+  const refundPieData = [
+    {
+      name: 'Gửi lượt',
+      value: summary?.refundBreakdown?.walkIn ?? 0,
+      color: '#fa8c16',
+    },
+    {
+      name: 'Đặt chỗ',
+      value: summary?.refundBreakdown?.reservation ?? 0,
+      color: '#eb2f96',
+    },
+    {
+      name: 'Gói tháng',
+      value: summary?.refundBreakdown?.subscription ?? 0,
+      color: '#faad14',
+    },
+  ]
 
   const totalRevenueBreakdown =
     (summary?.revenueBreakdown?.subscription || 0) +
@@ -283,11 +321,67 @@ const DashboardOperator: React.FC = () => {
       <>
         {renderSummaryCards()}
         <Row gutter={[16, 16]} className="chart-section">
-          <Col xs={24} xl={16}>
+          <Col xs={24} xl={14}>
             {renderChart()}
           </Col>
-          <Col xs={24} xl={8}>
+          <Col xs={24} xl={10}>
             {renderInsights()}
+          </Col>
+        </Row>
+        <Row gutter={[16, 16]} className="chart-section">
+          <Col xs={24} md={12}>
+            <Card title="Cơ cấu doanh thu" bordered={false} className="pie-card">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={revenuePieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    dataKey="value"
+                    nameKey="name"
+                    paddingAngle={3}
+                  >
+                    {revenuePieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value: number) => formatCurrency(value)}
+                    labelFormatter={(label) => `Kênh: ${label}`}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </Card>
+          </Col>
+          <Col xs={24} md={12}>
+            <Card title="Cơ cấu hoàn tiền" bordered={false} className="pie-card">
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={refundPieData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    dataKey="value"
+                    nameKey="name"
+                    paddingAngle={3}
+                  >
+                    {refundPieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value: number) => formatCurrency(value)}
+                    labelFormatter={(label) => `Kênh: ${label}`}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </Card>
           </Col>
         </Row>
         <Row gutter={[16, 16]}>
@@ -306,7 +400,7 @@ const DashboardOperator: React.FC = () => {
                   color: 'purple',
                 },
                 {
-                  label: 'Thuê bao',
+                  label: 'Gói tháng',
                   value: summary?.revenueBreakdown?.subscription ?? 0,
                   color: 'cyan',
                 },
@@ -329,7 +423,7 @@ const DashboardOperator: React.FC = () => {
                   color: 'magenta',
                 },
                 {
-                  label: 'Thuê bao',
+                  label: 'Gói tháng',
                   value: summary?.refundBreakdown?.subscription ?? 0,
                   color: 'gold',
                 },
