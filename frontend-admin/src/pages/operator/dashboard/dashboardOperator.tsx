@@ -28,6 +28,8 @@ import dayjs from 'dayjs'
 import type { Dayjs } from 'dayjs'
 import Cookies from 'js-cookie'
 import { skipToken } from '@reduxjs/toolkit/query'
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
+import type { SerializedError } from '@reduxjs/toolkit'
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -86,6 +88,16 @@ const getPercentage = (value: number, total: number) => {
   return Number(((value / total) * 100).toFixed(1))
 }
 
+const getErrorMessage = (err: FetchBaseQueryError | SerializedError | undefined) => {
+  if (!err) return ''
+  if ('status' in err) {
+    const data = err.data as { message?: string }
+    return data?.message ?? ''
+  }
+
+  return err.message ?? ''
+}
+
 const DashboardOperator: React.FC = () => {
   const parkingLotId = Cookies.get('parkingLotId') || ''
   console.log(parkingLotId)
@@ -107,6 +119,7 @@ const DashboardOperator: React.FC = () => {
       }
 
   const { data, isLoading, isFetching, error, refetch } = useGetDashboardAdminQuery(queryArgs)
+  const apiErrorMessage = getErrorMessage(error)
 
   const summary = data?.summary
   const chartData = data?.chartData ?? []
@@ -368,8 +381,8 @@ const DashboardOperator: React.FC = () => {
       {error && (
         <Alert
           type="error"
-          message="Không thể tải dữ liệu dashboard"
-          description="Vui lòng thử lại sau hoặc liên hệ quản trị viên."
+          message={apiErrorMessage || 'Không thể tải dữ liệu dashboard'}
+          description={apiErrorMessage ? undefined : 'Vui lòng thử lại sau hoặc liên hệ quản trị viên.'}
           showIcon
           className="dashboard-alert"
         />
