@@ -20,6 +20,7 @@ const ParkingLotSessionHistory = lazy(
   () => import('../pages/operator/parking-lot-session-history/ParkingLotSessionHistory')
 )
 const PaymentOperator = lazy(() => import('../pages/operator/payment/PaymentOperator'))
+const DashboardOperator = lazy(() => import('../pages/operator/dashboard/dashboardOperator'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -101,6 +102,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/payment',
         component: PaymentOperator,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/dashboard',
+        component: DashboardOperator,
         role: ['Operator'],
       },
     ],

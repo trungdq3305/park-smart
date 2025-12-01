@@ -55,7 +55,7 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Lịch sử phiên đỗ xe',
     },
     {
-      key: '/analytics',
+      key: '/operator/dashboard',
       icon: <BarChartOutlined />,
       label: 'Phân tích',
     },
