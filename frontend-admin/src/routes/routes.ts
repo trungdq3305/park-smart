@@ -66,7 +66,7 @@ const routes: LayoutRoute[] = [
     data: [
       {
         path: '/operator',
-        component: ManageAccountPage, // You can create a specific operator dashboard component later
+        component: DashboardOperator,
         role: ['Operator'],
       },
       {
