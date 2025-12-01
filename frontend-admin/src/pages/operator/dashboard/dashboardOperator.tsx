@@ -103,7 +103,7 @@ const getErrorMessage = (err: FetchBaseQueryError | SerializedError | undefined)
 
 const DashboardOperator: React.FC = () => {
   const parkingLotId = Cookies.get('parkingLotId') || ''
-  const [timeRange, setTimeRange] = useState<TimeRange>('DAY')
+  const [timeRange, setTimeRange] = useState<TimeRange>('WEEK')
   const [targetDate, setTargetDate] = useState<Dayjs>(dayjs())
 
   const targetDateString = useMemo(
@@ -260,7 +260,7 @@ const DashboardOperator: React.FC = () => {
     dataSource: { label: string; value: number; color: string }[],
     total: number
   ) => (
-    <Card title={title} bordered={false} className="breakdown-card">
+    <Card title={title}  className="breakdown-card">
       {dataSource.map((item) => (
         <div className="breakdown-row" key={item.label}>
           <div>
@@ -283,7 +283,7 @@ const DashboardOperator: React.FC = () => {
   )
 
   const renderInsights = () => (
-    <Card title="Chỉ số nổi bật" bordered={false} className="insights-card">
+    <Card title="Chỉ số nổi bật"  className="insights-card">
       <div className="insight-item">
         <div>
           <p>Lượt đăng ký mới</p>
