@@ -631,6 +631,18 @@ export class ReservationService implements IReservationService {
         session,
       )
 
+      const parkingLotId =
+        await this.reservationRepository.getParkingLotIdByReservationId(
+          id.id,
+          session,
+        )
+
+      if (!parkingLotId) {
+        throw new InternalServerErrorException(
+          'Không tìm thấy bãi đỗ xe của đơn đặt chỗ.',
+        )
+      }
+
       // Cập nhật thêm field refundedAmount
       // Hoàn tiền nếu có
       if (refundAmount > 0) {
@@ -641,9 +653,7 @@ export class ReservationService implements IReservationService {
         )
 
         const reservationOperatorId =
-          await this.parkingLotRepository.getParkingLotOperatorId(
-            reservation.parkingLotId,
-          )
+          await this.parkingLotRepository.getParkingLotOperatorId(parkingLotId)
 
         if (reservationOperatorId === null) {
           throw new InternalServerErrorException(
@@ -668,7 +678,7 @@ export class ReservationService implements IReservationService {
         inventoryEndTime.setMinutes(0, 0, 0) // Chuẩn hóa về 00 phút
 
         await this.bookingInventoryRepository.updateInventoryCounts(
-          reservation.parkingLotId.toString(),
+          parkingLotId,
           inventoryStartTime,
           inventoryEndTime,
           -1, // ⭐️ Trừ 1 (TRẢ SLOT)
