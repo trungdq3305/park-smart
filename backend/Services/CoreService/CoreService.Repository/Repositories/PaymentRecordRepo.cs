@@ -38,7 +38,41 @@ namespace CoreService.Repository.Repositories
             _ = _col.Indexes.CreateMany(idx);
         }
 
-        public Task AddAsync(PaymentRecord entity) => _col.InsertOneAsync(entity);
+        // Trong PaymentRepository (hoặc lớp chứa hàm này)
+
+        public async Task AddAsync(PaymentRecord entity)
+        {
+            try
+            {
+                // Thực hiện thao tác Insert
+                await _col.InsertOneAsync(entity);
+            }
+            catch (MongoBulkWriteException<PaymentRecord> ex)
+            {
+                // 🚨 BẮT LỖI BULK WRITE (thường xảy ra cả với InsertOneAsync) 🚨
+                // Ném lại lỗi để tầng Service có thể kiểm tra cụ thể.
+                Console.WriteLine("--- LỖI BULK WRITE/DUPLICATE KEY MONGODB ---");
+                Console.WriteLine($"Thông báo lỗi: {ex.Message}");
+
+                // Ném lỗi lên trên để tầng service xử lý business logic
+                throw;
+            }
+            catch (MongoDB.Bson.BsonSerializationException ex)
+            {
+                // 🚨 BẮT LỖI SERIALIZATION CỦA MONGODB 🚨
+                Console.WriteLine("--- LỖI SERIALIZATION MONGODB RẤT CHI TIẾT ---");
+                Console.WriteLine($"Thông báo lỗi: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Bắt các lỗi khác (ví dụ: lỗi kết nối, lỗi cấu hình index, etc.)
+                Console.WriteLine("--- LỖI CHUNG KHÁC KHI THÊM PAYMENTRECORD ---");
+                Console.WriteLine($"Thông báo lỗi: {ex.Message}");
+                throw;
+            }
+        }
 
         public Task UpdateAsync(PaymentRecord entity) =>
             _col.ReplaceOneAsync(x => x.Id == entity.Id, entity);
@@ -181,13 +215,19 @@ namespace CoreService.Repository.Repositories
         }
         public async Task<PaymentRecord?> GetUnpaidMainInvoiceForMonth(string operatorId, DateTime invoiceMonth)
         {
-            // Trạng thái UNPAID bao gồm "CREATED", "PENDING", "EXPIRED"
+            // Lấy ngày đầu tiên của tháng được truyền vào (ví dụ: 2025-12-01 00:00:00)
+            var startDate = new DateTime(invoiceMonth.Year, invoiceMonth.Month, 1).Date;
+            // Lấy ngày đầu tiên của tháng tiếp theo (ví dụ: 2026-01-01 00:00:00)
+            var endDate = startDate.AddMonths(1);
+
             var unpaidStatuses = new[] { "CREATED", "PENDING", "EXPIRED" };
 
             var filter = Builders<PaymentRecord>.Filter.And(
                 Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),
                 Builders<PaymentRecord>.Filter.Eq(p => p.PaymentType, PaymentType.OperatorCharge),
-                Builders<PaymentRecord>.Filter.Eq(p => p.InvoiceMonth, invoiceMonth.Date), // Khớp tháng tính phí (chỉ cần so sánh ngày 1)
+                // Lọc theo phạm vi tháng: InvoiceMonth >= startDate VÀ InvoiceMonth < endDate
+                Builders<PaymentRecord>.Filter.Gte(p => p.InvoiceMonth, startDate),
+                Builders<PaymentRecord>.Filter.Lt(p => p.InvoiceMonth, endDate),
                 Builders<PaymentRecord>.Filter.In(p => p.Status, unpaidStatuses)
             );
 
@@ -195,11 +235,17 @@ namespace CoreService.Repository.Repositories
         }
         public async Task<PaymentRecord?> GetMainInvoiceForMonth(string operatorId, DateTime invoiceMonth)
         {
+            // Lấy ngày đầu tiên của tháng được truyền vào
+            var startDate = new DateTime(invoiceMonth.Year, invoiceMonth.Month, 1).Date;
+            // Lấy ngày đầu tiên của tháng tiếp theo
+            var endDate = startDate.AddMonths(1);
+
             var filter = Builders<PaymentRecord>.Filter.And(
                 Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),
                 Builders<PaymentRecord>.Filter.Eq(p => p.PaymentType, PaymentType.OperatorCharge),
-                // So sánh chính xác ngày 1 của tháng tính phí
-                Builders<PaymentRecord>.Filter.Eq(p => p.InvoiceMonth, invoiceMonth.Date)
+                // Lọc theo phạm vi tháng: InvoiceMonth >= startDate VÀ InvoiceMonth < endDate
+                Builders<PaymentRecord>.Filter.Gte(p => p.InvoiceMonth, startDate),
+                Builders<PaymentRecord>.Filter.Lt(p => p.InvoiceMonth, endDate)
             );
 
             return await _col.Find(filter).FirstOrDefaultAsync();
