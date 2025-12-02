@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { ClientModule } from '../client/client.module'
 import { GuestCardModule } from '../guestCard/guestCard.module'
 import { ParkingLotModule } from '../parkingLot/parkingLot.module'
+import { ParkingTransactionModule } from '../parkingTransaction/parkingTransaction.module'
 import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
 import { ReservationModule } from '../reservation/reservation.module'
 import { SubscriptionModule } from '../subscription/subcription.module'
@@ -28,6 +29,7 @@ import {
     ClientModule,
     GuestCardModule,
     PricingPolicyModule,
+    ParkingTransactionModule,
   ],
   controllers: [ParkingLotSessionController],
   providers: [

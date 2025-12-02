@@ -11,6 +11,7 @@ export enum TransactionTypeEnum {
   WALK_IN_PAYMENT = 'WALK_IN_PAYMENT', // Khách vãng lai trả tiền tại cổng/App
 
   // --- NHÓM HOÀN TIỀN & KHÁC ---
-  REFUND = 'REFUND', // Hoàn tiền (cho bất kỳ loại nào)
+  REFUND_SUBSCRIPTION = 'REFUND_SUBSCRIPTION', // Hoàn tiền (cho bất kỳ loại nào)
+  REFUND_RESERVATION = 'REFUND_RESERVATION', // Hoàn tiền đặt chỗ
   PENALTY = 'PENALTY', // Phạt vi phạm (nếu tách riêng)
 }
