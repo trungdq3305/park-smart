@@ -23,6 +23,8 @@ import { IdDto } from 'src/common/dto/params.dto'
 import { IBookingInventoryRepository } from '../bookingInventory/interfaces/ibookingInventory.repository'
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
+import { TransactionTypeEnum } from '../parkingTransaction/enum/parkingTransaction.enum'
+import { IParkingTransactionRepository } from '../parkingTransaction/interfaces/iparkingTransaction.repository'
 import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 import {
   ConfirmReservationPaymentDto,
@@ -54,6 +56,8 @@ export class ReservationService implements IReservationService {
     private readonly connection: Connection,
     @Inject(IAccountServiceClient)
     private readonly accountServiceClient: IAccountServiceClient,
+    @Inject(IParkingTransactionRepository)
+    private readonly parkingTransactionRepository: IParkingTransactionRepository,
   ) {}
 
   private readonly logger: Logger = new Logger(ReservationService.name)
@@ -295,6 +299,19 @@ export class ReservationService implements IReservationService {
         throw new InternalServerErrorException('Lỗi khi cập nhật đơn đặt chỗ.')
       }
 
+      await this.parkingTransactionRepository.createTransaction(
+        {
+          parkingLotId: reservation.parkingLotId,
+          createdBy: userId,
+          reservationId: reservation._id,
+          amount: paymentCheck.amount,
+          type: TransactionTypeEnum.RESERVATION_EXTEND,
+          paymentId: extendDto.paymentId,
+          note: `Gia hạn đặt chỗ - Reservation ID: ${reservation._id.toString()}`,
+        },
+        session,
+      )
+
       await session.commitTransaction()
       return this.returnToDto(updatedReservation)
     } catch (error) {
@@ -493,6 +510,20 @@ export class ReservationService implements IReservationService {
           'Không thể cập nhật thông tin thanh toán cho đơn đặt chỗ.',
         )
       }
+
+      await this.parkingTransactionRepository.createTransaction(
+        {
+          parkingLotId: reservation.parkingLotId,
+          createdBy: userId,
+          reservationId: reservation._id,
+          amount: prepaidAmount,
+          type: TransactionTypeEnum.RESERVATION_CREATE,
+          paymentId: confirmDto.paymentId,
+          note: `Thanh toán đặt chỗ - Reservation ID: ${reservation._id.toString()}`,
+        },
+        session,
+      )
+
       await session.commitTransaction()
       return updatedReservation
     } catch (error) {
@@ -667,6 +698,19 @@ export class ReservationService implements IReservationService {
           'REQUESTED_BY_CUSTOMER', // Lý do chuẩn của Xendit
           userToken, // Token lấy từ Controller
           reservationOperatorId,
+        )
+
+        await this.parkingTransactionRepository.createTransaction(
+          {
+            parkingLotId: reservation.parkingLotId,
+            createdBy: userId,
+            reservationId: reservation._id,
+            amount: -refundAmount,
+            type: TransactionTypeEnum.REFUND_RESERVATION,
+            paymentId: reservation.paymentId,
+            note: `Hoàn tiền đặt chỗ - Reservation ID: ${reservation._id.toString()}`,
+          },
+          session,
         )
       }
 

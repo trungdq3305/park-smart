@@ -26,7 +26,8 @@ import { formatDateToLocalYYYYMMDD } from 'src/utils/formatDateTime.util'
 
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
-import { IParkingLotService } from '../parkingLot/interfaces/iparkingLot.service'
+import { TransactionTypeEnum } from '../parkingTransaction/enum/parkingTransaction.enum'
+import { IParkingTransactionRepository } from '../parkingTransaction/interfaces/iparkingTransaction.repository'
 import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 // Import các DTOs liên quan đến Subscription
 import {
@@ -64,8 +65,8 @@ export class SubscriptionService implements ISubscriptionService {
     private readonly pricingPolicyRepository: IPricingPolicyRepository,
     @Inject(INotificationService)
     private readonly notificationService: INotificationService,
-    @Inject(IParkingLotService)
-    private readonly parkingLotService: IParkingLotService,
+    @Inject(IParkingTransactionRepository)
+    private readonly parkingTransactionRepository: IParkingTransactionRepository,
   ) {}
 
   private readonly logger: Logger = new Logger(SubscriptionService.name)
@@ -355,6 +356,19 @@ export class SubscriptionService implements ISubscriptionService {
             ? SubscriptionTransactionType.INITIAL_PURCHASE
             : SubscriptionTransactionType.RENEWAL,
           amountPaid: amountPaid,
+        },
+        session,
+      )
+
+      await this.parkingTransactionRepository.createTransaction(
+        {
+          paymentId,
+          subscriptionId,
+          type: TransactionTypeEnum.SUBSCRIPTION_RENEW,
+          amount: checkPaymentStatus.amount,
+          note: `Mua gói thuê bao (ID: ${subscriptionId})`,
+          createdBy: userId,
+          parkingLotId: subscriptionDraft.parkingLotId,
         },
         session,
       )
@@ -716,6 +730,19 @@ export class SubscriptionService implements ISubscriptionService {
           },
           session,
         )
+
+        await this.parkingTransactionRepository.createTransaction(
+          {
+            paymentId: subscription.paymentId,
+            subscriptionId: subscription._id,
+            type: TransactionTypeEnum.REFUND_SUBSCRIPTION,
+            amount: -refundAmount,
+            note: `Hủy gói thuê bao (ID: ${subscription._id})`,
+            createdBy: userId,
+            parkingLotId: subscription.parkingLotId,
+          },
+          session,
+        )
       }
 
       await session.commitTransaction()
@@ -791,14 +818,9 @@ export class SubscriptionService implements ISubscriptionService {
         dateToCheckForAvailability.setDate(oldEndDate.getDate() + 1)
       } else {
         // KỊCH BẢN 2: Đã hết hạn
-        newStartDate = now // Bắt đầu từ hôm nay
-        newEndDate = await this.calculateEndDate(
-          existingSubscription.pricingPolicyId,
-          now,
-        ) // ⬅️ Sửa ở đây
-
-        // Ngày kiểm tra slot: Là ngày HÔM NAY
-        dateToCheckForAvailability = now
+        throw new BadRequestException(
+          'Gói thuê bao đã hết hạn hoặc không còn hiệu lực. Vui lòng mua gói mới thay vì gia hạn.',
+        )
       }
 
       // --- BƯỚC 3: KIỂM TRA SỨC CHỨA (ĐÃ DI CHUYỂN RA NGOÀI IF/ELSE) ---
@@ -848,6 +870,19 @@ export class SubscriptionService implements ISubscriptionService {
         transactionType: SubscriptionTransactionType.RENEWAL,
       }
       await this.subscriptionLogRepository.createLog(logData, session)
+
+      await this.parkingTransactionRepository.createTransaction(
+        {
+          paymentId,
+          subscriptionId: existingSubscription._id,
+          type: TransactionTypeEnum.SUBSCRIPTION_RENEW,
+          amount: checkPaymentStatus.amount,
+          note: `Gia hạn gói thuê bao (ID: ${existingSubscription._id})`,
+          createdBy: userId,
+          parkingLotId: existingSubscription.parkingLotId,
+        },
+        session,
+      )
 
       // Commit
       await session.commitTransaction()
@@ -996,8 +1031,11 @@ export class SubscriptionService implements ISubscriptionService {
       // Nhích thêm 1 giây hoặc 1 phút để đảm bảo nó nhảy sang chu kỳ mới
       dateToCheck.setMinutes(dateToCheck.getMinutes() + 1)
     } else {
-      // Nếu đã Expired (hoặc Active nhưng đã quá hạn): Kiểm tra ngay bây giờ
-      dateToCheck = now
+      return {
+        canRenew: false,
+        message:
+          'Gói thuê bao đã hết hạn hoặc không còn hiệu lực. Vui lòng đăng ký gói mới thay vì gia hạn.',
+      }
     }
 
     // 3. Lấy quy định sức chứa

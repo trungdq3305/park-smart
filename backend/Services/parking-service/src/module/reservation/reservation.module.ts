@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { BookingInventoryModule } from '../bookingInventory/bookingInventory.module'
 import { ClientModule } from '../client/client.module'
 import { ParkingLotModule } from '../parkingLot/parkingLot.module'
+import { ParkingTransactionModule } from '../parkingTransaction/parkingTransaction.module'
 import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
 import { IReservationRepository } from './interfaces/ireservation.repository'
 import { IReservationService } from './interfaces/ireservation.service'
@@ -21,6 +22,7 @@ import { Reservation, ReservationSchema } from './schemas/reservation.schema'
     forwardRef(() => ParkingLotModule),
     PricingPolicyModule,
     ClientModule,
+    ParkingTransactionModule,
   ],
   controllers: [ReservationController],
   providers: [

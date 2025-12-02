@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/restrict-plus-operands */
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -16,18 +17,11 @@ import * as timezone from 'dayjs/plugin/timezone'
 import * as utc from 'dayjs/plugin/utc'
 import mongoose, { Model, PipelineStage } from 'mongoose'
 
-// Kích hoạt plugin & Cấu hình Timezone
-dayjs.extend(utc)
-dayjs.extend(timezone)
-dayjs.extend(isoWeek)
-dayjs.extend(quarterOfYear)
-dayjs.locale('vi')
-dayjs.tz.setDefault('Asia/Ho_Chi_Minh')
-
+// --- CÁC SCHEMA ---
 import { ParkingLot } from '../parkingLot/schemas/parkingLot.schema'
 import { ParkingLotSession } from '../parkingLotSession/schemas/parkingLotSession.schema'
-import { Reservation } from '../reservation/schemas/reservation.schema'
-import { Subscription } from '../subscription/schemas/subscription.schema'
+import { TransactionTypeEnum } from '../parkingTransaction/enum/parkingTransaction.enum'
+import { ParkingTransaction } from '../parkingTransaction/schemas/parkingTransaction.schema'
 import {
   BackfillReportDto,
   DashboardReportResponseDto,
@@ -37,6 +31,14 @@ import { ReportTimeRangeEnum } from './enums/dashboard.enum'
 import { IDashboardService } from './interfaces/idashboard.service'
 import { ParkingDailyDashboard } from './schemas/dashboard.schema'
 
+// Kích hoạt plugin & Cấu hình Timezone
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.extend(isoWeek)
+dayjs.extend(quarterOfYear)
+dayjs.locale('vi')
+dayjs.tz.setDefault('Asia/Ho_Chi_Minh')
+
 @Injectable()
 export class DashboardService implements IDashboardService {
   private readonly logger = new Logger(DashboardService.name)
@@ -45,12 +47,226 @@ export class DashboardService implements IDashboardService {
     @InjectModel(ParkingDailyDashboard.name)
     private reportModel: Model<ParkingDailyDashboard>,
     @InjectModel(ParkingLot.name) private parkingLotModel: Model<ParkingLot>,
+    @InjectModel(ParkingTransaction.name)
+    private transactionModel: Model<ParkingTransaction>, // 👈 Dùng cái này để tính tiền
     @InjectModel(ParkingLotSession.name)
-    private sessionModel: Model<ParkingLotSession>,
-    @InjectModel(Subscription.name)
-    private subscriptionModel: Model<Subscription>,
-    @InjectModel(Reservation.name) private reservationModel: Model<Reservation>,
+    private sessionModel: Model<ParkingLotSession>, // 👈 Dùng cái này để tính lưu lượng xe
   ) {}
+
+  // ===========================================================================
+  // HELPER 1: TÍNH TOÁN TÀI CHÍNH (TỪ PARKING TRANSACTION)
+  // ===========================================================================
+  private async calculateFinancialStats(
+    parkingLotId: mongoose.Types.ObjectId,
+    start: Date,
+    end: Date,
+  ) {
+    const stats = await this.transactionModel.aggregate([
+      {
+        $match: {
+          parkingLotId: parkingLotId,
+          transactionDate: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+
+          // 1. TỔNG DOANH THU GỘP (Chỉ cộng các khoản dương > 0)
+          totalRevenue: {
+            $sum: {
+              $cond: [{ $gt: ['$amount', 0] }, '$amount', 0],
+            },
+          },
+
+          // 2. TỔNG TIỀN HOÀN (Cộng các khoản âm, lấy trị tuyệt đối)
+          totalRefunded: {
+            $sum: {
+              $cond: [{ $lt: ['$amount', 0] }, { $abs: '$amount' }, 0],
+            },
+          },
+
+          // 3. BREAKDOWN DOANH THU (Chỉ tính tiền thu vào)
+          subRevenue: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    '$type',
+                    [
+                      TransactionTypeEnum.SUBSCRIPTION_NEW,
+                      TransactionTypeEnum.SUBSCRIPTION_RENEW,
+                    ],
+                  ],
+                },
+                { $cond: [{ $gt: ['$amount', 0] }, '$amount', 0] },
+                0,
+              ],
+            },
+          },
+          resRevenue: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    '$type',
+                    [
+                      TransactionTypeEnum.RESERVATION_CREATE,
+                      TransactionTypeEnum.RESERVATION_EXTEND,
+                    ],
+                  ],
+                },
+                { $cond: [{ $gt: ['$amount', 0] }, '$amount', 0] },
+                0,
+              ],
+            },
+          },
+          walkInRevenue: {
+            $sum: {
+              $cond: [
+                {
+                  $in: [
+                    '$type',
+                    [
+                      TransactionTypeEnum.WALK_IN_PAYMENT,
+                      TransactionTypeEnum.PENALTY,
+                    ],
+                  ],
+                },
+                { $cond: [{ $gt: ['$amount', 0] }, '$amount', 0] },
+                0,
+              ],
+            },
+          },
+
+          // 4. BREAKDOWN HOÀN TIỀN (Chỉ tính tiền chi ra - số âm)
+          subRefund: {
+            $sum: {
+              $cond: [
+                { $eq: ['$type', TransactionTypeEnum.REFUND_SUBSCRIPTION] },
+                { $abs: '$amount' },
+                0,
+              ],
+            },
+          },
+          resRefund: {
+            $sum: {
+              $cond: [
+                { $eq: ['$type', TransactionTypeEnum.REFUND_RESERVATION] },
+                { $abs: '$amount' },
+                0,
+              ],
+            },
+          },
+          // Vãng lai thường ít hoàn, nhưng nếu có thì thêm logic tương tự
+          walkInRefund: { $sum: 0 },
+
+          // 5. ĐẾM SỐ LƯỢNG GIAO DỊCH MUA MỚI (Để tính New Subscriptions / Reservations)
+          newSubscriptions: {
+            $sum: {
+              $cond: [
+                { $eq: ['$type', TransactionTypeEnum.SUBSCRIPTION_NEW] },
+                1,
+                0,
+              ],
+            },
+          },
+          totalReservationsCreated: {
+            $sum: {
+              $cond: [
+                { $eq: ['$type', TransactionTypeEnum.RESERVATION_CREATE] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ])
+
+    return (
+      stats[0] ?? {
+        totalRevenue: 0,
+        totalRefunded: 0,
+        subRevenue: 0,
+        resRevenue: 0,
+        walkInRevenue: 0,
+        subRefund: 0,
+        resRefund: 0,
+        walkInRefund: 0,
+        newSubscriptions: 0,
+        totalReservationsCreated: 0,
+      }
+    )
+  }
+
+  // ===========================================================================
+  // HELPER 2: TÍNH TOÁN LƯU LƯỢNG (TỪ SESSION)
+  // ===========================================================================
+  private async calculateTrafficStats(
+    parkingLotId: mongoose.Types.ObjectId,
+    start: Date,
+    end: Date,
+  ) {
+    // 1. Check-out & Duration
+    const sessionStats = await this.sessionModel.aggregate([
+      {
+        $match: {
+          parkingLotId: parkingLotId,
+          checkOutTime: { $gte: start, $lte: end },
+          status: 'COMPLETED',
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalCheckOuts: { $sum: 1 },
+          avgDuration: {
+            $avg: { $subtract: ['$checkOutTime', '$checkInTime'] },
+          },
+        },
+      },
+    ])
+
+    // 2. Check-in Count
+    const totalCheckIns = await this.sessionModel.countDocuments({
+      parkingLotId: parkingLotId,
+      checkInTime: { $gte: start, $lte: end },
+    })
+
+    // 3. Peak Hour
+    const peakHourStats = await this.sessionModel.aggregate([
+      {
+        $match: {
+          parkingLotId: parkingLotId,
+          checkInTime: { $gte: start, $lte: end },
+        },
+      },
+      {
+        $project: {
+          hour: { $hour: '$checkInTime' },
+        },
+      },
+      {
+        $group: {
+          _id: '$hour',
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { count: -1 } },
+      { $limit: 1 },
+    ])
+
+    return {
+      totalCheckIns,
+      totalCheckOuts: sessionStats[0]?.totalCheckOuts ?? 0,
+      avgDurationMs: sessionStats[0]?.avgDuration ?? 0,
+      peakHour:
+        peakHourStats.length > 0
+          ? { hour: peakHourStats[0]._id, count: peakHourStats[0].count }
+          : null,
+    }
+  }
 
   // ===========================================================================
   // 1. TÍNH TOÁN DỮ LIỆU REAL-TIME (HÔM NAY)
@@ -60,133 +276,54 @@ export class DashboardService implements IDashboardService {
     const now = new Date()
     const lotIdObj = new mongoose.Types.ObjectId(parkingLotId)
 
-    // A. Vé tháng: Tổng tiền thu - Tổng tiền hoàn
-    const subStats = await this.subscriptionModel.aggregate([
-      {
-        $match: {
-          parkingLotId: lotIdObj,
-          createdAt: { $gte: startOfToday, $lte: now },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          // Net Revenue = Paid - Refunded
-          totalAmount: {
-            $sum: {
-              $subtract: [
-                { $ifNull: ['$amountPaid', 0] }, // 👈 Nếu thiếu amountPaid thì coi là 0
-                { $ifNull: ['$refundedAmount', 0] }, // 👈 Nếu thiếu refundedAmount thì coi là 0
-              ],
-            },
-          },
-          totalRefunded: { $sum: '$refundedAmount' },
-          count: { $sum: 1 },
-        },
-      },
-    ])
+    const financial = await this.calculateFinancialStats(
+      lotIdObj,
+      startOfToday,
+      now,
+    )
+    const traffic = await this.calculateTrafficStats(
+      lotIdObj,
+      startOfToday,
+      now,
+    )
 
-    // B. Đặt chỗ: Tổng tiền thu - Tổng tiền hoàn
-    const resStats = await this.reservationModel.aggregate([
-      {
-        $match: {
-          parkingLotId: lotIdObj,
-          createdAt: { $gte: startOfToday, $lte: now },
-          prepaidAmount: { $gt: 0 },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalAmount: {
-            $sum: {
-              $subtract: [
-                { $ifNull: ['$prepaidAmount', 0] }, // 👈 Sửa ở đây
-                { $ifNull: ['$refundedAmount', 0] }, // 👈 Sửa ở đây
-              ],
-            },
-          },
-          totalRefunded: { $sum: '$refundedAmount' },
-          count: { $sum: 1 },
-        },
-      },
-    ])
-
-    // C. Vãng lai: Doanh thu + Phạt (Thường chưa có refund)
-    const sessionStats = await this.sessionModel.aggregate([
-      {
-        $match: {
-          parkingLotId: lotIdObj,
-          checkOutTime: { $gte: startOfToday, $lte: now },
-          status: 'COMPLETED',
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalWalkInRevenue: {
-            $sum: {
-              $add: [
-                { $ifNull: ['$amountPaid', 0] },
-                { $ifNull: ['$amountPayAfterCheckOut', 0] },
-              ],
-            },
-          },
-          totalCheckOuts: { $sum: 1 },
-          avgDuration: {
-            $avg: { $subtract: ['$checkOutTime', '$checkInTime'] },
-          },
-        },
-      },
-    ])
-
-    const checkInCount = await this.sessionModel.countDocuments({
-      parkingLotId: lotIdObj,
-      checkInTime: { $gte: startOfToday, $lte: now },
-    })
-
-    const avgDurationMs = sessionStats[0]?.avgDuration ?? 0
-
-    // Tổng hợp kết quả
     return {
       reportDate: startOfToday,
 
-      totalRevenue:
-        (subStats[0]?.totalAmount ?? 0) +
-        (resStats[0]?.totalAmount ?? 0) +
-        (sessionStats[0]?.totalWalkInRevenue ?? 0),
-
-      totalRefunded:
-        (subStats[0]?.totalRefunded ?? 0) + (resStats[0]?.totalRefunded ?? 0),
-
+      // Tài chính
+      totalRevenue: financial.totalRevenue,
+      totalRefunded: financial.totalRefunded,
       revenueBreakdown: {
-        subscription: subStats[0]?.totalAmount ?? 0,
-        reservation: resStats[0]?.totalAmount ?? 0,
-        walkIn: sessionStats[0]?.totalWalkInRevenue ?? 0,
+        subscription: financial.subRevenue,
+        reservation: financial.resRevenue,
+        walkIn: financial.walkInRevenue,
       },
       refundBreakdown: {
-        subscription: subStats[0]?.totalRefunded ?? 0,
-        reservation: resStats[0]?.totalRefunded ?? 0,
-        walkIn: 0,
+        subscription: financial.subRefund,
+        reservation: financial.resRefund,
+        walkIn: financial.walkInRefund,
       },
+      // Số lượng đơn
+      newSubscriptions: financial.newSubscriptions,
+      totalReservationsCreated: financial.totalReservationsCreated,
 
-      totalCheckIns: checkInCount,
-      totalCheckOuts: sessionStats[0]?.totalCheckOuts ?? 0,
-      // Đổi ms sang phút
-      avgParkingDurationMinutes: Math.round(avgDurationMs / 60000),
+      // Lưu lượng
+      totalCheckIns: traffic.totalCheckIns,
+      totalCheckOuts: traffic.totalCheckOuts,
+      avgParkingDurationMinutes: Math.round(traffic.avgDurationMs / 60000),
 
-      totalReservationsCreated: resStats[0]?.count ?? 0,
-      newSubscriptions: subStats[0]?.count ?? 0,
       isRealTime: true,
     }
   }
 
+  // ===========================================================================
+  // 2. API BACKFILL (CHẠY LẠI DỮ LIỆU QUÁ KHỨ)
+  // ===========================================================================
   async backfillReports(dto: BackfillReportDto): Promise<string> {
     this.logger.log(
       `🔄 Bắt đầu Backfill từ ${dto.fromDate} đến ${dto.toDate}...`,
     )
 
-    // 1. Chuẩn bị danh sách bãi xe
     let parkingLots: any[] = []
     if (dto.parkingLotId) {
       parkingLots = await this.parkingLotModel
@@ -199,14 +336,11 @@ export class DashboardService implements IDashboardService {
 
     if (parkingLots.length === 0) return 'Không tìm thấy bãi xe nào.'
 
-    // 2. Chuẩn bị vòng lặp thời gian
-    // Lưu ý: Dùng Timezone VN để đảm bảo chính xác 00:00 - 23:59
     let currentDate = dayjs.tz(dto.fromDate, 'Asia/Ho_Chi_Minh').startOf('day')
     const endDate = dayjs.tz(dto.toDate, 'Asia/Ho_Chi_Minh').endOf('day')
 
     let countDays = 0
 
-    // 3. Vòng lặp từng ngày
     while (
       currentDate.isBefore(endDate) ||
       currentDate.isSame(endDate, 'day')
@@ -218,14 +352,12 @@ export class DashboardService implements IDashboardService {
         `   Processing Date: ${currentDate.format('YYYY-MM-DD')}...`,
       )
 
-      // Chạy song song cho tất cả bãi xe trong ngày đó
       await Promise.all(
         parkingLots.map((lot) =>
           this.processOneParkingLot(lot, startOfDay, endOfDay),
         ),
       )
 
-      // Tăng thêm 1 ngày
       currentDate = currentDate.add(1, 'day')
       countDays++
     }
@@ -234,13 +366,12 @@ export class DashboardService implements IDashboardService {
   }
 
   // ===========================================================================
-  // 2. CRON JOB (CHẠY ĐÊM ĐỂ TỔNG HỢP DỮ LIỆU HÔM QUA)
+  // 3. CRON JOB (CHẠY ĐÊM ĐỂ TỔNG HỢP DỮ LIỆU HÔM QUA)
   // ===========================================================================
   @Cron('5 0 * * *')
   async generateDailyReports() {
     this.logger.log('📊 Bắt đầu tổng hợp báo cáo doanh thu...')
 
-    // Lấy ngày hôm qua theo giờ VN
     const startOfDay = dayjs().tz().subtract(1, 'day').startOf('day').toDate()
     const endOfDay = dayjs().tz().subtract(1, 'day').endOf('day').toDate()
 
@@ -260,154 +391,41 @@ export class DashboardService implements IDashboardService {
     this.logger.log('✅ Hoàn tất tổng hợp báo cáo.')
   }
 
+  // Logic tính toán và lưu vào DB
   private async processOneParkingLot(lot: any, start: Date, end: Date) {
-    const lotId = lot._id.toString()
+    const lotIdObj = lot._id // Đã là ObjectId nếu dùng .find() từ Mongoose
+    const lotIdStr = lot._id.toString()
 
-    // 1. Subscription
-    const subStats = await this.subscriptionModel.aggregate([
-      {
-        $match: {
-          parkingLotId: lot._id,
-          createdAt: { $gte: start, $lte: end },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalAmount: {
-            $sum: {
-              $subtract: [
-                { $ifNull: ['$amountPaid', 0] }, // 👈 Nếu thiếu amountPaid thì coi là 0
-                { $ifNull: ['$refundedAmount', 0] }, // 👈 Nếu thiếu refundedAmount thì coi là 0
-              ],
-            },
-          },
-          totalRefunded: { $sum: '$refundedAmount' },
-          count: { $sum: 1 },
-        },
-      },
-    ])
-    const subRevenue = subStats[0]?.totalAmount ?? 0
-    const subRefund = subStats[0]?.totalRefunded ?? 0
-    const subCount = subStats[0]?.count ?? 0
-
-    // 2. Reservation
-    const resStats = await this.reservationModel.aggregate([
-      {
-        $match: {
-          parkingLotId: lot._id,
-          createdAt: { $gte: start, $lte: end },
-          prepaidAmount: { $gt: 0 },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalAmount: {
-            $sum: {
-              $subtract: [
-                { $ifNull: ['$prepaidAmount', 0] }, // 👈 Sửa ở đây
-                { $ifNull: ['$refundedAmount', 0] }, // 👈 Sửa ở đây
-              ],
-            },
-          },
-          totalRefunded: { $sum: '$refundedAmount' },
-          count: { $sum: 1 },
-        },
-      },
-    ])
-    const resRevenue = resStats[0]?.totalAmount ?? 0
-    const resRefund = resStats[0]?.totalRefunded ?? 0
-    const resCount = resStats[0]?.count ?? 0
-
-    // 3. Session (Vãng lai)
-    const sessionStats = await this.sessionModel.aggregate([
-      {
-        $match: {
-          parkingLotId: lot._id,
-          checkOutTime: { $gte: start, $lte: end },
-          status: 'COMPLETED',
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalWalkInRevenue: {
-            $sum: {
-              $add: [
-                { $ifNull: ['$amountPaid', 0] },
-                { $ifNull: ['$amountPayAfterCheckOut', 0] },
-              ],
-            },
-          },
-          totalCheckOuts: { $sum: 1 },
-          avgDuration: {
-            $avg: { $subtract: ['$checkOutTime', '$checkInTime'] },
-          },
-        },
-      },
-    ])
-
-    const checkInCount = await this.sessionModel.countDocuments({
-      parkingLotId: lot._id,
-      checkInTime: { $gte: start, $lte: end },
-    })
-
-    const walkInRevenue = sessionStats[0]?.totalWalkInRevenue ?? 0
-    const checkOutCount = sessionStats[0]?.totalCheckOuts ?? 0
-    const avgDurationMs = sessionStats[0]?.avgDuration ?? 0
-
-    // 4. Peak Hour
-    const peakHourStats = await this.sessionModel.aggregate([
-      {
-        $match: {
-          parkingLotId: lot._id,
-          checkInTime: { $gte: start, $lte: end },
-        },
-      },
-      {
-        $project: {
-          hour: { $hour: '$checkInTime' },
-        },
-      },
-      {
-        $group: {
-          _id: '$hour',
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { count: -1 } },
-      { $limit: 1 },
-    ])
+    const financial = await this.calculateFinancialStats(lotIdObj, start, end)
+    const traffic = await this.calculateTrafficStats(lotIdObj, start, end)
 
     // 5. Save to DB
     await this.reportModel.updateOne(
-      { parkingLotId: lotId, reportDate: start },
+      { parkingLotId: lotIdStr, reportDate: start },
       {
         $set: {
-          totalRevenue: subRevenue + resRevenue + walkInRevenue,
-          totalRefunded: subRefund + resRefund,
-
+          // Financials
+          totalRevenue: financial.totalRevenue,
+          totalRefunded: financial.totalRefunded,
           revenueBreakdown: {
-            subscription: subRevenue,
-            reservation: resRevenue,
-            walkIn: walkInRevenue,
+            subscription: financial.subRevenue,
+            reservation: financial.resRevenue,
+            walkIn: financial.walkInRevenue,
           },
           refundBreakdown: {
-            subscription: subRefund,
-            reservation: resRefund,
-            walkIn: 0,
+            subscription: financial.subRefund,
+            reservation: financial.resRefund,
+            walkIn: financial.walkInRefund,
           },
+          // Counts
+          newSubscriptions: financial.newSubscriptions,
+          totalReservationsCreated: financial.totalReservationsCreated,
 
-          totalCheckIns: checkInCount,
-          totalCheckOuts: checkOutCount,
-          totalReservationsCreated: resCount,
-          newSubscriptions: subCount,
-          avgParkingDurationMinutes: Math.round(avgDurationMs / 60000),
-          peakHourStats:
-            peakHourStats.length > 0
-              ? { hour: peakHourStats[0]._id, count: peakHourStats[0].count }
-              : null,
+          // Traffic
+          totalCheckIns: traffic.totalCheckIns,
+          totalCheckOuts: traffic.totalCheckOuts,
+          avgParkingDurationMinutes: Math.round(traffic.avgDurationMs / 60000),
+          peakHourStats: traffic.peakHour,
         },
       },
       { upsert: true },
@@ -415,7 +433,7 @@ export class DashboardService implements IDashboardService {
   }
 
   // ===========================================================================
-  // 3. API LẤY BÁO CÁO (DÙNG CHO FRONTEND)
+  // 4. API LẤY BÁO CÁO (DÙNG CHO FRONTEND)
   // ===========================================================================
   async getDashboardReport(
     query: GetReportQueryDto,
@@ -439,7 +457,6 @@ export class DashboardService implements IDashboardService {
       )
     }
 
-    // Logic xác định khoảng thời gian
     switch (timeRange) {
       case ReportTimeRangeEnum.DAY:
         startDate = date.startOf('day')
@@ -500,7 +517,7 @@ export class DashboardService implements IDashboardService {
           reportDate: {
             $gte: startDate.toDate(),
             $lte: endDate.toDate(),
-            $lt: today.toDate(), // Chỉ lấy quá khứ
+            $lt: today.toDate(),
           },
         },
       },
@@ -512,9 +529,8 @@ export class DashboardService implements IDashboardService {
           chartRevenue: { $sum: '$totalRevenue' },
           chartCheckIns: { $sum: '$totalCheckIns' },
           labelDate: { $first: '$reportDate' },
-
           sumRevenue: { $sum: '$totalRevenue' },
-          sumRefunded: { $sum: '$totalRefunded' }, // Tổng hoàn tiền
+          sumRefunded: { $sum: '$totalRefunded' },
 
           sumCheckIns: { $sum: '$totalCheckIns' },
           sumReservations: { $sum: '$totalReservationsCreated' },
@@ -565,6 +581,7 @@ export class DashboardService implements IDashboardService {
     const historicalData = await this.reportModel.aggregate(
       aggregation as PipelineStage[],
     )
+
     const combinedData = [...historicalData]
 
     // B. LOGIC HYBRID: GỘP DỮ LIỆU HÔM NAY (Real-time)
@@ -587,18 +604,16 @@ export class DashboardService implements IDashboardService {
         todayGroupId = today.format('YYYY-MM-DD')
       }
 
-      // Tìm xem đã có bucket của ngày hôm nay trong lịch sử chưa (để merge)
       const existingItemIndex = combinedData.findIndex(
         (item) => item._id === todayGroupId,
       )
 
       if (existingItemIndex > -1) {
-        // MERGE VÀO BUCKET CÓ SẴN (Ví dụ: Merge ngày 27 vào Tháng 11)
+        // MERGE VÀO BUCKET CÓ SẴN
         const existing = combinedData[existingItemIndex]
 
         existing.chartRevenue += todayStats.totalRevenue
         existing.chartCheckIns += todayStats.totalCheckIns
-
         existing.sumRevenue += todayStats.totalRevenue
         existing.sumRefunded += todayStats.totalRefunded
 
@@ -630,28 +645,23 @@ export class DashboardService implements IDashboardService {
 
         combinedData[existingItemIndex] = existing
       } else {
-        // TẠO BUCKET MỚI (Ví dụ: Ngày mới hoặc Tháng mới chưa có trong lịch sử)
+        // TẠO BUCKET MỚI
         const todayFormatted = {
           _id: todayGroupId,
           chartRevenue: todayStats.totalRevenue,
           chartCheckIns: todayStats.totalCheckIns,
           labelDate: today.toDate(),
-
           sumRevenue: todayStats.totalRevenue,
           sumRefunded: todayStats.totalRefunded,
-
           sumCheckIns: todayStats.totalCheckIns,
           sumReservations: todayStats.totalReservationsCreated,
           sumNewSubs: todayStats.newSubscriptions,
-
           sumRevWalkIn: todayStats.revenueBreakdown.walkIn,
           sumRevRes: todayStats.revenueBreakdown.reservation,
           sumRevSub: todayStats.revenueBreakdown.subscription,
-
           sumRefSub: todayStats.refundBreakdown.subscription,
           sumRefRes: todayStats.refundBreakdown.reservation,
           sumRefWalkIn: todayStats.refundBreakdown.walkIn,
-
           avgParkingDurationMinutes: todayStats.avgParkingDurationMinutes,
           totalCheckOuts: todayStats.totalCheckOuts,
         }
@@ -664,7 +674,6 @@ export class DashboardService implements IDashboardService {
       (acc, curr) => {
         const totalRevenue = acc.totalRevenue + (curr.sumRevenue ?? 0)
         const totalRefunded = acc.totalRefunded + (curr.sumRefunded ?? 0)
-
         const totalCheckIns = acc.totalCheckIns + (curr.sumCheckIns ?? 0)
         const totalReservations =
           acc.totalReservations + (curr.sumReservations ?? 0)
@@ -683,7 +692,6 @@ export class DashboardService implements IDashboardService {
         const refundByWalkIn =
           acc.refundBreakdown.walkIn + (curr.sumRefWalkIn ?? 0)
 
-        // Tính Weighted Average cho Summary Tổng
         const accCheckOuts = acc.totalCheckOuts ?? 0
         const currCheckOuts = curr.totalCheckOuts ?? 0
         const accAvg = acc.avgParkingDurationMinutes ?? 0
@@ -702,16 +710,12 @@ export class DashboardService implements IDashboardService {
         return {
           totalRevenue,
           totalRefunded,
-
           totalCheckIns,
           totalReservations,
           newSubscriptions,
-
           revenueByWalkIn,
           revenueByReservation,
           revenueBySubscription,
-
-          // Object breakdown
           refundBreakdown: {
             subscription: refundBySubscription,
             reservation: refundByReservation,
@@ -722,12 +726,10 @@ export class DashboardService implements IDashboardService {
             reservation: revenueByReservation,
             walkIn: revenueByWalkIn,
           },
-
           totalCheckOuts: newTotalCheckOuts,
           avgParkingDurationMinutes: newAvgDuration,
         }
       },
-      // Initial Value (Phải khớp cấu trúc return)
       {
         totalRevenue: 0,
         totalRefunded: 0,
@@ -738,7 +740,7 @@ export class DashboardService implements IDashboardService {
         revenueByReservation: 0,
         revenueBySubscription: 0,
         refundBreakdown: { subscription: 0, reservation: 0, walkIn: 0 },
-        revenueBreakdown: { subscription: 0, reservation: 0, walkIn: 0 }, // Thêm dòng này nếu muốn summary trả về dạng object lồng
+        revenueBreakdown: { subscription: 0, reservation: 0, walkIn: 0 },
         totalCheckOuts: 0,
         avgParkingDurationMinutes: 0,
       },
@@ -749,7 +751,7 @@ export class DashboardService implements IDashboardService {
       let label = ''
 
       if (item._id) {
-        const d = dayjs(item._id) // Parse chuỗi group key (YYYY-MM hoặc YYYY-MM-DD)
+        const d = dayjs(item._id) // Parse YYYY-MM-DD
         if (
           timeRange === ReportTimeRangeEnum.YEAR ||
           timeRange === ReportTimeRangeEnum.QUARTER
@@ -772,7 +774,7 @@ export class DashboardService implements IDashboardService {
       }
     })
 
-    // E. POPULATE THÔNG TIN BÃI XE
+    // E. POPULATE
     const parkingLotInfo = await this.parkingLotModel
       .findById(parkingLotId)
       .select('name addressId -_id')
