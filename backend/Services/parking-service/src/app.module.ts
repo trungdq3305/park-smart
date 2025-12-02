@@ -25,6 +25,7 @@ import { ParkingLotPolicyLinkModule } from './module/parkingLotPolicyLinks/parki
 import { ParkingLotSessionModule } from './module/parkingLotSession/parkingLotSession.module'
 import { ParkingSpaceModule } from './module/parkingSpace/parkingSpace.module'
 import { ParkingSpaceStatusModule } from './module/parkingSpaceStatus/parkingSpaceStatus.module'
+import { ParkingTransactionModule } from './module/parkingTransaction/parkingTransaction.module'
 import { PricingPolicyModule } from './module/pricingPolicy/pricingPolicy.module'
 import { ReservationModule } from './module/reservation/reservation.module'
 import { SubscriptionModule } from './module/subscription/subcription.module'
@@ -74,6 +75,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     ParkingLotSessionModule,
     GuestCardModule,
     DashboardModule,
+    ParkingTransactionModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],

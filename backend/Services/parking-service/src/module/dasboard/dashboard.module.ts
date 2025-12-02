@@ -10,6 +10,10 @@ import {
   ParkingLotSessionSchema,
 } from '../parkingLotSession/schemas/parkingLotSession.schema'
 import {
+  ParkingTransaction,
+  ParkingTransactionSchema,
+} from '../parkingTransaction/schemas/parkingTransaction.schema'
+import {
   Reservation,
   ReservationSchema,
 } from '../reservation/schemas/reservation.schema'
@@ -35,6 +39,7 @@ import {
       { name: ParkingLotSession.name, schema: ParkingLotSessionSchema },
       { name: Subscription.name, schema: SubscriptionSchema },
       { name: Reservation.name, schema: ReservationSchema },
+      { name: ParkingTransaction.name, schema: ParkingTransactionSchema },
     ]),
   ],
   controllers: [DashboardController],

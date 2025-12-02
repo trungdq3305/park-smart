@@ -27,6 +27,8 @@ import { IAccountServiceClient } from '../client/interfaces/iaccount-service-cli
 import { IGuestCardService } from '../guestCard/interfaces/iguestCard.service'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
 import { IParkingLotService } from '../parkingLot/interfaces/iparkingLot.service'
+import { TransactionTypeEnum } from '../parkingTransaction/enum/parkingTransaction.enum'
+import { IParkingTransactionRepository } from '../parkingTransaction/interfaces/iparkingTransaction.repository'
 import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 import { ReservationStatusEnum } from '../reservation/enums/reservation.enum'
 import { IReservationRepository } from '../reservation/interfaces/ireservation.repository'
@@ -74,6 +76,9 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
 
     @Inject(IPricingPolicyRepository)
     private readonly pricingPolicyRepository: IPricingPolicyRepository,
+
+    @Inject(IParkingTransactionRepository)
+    private readonly parkingTransactionRepository: IParkingTransactionRepository,
   ) {}
 
   /**
@@ -663,7 +668,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         }
         await this.subscriptionRepository.updateUsageStatus(
           sub.subscriptionIdentifier,
-          true,
+          false,
           session,
         )
       }
@@ -739,6 +744,49 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         'Check-out từ Kiosk Bảo Vệ', // Description
       )
 
+      if (parkingSession.reservationId) {
+        await this.parkingTransactionRepository.createTransaction(
+          {
+            reservationId: parkingSession.reservationId,
+            parkingLotId: parkingSession.parkingLotId,
+            amount:
+              amountPayAfterCheckOut && amountPayAfterCheckOut > 0
+                ? amountPayAfterCheckOut
+                : 0,
+            type: TransactionTypeEnum.PENALTY,
+            paymentId: paymentId,
+          },
+          session,
+        )
+      } else if (parkingSession.subscriptionId) {
+        await this.parkingTransactionRepository.createTransaction(
+          {
+            subscriptionId: parkingSession.subscriptionId,
+            parkingLotId: parkingSession.parkingLotId,
+            amount:
+              amountPayAfterCheckOut && amountPayAfterCheckOut > 0
+                ? amountPayAfterCheckOut
+                : 0,
+            type: TransactionTypeEnum.PENALTY,
+            paymentId: paymentId,
+          },
+          session,
+        )
+      } else if (parkingSession.guestCardId) {
+        await this.parkingTransactionRepository.createTransaction(
+          {
+            sessionId: parkingSession._id.toString(),
+            parkingLotId: parkingSession.parkingLotId,
+            amount:
+              amountPayAfterCheckOut && amountPayAfterCheckOut > 0
+                ? amountPayAfterCheckOut
+                : 0,
+            type: TransactionTypeEnum.WALK_IN_PAYMENT,
+            paymentId: paymentId,
+          },
+          session,
+        )
+      }
       if (!data) {
         throw new InternalServerErrorException(
           'Checkout thất bại, vui lòng thử lại.',

@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 import { ClientModule } from '../client/client.module'
 import { NotificationModule } from '../notification/notification.module' // <-- THÊM DÒNG NÀY
 import { ParkingLotModule } from '../parkingLot/parkingLot.module'
+import { ParkingTransactionModule } from '../parkingTransaction/parkingTransaction.module'
 import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
 import { ISubscriptionRepository } from './interfaces/isubcription.repository'
 import { ISubscriptionService } from './interfaces/isubcription.service'
@@ -28,6 +29,7 @@ import { SubscriptionLogRepository } from './subcriptionLog.repository'
     forwardRef(() => ParkingLotModule),
     PricingPolicyModule,
     NotificationModule,
+    ParkingTransactionModule,
   ],
   controllers: [SubscriptionController],
   providers: [
