@@ -1,5 +1,6 @@
 import { lazy } from 'react'
 import type { LayoutRoute } from '../types/Route'
+import ManageRequest from '../pages/admin/manage-request/ManageRequest'
 
 // Các layout này được export dưới dạng export default
 const MainLayout = lazy(() => import('../components/layouts/layout/MainLayout'))
@@ -57,6 +58,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/admin/manage-parking-lots',
         component: ManageParkingLots,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/parking-lot-requests',
+        component: ManageRequest,
         role: ['Admin'],
       },
     ],
