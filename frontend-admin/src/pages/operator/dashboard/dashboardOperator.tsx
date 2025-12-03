@@ -91,6 +91,21 @@ const getPercentage = (value: number, total: number) => {
   return Number(((value / total) * 100).toFixed(1))
 }
 
+const getDatePickerFormat = (timeRange: TimeRange) => {
+  if (timeRange === 'WEEK') {
+    return (value: Dayjs) =>
+      `${value.startOf('week').format('DD/MM')} - ${value.endOf('week').format('DD/MM')}`
+  }
+  if (timeRange === 'MONTH') {
+    return 'MM/YYYY'
+  }
+  if (timeRange === 'YEAR') {
+    return 'YYYY'
+  }
+
+  return 'DD/MM/YYYY'
+}
+
 const getErrorMessage = (err: FetchBaseQueryError | SerializedError | undefined) => {
   if (!err) return ''
   if ('status' in err) {
@@ -110,6 +125,8 @@ const DashboardOperator: React.FC = () => {
     () => getFormattedTargetDate(targetDate, timeRange),
     [targetDate, timeRange]
   )
+
+  const datePickerFormat = useMemo(() => getDatePickerFormat(timeRange), [timeRange])
 
   const shouldSkip = !parkingLotId
   const queryArgs: DashboardQueryArgs = shouldSkip
@@ -462,7 +479,7 @@ const DashboardOperator: React.FC = () => {
           />
           <DatePicker
             value={targetDate}
-            format="DD/MM/YYYY"
+            format={datePickerFormat as any}
             picker={timeRangeOptions.find((item) => item.value === timeRange)?.picker}
             onChange={(value) => value && setTargetDate(value)}
             allowClear={false}
