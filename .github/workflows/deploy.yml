@@ -53,6 +53,7 @@ jobs:
             SMTP_PORT=${{ secrets.SMTP_PORT }}
             APP_NAME=${{ secrets.APP_NAME }}
             CORE_SERVICE_URL=${{ secrets.CORE_SERVICE_URL }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             EOF
             echo ">>> .env file created successfully."
 
