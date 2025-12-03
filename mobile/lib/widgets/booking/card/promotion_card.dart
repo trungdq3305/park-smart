@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../screens/user/profile/promotion/promotion_screen.dart';
 
 class PromotionCard extends StatelessWidget {
   final List<Map<String, dynamic>> promotions;
@@ -74,12 +75,26 @@ class PromotionCard extends StatelessWidget {
       );
     }
 
-    if (promotions.isEmpty) {
+    // Filter only active promotions
+    final activePromotions = promotions.where((promotion) {
+      final status = promotion['status']?.toString();
+      final isActive =
+          promotion['isActive'] == true || status?.toUpperCase() == 'ACTIVE';
+      return isActive;
+    }).toList();
+
+    if (activePromotions.isEmpty) {
       return const SizedBox.shrink();
     }
 
+    // Limit to max 2 promotions for display
+    final maxDisplay = 2;
+    final displayedPromotions = activePromotions.take(maxDisplay).toList();
+    final hasMore = activePromotions.length > maxDisplay;
+    final totalCount = activePromotions.length;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      constraints: const BoxConstraints(maxHeight: 400),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -93,38 +108,57 @@ class PromotionCard extends StatelessWidget {
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  Icons.local_offer,
-                  color: Colors.orange.shade700,
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'Khuyến mãi',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87,
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.local_offer,
+                    color: Colors.orange.shade700,
+                    size: 20,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Khuyến mãi',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          ...promotions.map(
-            (promotion) => _buildPromotionItem(context, promotion),
+          Flexible(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ...displayedPromotions.map(
+                    (promotion) => _buildPromotionItem(context, promotion),
+                  ),
+                  if (hasMore) ...[
+                    const SizedBox(height: 8),
+                    _buildViewMoreItem(context, totalCount - maxDisplay),
+                    const SizedBox(height: 8),
+                  ],
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -328,6 +362,41 @@ class PromotionCard extends StatelessWidget {
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildViewMoreItem(BuildContext context, int remainingCount) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const PromotionScreen()),
+        );
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.grey.shade300, width: 1.5),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.expand_more, color: Colors.grey.shade600, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'Xem thêm $remainingCount khuyến mãi khác',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
         ),
       ),
     );

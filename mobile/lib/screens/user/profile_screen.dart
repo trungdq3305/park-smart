@@ -9,6 +9,7 @@ import 'package:mobile/services/user_service.dart';
 import 'profile/infor/personal_info_screen.dart';
 import 'profile/subcription/my_subscriptions_screen.dart';
 import 'profile/faqs/faqs_screen.dart';
+import 'profile/promotion/promotion_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -351,7 +352,12 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       icon: Icons.confirmation_number_outlined,
                       title: 'Mã giảm giá',
                       onTap: () {
-                        // TODO: Navigate to tickets screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PromotionScreen(),
+                          ),
+                        );
                       },
                     ),
                     _buildTile(

@@ -19,21 +19,26 @@ class ReservationFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
         child: Row(
           children: [
-            _buildChip(label: 'Tất cả', statusCode: null, color: Colors.green),
+            _buildChip(label: 'Tất cả', statusCode: null),
             const SizedBox(width: 8),
             for (final status in statuses) ...[
-              _buildChip(
-                label: getStatusText(status),
-                statusCode: status,
-                color: getStatusColor(status),
-              ),
+              _buildChip(label: getStatusText(status), statusCode: status),
               const SizedBox(width: 8),
             ],
           ],
@@ -42,29 +47,26 @@ class ReservationFilterBar extends StatelessWidget {
     );
   }
 
-  Widget _buildChip({
-    required String label,
-    required String? statusCode,
-    required Color color,
-  }) {
+  Widget _buildChip({required String label, required String? statusCode}) {
     final bool isSelected = selectedStatus == statusCode;
     return ChoiceChip(
       label: Text(label),
       selected: isSelected,
-      selectedColor: color,
-      labelPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.grey.shade700,
-        fontWeight: FontWeight.w600,
-      ),
+      onSelected: (selected) {
+        if (selected) {
+          onStatusChanged(statusCode);
+        }
+      },
+      selectedColor: Colors.green.shade100,
       backgroundColor: Colors.grey.shade100,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-        side: BorderSide(color: isSelected ? color : Colors.grey.shade300),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.green.shade700 : Colors.grey.shade700,
+        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
-      onSelected: (_) => onStatusChanged(statusCode),
+      side: BorderSide(
+        color: isSelected ? Colors.green.shade600 : Colors.grey.shade300,
+        width: isSelected ? 2 : 1,
+      ),
     );
   }
 }
-
-
