@@ -16,6 +16,7 @@ import { AddressModule } from './module/address/address.module'
 import { AnnouncementModule } from './module/announcement/announcement.module'
 import { BasisModule } from './module/basis/basis.module'
 import { BookingInventoryModule } from './module/bookingInventory/bookingInventory.module'
+import { ChatbotModule } from './module/chatbot/chatbot.module';
 import { DashboardModule } from './module/dasboard/dashboard.module'
 import { GuestCardModule } from './module/guestCard/guestCard.module'
 import { NotificationModule } from './module/notification/notification.module'
@@ -32,7 +33,6 @@ import { SubscriptionModule } from './module/subscription/subcription.module'
 import { TieredRateSetModule } from './module/tieredRateSet/tieredRateSet.module'
 import { WardModule } from './module/ward/ward.module'
 import { JwtStrategy } from './strategy/jwt.strategy'
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -76,6 +76,7 @@ import { JwtStrategy } from './strategy/jwt.strategy'
     GuestCardModule,
     DashboardModule,
     ParkingTransactionModule,
+    ChatbotModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService, JwtStrategy, JwtAuthGuard],
