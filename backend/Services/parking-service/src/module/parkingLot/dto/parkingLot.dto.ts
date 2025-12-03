@@ -285,6 +285,9 @@ export class ParkingLotResponseDto {
 
   @Expose()
   name: string
+
+  @Expose()
+  secretKey: string
 }
 
 /**
@@ -332,6 +335,10 @@ export class ParkingLotRequestResponseDto {
 
   @Expose()
   createdAt: Date
+
+  @Expose()
+  @Type(() => ParkingLotResponseDto)
+  parkingLotId: ParkingLotResponseDto
 }
 
 /**

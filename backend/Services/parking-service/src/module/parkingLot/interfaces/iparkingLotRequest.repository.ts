@@ -32,7 +32,12 @@ export interface IParkingLotRequestRepository {
 
   findByParkingLotId(parkingLotId: string): Promise<ParkingLotRequest[]>
 
-  findAllRequests(status: string, type: string): Promise<ParkingLotRequest[]>
+  findAllRequests(
+    status: string,
+    type: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: ParkingLotRequest[]; total: number }>
 
   hardDeleteById(id: string, session?: ClientSession): Promise<boolean>
 
