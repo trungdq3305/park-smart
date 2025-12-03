@@ -817,18 +817,19 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             final cancelResponse = await ReservationService.cancelReservation(
               reservationId,
             );
-            
+
             if (!mounted) return;
-            
+
             // Extract message from response (could be in different fields)
             String successMessage = 'Hủy đặt chỗ thành công.';
-            final message = cancelResponse['message']?.toString() ??
+            final message =
+                cancelResponse['message']?.toString() ??
                 cancelResponse['data']?['message']?.toString() ??
                 cancelResponse['data']?.toString();
             if (message != null && message.isNotEmpty) {
               successMessage = message;
             }
-            
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
@@ -858,7 +859,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                 duration: const Duration(seconds: 3),
               ),
             );
-            
+
             // Reload reservations after a short delay to ensure backend processed
             await Future.delayed(const Duration(milliseconds: 500));
             if (mounted) {
@@ -868,9 +869,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  'Lỗi khi hủy đặt chỗ: $cancelError',
-                ),
+                content: Text('Lỗi khi hủy đặt chỗ: $cancelError'),
                 backgroundColor: Colors.red,
               ),
             );
