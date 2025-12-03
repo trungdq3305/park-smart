@@ -1,7 +1,6 @@
 import React from 'react'
 import { Layout, Menu, Button } from 'antd'
 import {
-  DashboardOutlined,
   BarChartOutlined,
   FileTextOutlined,
   AppstoreOutlined,
@@ -47,9 +46,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       active: true,
     },
     {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Bảng điều khiển',
+      key: '/admin/parking-lot-requests',
+      icon: <CarOutlined />,
+      label: 'Yêu cầu bãi đỗ xe',
     },
     {
       key: '/admin/manage-parking-lots',
