@@ -155,6 +155,7 @@ class PaymentResultScreen extends StatelessWidget {
                 child: ElevatedButton(
                   onPressed: () {
                     // Navigate back to home or previous screen
+                    if (!context.mounted) return;
                     Navigator.of(context).popUntil((route) => route.isFirst);
                   },
                   style: ElevatedButton.styleFrom(
@@ -178,7 +179,9 @@ class PaymentResultScreen extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () {
                       // Navigate to profile screen
+                      if (!context.mounted) return;
                       Navigator.of(context).popUntil((route) => route.isFirst);
+                      if (!context.mounted) return;
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) => const ProfileScreen(),
@@ -208,6 +211,7 @@ class PaymentResultScreen extends StatelessWidget {
                   child: OutlinedButton(
                     onPressed: () {
                       // Retry payment
+                      if (!context.mounted) return;
                       Navigator.of(context).pop();
                     },
                     style: OutlinedButton.styleFrom(

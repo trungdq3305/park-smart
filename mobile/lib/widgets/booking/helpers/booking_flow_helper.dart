@@ -257,19 +257,18 @@ class BookingFlowHelper {
                     // Navigate to result screen
                     // After WebView closes, we're back at booking screen
                     // Use pushReplacement to replace booking screen with result screen
-                    if (bookingContext.mounted) {
-                      Navigator.of(bookingContext).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (ctx) => PaymentResultScreen(
-                            isSuccess: true,
-                            message:
-                                'Đặt chỗ của bạn đã được xác nhận thành công.',
-                            paymentId: finalPaymentId,
-                            reservationId: reservationId,
-                          ),
+                    if (!bookingContext.mounted) return;
+                    Navigator.of(bookingContext).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (ctx) => PaymentResultScreen(
+                          isSuccess: true,
+                          message:
+                              'Đặt chỗ của bạn đã được xác nhận thành công.',
+                          paymentId: finalPaymentId,
+                          reservationId: reservationId,
                         ),
-                      );
-                    }
+                      ),
+                    );
                   } catch (confirmError) {
                     print('❌ Error in reservation confirmation flow:');
                     print('  Error: $confirmError');
@@ -286,50 +285,47 @@ class BookingFlowHelper {
                     }
 
                     // Navigate to result screen with error
-                    if (bookingContext.mounted) {
-                      Navigator.of(bookingContext).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (ctx) => PaymentResultScreen(
-                            isSuccess: false,
-                            message:
-                                'Thanh toán thành công nhưng có lỗi khi xác nhận đặt chỗ.',
-                            errorMessage: errorMessage,
-                            paymentId: finalPaymentId,
-                            reservationId: reservationId,
-                          ),
-                        ),
-                      );
-                    }
-                  }
-                } else {
-                  // Missing information
-                  if (bookingContext.mounted) {
+                    if (!bookingContext.mounted) return;
                     Navigator.of(bookingContext).pushReplacement(
                       MaterialPageRoute(
                         builder: (ctx) => PaymentResultScreen(
                           isSuccess: false,
-                          message: 'Thiếu thông tin để xác nhận đặt chỗ.',
-                          paymentId: returnedPaymentId ?? paymentId,
+                          message:
+                              'Thanh toán thành công nhưng có lỗi khi xác nhận đặt chỗ.',
+                          errorMessage: errorMessage,
+                          paymentId: finalPaymentId,
                           reservationId: reservationId,
                         ),
                       ),
                     );
                   }
-                }
-              } else {
-                // Payment failed or cancelled
-                if (bookingContext.mounted) {
+                } else {
+                  // Missing information
+                  if (!bookingContext.mounted) return;
                   Navigator.of(bookingContext).pushReplacement(
                     MaterialPageRoute(
                       builder: (ctx) => PaymentResultScreen(
                         isSuccess: false,
-                        message: 'Thanh toán đã bị hủy hoặc thất bại.',
+                        message: 'Thiếu thông tin để xác nhận đặt chỗ.',
                         paymentId: returnedPaymentId ?? paymentId,
                         reservationId: reservationId,
                       ),
                     ),
                   );
                 }
+              } else {
+                // Payment failed or cancelled
+                if (!bookingContext.mounted) return;
+                Navigator.of(bookingContext).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (ctx) => PaymentResultScreen(
+                      isSuccess: false,
+                      message: 'Thanh toán đã bị hủy hoặc thất bại.',
+                      paymentId: returnedPaymentId ?? paymentId,
+                      reservationId: reservationId,
+                    ),
+                  ),
+                );
               }
             },
           ),
@@ -603,19 +599,18 @@ class BookingFlowHelper {
                       }
                     }
 
-                    if (bookingContext.mounted) {
-                      Navigator.of(bookingContext).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => PaymentResultScreen(
-                            isSuccess: true,
-                            message:
-                                'Gói thuê bao của bạn đã được kích hoạt thành công.',
-                            paymentId: finalPaymentId,
-                            subscriptionId: subscriptionId,
-                          ),
+                    if (!bookingContext.mounted) return;
+                    Navigator.of(bookingContext).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => PaymentResultScreen(
+                          isSuccess: true,
+                          message:
+                              'Gói thuê bao của bạn đã được kích hoạt thành công.',
+                          paymentId: finalPaymentId,
+                          subscriptionId: subscriptionId,
                         ),
-                      );
-                    }
+                      ),
+                    );
                   } catch (confirmError) {
                     print('❌ Error in subscription confirmation flow:');
                     print('  Error: $confirmError');
@@ -631,22 +626,22 @@ class BookingFlowHelper {
                       );
                     }
 
-                    if (bookingContext.mounted) {
-                      Navigator.of(bookingContext).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (context) => PaymentResultScreen(
-                            isSuccess: false,
-                            message:
-                                'Thanh toán thành công nhưng có lỗi khi kích hoạt gói.',
-                            errorMessage: errorMessage,
-                            paymentId: finalPaymentId,
-                            subscriptionId: subscriptionId,
-                          ),
+                    if (!bookingContext.mounted) return;
+                    Navigator.of(bookingContext).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (context) => PaymentResultScreen(
+                          isSuccess: false,
+                          message:
+                              'Thanh toán thành công nhưng có lỗi khi kích hoạt gói.',
+                          errorMessage: errorMessage,
+                          paymentId: finalPaymentId,
+                          subscriptionId: subscriptionId,
                         ),
-                      );
-                    }
+                      ),
+                    );
                   }
-                } else if (bookingContext.mounted) {
+                } else {
+                  if (!bookingContext.mounted) return;
                   Navigator.of(bookingContext).pushReplacement(
                     MaterialPageRoute(
                       builder: (context) => PaymentResultScreen(
@@ -660,7 +655,8 @@ class BookingFlowHelper {
                     ),
                   );
                 }
-              } else if (bookingContext.mounted) {
+              } else {
+                if (!bookingContext.mounted) return;
                 Navigator.of(bookingContext).pushReplacement(
                   MaterialPageRoute(
                     builder: (context) => PaymentResultScreen(
