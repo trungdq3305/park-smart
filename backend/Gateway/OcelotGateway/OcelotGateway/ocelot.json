@@ -469,7 +469,7 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/dashboard/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST"]
+      "UpstreamHttpMethod": [ "GET", "POST" ]
     },
     {
       "DownstreamPathTemplate": "/subscriptions/{everything}",
@@ -529,6 +529,18 @@
         }
       ],
       "UpstreamPathTemplate": "/parking/guest-cards/{everything}",
+      "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
+    },
+    {
+      "DownstreamPathTemplate": "/chatbot/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "parkingservice",
+          "Port": 5000
+        }
+      ],
+      "UpstreamPathTemplate": "/parking/chatbot/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PATCH", "DELETE" ]
     },
     {
