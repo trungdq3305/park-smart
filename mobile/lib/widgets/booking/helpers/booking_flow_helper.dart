@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../services/reservation_service.dart';
 import '../../../../services/subcription_service.dart';
 import '../../../../services/payment_service.dart';
+import '../../../../services/promotion_service.dart';
 import '../../../../screens/user/booking_reservation/payment_checkout_screen.dart';
 import '../../../../screens/user/booking_reservation/payment_result_screen.dart';
 import 'tiered_pricing_helper.dart';
@@ -222,6 +223,36 @@ class BookingFlowHelper {
                     );
 
                     print('✅ Payment confirmed and reservation activated');
+
+                    // Step 3: Use promotion if selected
+                    if (selectedPromotion != null) {
+                      try {
+                        final promotionCode =
+                            selectedPromotion['code']?.toString();
+                        if (promotionCode != null && promotionCode.isNotEmpty) {
+                          print('🎁 Step 3: Using promotion:');
+                          print('  Promotion Code: $promotionCode');
+                          print('  Original Amount: $originalAmount');
+                          print('  Entity ID (Reservation): $reservationId');
+
+                          await PromotionService.usePromotion(
+                            promotionCode: promotionCode,
+                            originalAmount: originalAmount,
+                            entityId: reservationId,
+                          );
+
+                          print('✅ Promotion used successfully');
+                        } else {
+                          print(
+                            '⚠️ Promotion selected but code is missing or empty',
+                          );
+                        }
+                      } catch (promoError) {
+                        print('⚠️ Error using promotion: $promoError');
+                        // Don't block navigation if promotion use fails
+                        // The payment is already confirmed
+                      }
+                    }
 
                     // Navigate to result screen
                     // After WebView closes, we're back at booking screen
@@ -541,6 +572,36 @@ class BookingFlowHelper {
                     );
 
                     print('✅ Payment confirmed and subscription activated');
+
+                    // Step 3: Use promotion if selected
+                    if (selectedPromotion != null) {
+                      try {
+                        final promotionCode =
+                            selectedPromotion['code']?.toString();
+                        if (promotionCode != null && promotionCode.isNotEmpty) {
+                          print('🎁 Step 3: Using promotion:');
+                          print('  Promotion Code: $promotionCode');
+                          print('  Original Amount: $originalAmount');
+                          print('  Entity ID (Subscription): $subscriptionId');
+
+                          await PromotionService.usePromotion(
+                            promotionCode: promotionCode,
+                            originalAmount: originalAmount,
+                            entityId: subscriptionId,
+                          );
+
+                          print('✅ Promotion used successfully');
+                        } else {
+                          print(
+                            '⚠️ Promotion selected but code is missing or empty',
+                          );
+                        }
+                      } catch (promoError) {
+                        print('⚠️ Error using promotion: $promoError');
+                        // Don't block navigation if promotion use fails
+                        // The payment is already confirmed
+                      }
+                    }
 
                     if (bookingContext.mounted) {
                       Navigator.of(bookingContext).pushReplacement(

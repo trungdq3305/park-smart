@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../profile_screen.dart';
 
 class PaymentResultScreen extends StatelessWidget {
   final bool isSuccess;
@@ -41,9 +42,7 @@ class PaymentResultScreen extends StatelessWidget {
                 height: 120,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: isSuccess
-                      ? Colors.green.shade50
-                      : Colors.red.shade50,
+                  color: isSuccess ? Colors.green.shade50 : Colors.red.shade50,
                 ),
                 child: Icon(
                   isSuccess ? Icons.check_circle : Icons.error,
@@ -73,7 +72,7 @@ class PaymentResultScreen extends StatelessWidget {
                     (isSuccess
                         ? 'Gói thuê bao của bạn đã được kích hoạt thành công.'
                         : errorMessage ??
-                            'Thanh toán không thành công. Vui lòng thử lại.'),
+                              'Thanh toán không thành công. Vui lòng thử lại.'),
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey.shade700,
@@ -83,7 +82,9 @@ class PaymentResultScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               // Details Card
-              if (paymentId != null || subscriptionId != null || reservationId != null)
+              if (paymentId != null ||
+                  subscriptionId != null ||
+                  reservationId != null)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -166,10 +167,7 @@ class PaymentResultScreen extends StatelessWidget {
                   ),
                   child: const Text(
                     'Về trang chủ',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -179,8 +177,13 @@ class PaymentResultScreen extends StatelessWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () {
-                      // Navigate to subscription details or list
-                      Navigator.of(context).pop();
+                      // Navigate to profile screen
+                      Navigator.of(context).popUntil((route) => route.isFirst);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const ProfileScreen(),
+                        ),
+                      );
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.green,
@@ -239,11 +242,7 @@ class PaymentResultScreen extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(
-          icon,
-          size: 18,
-          color: Colors.grey.shade600,
-        ),
+        Icon(icon, size: 18, color: Colors.grey.shade600),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -251,10 +250,7 @@ class PaymentResultScreen extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
               ),
               const SizedBox(height: 4),
               Text(
@@ -272,4 +268,3 @@ class PaymentResultScreen extends StatelessWidget {
     );
   }
 }
-

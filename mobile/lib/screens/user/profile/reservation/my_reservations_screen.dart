@@ -814,6 +814,32 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
         if (confirmed == true && mounted) {
           try {
+            // Show loading indicator
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Đang hủy đặt chỗ...'),
+                    ],
+                  ),
+                  backgroundColor: Colors.blue,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+
             final cancelResponse = await ReservationService.cancelReservation(
               reservationId,
             );
@@ -830,19 +856,64 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
               successMessage = message;
             }
 
+            // Reload reservations immediately to update the UI
+            await _loadReservations();
+
+            // Show success message after reload
+            if (mounted) {
+              // Dismiss any existing snackbars first
+              ScaffoldMessenger.of(context).clearSnackBars();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          successMessage,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  duration: const Duration(seconds: 3),
+                  margin: const EdgeInsets.all(16),
+                ),
+              );
+            }
+          } catch (cancelError) {
+            if (!mounted) return;
+
+            // Dismiss any existing snackbars first
+            ScaffoldMessenger.of(context).clearSnackBars();
+
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Row(
                   children: [
                     const Icon(
-                      Icons.check_circle,
+                      Icons.error_outline,
                       color: Colors.white,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        successMessage,
+                        'Lỗi khi hủy đặt chỗ: $cancelError',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -851,26 +922,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
                     ),
                   ],
                 ),
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.red,
                 behavior: SnackBarBehavior.floating,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                duration: const Duration(seconds: 3),
-              ),
-            );
-
-            // Reload reservations after a short delay to ensure backend processed
-            await Future.delayed(const Duration(milliseconds: 500));
-            if (mounted) {
-              _loadReservations();
-            }
-          } catch (cancelError) {
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Lỗi khi hủy đặt chỗ: $cancelError'),
-                backgroundColor: Colors.red,
+                duration: const Duration(seconds: 4),
+                margin: const EdgeInsets.all(16),
               ),
             );
           }
