@@ -115,7 +115,11 @@ export interface IParkingLotService {
   getAllRequest(
     status: string,
     type: string,
-  ): Promise<ParkingLotRequestResponseDto[]>
+    paginationQuery: PaginationQueryDto,
+  ): Promise<{
+    data: ParkingLotRequestResponseDto[]
+    pagination: PaginationDto
+  }>
 
   hardDeleteRequestById(id: string): Promise<boolean>
 
@@ -126,6 +130,10 @@ export interface IParkingLotService {
     status: string,
     type: string,
   ): Promise<ParkingLotRequestResponseDto[]>
+
+  findParkingLotRequestById(
+    id: string,
+  ): Promise<ParkingLotRequestResponseDto>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

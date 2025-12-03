@@ -291,14 +291,34 @@ export class ParkingLotController {
     enum: RequestType, // ⭐️ 3. THÊM DÒNG NÀY (để tạo dropdown)
     example: RequestType.CREATE, // Thêm ví dụ cho rõ ràng
   })
+  @ApiQuery({
+    name: 'page',
+    type: Number,
+    required: true,
+    description: 'Số trang',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    type: Number,
+    required: true,
+    description: 'Số lượng mục trên trang',
+    example: 20,
+  })
   @ApiOperation({ summary: 'Lấy tất cả yêu cầu bãi đỗ xe cho admin' })
   async findAllRequests(
     @Query('status') status: RequestStatus,
     @Query('type') type: RequestType,
-  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto[]>> {
-    const requests = await this.parkingLotService.getAllRequest(status, type)
+    @Query() paginationQuery: PaginationQueryDto,
+  ): Promise<PaginatedResponseDto<ParkingLotRequestResponseDto>> {
+    const requests = await this.parkingLotService.getAllRequest(
+      status,
+      type,
+      paginationQuery,
+    )
     return {
-      data: requests,
+      data: requests.data,
+      pagination: requests.pagination,
       message: 'Lấy tất cả yêu cầu bãi đỗ xe thành công',
       statusCode: HttpStatus.OK,
       success: true,
@@ -487,6 +507,21 @@ export class ParkingLotController {
       data: result.data,
       message: result.message,
       statusCode: result.responseCode,
+      success: true,
+    }
+  }
+
+  @Get('/requests/:id')
+  @ApiOperation({ summary: 'Lấy chi tiết một yêu cầu bãi đỗ xe' })
+  @ApiParam({ name: 'id', description: 'ID của yêu cầu (Request)' })
+  async getParkingLotRequestById(
+    @Param('id') id: string,
+  ): Promise<ApiResponseDto<ParkingLotRequestResponseDto>> {
+    const request = await this.parkingLotService.findParkingLotRequestById(id)
+    return {
+      data: [request],
+      message: 'Lấy chi tiết yêu cầu bãi đỗ xe thành công',
+      statusCode: HttpStatus.OK,
       success: true,
     }
   }
