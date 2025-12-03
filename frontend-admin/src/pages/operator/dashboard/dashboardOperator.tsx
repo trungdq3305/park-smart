@@ -59,7 +59,7 @@ type DashboardQueryArgs =
 
 const timeRangeOptions: { label: string; value: TimeRange; picker: 'date' | 'week' | 'month' | 'year' }[] = [
   { label: 'Theo ngày', value: 'DAY', picker: 'date' },
-  { label: 'Theo tuần', value: 'WEEK', picker: 'week' },
+  { label: 'Theo tuần', value: 'WEEK', picker: 'date' },
   { label: 'Theo tháng', value: 'MONTH', picker: 'month' },
   { label: 'Theo năm', value: 'YEAR', picker: 'year' },
 ]
