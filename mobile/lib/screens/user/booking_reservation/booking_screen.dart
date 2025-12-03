@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../services/parking_lot_service.dart';
+import '../../../services/promotion_service.dart';
 import '../../../widgets/booking/card/parking_lot_info_card.dart';
 import '../../../widgets/booking/card/pricing_table_card.dart';
+import '../../../widgets/booking/card/promotion_card.dart';
+import '../../../widgets/booking/card/payment_summary_card.dart';
 import '../../../widgets/booking/comment_parkinglot/comments_section.dart';
 import '../../../widgets/booking/celendar/subscription_calendar.dart';
 import '../../../widgets/booking/card/booking_method_card.dart';
@@ -26,7 +29,10 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isLoadingPricing = false;
   bool _isCreating = false;
   bool _isLoadingAvailability = false;
+  bool _isLoadingPromotions = false;
   List<Map<String, dynamic>> _pricingLinks = [];
+  List<Map<String, dynamic>> _promotions = [];
+  Map<String, dynamic>? _selectedPromotion;
   String? _selectedPricingPolicyId;
   Map<String, dynamic> _availabilityData = {};
   DateTime? _selectedStartDate;
@@ -39,6 +45,54 @@ class _BookingScreenState extends State<BookingScreen> {
   void initState() {
     super.initState();
     _loadPricingLinks();
+    _loadPromotions();
+  }
+
+  /// Load promotions for the parking lot operator
+  Future<void> _loadPromotions() async {
+    final operatorId =
+        widget.parkingLot['parkingLotOperatorId']?.toString() ??
+        widget.parkingLot['operatorId']?.toString();
+
+    if (operatorId == null || operatorId.isEmpty) {
+      print('⚠️ Cannot load promotions: Operator ID is null');
+      return;
+    }
+
+    setState(() {
+      _isLoadingPromotions = true;
+    });
+
+    try {
+      print('🎁 Loading promotions for operator: $operatorId');
+
+      final response = await PromotionService.getPromotionsByOperator(
+        operatorId: operatorId,
+      );
+
+      final promotionsData = response['data'];
+      List<Map<String, dynamic>> promotions = [];
+
+      if (promotionsData is List) {
+        promotions = List<Map<String, dynamic>>.from(promotionsData);
+      }
+
+      setState(() {
+        _promotions = promotions;
+        _isLoadingPromotions = false;
+      });
+
+      print('✅ Loaded ${promotions.length} promotions');
+    } catch (e) {
+      setState(() {
+        _isLoadingPromotions = false;
+        _promotions = [];
+      });
+      print('❌ Error loading promotions: $e');
+
+      // Don't show error snackbar for promotions, just log it
+      // Promotions are not critical for booking flow
+    }
   }
 
   /// Load pricing links for the parking lot
@@ -118,6 +172,9 @@ class _BookingScreenState extends State<BookingScreen> {
                       _isPackageType = false;
                       _availabilityData = {};
                       _selectedStartDate = null;
+                      _selectedPromotion = null;
+                      _userExpectedTime = null;
+                      _estimatedEndTime = null;
                     });
                     // Auto-load reservation availability when selecting "Đặt chỗ"
                     if (method == BookingMethod.reservation) {
@@ -185,6 +242,66 @@ class _BookingScreenState extends State<BookingScreen> {
                     selectedDate: _selectedStartDate,
                     onDateSelected: _onDateSelected,
                     isLoading: _isLoadingAvailability,
+                  ),
+                ],
+
+                // Promotion card (show after calendar)
+                if ((_selectedBookingMethod == BookingMethod.reservation &&
+                        _selectedStartDate != null) ||
+                    (_isPackageType &&
+                        _selectedBookingMethod == BookingMethod.subscription &&
+                        _selectedPricingPolicyId != null)) ...[
+                  const SizedBox(height: 24),
+                  PromotionCard(
+                    promotions: _promotions,
+                    isLoading: _isLoadingPromotions,
+                    selectedPromotion: _selectedPromotion,
+                    onPromotionSelected: (promotion) {
+                      setState(() {
+                        // Toggle promotion selection
+                        final promotionId =
+                            promotion['_id']?.toString() ??
+                            promotion['id']?.toString();
+                        final selectedId =
+                            _selectedPromotion?['_id']?.toString() ??
+                            _selectedPromotion?['id']?.toString();
+
+                        if (selectedId == promotionId) {
+                          _selectedPromotion = null;
+                        } else {
+                          _selectedPromotion = promotion;
+                        }
+                      });
+                    },
+                  ),
+                ],
+
+                // Payment summary card
+                if (_shouldShowPaymentSummary()) ...[
+                  const SizedBox(height: 24),
+                  PaymentSummaryCard(
+                    originalPrice:
+                        _selectedBookingMethod == BookingMethod.subscription
+                        ? _getOriginalPrice()
+                        : null,
+                    selectedPromotion: _selectedPromotion,
+                    promotionName: _selectedPromotion?['name']?.toString(),
+                    selectedDate:
+                        _selectedBookingMethod == BookingMethod.reservation
+                        ? _selectedStartDate
+                        : null,
+                    userExpectedTime:
+                        _selectedBookingMethod == BookingMethod.reservation
+                        ? _userExpectedTime
+                        : null,
+                    estimatedEndTime:
+                        _selectedBookingMethod == BookingMethod.reservation
+                        ? _estimatedEndTime
+                        : null,
+                    tieredRateSetId:
+                        _selectedBookingMethod == BookingMethod.reservation
+                        ? _getTieredRateSetId()
+                        : null,
                   ),
                 ],
 
@@ -397,6 +514,72 @@ class _BookingScreenState extends State<BookingScreen> {
 
     final pricingPolicy = selectedLink['pricingPolicyId'];
     return pricingPolicy?['tieredRateSetId'];
+  }
+
+  /// Check if payment summary should be shown
+  bool _shouldShowPaymentSummary() {
+    if (_selectedBookingMethod == BookingMethod.reservation) {
+      return _selectedStartDate != null &&
+          _userExpectedTime != null &&
+          _estimatedEndTime != null &&
+          _getTieredRateSetId() != null;
+    } else if (_selectedBookingMethod == BookingMethod.subscription) {
+      return _selectedPricingPolicyId != null;
+    }
+    return false;
+  }
+
+  /// Get original price based on booking method (only for subscription)
+  int _getOriginalPrice() {
+    if (_selectedBookingMethod == BookingMethod.subscription) {
+      // Get price from selected pricing link
+      if (_selectedPricingPolicyId == null) {
+        return 0;
+      }
+
+      final selectedLink = _pricingLinks.firstWhere((link) {
+        final pricingPolicy = link['pricingPolicyId'];
+        final pricingPolicyId = pricingPolicy?['_id'] ?? pricingPolicy?['id'];
+        return pricingPolicyId == _selectedPricingPolicyId;
+      }, orElse: () => <String, dynamic>{});
+
+      if (selectedLink.isEmpty) {
+        return 0;
+      }
+
+      final pricingPolicy = selectedLink['pricingPolicyId'];
+
+      // Get price from packageRateId (for PACKAGE type subscriptions)
+      final packageRate = pricingPolicy?['packageRateId'];
+
+      if (packageRate != null && packageRate is Map) {
+        final price = packageRate['price'];
+        if (price is num && price > 0) {
+          print('✅ Found subscription price from packageRateId: $price');
+          return price.toInt();
+        }
+      }
+
+      // Fallback: try fixedPrice if available
+      if (pricingPolicy != null) {
+        final fixedPrice = pricingPolicy['fixedPrice'];
+        if (fixedPrice is num && fixedPrice > 0) {
+          print('✅ Found subscription price from fixedPrice: $fixedPrice');
+          return fixedPrice.toInt();
+        }
+        final price = pricingPolicy['price'];
+        if (price is num && price > 0) {
+          print('✅ Found subscription price from price: $price');
+          return price.toInt();
+        }
+      }
+
+      print(
+        '⚠️ Could not find subscription price. PricingPolicy: ${pricingPolicy?.keys.toList()}',
+      );
+      return 0;
+    }
+    return 0;
   }
 
   /// Handle create reservation

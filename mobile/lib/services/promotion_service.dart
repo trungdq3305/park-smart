@@ -41,7 +41,7 @@ class PromotionService {
     };
   }
 
-  /// GET /api/promotions
+  /// GET /core/promotions
   /// Get all promotions
   static Future<Map<String, dynamic>> getAllPromotions() async {
     try {
@@ -50,7 +50,7 @@ class PromotionService {
         throw Exception('Authentication token not found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/promotions');
+      final uri = Uri.parse('$baseUrl/core/promotions');
 
       print('🎁 Fetching all promotions');
 
@@ -71,7 +71,7 @@ class PromotionService {
     }
   }
 
-  /// GET /api/promotions/operator?operatorId={operatorId}
+  /// GET /core/promotions/operator?operatorId={operatorId}
   /// Get promotions by operator ID
   static Future<Map<String, dynamic>> getPromotionsByOperator({
     required String operatorId,
@@ -83,7 +83,7 @@ class PromotionService {
       }
 
       final uri = Uri.parse(
-        '$baseUrl/api/promotions/operator',
+        '$baseUrl/core/promotions/operator',
       ).replace(queryParameters: {'operatorId': operatorId});
 
       print('🎁 Fetching promotions for operator: $operatorId');
@@ -94,7 +94,15 @@ class PromotionService {
       print('📡 Get promotions by operator body: ${response.body}');
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final decoded = jsonDecode(response.body);
+        print('📡 Decoded response type: ${decoded.runtimeType}');
+        print('📡 Decoded response: $decoded');
+
+        // If response is directly an array, wrap it
+        if (decoded is List) {
+          return {'data': decoded};
+        }
+        return decoded;
       }
       throw Exception(
         'Failed to fetch promotions by operator: ${response.statusCode} - ${response.body}',
@@ -105,7 +113,7 @@ class PromotionService {
     }
   }
 
-  /// GET /api/promotions/{id}
+  /// GET /core/promotions/{id}
   /// Get promotion by ID
   static Future<Map<String, dynamic>> getPromotionById({
     required String promotionId,
@@ -116,7 +124,7 @@ class PromotionService {
         throw Exception('Authentication token not found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/promotions/$promotionId');
+      final uri = Uri.parse('$baseUrl/core/promotions/$promotionId');
 
       print('🎁 Fetching promotion by ID: $promotionId');
 
@@ -137,7 +145,7 @@ class PromotionService {
     }
   }
 
-  /// POST /api/promotions/use
+  /// POST /core/promotions/use
   /// Use a promotion code
   static Future<Map<String, dynamic>> usePromotion({
     required String promotionCode,
@@ -150,7 +158,7 @@ class PromotionService {
         throw Exception('Authentication token not found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/promotions/use');
+      final uri = Uri.parse('$baseUrl/core/promotions/use');
 
       final payload = {
         'promotionCode': promotionCode,
@@ -183,7 +191,7 @@ class PromotionService {
     }
   }
 
-  /// POST /api/promotions/refund?entityId={entityId}
+  /// POST /core/promotions/refund?entityId={entityId}
   /// Refund a promotion
   static Future<Map<String, dynamic>> refundPromotion({
     required String entityId,
@@ -195,7 +203,7 @@ class PromotionService {
       }
 
       final uri = Uri.parse(
-        '$baseUrl/api/promotions/refund',
+        '$baseUrl/core/promotions/refund',
       ).replace(queryParameters: {'entityId': entityId});
 
       print('🎁 Refunding promotion for entity: $entityId');
