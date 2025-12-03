@@ -40,6 +40,8 @@ class _BookingScreenState extends State<BookingScreen> {
   BookingMethod? _selectedBookingMethod;
   TimeOfDay? _userExpectedTime;
   TimeOfDay? _estimatedEndTime;
+  String? _lastLoadedParkingLotId;
+  BookingMethod? _lastLoadedBookingMethod;
 
   @override
   void initState() {
@@ -175,6 +177,11 @@ class _BookingScreenState extends State<BookingScreen> {
                       _selectedPromotion = null;
                       _userExpectedTime = null;
                       _estimatedEndTime = null;
+                      // Reset cache when changing booking method
+                      if (_lastLoadedBookingMethod != method) {
+                        _lastLoadedParkingLotId = null;
+                        _lastLoadedBookingMethod = null;
+                      }
                     });
                     // Auto-load reservation availability when selecting "Đặt chỗ"
                     if (method == BookingMethod.reservation) {
@@ -378,6 +385,8 @@ class _BookingScreenState extends State<BookingScreen> {
         _isPackageType = false;
         _availabilityData = {};
         _selectedStartDate = null;
+        _lastLoadedParkingLotId = null;
+        _lastLoadedBookingMethod = null;
         print('❌ Deselected pricing policy: $pricingPolicyId');
       } else {
         _selectedPricingPolicyId = pricingPolicyId;
@@ -389,17 +398,32 @@ class _BookingScreenState extends State<BookingScreen> {
         final basisName = basisId?['basisName'] ?? basisId?['name'] ?? '';
 
         if (_selectedBookingMethod == BookingMethod.reservation) {
-          // For reservation, load reservation availability
+          // For reservation, load reservation availability (only if not already loaded)
           _isPackageType = false;
-          _loadReservationAvailability();
+          // Only load if we don't have data or parking lot changed
+          final parkingLotId =
+              widget.parkingLot['_id'] ?? widget.parkingLot['id'];
+          if (_lastLoadedParkingLotId != parkingLotId ||
+              _lastLoadedBookingMethod != BookingMethod.reservation ||
+              _availabilityData.isEmpty) {
+            _loadReservationAvailability();
+          }
         } else if (basisName == 'PACKAGE') {
-          // For subscription, load subscription availability
+          // For subscription, load subscription availability (only if not already loaded)
           _isPackageType = true;
-          _loadSubscriptionAvailability();
+          final parkingLotId =
+              widget.parkingLot['_id'] ?? widget.parkingLot['id'];
+          if (_lastLoadedParkingLotId != parkingLotId ||
+              _lastLoadedBookingMethod != BookingMethod.subscription ||
+              _availabilityData.isEmpty) {
+            _loadSubscriptionAvailability();
+          }
         } else {
           _isPackageType = false;
           _availabilityData = {};
           _selectedStartDate = null;
+          _lastLoadedParkingLotId = null;
+          _lastLoadedBookingMethod = null;
         }
       }
     });
@@ -413,28 +437,52 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    // Prevent duplicate calls: check if already loading or already loaded for this parking lot
+    if (_isLoadingAvailability) {
+      print('⏸️ Already loading availability, skipping...');
+      return;
+    }
+
+    // Check if we already have data for this parking lot and booking method
+    if (_lastLoadedParkingLotId == parkingLotId &&
+        _lastLoadedBookingMethod == BookingMethod.reservation &&
+        _availabilityData.isNotEmpty) {
+      print('✅ Availability already loaded for this parking lot, skipping...');
+      return;
+    }
+
     setState(() {
       _isLoadingAvailability = true;
     });
 
     try {
+      print(
+        '📅 Loading reservation availability for parking lot: $parkingLotId',
+      );
       final availabilityMap =
           await BookingAvailabilityHelper.loadReservationAvailability(
             parkingLotId: parkingLotId,
           );
 
-      setState(() {
-        _availabilityData = availabilityMap;
-        _isLoadingAvailability = false;
-      });
+      if (mounted) {
+        setState(() {
+          _availabilityData = availabilityMap;
+          _isLoadingAvailability = false;
+          _lastLoadedParkingLotId = parkingLotId;
+          _lastLoadedBookingMethod = BookingMethod.reservation;
+        });
+        print(
+          '✅ Loaded reservation availability: ${availabilityMap.length} days',
+        );
+      }
     } catch (e) {
       print('❌ Error loading reservation availability: $e');
-      setState(() {
-        _isLoadingAvailability = false;
-        _availabilityData = {};
-      });
-
       if (mounted) {
+        setState(() {
+          _isLoadingAvailability = false;
+          _availabilityData = {};
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi tải lịch đặt chỗ: $e'),
@@ -453,28 +501,50 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    // Prevent duplicate calls: check if already loading
+    if (_isLoadingAvailability) {
+      print('⏸️ Already loading availability, skipping...');
+      return;
+    }
+
+    // Check if we already have data for this parking lot and booking method
+    if (_lastLoadedParkingLotId == parkingLotId &&
+        _lastLoadedBookingMethod == BookingMethod.subscription &&
+        _availabilityData.isNotEmpty) {
+      print('✅ Availability already loaded for this parking lot, skipping...');
+      return;
+    }
+
     setState(() {
       _isLoadingAvailability = true;
     });
 
     try {
+      print(
+        '📅 Loading subscription availability for parking lot: $parkingLotId',
+      );
       final availabilityMap =
           await BookingAvailabilityHelper.loadSubscriptionAvailability(
             parkingLotId: parkingLotId,
           );
 
-      setState(() {
-        _availabilityData = availabilityMap;
-        _isLoadingAvailability = false;
-      });
+      if (mounted) {
+        setState(() {
+          _availabilityData = availabilityMap;
+          _isLoadingAvailability = false;
+          _lastLoadedParkingLotId = parkingLotId;
+          _lastLoadedBookingMethod = BookingMethod.subscription;
+        });
+        print('✅ Loaded subscription availability');
+      }
     } catch (e) {
       print('❌ Error loading subscription availability: $e');
-      setState(() {
-        _isLoadingAvailability = false;
-        _availabilityData = {};
-      });
-
       if (mounted) {
+        setState(() {
+          _isLoadingAvailability = false;
+          _availabilityData = {};
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi tải lịch: $e'),
@@ -655,6 +725,7 @@ class _BookingScreenState extends State<BookingScreen> {
       estimatedEndTime: _estimatedEndTime!,
       selectedLink: selectedLink,
       parkingLot: widget.parkingLot,
+      selectedPromotion: _selectedPromotion,
     );
 
     if (mounted) {
@@ -725,6 +796,7 @@ class _BookingScreenState extends State<BookingScreen> {
       selectedLink: selectedLink,
       parkingLot: widget.parkingLot,
       selectedStartDate: _selectedStartDate,
+      selectedPromotion: _selectedPromotion,
     );
 
     if (mounted) {

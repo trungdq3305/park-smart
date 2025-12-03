@@ -813,20 +813,68 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         );
 
         if (confirmed == true && mounted) {
-          final cancelResponse = await ReservationService.cancelReservation(
-            reservationId,
-          );
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                cancelResponse['message']?.toString() ??
-                    'Hủy đặt chỗ thành công.',
+          try {
+            final cancelResponse = await ReservationService.cancelReservation(
+              reservationId,
+            );
+            
+            if (!mounted) return;
+            
+            // Extract message from response (could be in different fields)
+            String successMessage = 'Hủy đặt chỗ thành công.';
+            final message = cancelResponse['message']?.toString() ??
+                cancelResponse['data']?['message']?.toString() ??
+                cancelResponse['data']?.toString();
+            if (message != null && message.isNotEmpty) {
+              successMessage = message;
+            }
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        successMessage,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.green,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                duration: const Duration(seconds: 3),
               ),
-              backgroundColor: Colors.green,
-            ),
-          );
-          _loadReservations();
+            );
+            
+            // Reload reservations after a short delay to ensure backend processed
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) {
+              _loadReservations();
+            }
+          } catch (cancelError) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Lỗi khi hủy đặt chỗ: $cancelError',
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
       }
     } catch (e) {

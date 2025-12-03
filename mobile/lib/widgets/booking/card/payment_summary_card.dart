@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../helpers/promotion_pricing_helper.dart';
 import '../helpers/tiered_pricing_helper.dart';
 
-class PaymentSummaryCard extends StatelessWidget {
+class PaymentSummaryCard extends StatefulWidget {
   // For subscription: use originalPrice directly
   // For reservation: calculate from time and tieredRateSetId
   final int? originalPrice; // For subscription
@@ -27,55 +27,89 @@ class PaymentSummaryCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  State<PaymentSummaryCard> createState() => _PaymentSummaryCardState();
+}
+
+class _PaymentSummaryCardState extends State<PaymentSummaryCard> {
+  late int _calculatedOriginalPrice;
+  late int _discountAmount;
+  late int _finalPrice;
+  late bool _hasDiscount;
+
+  @override
+  void initState() {
+    super.initState();
+    _calculatePrices();
+  }
+
+  @override
+  void didUpdateWidget(PaymentSummaryCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.originalPrice != widget.originalPrice ||
+        oldWidget.selectedPromotion != widget.selectedPromotion ||
+        oldWidget.selectedDate != widget.selectedDate ||
+        oldWidget.userExpectedTime != widget.userExpectedTime ||
+        oldWidget.estimatedEndTime != widget.estimatedEndTime ||
+        oldWidget.tieredRateSetId != widget.tieredRateSetId) {
+      _calculatePrices();
+    }
+  }
+
+  void _calculatePrices() {
     // Calculate original price
     int calculatedOriginalPrice = 0;
 
-    if (originalPrice != null) {
+    if (widget.originalPrice != null) {
       // Subscription: use provided price
-      calculatedOriginalPrice = originalPrice!;
-    } else if (selectedDate != null &&
-        userExpectedTime != null &&
-        estimatedEndTime != null &&
-        tieredRateSetId != null) {
+      calculatedOriginalPrice = widget.originalPrice!;
+    } else if (widget.selectedDate != null &&
+        widget.userExpectedTime != null &&
+        widget.estimatedEndTime != null &&
+        widget.tieredRateSetId != null) {
       // Reservation: calculate from time and tiered rate
       final startDateTime = DateTime(
-        selectedDate!.year,
-        selectedDate!.month,
-        selectedDate!.day,
-        userExpectedTime!.hour,
-        userExpectedTime!.minute,
+        widget.selectedDate!.year,
+        widget.selectedDate!.month,
+        widget.selectedDate!.day,
+        widget.userExpectedTime!.hour,
+        widget.userExpectedTime!.minute,
       );
 
       final endDateTime = DateTime(
-        selectedDate!.year,
-        selectedDate!.month,
-        selectedDate!.day,
-        estimatedEndTime!.hour,
-        estimatedEndTime!.minute,
+        widget.selectedDate!.year,
+        widget.selectedDate!.month,
+        widget.selectedDate!.day,
+        widget.estimatedEndTime!.hour,
+        widget.estimatedEndTime!.minute,
       );
 
       calculatedOriginalPrice = TieredPricingHelper.calculatePrice(
-        tieredRateSetId: tieredRateSetId,
+        tieredRateSetId: widget.tieredRateSetId,
         startDateTime: startDateTime,
         endDateTime: endDateTime,
       );
     }
 
-    final discountAmount = selectedPromotion != null
+    final discountAmount = widget.selectedPromotion != null
         ? PromotionPricingHelper.calculateDiscount(
             originalPrice: calculatedOriginalPrice,
-            promotion: selectedPromotion!,
+            promotion: widget.selectedPromotion!,
           )
         : 0;
 
     final finalPrice = PromotionPricingHelper.calculateFinalPrice(
       originalPrice: calculatedOriginalPrice,
-      promotion: selectedPromotion,
+      promotion: widget.selectedPromotion,
     );
 
-    final hasDiscount = discountAmount > 0;
+    _calculatedOriginalPrice = calculatedOriginalPrice;
+    _discountAmount = discountAmount;
+    _finalPrice = finalPrice;
+    _hasDiscount = discountAmount > 0;
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -90,7 +124,7 @@ class PaymentSummaryCard extends StatelessWidget {
           ),
         ],
         border: Border.all(
-          color: hasDiscount ? Colors.green.shade300 : Colors.grey.shade200,
+          color: _hasDiscount ? Colors.green.shade300 : Colors.grey.shade200,
           width: 1.5,
         ),
       ),
@@ -127,7 +161,7 @@ class PaymentSummaryCard extends StatelessWidget {
           const SizedBox(height: 20),
 
           // Original price (only show if > 0)
-          if (calculatedOriginalPrice > 0) ...[
+          if (_calculatedOriginalPrice > 0) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -136,11 +170,11 @@ class PaymentSummaryCard extends StatelessWidget {
                   style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
                 ),
                 Text(
-                  '${PromotionPricingHelper.formatPrice(calculatedOriginalPrice)} đ',
+                  '${PromotionPricingHelper.formatPrice(_calculatedOriginalPrice)} đ',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey.shade700,
-                    decoration: hasDiscount
+                    decoration: _hasDiscount
                         ? TextDecoration.lineThrough
                         : TextDecoration.none,
                   ),
@@ -150,7 +184,7 @@ class PaymentSummaryCard extends StatelessWidget {
           ],
 
           // Discount (if any)
-          if (hasDiscount) ...[
+          if (_hasDiscount) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
@@ -174,16 +208,16 @@ class PaymentSummaryCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            promotionName ?? 'Khuyến mãi',
+                            widget.promotionName ?? 'Khuyến mãi',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: Colors.green.shade900,
                             ),
                           ),
-                          if (selectedPromotion?['code'] != null)
+                          if (widget.selectedPromotion?['code'] != null)
                             Text(
-                              'Mã: ${selectedPromotion!['code']}',
+                              'Mã: ${widget.selectedPromotion!['code']}',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.green.shade700,
@@ -194,7 +228,7 @@ class PaymentSummaryCard extends StatelessWidget {
                     ],
                   ),
                   Text(
-                    '-${PromotionPricingHelper.formatPrice(discountAmount)} đ',
+                    '-${PromotionPricingHelper.formatPrice(_discountAmount)} đ',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -243,7 +277,7 @@ class PaymentSummaryCard extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  '${PromotionPricingHelper.formatPrice(finalPrice)} đ',
+                  '${PromotionPricingHelper.formatPrice(_finalPrice)} đ',
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,

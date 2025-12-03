@@ -5,6 +5,7 @@ import '../../../../services/payment_service.dart';
 import '../../../../screens/user/booking_reservation/payment_checkout_screen.dart';
 import '../../../../screens/user/booking_reservation/payment_result_screen.dart';
 import 'tiered_pricing_helper.dart';
+import 'promotion_pricing_helper.dart';
 
 class BookingFlowHelper {
   /// Create reservation with selected date and time, then proceed to payment
@@ -17,6 +18,7 @@ class BookingFlowHelper {
     required TimeOfDay estimatedEndTime,
     required Map<String, dynamic> selectedLink,
     required Map<String, dynamic> parkingLot,
+    Map<String, dynamic>? selectedPromotion,
   }) async {
     try {
       // Build DateTime objects from selected date and time
@@ -98,34 +100,46 @@ class BookingFlowHelper {
       }
 
       // Calculate price using tiered pricing helper
-      final amount = TieredPricingHelper.calculatePrice(
+      final originalAmount = TieredPricingHelper.calculatePrice(
         tieredRateSetId: tieredRateSetId,
         startDateTime: userExpectedDateTime,
         endDateTime: estimatedEndDateTime,
       );
 
-      if (amount <= 0) {
+      if (originalAmount <= 0) {
         throw Exception('Không thể tính giá từ bảng giá tiered');
       }
 
+      // Calculate final price with promotion discount
+      final finalAmount = PromotionPricingHelper.calculateFinalPrice(
+        originalPrice: originalAmount,
+        promotion: selectedPromotion,
+      );
+
+      final discountAmount = originalAmount - finalAmount;
+
       print('💰 Calculated payment amount:');
       print('  Duration (hours): $durationInHours');
-      print('  Total amount: ${TieredPricingHelper.formatPrice(amount)} đ');
+      print('  Original amount: ${TieredPricingHelper.formatPrice(originalAmount)} đ');
+      if (discountAmount > 0) {
+        print('  Discount: -${TieredPricingHelper.formatPrice(discountAmount)} đ');
+      }
+      print('  Final amount: ${TieredPricingHelper.formatPrice(finalAmount)} đ');
 
-      // Step 3: Create payment
+      // Step 3: Create payment with final amount (after discount)
       final operatorId = parkingLot['parkingLotOperatorId'] as String?;
       final entityId = reservationId; // Use reservation ID as entity ID
 
       print('💳 Creating payment:');
       print('  Entity ID (Reservation): $entityId');
       print('  Type: Reservation');
-      print('  Amount: $amount');
+      print('  Amount (after discount): $finalAmount');
       print('  Operator ID: $operatorId');
 
       final paymentResponse = await PaymentService.createPayment(
         entityId: entityId!,
         type: 'Reservation',
-        amount: amount,
+        amount: finalAmount,
         operatorId: operatorId,
       );
 
@@ -315,6 +329,7 @@ class BookingFlowHelper {
     required Map<String, dynamic> selectedLink,
     required Map<String, dynamic> parkingLot,
     DateTime? selectedStartDate,
+    Map<String, dynamic>? selectedPromotion,
   }) async {
     try {
       // Extract pricing policy and package rate information
@@ -327,28 +342,43 @@ class BookingFlowHelper {
 
       // Get required data for payment
       final entityId = pricingPolicy['_id'] ?? pricingPolicy['id'];
-      final amount = packageRate['price'] as int? ?? 0;
+      final originalAmount = packageRate['price'] as int? ?? 0;
       final operatorId = parkingLot['parkingLotOperatorId'] as String?;
 
       if (entityId == null) {
         throw Exception('Không tìm thấy ID của gói thuê bao');
       }
 
-      if (amount <= 0) {
+      if (originalAmount <= 0) {
         throw Exception('Giá gói thuê bao không hợp lệ');
       }
 
-      // Step 1: Create payment
+      // Calculate final price with promotion discount
+      final finalAmount = PromotionPricingHelper.calculateFinalPrice(
+        originalPrice: originalAmount,
+        promotion: selectedPromotion,
+      );
+
+      final discountAmount = originalAmount - finalAmount;
+
+      print('💰 Calculated payment amount:');
+      print('  Original amount: ${PromotionPricingHelper.formatPrice(originalAmount)} đ');
+      if (discountAmount > 0) {
+        print('  Discount: -${PromotionPricingHelper.formatPrice(discountAmount)} đ');
+      }
+      print('  Final amount: ${PromotionPricingHelper.formatPrice(finalAmount)} đ');
+
+      // Step 1: Create payment with final amount (after discount)
       print('💳 Creating payment:');
       print('  Entity ID (Pricing Policy): $entityId');
       print('  Type: Subscription');
-      print('  Amount: $amount');
+      print('  Amount (after discount): $finalAmount');
       print('  Operator ID: $operatorId');
 
       final paymentResponse = await PaymentService.createPayment(
         entityId: entityId,
         type: 'Subscription',
-        amount: amount,
+        amount: finalAmount,
         operatorId: operatorId,
       );
 
