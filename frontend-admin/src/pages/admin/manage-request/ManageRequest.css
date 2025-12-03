@@ -1,0 +1,75 @@
+.manage-request-page {
+  padding: 3vh;
+  background: #f5f6fa;
+  min-height: 100%;
+}
+
+.manage-request-page .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 3vh;
+}
+
+.manage-request-page .page-title {
+  margin: 0;
+}
+
+.manage-request-page .header-stat {
+  display: flex;
+  align-items: center;
+  gap: 1vh;
+  font-size: 14px;
+}
+
+.manage-request-page .header-stat strong {
+  font-size: 16px;
+}
+
+.filters-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2vh;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5vh;
+}
+
+.filter-label {
+  font-size: 13px;
+  color: #8c8c8c;
+}
+
+.request-table-card {
+  border-radius: 18px;
+  box-shadow: 0 1.5vh 4vh rgba(15, 23, 42, 0.08);
+}
+
+.request-table .ant-table-thead > tr > th {
+  background: #f0f2f5;
+  font-weight: 600;
+}
+
+.request-table .ant-table-tbody > tr:hover > td {
+  background: #f9fafb;
+}
+
+@media (max-width: 768px) {
+  .manage-request-page .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5vh;
+  }
+
+  .filters-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.5vh;
+  }
+}
+
+
