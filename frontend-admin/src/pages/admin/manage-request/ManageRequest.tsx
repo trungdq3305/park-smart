@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
-import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge } from 'antd'
-import type { ColumnsType } from 'antd/es/table'
+import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Modal, Descriptions } from 'antd'
+import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import { EditOutlined, EyeOutlined } from '@ant-design/icons'
 import { useParkingLotRequestsQuery } from '../../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../../types/ParkingLotRequest'
 import './ManageRequest.css'
+import { useSearchParams } from 'react-router-dom'
 
 const RequestStatus = {
   PENDING: 'PENDING',
@@ -55,15 +56,66 @@ const typeTagColor: Record<RequestTypeValue, string> = {
 }
 
 const ManageRequest: React.FC = () => {
-  const [status, setStatus] = useState<RequestStatusValue>(RequestStatus.PENDING)
-  const [type, setType] = useState<RequestTypeValue>(RequestType.UPDATE)
+  const [status, setStatus] = useState<RequestStatusValue>(
+    (window.location.search && (new URLSearchParams(window.location.search).get('status') as RequestStatusValue)) ||
+      RequestStatus.PENDING,
+  )
+  const [type, setType] = useState<RequestTypeValue>(
+    (window.location.search && (new URLSearchParams(window.location.search).get('type') as RequestTypeValue)) ||
+      RequestType.UPDATE,
+  )
+  const [selectedRequest, setSelectedRequest] = useState<ParkingLotRequest | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Get values from URL parameters with defaults
+  const currentPage = parseInt(searchParams.get('page') || '1', 10)
+  const pageSize = 5 // Fixed page size, not from URL
 
   const { data, isLoading } = useParkingLotRequestsQuery({
     status,
     type,
+    page: currentPage,
+    pageSize,
   })
 
   const parkingLotRequests: ParkingLotRequest[] = data?.data || []
+  const totalRequests = parkingLotRequests.length
+
+  const pagedRequests = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return parkingLotRequests.slice(start, start + pageSize)
+  }, [parkingLotRequests, currentPage])
+
+  const updateSearchParams = (updates: Record<string, string | number | null>) => {
+    const newSearchParams = new URLSearchParams(searchParams)
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === '' || value === 'all') {
+        newSearchParams.delete(key)
+      } else {
+        newSearchParams.set(key, value.toString())
+      }
+    })
+
+    setSearchParams(newSearchParams, { replace: true })
+  }
+
+  const handleStatusChange = (value: RequestStatusValue) => {
+    setStatus(value)
+    updateSearchParams({ status: value, page: 1 })
+  }
+
+  const handleTypeChange = (value: RequestTypeValue) => {
+    setType(value)
+    updateSearchParams({ type: value, page: 1 })
+  }
+
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    if (pagination.current && pagination.current !== currentPage) {
+      updateSearchParams({ page: pagination.current })
+    }
+  }
 
   const stats = useMemo(() => {
     const total = parkingLotRequests.length
@@ -125,7 +177,14 @@ const ManageRequest: React.FC = () => {
       render: (_, record) => (
         <Space>
           <Tooltip title="Xem chi tiết yêu cầu">
-            <Button size="small" icon={<EyeOutlined />} />
+            <Button
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => {
+                setSelectedRequest(record)
+                setIsDetailModalOpen(true)
+              }}
+            />
           </Tooltip>
           <Tooltip title="Xử lý yêu cầu">
             <Button size="small" type="primary" icon={<EditOutlined />} disabled={record.status !== 'PENDING'} />
@@ -172,7 +231,7 @@ const ManageRequest: React.FC = () => {
             <Select
               value={status}
               options={statusOptions}
-              onChange={(value) => setStatus(value)}
+              onChange={handleStatusChange}
               style={{ width: 220 }}
             />
           </div>
@@ -181,7 +240,7 @@ const ManageRequest: React.FC = () => {
             <Select
               value={type}
               options={typeOptions}
-              onChange={(value) => setType(value)}
+              onChange={handleTypeChange}
               style={{ width: 220 }}
             />
           </div>
@@ -192,12 +251,90 @@ const ManageRequest: React.FC = () => {
         <Table
           rowKey="_id"
           columns={columns}
-          dataSource={parkingLotRequests}
+          dataSource={pagedRequests}
           loading={isLoading}
-          pagination={false}
+          pagination={{
+            current: currentPage,
+            pageSize,
+            total: totalRequests,
+            showSizeChanger: false,
+            responsive: true,
+          }}
+          onChange={handleTableChange}
           className="request-table"
         />
       </Card>
+
+      <Modal
+        open={isDetailModalOpen}
+        title="Chi tiết yêu cầu bãi đỗ xe"
+        onCancel={() => setIsDetailModalOpen(false)}
+        footer={[
+          <Button key="close" onClick={() => setIsDetailModalOpen(false)}>
+            Đóng
+          </Button>,
+        ]}
+        width={720}
+      >
+        {selectedRequest && (
+          <Space direction="vertical" size="large" style={{ width: '100%' }}>
+            <Descriptions column={2} bordered size="small" labelStyle={{ width: 180 }}>
+              <Descriptions.Item label="Tên bãi đỗ xe">{selectedRequest.payload.name}</Descriptions.Item>
+              <Descriptions.Item label="Trạng thái yêu cầu">
+                <Tag color={statusTagColor[selectedRequest.status as RequestStatusValue]}>
+                  {statusOptions.find((s) => s.value === selectedRequest.status)?.label ||
+                    selectedRequest.status}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Loại yêu cầu">
+                <Tag color={typeTagColor[selectedRequest.requestType as RequestTypeValue]}>
+                  {typeOptions.find((t) => t.value === selectedRequest.requestType)?.label ||
+                    selectedRequest.requestType}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày tạo">
+                {new Date(selectedRequest.createdAt).toLocaleString('vi-VN')}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày hiệu lực">
+                {new Date(selectedRequest.effectiveDate).toLocaleDateString('vi-VN')}
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Descriptions
+              title="Thông tin bãi đỗ xe"
+              column={2}
+              bordered
+              size="small"
+              labelStyle={{ width: 180 }}
+            >
+              <Descriptions.Item label="Địa chỉ">
+                {selectedRequest.payload.addressId?.fullAddress}
+              </Descriptions.Item>
+              <Descriptions.Item label="Vị trí">
+                {`${selectedRequest.payload.addressId?.latitude}, ${selectedRequest.payload.addressId?.longitude}`}
+              </Descriptions.Item>
+              <Descriptions.Item label="Tổng tầng">
+                {selectedRequest.payload.totalLevel}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa mỗi tầng">
+                {selectedRequest.payload.totalCapacityEachLevel}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa đặt chỗ">
+                {selectedRequest.payload.bookableCapacity}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa gói tháng">
+                {selectedRequest.payload.leasedCapacity}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa gửi lượt">
+                {selectedRequest.payload.walkInCapacity}
+              </Descriptions.Item>
+              <Descriptions.Item label="Thời lượng slot đặt chỗ (giờ)">
+                {selectedRequest.payload.bookingSlotDurationHours}
+              </Descriptions.Item>
+            </Descriptions>
+          </Space>
+        )}
+      </Modal>
     </div>
   )
 }

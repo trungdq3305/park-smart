@@ -29,14 +29,14 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['parkingLot', 'parkingLotRequest'],
     }),
-    parkingLotRequests :builder.query({
-query : ({status,type}) =>({
-  url : '/parking/parking-lots/all-requests',
-  method : 'GET',
-  params : {status,type}
-}),
-transformResponse : (res) => res,
-providesTags : ['parkingLotRequest']
+    parkingLotRequests: builder.query({
+      query: ({ status, type, page , pageSize  }) => ({
+        url: '/parking/parking-lots/all-requests',
+        method: 'GET',
+        params: { status, type, page, pageSize },
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['parkingLotRequest'],
     }),
   }),
 })
