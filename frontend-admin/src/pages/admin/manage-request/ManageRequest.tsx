@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Modal, Descriptions } from 'antd'
+import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Modal, Descriptions, Empty } from 'antd'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import { EditOutlined, EyeOutlined } from '@ant-design/icons'
 import { useParkingLotRequestsQuery } from '../../../features/admin/parkinglotAPI'
@@ -262,6 +262,16 @@ const ManageRequest: React.FC = () => {
           }}
           onChange={handleTableChange}
           className="request-table"
+          locale={{
+            emptyText: isLoading
+              ? 'Đang tải dữ liệu...'
+              : (
+                  <Empty
+                    description="Không có yêu cầu nào phù hợp với bộ lọc hiện tại"
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                  />
+                ),
+          }}
         />
       </Card>
 
