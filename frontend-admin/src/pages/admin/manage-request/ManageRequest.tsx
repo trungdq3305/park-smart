@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Empty, Modal, Input, notification } from 'antd'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
-import { EyeOutlined } from '@ant-design/icons'
+import { EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
 import { useParkingLotRequestsQuery, useReviewParkingLotRequestMutation } from '../../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../../types/ParkingLotRequest'
 import './ManageRequest.css'
@@ -255,21 +255,21 @@ const ManageRequest: React.FC = () => {
             <Button
               size="small"
               type="primary"
+              icon={<CheckOutlined />}
+              aria-label="Chấp thuận yêu cầu"
               disabled={record.status !== RequestStatus.PENDING || isReviewLoading}
               onClick={() => handleApproveRequest(record)}
-            >
-              Chấp thuận
-            </Button>
+            />
           </Tooltip>
           <Tooltip title="Từ chối yêu cầu">
             <Button
               size="small"
               danger
+              icon={<CloseOutlined />}
+              aria-label="Từ chối yêu cầu"
               disabled={record.status !== RequestStatus.PENDING}
               onClick={() => openRejectModal(record)}
-            >
-              Từ chối
-            </Button>
+            />
           </Tooltip>
         </Space>
       ),
