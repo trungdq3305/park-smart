@@ -1,5 +1,6 @@
 import { lazy } from 'react'
 import type { LayoutRoute } from '../types/Route'
+import ManageRequest from '../pages/admin/manage-request/ManageRequest'
 
 // Các layout này được export dưới dạng export default
 const MainLayout = lazy(() => import('../components/layouts/layout/MainLayout'))
@@ -20,6 +21,8 @@ const ParkingLotSessionHistory = lazy(
   () => import('../pages/operator/parking-lot-session-history/ParkingLotSessionHistory')
 )
 const PaymentOperator = lazy(() => import('../pages/operator/payment/PaymentOperator'))
+const DashboardOperator = lazy(() => import('../pages/operator/dashboard/dashboardOperator'))
+const ManageEventsAdmin = lazy(() => import('../pages/admin/manage-events/ManageEventsAdmin'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -58,6 +61,16 @@ const routes: LayoutRoute[] = [
         component: ManageParkingLots,
         role: ['Admin'],
       },
+      {
+        path: '/admin/parking-lot-requests',
+        component: ManageRequest,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/events',
+        component: ManageEventsAdmin,
+        role: ['Admin'],
+      },
     ],
   },
   {
@@ -65,7 +78,7 @@ const routes: LayoutRoute[] = [
     data: [
       {
         path: '/operator',
-        component: ManageAccountPage, // You can create a specific operator dashboard component later
+        component: DashboardOperator,
         role: ['Operator'],
       },
       {
@@ -101,6 +114,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/payment',
         component: PaymentOperator,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/dashboard',
+        component: DashboardOperator,
         role: ['Operator'],
       },
     ],

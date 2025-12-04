@@ -40,6 +40,11 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
   // Menu items aligned to Admin sidebar
   const menuItems = [
     {
+      key: '/operator',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard',
+    },
+    {
       key: '/operator/parking-lot',
       icon: <CarOutlined />,
       label: 'Bãi đỗ xe',
@@ -55,9 +60,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Lịch sử phiên đỗ xe',
     },
     {
-      key: '/analytics',
+      key: '/operator/dashboard',
       icon: <BarChartOutlined />,
-      label: 'Phân tích',
+      label: 'Phân tích nâng cao',
     },
     {
       key: '/operator/create-report',
@@ -80,7 +85,7 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Phương tiện',
     },
     {
-      key: '/payments',
+      key: '/operator/payment',
       icon: <WalletOutlined />,
       label: 'Thanh toán',
     },

@@ -7,4 +7,5 @@ export interface ParkingLotRequest {
   effectiveDate: string
   requestType: string
   status: string
+  parkingLotId: ParkingLot
 }

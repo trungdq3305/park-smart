@@ -79,6 +79,15 @@ export const accountAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['account'],
     }),
+    bannedAccountList: builder.query({
+      query: ({ page, pageSize }) => ({
+        url: '/core/accounts/banned',
+        method: 'GET',
+        params: { page, pageSize },
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['account'],
+    }),
   }),
 })
 
@@ -92,4 +101,5 @@ export const {
   useGetInactiveAccountQuery,
   useConfirmOperatorMutation,
   useAccountDetailsQuery,
+  useBannedAccountListQuery,
 } = accountAPI
