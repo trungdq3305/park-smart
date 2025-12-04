@@ -1,4 +1,4 @@
-const PaymentOperator :React.FC= () => {
+const PaymentOperator: React.FC = () => {
   return (
     <div>
       <h1>Payment Operator</h1>

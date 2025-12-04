@@ -6,7 +6,7 @@ export const dashboardAPI = apiSlice.injectEndpoints({
       query: ({ params }) => ({
         url: 'parking/dashboards',
         method: 'GET',
-        params : params
+        params: params,
       }),
       transformResponse: (res) => res,
       providesTags: ['dashboard'],
@@ -14,6 +14,4 @@ export const dashboardAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const {
-  useGetDashboardAdminQuery,
-} = dashboardAPI
+export const { useGetDashboardAdminQuery } = dashboardAPI

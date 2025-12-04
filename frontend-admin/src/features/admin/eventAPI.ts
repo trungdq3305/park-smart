@@ -22,7 +22,4 @@ export const eventAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const {
-  useGetReportsQuery,
-  useCreateEventMutation,
-} = eventAPI
+export const { useGetReportsQuery, useCreateEventMutation } = eventAPI

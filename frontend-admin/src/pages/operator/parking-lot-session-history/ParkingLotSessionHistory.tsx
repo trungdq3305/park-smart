@@ -77,10 +77,8 @@ const ParkingLotSessionHistory: React.FC = () => {
     return [start, end]
   })
 
-  const {
-    data: parkingLotsResponseData,
-    isLoading: isParkingLotsLoading,
-  } = useGetParkingLotsOperatorQuery({})
+  const { data: parkingLotsResponseData, isLoading: isParkingLotsLoading } =
+    useGetParkingLotsOperatorQuery({})
 
   const parkingLots: ParkingLot[] =
     (parkingLotsResponseData as ParkingLotsListResponse | undefined)?.data ?? []
@@ -109,41 +107,41 @@ const ParkingLotSessionHistory: React.FC = () => {
     }
   }, [page, searchParams, setSearchParams])
 
-const {
-  data: parkingSessionHistoryResponse,
-  isFetching: isFetchingSessions,
-  refetch: refetchSessions,
-} = useGetParkingSessionHistoryQuery(
-  selectedLotId && dateRange
-    ? {
-        parkingLotId: selectedLotId,
-        params: {
-          page,
-          pageSize,
-          startDate: dateRange[0].startOf('day').toISOString(),
-          endDate: dateRange[1].endOf('day').toISOString(),
-        },
-      }
-    : skipToken
-)
+  const {
+    data: parkingSessionHistoryResponse,
+    isFetching: isFetchingSessions,
+    refetch: refetchSessions,
+  } = useGetParkingSessionHistoryQuery(
+    selectedLotId && dateRange
+      ? {
+          parkingLotId: selectedLotId,
+          params: {
+            page,
+            pageSize,
+            startDate: dateRange[0].startOf('day').toISOString(),
+            endDate: dateRange[1].endOf('day').toISOString(),
+          },
+        }
+      : skipToken
+  )
 
-const typedParkingSessions =(parkingSessionHistoryResponse as ParkingLotSessionHistoryResponse | undefined)
-const parkingSessions: ParkingLotSession[] = typedParkingSessions?.data ?? []
-console.log(parkingSessions)
-const paginationInfo: Pagination | undefined = typedParkingSessions?.pagination
+  const typedParkingSessions = parkingSessionHistoryResponse as
+    | ParkingLotSessionHistoryResponse
+    | undefined
+  const parkingSessions: ParkingLotSession[] = typedParkingSessions?.data ?? []
+  console.log(parkingSessions)
+  const paginationInfo: Pagination | undefined = typedParkingSessions?.pagination
 
-const {
-  data: parkingSessionHistoryDetailResponse,
-  isFetching: isFetchingSessionDetail,
-} = useGetParkingSessionHistoryDetailQuery(
-  selectedSessionId ? { sessionId: selectedSessionId } : skipToken
-)
+  const { data: parkingSessionHistoryDetailResponse, isFetching: isFetchingSessionDetail } =
+    useGetParkingSessionHistoryDetailQuery(
+      selectedSessionId ? { sessionId: selectedSessionId } : skipToken
+    )
 
-const sessionDetailData = parkingSessionHistoryDetailResponse as
-  | ParkingLotSessionHistoryDetailResponse
-  | undefined
-const sessionDetail = sessionDetailData?.data?.[0]
-const sessionImages = sessionDetail?.images ?? []
+  const sessionDetailData = parkingSessionHistoryDetailResponse as
+    | ParkingLotSessionHistoryDetailResponse
+    | undefined
+  const sessionDetail = sessionDetailData?.data?.[0]
+  const sessionImages = sessionDetail?.images ?? []
 
   const summary = useMemo(() => {
     if (!parkingSessions.length) {
@@ -178,7 +176,7 @@ const sessionImages = sessionDetail?.images ?? []
     }
   }, [parkingSessions])
 
-const columns: ColumnsType<ParkingLotSession> = [
+  const columns: ColumnsType<ParkingLotSession> = [
     {
       title: 'Biển số',
       dataIndex: 'plateNumber',
@@ -202,7 +200,9 @@ const columns: ColumnsType<ParkingLotSession> = [
       dataIndex: 'status',
       key: 'status',
       render: (status: string) => (
-        <Tag color={status === 'COMPLETED' ? 'green' : status === 'IN_PROGRESS' ? 'blue' : 'default'}>
+        <Tag
+          color={status === 'COMPLETED' ? 'green' : status === 'IN_PROGRESS' ? 'blue' : 'default'}
+        >
           {status}
         </Tag>
       ),
@@ -247,23 +247,23 @@ const columns: ColumnsType<ParkingLotSession> = [
     setPage(1)
   }
 
-const handleDateChange = (value: [Dayjs | null, Dayjs | null] | null) => {
-  if (!value || !value[0] || !value[1]) return
-  setDateRange([value[0], value[1]])
-  setPage(1)
-}
+  const handleDateChange = (value: [Dayjs | null, Dayjs | null] | null) => {
+    if (!value || !value[0] || !value[1]) return
+    setDateRange([value[0], value[1]])
+    setPage(1)
+  }
 
-const handleTableChange = (pagination: TablePaginationConfig) => {
+  const handleTableChange = (pagination: TablePaginationConfig) => {
     if (pagination.current) setPage(pagination.current)
     if (pagination.pageSize) setPageSize(pagination.pageSize)
   }
 
-const handleViewSessionImages = (sessionId: string) => {
+  const handleViewSessionImages = (sessionId: string) => {
     setSelectedSessionId(sessionId)
     setIsImageModalOpen(true)
   }
 
-const handleCloseImageModal = () => {
+  const handleCloseImageModal = () => {
     setIsImageModalOpen(false)
     setSelectedSessionId(null)
   }
@@ -274,7 +274,7 @@ const handleCloseImageModal = () => {
 
   return (
     <div className="parking-session-history-page">
-      <Card className="parking-session-history-card" >
+      <Card className="parking-session-history-card">
         <div className="page-header">
           <div>
             <Title level={3}>Lịch sử ra / vào bãi xe</Title>
@@ -305,7 +305,7 @@ const handleCloseImageModal = () => {
 
         <Row gutter={16} className="summary-row">
           <Col xs={24} md={6}>
-            <Card className="summary-card" >
+            <Card className="summary-card">
               <Statistic
                 title="Tổng phiên (trang hiện tại)"
                 value={summary.total}
@@ -314,7 +314,7 @@ const handleCloseImageModal = () => {
             </Card>
           </Col>
           <Col xs={24} md={6}>
-            <Card className="summary-card" >
+            <Card className="summary-card">
               <Statistic
                 title="Đang đậu"
                 value={summary.active}
@@ -323,7 +323,7 @@ const handleCloseImageModal = () => {
             </Card>
           </Col>
           <Col xs={24} md={6}>
-            <Card className="summary-card" >
+            <Card className="summary-card">
               <Statistic
                 title="Doanh thu (trang hiện tại)"
                 value={summary.revenue}
@@ -333,13 +333,13 @@ const handleCloseImageModal = () => {
             </Card>
           </Col>
           <Col xs={24} md={6}>
-                <Card className="summary-card" >
+            <Card className="summary-card">
               <Statistic title="Thời gian đậu trung bình" value={summary.avgDuration} />
             </Card>
           </Col>
         </Row>
 
-        <Card className="session-table-card" >
+        <Card className="session-table-card">
           <PaginationLoading isLoading={isFetchingSessions} loadingText="Đang tải lịch sử...">
             {parkingSessions.length === 0 ? (
               <Empty

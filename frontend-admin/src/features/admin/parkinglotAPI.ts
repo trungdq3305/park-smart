@@ -30,7 +30,7 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       invalidatesTags: ['parkingLot', 'parkingLotRequest'],
     }),
     parkingLotRequests: builder.query({
-      query: ({ status, type, page , pageSize  }) => ({
+      query: ({ status, type, page, pageSize }) => ({
         url: '/parking/parking-lots/all-requests',
         method: 'GET',
         params: { status, type, page, pageSize },
@@ -38,14 +38,14 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['parkingLotRequest'],
     }),
-    parkingLotRequestDetail : builder.query({
-      query : ({ id }) => ({
-        url : `/parking/parking-lots/requests/${id}`,
-        method : 'GET',
+    parkingLotRequestDetail: builder.query({
+      query: ({ id }) => ({
+        url: `/parking/parking-lots/requests/${id}`,
+        method: 'GET',
       }),
-      transformResponse : (res) => res,
-      providesTags : ['parkingLotRequest'],
-    })
+      transformResponse: (res) => res,
+      providesTags: ['parkingLotRequest'],
+    }),
   }),
 })
 

@@ -22,6 +22,7 @@ const ParkingLotSessionHistory = lazy(
 )
 const PaymentOperator = lazy(() => import('../pages/operator/payment/PaymentOperator'))
 const DashboardOperator = lazy(() => import('../pages/operator/dashboard/dashboardOperator'))
+const ManageEventsAdmin = lazy(() => import('../pages/admin/manage-events/ManageEventsAdmin'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -63,6 +64,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/admin/parking-lot-requests',
         component: ManageRequest,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/events',
+        component: ManageEventsAdmin,
         role: ['Admin'],
       },
     ],

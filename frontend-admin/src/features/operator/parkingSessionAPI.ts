@@ -110,14 +110,14 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['ParkingSession'],
     }),
-    getParkingSessionHistoryDetail : builder.query({
-      query : ({sessionId}) => ({
-        url : `/parking/parking-sessions/${sessionId}/details`,
-        method : 'GET',
+    getParkingSessionHistoryDetail: builder.query({
+      query: ({ sessionId }) => ({
+        url: `/parking/parking-sessions/${sessionId}/details`,
+        method: 'GET',
       }),
-      transformResponse : (res) => res,
-      providesTags : ['ParkingSession'],
-    })
+      transformResponse: (res) => res,
+      providesTags: ['ParkingSession'],
+    }),
   }),
 })
 

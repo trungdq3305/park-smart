@@ -57,7 +57,11 @@ type DashboardQueryArgs =
     }
   | typeof skipToken
 
-const timeRangeOptions: { label: string; value: TimeRange; picker: 'date' | 'week' | 'month' | 'year' }[] = [
+const timeRangeOptions: {
+  label: string
+  value: TimeRange
+  picker: 'date' | 'week' | 'month' | 'year'
+}[] = [
   { label: 'Theo ngày', value: 'DAY', picker: 'date' },
   { label: 'Theo tuần', value: 'WEEK', picker: 'date' },
   { label: 'Theo tháng', value: 'MONTH', picker: 'month' },
@@ -240,7 +244,9 @@ const DashboardOperator: React.FC = () => {
       title="Biểu đồ doanh thu & lưu lượng"
       className="chart-card"
       bordered={false}
-      extra={<Tag color="blue">{timeRangeOptions.find((item) => item.value === timeRange)?.label}</Tag>}
+      extra={
+        <Tag color="blue">{timeRangeOptions.find((item) => item.value === timeRange)?.label}</Tag>
+      }
     >
       <ResponsiveContainer width="100%" height={320}>
         <ComposedChart data={chartData}>
@@ -277,7 +283,7 @@ const DashboardOperator: React.FC = () => {
     dataSource: { label: string; value: number; color: string }[],
     total: number
   ) => (
-    <Card title={title}  className="breakdown-card">
+    <Card title={title} className="breakdown-card">
       {dataSource.map((item) => (
         <div className="breakdown-row" key={item.label}>
           <div>
@@ -300,7 +306,7 @@ const DashboardOperator: React.FC = () => {
   )
 
   const renderInsights = () => (
-    <Card title="Chỉ số nổi bật"  className="insights-card">
+    <Card title="Chỉ số nổi bật" className="insights-card">
       <div className="insight-item">
         <div>
           <p>Lượt đăng ký mới</p>
@@ -347,7 +353,7 @@ const DashboardOperator: React.FC = () => {
         </Row>
         <Row gutter={[16, 16]} className="chart-section">
           <Col xs={24} md={12}>
-            <Card title="Cơ cấu doanh thu"  className="pie-card">
+            <Card title="Cơ cấu doanh thu" className="pie-card">
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
@@ -374,7 +380,7 @@ const DashboardOperator: React.FC = () => {
             </Card>
           </Col>
           <Col xs={24} md={12}>
-            <Card title="Cơ cấu hoàn tiền"  className="pie-card">
+            <Card title="Cơ cấu hoàn tiền" className="pie-card">
               <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
@@ -493,7 +499,9 @@ const DashboardOperator: React.FC = () => {
         <Alert
           type="error"
           message={apiErrorMessage || 'Không thể tải dữ liệu dashboard'}
-          description={apiErrorMessage ? undefined : 'Vui lòng thử lại sau hoặc liên hệ quản trị viên.'}
+          description={
+            apiErrorMessage ? undefined : 'Vui lòng thử lại sau hoặc liên hệ quản trị viên.'
+          }
           showIcon
           className="dashboard-alert"
         />

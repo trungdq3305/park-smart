@@ -1,8 +1,25 @@
 import { useMemo, useState } from 'react'
-import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Empty, Modal, Input, notification } from 'antd'
+import {
+  Card,
+  Tag,
+  Table,
+  Select,
+  Space,
+  Typography,
+  Tooltip,
+  Button,
+  Badge,
+  Empty,
+  Modal,
+  Input,
+  notification,
+} from 'antd'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import { EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
-import { useParkingLotRequestsQuery, useReviewParkingLotRequestMutation } from '../../../features/admin/parkinglotAPI'
+import {
+  useParkingLotRequestsQuery,
+  useReviewParkingLotRequestMutation,
+} from '../../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../../types/ParkingLotRequest'
 import './ManageRequest.css'
 import { useSearchParams } from 'react-router-dom'
@@ -58,12 +75,14 @@ const typeTagColor: Record<RequestTypeValue, string> = {
 
 const ManageRequest: React.FC = () => {
   const [status, setStatus] = useState<RequestStatusValue>(
-    (window.location.search && (new URLSearchParams(window.location.search).get('status') as RequestStatusValue)) ||
-      RequestStatus.PENDING,
+    (window.location.search &&
+      (new URLSearchParams(window.location.search).get('status') as RequestStatusValue)) ||
+      RequestStatus.PENDING
   )
   const [type, setType] = useState<RequestTypeValue>(
-    (window.location.search && (new URLSearchParams(window.location.search).get('type') as RequestTypeValue)) ||
-      RequestType.UPDATE,
+    (window.location.search &&
+      (new URLSearchParams(window.location.search).get('type') as RequestTypeValue)) ||
+      RequestType.UPDATE
   )
   const [selectedRequest, setSelectedRequest] = useState<ParkingLotRequest | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
@@ -71,7 +90,8 @@ const ManageRequest: React.FC = () => {
   const [requestBeingReviewed, setRequestBeingReviewed] = useState<ParkingLotRequest | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
-  const [reviewParkingLotRequest, { isLoading: isReviewLoading }] = useReviewParkingLotRequestMutation()
+  const [reviewParkingLotRequest, { isLoading: isReviewLoading }] =
+    useReviewParkingLotRequestMutation()
 
   // Get values from URL parameters with defaults
   const currentPage = parseInt(searchParams.get('page') || '1', 10)
@@ -83,7 +103,6 @@ const ManageRequest: React.FC = () => {
     page: currentPage,
     pageSize,
   })
-
 
   const parkingLotRequests: ParkingLotRequest[] = data?.data || []
   const totalRequests = parkingLotRequests.length
@@ -128,9 +147,15 @@ const ManageRequest: React.FC = () => {
 
   const stats = useMemo(() => {
     const total = parkingLotRequests.length
-    const pending = parkingLotRequests.filter((r: ParkingLotRequest) => r.status === RequestStatus.PENDING).length
-    const approved = parkingLotRequests.filter((r: ParkingLotRequest) => r.status === RequestStatus.APPROVED).length
-    const rejected = parkingLotRequests.filter((r: ParkingLotRequest) => r.status === RequestStatus.REJECTED).length
+    const pending = parkingLotRequests.filter(
+      (r: ParkingLotRequest) => r.status === RequestStatus.PENDING
+    ).length
+    const approved = parkingLotRequests.filter(
+      (r: ParkingLotRequest) => r.status === RequestStatus.APPROVED
+    ).length
+    const rejected = parkingLotRequests.filter(
+      (r: ParkingLotRequest) => r.status === RequestStatus.REJECTED
+    ).length
 
     return { total, pending, approved, rejected }
   }, [parkingLotRequests])
@@ -220,7 +245,9 @@ const ManageRequest: React.FC = () => {
       dataIndex: 'status',
       key: 'status',
       render: (value: RequestStatusValue) => (
-        <Tag color={statusTagColor[value]}>{statusOptions.find((s) => s.value === value)?.label}</Tag>
+        <Tag color={statusTagColor[value]}>
+          {statusOptions.find((s) => s.value === value)?.label}
+        </Tag>
       ),
     },
     {
@@ -354,14 +381,14 @@ const ManageRequest: React.FC = () => {
             onChange={handleTableChange}
             className="request-table"
             locale={{
-              emptyText: isLoading
-                ? 'Đang tải dữ liệu...'
-                : (
-                    <Empty
-                      description="Không có yêu cầu nào phù hợp với bộ lọc hiện tại"
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    />
-                  ),
+              emptyText: isLoading ? (
+                'Đang tải dữ liệu...'
+              ) : (
+                <Empty
+                  description="Không có yêu cầu nào phù hợp với bộ lọc hiện tại"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
+              ),
             }}
           />
         )}

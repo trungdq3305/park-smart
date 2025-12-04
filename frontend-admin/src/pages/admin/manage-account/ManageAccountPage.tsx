@@ -105,10 +105,10 @@ const ManageAccountPage: React.FC = () => {
       pageSize,
     }) as { data: ListInactiveAccountResponse | undefined; isLoading: boolean }
 
-    const { data: bannedAccountData, isLoading: isBannedAccountLoading } = useBannedAccountListQuery({
-      page: currentPage,
-      pageSize,
-    }) as { data: ListBannedAccountResponse | undefined; isLoading: boolean }
+  const { data: bannedAccountData, isLoading: isBannedAccountLoading } = useBannedAccountListQuery({
+    page: currentPage,
+    pageSize,
+  }) as { data: ListBannedAccountResponse | undefined; isLoading: boolean }
 
   const [deleteAccount] = useDeleteAccountMutation()
   const [toggleAccountStatus] = useToggleAccountStatusMutation()
@@ -121,18 +121,18 @@ const ManageAccountPage: React.FC = () => {
   const accounts = showBannedAccounts
     ? bannedAccounts
     : showInactiveAccounts
-    ? inActiveAccounts
-    : activeAccounts
+      ? inActiveAccounts
+      : activeAccounts
   const totalItems = showBannedAccounts
     ? bannedAccountData?.data?.totalItems || 0
     : showInactiveAccounts
-    ? inactiveAccountData?.data?.totalItems || 0
-    : data?.data?.pagedAccounts?.totalItems || 0
+      ? inactiveAccountData?.data?.totalItems || 0
+      : data?.data?.pagedAccounts?.totalItems || 0
   const totalPages = showBannedAccounts
     ? bannedAccountData?.data?.totalPages || 0
     : showInactiveAccounts
-    ? inactiveAccountData?.data?.totalPages || 0
-    : Math.ceil(totalItems / pageSize)
+      ? inactiveAccountData?.data?.totalPages || 0
+      : Math.ceil(totalItems / pageSize)
 
   const totalAdmins = data?.data?.totalAdmins || 0
   const totalOperators = data?.data?.totalOperators || 0
@@ -271,8 +271,8 @@ const ManageAccountPage: React.FC = () => {
   const isLoadingData = showBannedAccounts
     ? isBannedAccountLoading
     : showInactiveAccounts
-    ? isInactiveAccountLoading
-    : isLoading
+      ? isInactiveAccountLoading
+      : isLoading
 
   if (isLoadingData && !isPageLoading) {
     return (
@@ -365,15 +365,15 @@ const ManageAccountPage: React.FC = () => {
                     {showBannedAccounts
                       ? 'Không có tài khoản bị cấm'
                       : showInactiveAccounts
-                      ? 'Không có tài khoản không hoạt động'
-                      : 'Không có tài khoản hoạt động'}
+                        ? 'Không có tài khoản không hoạt động'
+                        : 'Không có tài khoản hoạt động'}
                   </h3>
                   <p className="empty-state-message">
                     {showBannedAccounts
                       ? 'Hiện tại không có tài khoản nào bị cấm trong hệ thống.'
                       : showInactiveAccounts
-                      ? 'Hiện tại không có tài khoản nào không hoạt động trong hệ thống.'
-                      : 'Hiện tại không có tài khoản nào đang hoạt động trong hệ thống.'}
+                        ? 'Hiện tại không có tài khoản nào không hoạt động trong hệ thống.'
+                        : 'Hiện tại không có tài khoản nào đang hoạt động trong hệ thống.'}
                   </p>
                 </div>
               ) : (
@@ -443,35 +443,35 @@ const ManageAccountPage: React.FC = () => {
           {/* Pagination */}
           {accounts.length > 0 && (
             <div className="pagination">
-            <button
-              className="pagination-btn"
-              disabled={currentPage === 1 || isPageLoading}
-              onClick={() => handlePageChange(currentPage - 1)}
-            >
-              {isPageLoading ? '...' : 'Trước'}
-            </button>
+              <button
+                className="pagination-btn"
+                disabled={currentPage === 1 || isPageLoading}
+                onClick={() => handlePageChange(currentPage - 1)}
+              >
+                {isPageLoading ? '...' : 'Trước'}
+              </button>
 
-            <div className="pagination-numbers">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  className={`pagination-number ${currentPage === page ? 'active' : ''} ${isPageLoading ? 'loading' : ''}`}
-                  onClick={() => handlePageChange(page)}
-                  disabled={isPageLoading}
-                >
-                  {page}
-                </button>
-              ))}
+              <div className="pagination-numbers">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    className={`pagination-number ${currentPage === page ? 'active' : ''} ${isPageLoading ? 'loading' : ''}`}
+                    onClick={() => handlePageChange(page)}
+                    disabled={isPageLoading}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                className="pagination-btn"
+                disabled={currentPage === totalPages || isPageLoading}
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
+                {isPageLoading ? '...' : 'Sau'}
+              </button>
             </div>
-
-            <button
-              className="pagination-btn"
-              disabled={currentPage === totalPages || isPageLoading}
-              onClick={() => handlePageChange(currentPage + 1)}
-            >
-              {isPageLoading ? '...' : 'Sau'}
-            </button>
-          </div>
           )}
         </div>
       </div>

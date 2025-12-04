@@ -23,7 +23,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   statusTagColor,
   typeTagColor,
 }) => {
-  const shouldFetchRequestDetail = Boolean(open && request?._id && request?.requestType === 'UPDATE')
+  const shouldFetchRequestDetail = Boolean(
+    open && request?._id && request?.requestType === 'UPDATE'
+  )
 
   const {
     data: requestDetail,
@@ -31,15 +33,15 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
     error: requestDetailError,
   } = useParkingLotRequestDetailQuery(
     { id: request?._id || '' },
-    { skip: !shouldFetchRequestDetail },
+    { skip: !shouldFetchRequestDetail }
   )
 
   const detailRecordRaw = requestDetail?.data ?? requestDetail
   const detailRecord = Array.isArray(detailRecordRaw) ? detailRecordRaw[0] : detailRecordRaw
 
-  const resolvedRequest = (shouldFetchRequestDetail && detailRecord
-    ? (detailRecord as ParkingLotRequest)
-    : request) as ParkingLotRequest | null
+  const resolvedRequest = (
+    shouldFetchRequestDetail && detailRecord ? (detailRecord as ParkingLotRequest) : request
+  ) as ParkingLotRequest | null
 
   if (!request) {
     return null
@@ -71,10 +73,13 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
       ) : resolvedRequest ? (
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Descriptions column={2} bordered size="small" labelStyle={{ width: 180 }}>
-            <Descriptions.Item label="Tên bãi đỗ xe">{resolvedRequest.payload?.name}</Descriptions.Item>
+            <Descriptions.Item label="Tên bãi đỗ xe">
+              {resolvedRequest.payload?.name}
+            </Descriptions.Item>
             <Descriptions.Item label="Trạng thái yêu cầu">
               <Tag color={statusTagColor[resolvedRequest.status] || 'default'}>
-                {statusOptions.find((s) => s.value === resolvedRequest.status)?.label || resolvedRequest.status}
+                {statusOptions.find((s) => s.value === resolvedRequest.status)?.label ||
+                  resolvedRequest.status}
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Loại yêu cầu">
@@ -84,7 +89,9 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="Ngày tạo">
-              {resolvedRequest.createdAt ? new Date(resolvedRequest.createdAt).toLocaleString('vi-VN') : '--'}
+              {resolvedRequest.createdAt
+                ? new Date(resolvedRequest.createdAt).toLocaleString('vi-VN')
+                : '--'}
             </Descriptions.Item>
             <Descriptions.Item label="Ngày hiệu lực">
               {resolvedRequest.effectiveDate
@@ -93,7 +100,13 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
             </Descriptions.Item>
           </Descriptions>
 
-          <Descriptions title="Thông tin bãi đỗ xe theo yêu cầu" column={2} bordered size="small" labelStyle={{ width: 180 }}>
+          <Descriptions
+            title="Thông tin bãi đỗ xe theo yêu cầu"
+            column={2}
+            bordered
+            size="small"
+            labelStyle={{ width: 180 }}
+          >
             <Descriptions.Item label="Tên bãi đỗ xe">
               {resolvedRequest.payload?.name || 'Chưa cập nhật'}
             </Descriptions.Item>
@@ -121,7 +134,13 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
           </Descriptions>
 
           {resolvedRequest.parkingLotId && (
-            <Descriptions title="Thông tin bãi đỗ xe hiện tại" column={2} bordered size="small" labelStyle={{ width: 180 }}>
+            <Descriptions
+              title="Thông tin bãi đỗ xe hiện tại"
+              column={2}
+              bordered
+              size="small"
+              labelStyle={{ width: 180 }}
+            >
               <Descriptions.Item label="Tên bãi đỗ xe">
                 {resolvedRequest.parkingLotId.name || 'Không xác định'}
               </Descriptions.Item>
@@ -163,4 +182,3 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
 }
 
 export default RequestDetailModal
-
