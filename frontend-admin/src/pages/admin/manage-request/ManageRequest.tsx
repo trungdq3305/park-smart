@@ -72,7 +72,7 @@ const ManageRequest: React.FC = () => {
   const currentPage = parseInt(searchParams.get('page') || '1', 10)
   const pageSize = 5 // Fixed page size, not from URL
 
-  const { data, isLoading } = useParkingLotRequestsQuery({
+  const { data, isLoading, error } = useParkingLotRequestsQuery({
     status,
     type,
     page: currentPage,
@@ -81,6 +81,9 @@ const ManageRequest: React.FC = () => {
 
   const parkingLotRequests: ParkingLotRequest[] = data?.data || []
   const totalRequests = parkingLotRequests.length
+
+  const apiError = error as any
+  const isNoDataError = apiError?.status 
 
   const pagedRequests = useMemo(() => {
     const start = (currentPage - 1) * pageSize
@@ -248,31 +251,41 @@ const ManageRequest: React.FC = () => {
       </div>
 
       <Card className="request-table-card">
-        <Table
-          rowKey="_id"
-          columns={columns}
-          dataSource={pagedRequests}
-          loading={isLoading}
-          pagination={{
-            current: currentPage,
-            pageSize,
-            total: totalRequests,
-            showSizeChanger: false,
-            responsive: true,
-          }}
-          onChange={handleTableChange}
-          className="request-table"
-          locale={{
-            emptyText: isLoading
-              ? 'Đang tải dữ liệu...'
-              : (
-                  <Empty
-                    description="Không có yêu cầu nào phù hợp với bộ lọc hiện tại"
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                  />
-                ),
-          }}
-        />
+        {isNoDataError ? (
+          <Empty
+            description={
+              apiError?.data?.message ||
+              'Không tìm thấy yêu cầu bãi đỗ xe nào. Vui lòng điều chỉnh bộ lọc hoặc thử lại sau.'
+            }
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        ) : (
+          <Table
+            rowKey="_id"
+            columns={columns}
+            dataSource={pagedRequests}
+            loading={isLoading}
+            pagination={{
+              current: currentPage,
+              pageSize,
+              total: totalRequests,
+              showSizeChanger: false,
+              responsive: true,
+            }}
+            onChange={handleTableChange}
+            className="request-table"
+            locale={{
+              emptyText: isLoading
+                ? 'Đang tải dữ liệu...'
+                : (
+                    <Empty
+                      description="Không có yêu cầu nào phù hợp với bộ lọc hiện tại"
+                      image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    />
+                  ),
+            }}
+          />
+        )}
       </Card>
 
       <Modal
