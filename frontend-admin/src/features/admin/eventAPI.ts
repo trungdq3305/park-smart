@@ -19,7 +19,15 @@ export const eventAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['events'],
     }),
+    getEventsByOperatorId: builder.query({
+      query: (id: string) => ({
+        url: `/core/events/created-by?id=${id}`,
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['events'],
+    }),
   }),
 })
 
-export const { useGetEventsQuery, useCreateEventMutation } = eventAPI
+export const { useGetEventsQuery, useCreateEventMutation, useGetEventsByOperatorIdQuery } = eventAPI

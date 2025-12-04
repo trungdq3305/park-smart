@@ -11,8 +11,8 @@ import {
   CarOutlined,
   EnvironmentOutlined,
   WalletOutlined,
-  HistoryOutlined,
   SafetyOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -90,9 +90,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Thanh toán',
     },
     {
-      key: '/history',
-      icon: <HistoryOutlined />,
-      label: 'Lịch sử',
+      key: '/operator/events',
+      icon: <CalendarOutlined />,
+      label: 'Sự kiện',
     },
     {
       key: '/operator/import-card',
