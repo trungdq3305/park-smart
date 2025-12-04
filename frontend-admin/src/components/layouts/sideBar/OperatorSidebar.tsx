@@ -85,7 +85,7 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Phương tiện',
     },
     {
-      key: '/payments',
+      key: '/operator/payment',
       icon: <WalletOutlined />,
       label: 'Thanh toán',
     },

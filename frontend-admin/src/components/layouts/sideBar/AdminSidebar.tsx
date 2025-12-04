@@ -10,8 +10,8 @@ import {
   CarOutlined,
   EnvironmentOutlined,
   WalletOutlined,
-  HistoryOutlined,
   SafetyOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -76,9 +76,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Thanh toán',
     },
     {
-      key: '/history',
-      icon: <HistoryOutlined />,
-      label: 'Lịch sử',
+      key: '/admin/events',
+      icon: <CalendarOutlined />,
+      label: 'Sự kiện',
     },
     {
       key: '/security',
