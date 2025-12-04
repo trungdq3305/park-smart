@@ -22,7 +22,6 @@ export class ParkingTransaction extends BaseEntity {
   })
   parkingLotId: string
 
-
   @Prop({
     required: true,
     type: String,
@@ -38,9 +37,10 @@ export class ParkingTransaction extends BaseEntity {
   amount: number // Số tiền thực tế (Dương = Thu, Âm = Hoàn trả)
 
   @Prop({
-    required: true,
+    required: false,
     type: String,
     index: true,
+    sparse: true,
   })
   paymentId: string // ID tham chiếu sang AccountService/Payment Gateway (Xendit)
 
