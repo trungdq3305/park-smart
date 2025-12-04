@@ -43,6 +43,7 @@ class AuthService {
     String phoneNumber,
     String fullName,
     bool gender,
+    bool isAgreeToP,
   ) async {
     final url = Uri.parse('$baseUrl/core/auths/driver-register');
 
@@ -55,6 +56,7 @@ class AuthService {
         'fullName': fullName,
         'phoneNumber': phoneNumber,
         'gender': gender,
+        'isAgreeToP': isAgreeToP,
       }),
     );
 
