@@ -9,12 +9,13 @@ interface ParkingLotsListResponse {
   isLoading: boolean
 }
 const ManageParkingLots: React.FC = () => {
-  const { data, isLoading } = useGetParkingLotsAdminQuery<ParkingLotsListResponse>({
+  const { data } = useGetParkingLotsAdminQuery<ParkingLotsListResponse>({
     status: 'APPROVED',
     page: 1,
     pageSize: 10,
   })
   const parkingLots = data?.data || []
+  console.log(parkingLots)
   return (
     <div>
       <h1>Manage Parking Lots</h1>
