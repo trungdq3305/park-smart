@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Modal, Descriptions, Empty } from 'antd'
+import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Empty } from 'antd'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import { EditOutlined, EyeOutlined } from '@ant-design/icons'
 import { useParkingLotRequestsQuery } from '../../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../../types/ParkingLotRequest'
 import './ManageRequest.css'
 import { useSearchParams } from 'react-router-dom'
+import { RequestDetailModal } from '../../../components/modals'
 
 const RequestStatus = {
   PENDING: 'PENDING',
@@ -83,7 +84,7 @@ const ManageRequest: React.FC = () => {
   const totalRequests = parkingLotRequests.length
 
   const apiError = error as any
-  const isNoDataError = apiError?.status 
+  const isNoDataError = apiError?.status === 404
 
   const pagedRequests = useMemo(() => {
     const start = (currentPage - 1) * pageSize
@@ -288,76 +289,15 @@ const ManageRequest: React.FC = () => {
         )}
       </Card>
 
-      <Modal
+      <RequestDetailModal
         open={isDetailModalOpen}
-        title="Chi tiết yêu cầu bãi đỗ xe"
-        onCancel={() => setIsDetailModalOpen(false)}
-        footer={[
-          <Button key="close" onClick={() => setIsDetailModalOpen(false)}>
-            Đóng
-          </Button>,
-        ]}
-        width={720}
-      >
-        {selectedRequest && (
-          <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            <Descriptions column={2} bordered size="small" labelStyle={{ width: 180 }}>
-              <Descriptions.Item label="Tên bãi đỗ xe">{selectedRequest.payload.name}</Descriptions.Item>
-              <Descriptions.Item label="Trạng thái yêu cầu">
-                <Tag color={statusTagColor[selectedRequest.status as RequestStatusValue]}>
-                  {statusOptions.find((s) => s.value === selectedRequest.status)?.label ||
-                    selectedRequest.status}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Loại yêu cầu">
-                <Tag color={typeTagColor[selectedRequest.requestType as RequestTypeValue]}>
-                  {typeOptions.find((t) => t.value === selectedRequest.requestType)?.label ||
-                    selectedRequest.requestType}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Ngày tạo">
-                {new Date(selectedRequest.createdAt).toLocaleString('vi-VN')}
-              </Descriptions.Item>
-              <Descriptions.Item label="Ngày hiệu lực">
-                {new Date(selectedRequest.effectiveDate).toLocaleDateString('vi-VN')}
-              </Descriptions.Item>
-            </Descriptions>
-
-            <Descriptions
-              title="Thông tin bãi đỗ xe"
-              column={2}
-              bordered
-              size="small"
-              labelStyle={{ width: 180 }}
-            >
-              <Descriptions.Item label="Địa chỉ">
-                {selectedRequest.payload.addressId?.fullAddress}
-              </Descriptions.Item>
-              <Descriptions.Item label="Vị trí">
-                {`${selectedRequest.payload.addressId?.latitude}, ${selectedRequest.payload.addressId?.longitude}`}
-              </Descriptions.Item>
-              <Descriptions.Item label="Tổng tầng">
-                {selectedRequest.payload.totalLevel}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa mỗi tầng">
-                {selectedRequest.payload.totalCapacityEachLevel}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa đặt chỗ">
-                {selectedRequest.payload.bookableCapacity}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa gói tháng">
-                {selectedRequest.payload.leasedCapacity}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa gửi lượt">
-                {selectedRequest.payload.walkInCapacity}
-              </Descriptions.Item>
-              <Descriptions.Item label="Thời lượng slot đặt chỗ (giờ)">
-                {selectedRequest.payload.bookingSlotDurationHours}
-              </Descriptions.Item>
-            </Descriptions>
-          </Space>
-        )}
-      </Modal>
+        request={selectedRequest}
+        onClose={() => setIsDetailModalOpen(false)}
+        statusOptions={statusOptions}
+        typeOptions={typeOptions}
+        statusTagColor={statusTagColor}
+        typeTagColor={typeTagColor}
+      />
     </div>
   )
 }
