@@ -18,9 +18,13 @@ namespace CoreService.API.Controllers
         private readonly IXenditPlatformService _platform;
         private readonly IPaymentApp _payment;
         private readonly IOptions<XenditOptions> _opt;
+        private readonly IBillingService _billingService ;
 
-        public OperatorPaymentsController(IXenditPlatformService platform, IPaymentApp payment, IOptions<XenditOptions> opt)
-        { _platform = platform; _payment = payment; _opt = opt; }
+        public OperatorPaymentsController(IXenditPlatformService platform, IPaymentApp payment, IOptions<XenditOptions> opt, IBillingService billingService)
+        {
+            _platform = platform; _payment = payment; _opt = opt;
+            _billingService = billingService;
+        }
 
         //[HttpPost("xendit-account")]
         ////[Authorize(Roles = "Operator,Admin")]
@@ -47,26 +51,6 @@ namespace CoreService.API.Controllers
         [Authorize(Roles = "Operator,Admin")]
         public async Task<IActionResult> GetTotals(string operatorId, DateTime? from, DateTime? to)
             => Ok(await _payment.GetOperatorTotalsAsync(operatorId, from, to));
-
-        [HttpPost("parking-lot-fee-invoice")]
-        public async Task<IActionResult> CreateSubscriptionInvoice(
-        string operatorId,
-        [FromBody] SubscriptionInvoiceDto dto)
-        {
-
-
-            var pr = await _payment.CreateSubscriptionInvoiceAsync(
-                operatorId,
-                dto.Amount,
-                dto.DueDate); // Truyền DueDate
-
-            return Ok(new
-            {
-                pr.XenditInvoiceId,
-                pr.Status,
-                pr.CheckoutUrl
-            });
-        }
 
         // Endpoint 2: Lấy danh sách hóa đơn chưa thanh toán (Báo đỏ)
         //[HttpGet("subscriptions/pending")]
@@ -105,6 +89,31 @@ namespace CoreService.API.Controllers
             var detail = await _payment.GetXenditInvoiceDetailAsync(paymentId);
 
             return Ok(detail);
+        }
+
+        [HttpPost("run-monthly-billing")]
+        public async Task<IActionResult> RunMonthlyBillingManually()
+        {
+            try
+            {
+                // Gọi hàm logic cốt lõi
+                await _billingService.RunMonthlyBillingAndSuspensionJobAsync();
+
+                return Ok(new
+                {
+                    message = "✅ Job thanh toán định kỳ và giám sát đã được kích hoạt thủ công thành công.",
+                    note = "Vui lòng kiểm tra log và MongoDB để xác minh các hóa đơn đã được tạo và các tài khoản nợ đã bị khóa."
+                });
+            }
+            catch (Exception ex)
+            {
+                // Trả về lỗi chi tiết để dễ debug trong môi trường test
+                return StatusCode(500, new
+                {
+                    message = "❌ Lỗi khi chạy Job thanh toán thủ công.",
+                    detail = ex.Message
+                });
+            }
         }
     }
 

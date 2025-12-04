@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { InjectModel } from '@nestjs/mongoose'
 import { ClientSession, FilterQuery, Model } from 'mongoose'
 
@@ -63,7 +65,13 @@ export class ParkingLotRequestRepository
   }
 
   async findById(id: string): Promise<ParkingLotRequest | null> {
-    return await this.parkingLotRequestModel.findById(id).lean().exec()
+    return await this.parkingLotRequestModel
+      .findById(id)
+      .populate({
+        path: 'parkingLotId',
+      })
+      .lean()
+      .exec()
   }
 
   async updateStatus(
@@ -146,41 +154,45 @@ export class ParkingLotRequestRepository
       .exec()
   }
 
-  async findAllRequests(status: string, type: string): Promise<any[]> {
-    const requests = await this.parkingLotRequestModel.aggregate([
-      // STAGE 0: Chuyển đổi addressId từ String sang ObjectId
-      // Thêm một trường tạm thời để chứa ObjectId đã được chuyển đổi
+  async findAllRequests(
+    status: string,
+    type: string,
+    page: number,
+    pageSize: number,
+  ): Promise<{ data: ParkingLotRequest[]; total: number }> {
+    const skip = (page - 1) * pageSize
+
+    const [result] = await this.parkingLotRequestModel.aggregate([
+      // --- STAGE 1: LỌC DỮ LIỆU ---
       {
         $match: {
           status: status,
           requestType: type,
         },
       },
+
+      // --- STAGE 2: LOOKUP & POPULATE (Giữ nguyên logic của bạn) ---
       {
         $addFields: {
           convertedAddressId: { $toObjectId: '$payload.addressId' },
         },
       },
-
-      // Stage 1: "Join" với collection 'addresses'
+      // Join Address
       {
         $lookup: {
           from: 'addresses',
-          // <<< THAY ĐỔI: Sử dụng trường ObjectId đã được chuyển đổi
           localField: 'convertedAddressId',
           foreignField: '_id',
           as: 'addressInfo',
         },
       },
-
-      // Stage 2: $unwind (Giữ nguyên)
       {
         $unwind: {
           path: '$addressInfo',
           preserveNullAndEmptyArrays: true,
         },
       },
-
+      // Join Ward
       {
         $lookup: {
           from: 'wards',
@@ -189,19 +201,20 @@ export class ParkingLotRequestRepository
           as: 'wardInfo',
         },
       },
-
-      { $unwind: { path: '$wardInfo', preserveNullAndEmptyArrays: true } },
+      {
+        $unwind: {
+          path: '$wardInfo',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      // Format lại Ward trong Address
       {
         $addFields: {
-          // Ghi đè trường 'wardId' bên trong 'addressInfo'
-          // bằng toàn bộ object 'wardInfo' đã được lookup
           'addressInfo.wardId': { wardName: '$wardInfo.wardName' },
         },
       },
-      {
-        $unset: 'payload.addressId',
-      },
-      // Stage 3: $project (Giữ nguyên logic, nhưng có thể dọn dẹp trường tạm)
+
+      // --- STAGE 3: PROJECT (Cấu trúc lại dữ liệu) ---
       {
         $project: {
           _id: 1,
@@ -213,6 +226,7 @@ export class ParkingLotRequestRepository
             $mergeObjects: [
               '$payload',
               {
+                // Ghi đè addressId (string) bằng object addressInfo đã populate
                 addressId: '$addressInfo',
               },
             ],
@@ -220,14 +234,29 @@ export class ParkingLotRequestRepository
         },
       },
 
-      // Stage 4: $sort (Giữ nguyên)
+      // --- STAGE 4: SORT ---
       {
         $sort: {
           createdAt: -1,
         },
       },
+
+      // --- STAGE 5: FACET (Phân trang & Đếm tổng song song) ---
+      {
+        $facet: {
+          // Luồng 1: Lấy dữ liệu phân trang
+          data: [{ $skip: skip }, { $limit: pageSize }],
+          // Luồng 2: Đếm tổng số bản ghi (trước khi skip/limit)
+          totalCount: [{ $count: 'count' }],
+        },
+      },
     ])
 
-    return requests
+    // --- XỬ LÝ KẾT QUẢ ---
+    // $facet luôn trả về mảng 1 phần tử, ta destructure nó ra
+    const data = result.data ?? []
+    const total = result.totalCount[0] ? result.totalCount[0].count : 0
+
+    return { data, total }
   }
 }

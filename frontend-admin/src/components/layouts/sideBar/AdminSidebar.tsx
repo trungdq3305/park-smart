@@ -1,7 +1,6 @@
 import React from 'react'
 import { Layout, Menu, Button } from 'antd'
 import {
-  DashboardOutlined,
   BarChartOutlined,
   FileTextOutlined,
   AppstoreOutlined,
@@ -11,8 +10,8 @@ import {
   CarOutlined,
   EnvironmentOutlined,
   WalletOutlined,
-  HistoryOutlined,
   SafetyOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -47,9 +46,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       active: true,
     },
     {
-      key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: 'Bảng điều khiển',
+      key: '/admin/parking-lot-requests',
+      icon: <CarOutlined />,
+      label: 'Yêu cầu bãi đỗ xe',
     },
     {
       key: '/admin/manage-parking-lots',
@@ -77,9 +76,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Thanh toán',
     },
     {
-      key: '/history',
-      icon: <HistoryOutlined />,
-      label: 'Lịch sử',
+      key: '/admin/events',
+      icon: <CalendarOutlined />,
+      label: 'Sự kiện',
     },
     {
       key: '/security',

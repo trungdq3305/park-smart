@@ -31,7 +31,9 @@ namespace CoreService.Application.Applications
         private readonly IXenditPlatformService _paymentService;
         private readonly IAddressApiService _addressApiService; // Service gọi HTTP /addresses
         private readonly IParkingLotApiService _parkingLotApiService;
-        public AuthApplication(IAccountRepository userRepo, Common.Helpers.JwtTokenHelper jwtHelper, IEmailApplication emailApplication, IDriverRepository driverRepo, IParkingLotOperatorRepository opRepo, ICityAdminRepository adminRepo, IOptions<AppSecurityOptions> securityOptions, IOperatorPaymentAccountRepo operatorPaymentAccountRepo, IXenditPlatformService paymentService, IAddressApiService addressApiService, IParkingLotApiService parkingLotApiService)
+        private readonly ISubscriptionPlanRepository _planRepo;
+        private readonly IPaymentApp _paymentApp;
+        public AuthApplication(IAccountRepository userRepo, Common.Helpers.JwtTokenHelper jwtHelper, IEmailApplication emailApplication, IDriverRepository driverRepo, IParkingLotOperatorRepository opRepo, ICityAdminRepository adminRepo, IOptions<AppSecurityOptions> securityOptions, IOperatorPaymentAccountRepo operatorPaymentAccountRepo, IXenditPlatformService paymentService, IAddressApiService addressApiService, IParkingLotApiService parkingLotApiService, ISubscriptionPlanRepository planRepo, IPaymentApp paymentApp)
         {
             _accountRepo = userRepo;
             _jwtHelper = jwtHelper;
@@ -44,6 +46,8 @@ namespace CoreService.Application.Applications
             _paymentService = paymentService;
             _addressApiService = addressApiService;
             _parkingLotApiService = parkingLotApiService;
+            _planRepo = planRepo;
+            _paymentApp = paymentApp;
         }
 
         public async Task<ApiResponse<string>> LoginAsync(LoginRequest request)
@@ -56,6 +60,10 @@ namespace CoreService.Application.Applications
             if (!account.IsActive && account.RoleId == "68bee1f500a9410adb97d3a0")
             {
                 throw new ApiException("Tài khoản đang chờ được Admin xác thực ", StatusCodes.Status401Unauthorized);
+            }
+            else if (account.IsBanned)
+            {
+                throw new ApiException("Tài khoản đã bị khóa vì sai phạm nhiều", StatusCodes.Status401Unauthorized);
             }
             var activedAccount = await _accountRepo.GetActivedByEmailAsync(request.Email);
             if (activedAccount == null)
@@ -256,7 +264,41 @@ namespace CoreService.Application.Applications
                 }
             }
         }
+        public async Task HandleFirstMonthBilling(ParkingLotOperator o)
+        {
+            DateTime registrationDate = (DateTime)o.RegistrationDate;
+            var currentMonth = registrationDate.Month;
+            var currentYear = registrationDate.Year;
 
+            // 1. Lấy phí từ cấu hình
+            var plan = await _planRepo.GetByIdAsync(o.SubscriptionPlanId);
+            var monthlyFee = plan.MonthlyFeeAmount;
+
+            // Nếu đăng ký từ ngày 10 trở đi: MIỄN PHÍ tháng này.
+            if (registrationDate.Day >= 10)
+            {
+                // Billing sẽ bắt đầu vào ngày 1 tháng sau bởi Scheduler.
+                return;
+            }
+
+            // Nếu đăng ký trước ngày 10 (Ngày 1-9): TÍNH PHÍ TOÀN BỘ THÁNG.
+
+            // Ngày Đáo Hạn: Ngày cuối cùng của tháng hiện tại
+            var lastDayOfMonth = new DateTime(currentYear, currentMonth,
+                                              DateTime.DaysInMonth(currentYear, currentMonth));
+
+            // Tháng tính phí: Ngày 1 của tháng hiện tại
+            var invoiceMonth = new DateTime(currentYear, currentMonth, 1);
+
+            // Tạo hóa đơn chính (OperatorCharge)
+            await _paymentApp.CreateSubscriptionInvoiceAsync(
+                o.Id,
+                monthlyFee,
+                lastDayOfMonth
+            );
+            // Gửi thông báo hóa đơn
+            // ...
+        }
         private async Task PerformRollbackAsync(Account account, ParkingLotOperator op, string addressId, string parkingLotRequestId)
         {
             if (parkingLotRequestId != null)
@@ -505,6 +547,7 @@ namespace CoreService.Application.Applications
         {
             var account = await _accountRepo.GetByIdAsync(id);
             var operatorEntity = await _opRepo.GetByAccountIdAsync(id);
+            
             if (account == null)
             {
                 throw new ApiException("Tài khoản không tồn tại", StatusCodes.Status400BadRequest);
@@ -526,8 +569,12 @@ namespace CoreService.Application.Applications
         <p>Trân trọng,<br/>ParkSmart</p>";
             await _emailApplication.SendEmailAsync(account.Email, subject, body);
             account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
-
+            operatorEntity.RegistrationDate = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            operatorEntity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            operatorEntity.SubscriptionPlanId = "69283c6e8a0a5cd51cd5fe5f";
+            await HandleFirstMonthBilling(operatorEntity);
             await _accountRepo.UpdateAsync(account);
+            await _opRepo.UpdateAsync(operatorEntity);
 
             return new ApiResponse<string>(
                 null,
@@ -669,6 +716,10 @@ namespace CoreService.Application.Applications
                     "Đây là mật khẩu để đăng nhập vào hệ thống nếu bạn không muốn đăng nhập bằng Google. " +
                     "Hãy đổi mật khẩu ngay sau khi đăng nhập để đảm bảo an toàn."
                 );
+            }
+            else if (account.IsBanned)
+            {
+                throw new ApiException("Tài khoản đã bị khóa vì sai phạm nhiều", StatusCodes.Status401Unauthorized);
             }
             else if (!account.IsActive)
             {

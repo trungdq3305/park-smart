@@ -262,6 +262,9 @@ export class SubscriptionDetailResponseDto {
 
   @Expose()
   amountPaid: number
+
+  @Expose()
+  refundedAmount: number
 }
 
 export class AvailabilitySlotDto {

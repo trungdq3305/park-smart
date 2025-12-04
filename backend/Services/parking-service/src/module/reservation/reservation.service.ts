@@ -23,12 +23,15 @@ import { IdDto } from 'src/common/dto/params.dto'
 import { IBookingInventoryRepository } from '../bookingInventory/interfaces/ibookingInventory.repository'
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
+import { TransactionTypeEnum } from '../parkingTransaction/enum/parkingTransaction.enum'
+import { IParkingTransactionRepository } from '../parkingTransaction/interfaces/iparkingTransaction.repository'
 import { IPricingPolicyRepository } from '../pricingPolicy/interfaces/ipricingPolicy.repository'
 import {
   ConfirmReservationPaymentDto,
   CreateReservationDto,
   ExtendReservationDto,
   ReservationAvailabilitySlotDto,
+  ReservationCancellationPreviewResponseDto,
   ReservationDetailResponseDto,
   ReservationExtensionEligibilityResponseDto,
   UpdateReservationStatusDto,
@@ -53,7 +56,82 @@ export class ReservationService implements IReservationService {
     private readonly connection: Connection,
     @Inject(IAccountServiceClient)
     private readonly accountServiceClient: IAccountServiceClient,
+    @Inject(IParkingTransactionRepository)
+    private readonly parkingTransactionRepository: IParkingTransactionRepository,
   ) {}
+
+  private readonly logger: Logger = new Logger(ReservationService.name)
+
+  private returnToDto(reservation: Reservation): ReservationDetailResponseDto {
+    // Chuyển đổi entity/model sang DTO (có thể dùng class-transformer nếu cần)
+    return plainToInstance(ReservationDetailResponseDto, reservation, {
+      excludeExtraneousValues: true,
+    })
+  }
+
+  private calculateRefundPolicy(reservation: Reservation): {
+    amount: number
+    minutesRemaining: number
+  } {
+    const now = new Date()
+    const startTime = new Date(reservation.userExpectedTime)
+
+    const diffMs = startTime.getTime() - now.getTime()
+    const minutesRemaining = Math.floor(diffMs / (1000 * 60))
+
+    // Logic hoàn tiền: Hủy trước > 60 phút hoàn 100%, ngược lại 0%
+    const CUTOFF_MINUTES = 60
+
+    if (minutesRemaining > CUTOFF_MINUTES) {
+      return { amount: reservation.prepaidAmount, minutesRemaining }
+    } else {
+      return { amount: 0, minutesRemaining }
+    }
+  }
+
+  // --- API 1: XEM TRƯỚC (PREVIEW) ---
+  async getCancellationPreview(
+    id: IdDto,
+    userId: string,
+  ): Promise<ReservationCancellationPreviewResponseDto> {
+    const reservation = await this.reservationRepository.findReservationById(
+      id.id,
+    )
+
+    if (!reservation) {
+      throw new NotFoundException('Đơn đặt chỗ không tồn tại.')
+    }
+
+    if (reservation.createdBy && reservation.createdBy !== userId) {
+      throw new NotFoundException('Bạn không có quyền xem đơn này.') // Hoặc Forbidden
+    }
+
+    // Chỉ cho hủy nếu đang PENDING hoặc CONFIRMED
+    if (
+      reservation.status !== ReservationStatusEnum.CONFIRMED &&
+      reservation.status !== ReservationStatusEnum.PENDING_PAYMENT
+    ) {
+      return {
+        canCancel: false,
+        refundAmount: 0,
+        minutesUntilStart: 0,
+        warningMessage:
+          'Vé này không thể hủy (Đã check-in, hết hạn hoặc đã hủy).',
+      }
+    }
+
+    const policy = this.calculateRefundPolicy(reservation)
+
+    return {
+      canCancel: true,
+      refundAmount: policy.amount,
+      minutesUntilStart: policy.minutesRemaining,
+      warningMessage:
+        policy.amount > 0
+          ? `Bạn hủy trước giờ đặt ${policy.minutesRemaining} phút. Bạn sẽ được hoàn lại 100% tiền (${policy.amount.toLocaleString()}đ).`
+          : `⚠️ CẢNH BÁO: Bạn đang hủy quá sát giờ (< 60 phút). Vé sẽ bị hủy nhưng KHÔNG ĐƯỢC HOÀN TIỀN.`,
+    }
+  }
 
   async checkExtensionEligibility(
     id: IdDto,
@@ -221,6 +299,19 @@ export class ReservationService implements IReservationService {
         throw new InternalServerErrorException('Lỗi khi cập nhật đơn đặt chỗ.')
       }
 
+      await this.parkingTransactionRepository.createTransaction(
+        {
+          parkingLotId: reservation.parkingLotId,
+          createdBy: userId,
+          reservationId: reservation._id,
+          amount: paymentCheck.amount,
+          type: TransactionTypeEnum.RESERVATION_EXTEND,
+          paymentId: extendDto.paymentId,
+          note: `Gia hạn đặt chỗ - Reservation ID: ${reservation._id.toString()}`,
+        },
+        session,
+      )
+
       await session.commitTransaction()
       return this.returnToDto(updatedReservation)
     } catch (error) {
@@ -238,15 +329,6 @@ export class ReservationService implements IReservationService {
     } finally {
       await session.endSession()
     }
-  }
-
-  private readonly logger: Logger = new Logger(ReservationService.name)
-
-  private returnToDto(reservation: Reservation): ReservationDetailResponseDto {
-    // Chuyển đổi entity/model sang DTO (có thể dùng class-transformer nếu cần)
-    return plainToInstance(ReservationDetailResponseDto, reservation, {
-      excludeExtraneousValues: true,
-    })
   }
 
   /**
@@ -428,6 +510,20 @@ export class ReservationService implements IReservationService {
           'Không thể cập nhật thông tin thanh toán cho đơn đặt chỗ.',
         )
       }
+
+      await this.parkingTransactionRepository.createTransaction(
+        {
+          parkingLotId: reservation.parkingLotId,
+          createdBy: userId,
+          reservationId: reservation._id,
+          amount: prepaidAmount,
+          type: TransactionTypeEnum.RESERVATION_CREATE,
+          paymentId: confirmDto.paymentId,
+          note: `Thanh toán đặt chỗ - Reservation ID: ${reservation._id.toString()}`,
+        },
+        session,
+      )
+
       await session.commitTransaction()
       return updatedReservation
     } catch (error) {
@@ -501,24 +597,31 @@ export class ReservationService implements IReservationService {
     return this.returnToDto(data)
   }
 
-  async cancelReservationByUser(id: IdDto, userId: string): Promise<boolean> {
+  async cancelReservationByUser(
+    id: IdDto,
+    userId: string,
+    userToken: string,
+  ): Promise<boolean> {
     const session = await this.connection.startSession()
     session.startTransaction()
 
     try {
       // --- BƯỚC 1: LẤY VÉ (RESERVATION) ---
-      // (Lấy bản ghi, khóa nó lại bằng session)
-      const reservation =
-        await this.reservationRepository.findReservationByIdWithoutPopulate(
-          id.id,
-          session, // ⭐️ Rất quan trọng: Khóa bản ghi này
-        )
+      const reservation = await this.reservationRepository.findReservationById(
+        id.id,
+        session, // Khóa bản ghi
+      )
 
       if (!reservation) {
         throw new NotFoundException('Không tìm thấy đơn đặt chỗ.')
       }
 
-      // --- BƯỚC 2: KIỂM TRA TRẠNG THÁI (GUARD CLAUSES) ---
+      // Validate quyền sở hữu
+      if (reservation.createdBy !== userId) {
+        throw new BadRequestException('Bạn không có quyền hủy đơn này.')
+      }
+
+      // --- BƯỚC 2: KIỂM TRA TRẠNG THÁI ---
       // Chỉ cho hủy nếu vé đang PENDING hoặc CONFIRMED
       if (
         reservation.status !== ReservationStatusEnum.PENDING_PAYMENT &&
@@ -529,24 +632,29 @@ export class ReservationService implements IReservationService {
         )
       }
 
-      // --- BƯỚC 3: KIỂM TRA QUY TẮC CẮT GIỜ (LOGIC CỦA BẠN) ---
-      const CANCELLATION_CUTOFF_MINUTES = 15 // ⭐️ Quy tắc 15 phút
+      // --- BƯỚC 3: TÍNH TOÁN HOÀN TIỀN (Logic mới) ---
+      // Quy tắc: Hủy trước > 60 phút hoàn 100%, ngược lại 0%
       const now = new Date()
-      const expectedTime = new Date(reservation.userExpectedTime)
+      const startTime = new Date(reservation.userExpectedTime)
+      const diffMs = startTime.getTime() - now.getTime()
+      const minutesRemaining = Math.floor(diffMs / (1000 * 60))
 
-      // Tính số mili-giây còn lại
-      const timeRemainingMs = expectedTime.getTime() - now.getTime()
-      const timeRemainingMinutes = timeRemainingMs / (1000 * 60)
+      const CUTOFF_MINUTES = 60
+      let refundAmount = 0
 
-      if (timeRemainingMinutes <= CANCELLATION_CUTOFF_MINUTES) {
-        throw new BadRequestException(
-          `Không thể hủy. Đã quá sát giờ (còn ${CANCELLATION_CUTOFF_MINUTES} phút).`,
-        )
+      // Chỉ tính hoàn tiền nếu vé đã CONFIRMED (đã trả tiền)
+      if (reservation.status === ReservationStatusEnum.CONFIRMED) {
+        if (minutesRemaining > CUTOFF_MINUTES) {
+          refundAmount = reservation.prepaidAmount // Hoàn 100%
+        } else {
+          refundAmount = 0 // Sát giờ (<= 60p) -> Mất trắng
+        }
       }
 
       // --- BƯỚC 4: HÀNH ĐỘNG (ACT) ---
 
-      // 4a. Cập nhật "Vé" -> HỦY
+      // 4a. Cập nhật trạng thái & Lưu số tiền hoàn
+      // (Sử dụng updateOne trực tiếp hoặc qua Repo để set thêm refundedAmount)
       await this.reservationRepository.updateReservationStatus(
         id.id,
         ReservationStatusEnum.CANCELLED_BY_USER,
@@ -554,17 +662,67 @@ export class ReservationService implements IReservationService {
         session,
       )
 
-      // 4b. TRẢ LẠI "SLOT" CHO KHO (Rất quan trọng)
-      // (Chỉ trả slot nếu vé đã được xác nhận, vì PENDING chưa lấy slot)
+      const parkingLotId =
+        await this.reservationRepository.getParkingLotIdByReservationId(
+          id.id,
+          session,
+        )
+
+      if (!parkingLotId) {
+        throw new InternalServerErrorException(
+          'Không tìm thấy bãi đỗ xe của đơn đặt chỗ.',
+        )
+      }
+
+      // Cập nhật thêm field refundedAmount
+      // Hoàn tiền nếu có
+      if (refundAmount > 0) {
+        await this.reservationRepository.updateReservationRefundAmount(
+          id.id,
+          refundAmount,
+          session,
+        )
+
+        const reservationOperatorId =
+          await this.parkingLotRepository.getParkingLotOperatorId(parkingLotId)
+
+        if (reservationOperatorId === null) {
+          throw new InternalServerErrorException(
+            'Không tìm thấy operator của bãi đỗ xe.',
+          )
+        }
+
+        await this.accountServiceClient.refundTransaction(
+          reservation.paymentId,
+          refundAmount,
+          'REQUESTED_BY_CUSTOMER', // Lý do chuẩn của Xendit
+          userToken, // Token lấy từ Controller
+          reservationOperatorId,
+        )
+
+        await this.parkingTransactionRepository.createTransaction(
+          {
+            parkingLotId: reservation.parkingLotId,
+            createdBy: userId,
+            reservationId: reservation._id,
+            amount: -refundAmount,
+            type: TransactionTypeEnum.REFUND_RESERVATION,
+            paymentId: reservation.paymentId,
+            note: `Hoàn tiền đặt chỗ - Reservation ID: ${reservation._id.toString()}`,
+          },
+          session,
+        )
+      }
+
+      // 4b. TRẢ LẠI "SLOT" CHO KHO (Booking Inventory)
+      // Phải trả slot nếu vé đã giữ chỗ (CONFIRMED)
       if (reservation.status === ReservationStatusEnum.CONFIRMED) {
-        // (Bạn cần tính lại inventoryStartTime/EndTime dựa trên vé)
         const inventoryStartTime = new Date(reservation.inventoryTimeSlot)
         const inventoryEndTime = new Date(reservation.estimatedEndTime)
         inventoryEndTime.setMinutes(0, 0, 0) // Chuẩn hóa về 00 phút
-        // (Bạn cần logic để lấy lại 'estimatedEndTime' và 'blockSize')
 
         await this.bookingInventoryRepository.updateInventoryCounts(
-          reservation.parkingLotId,
+          parkingLotId,
           inventoryStartTime,
           inventoryEndTime,
           -1, // ⭐️ Trừ 1 (TRẢ SLOT)
@@ -572,16 +730,11 @@ export class ReservationService implements IReservationService {
         )
       }
 
-      // (4c. Xử lý Hoàn tiền - Gọi Payment Service để refund 'paymentId')
-      // if (reservation.paymentId) {
-      //   await this.paymentService.requestRefund(reservation.paymentId);
-      // }
-
       await session.commitTransaction()
       return true
     } catch (error) {
       await session.abortTransaction()
-      throw error // Ném lại lỗi (404, 400, 409...)
+      throw error
     } finally {
       await session.endSession()
     }

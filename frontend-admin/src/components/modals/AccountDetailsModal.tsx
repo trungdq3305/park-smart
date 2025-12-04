@@ -1,21 +1,99 @@
 import React from 'react'
-import { Modal, Button, Descriptions, Tag, message } from 'antd'
+import { Modal, Button, Descriptions, Tag, message, Input } from 'antd'
 import type { Account } from '../../types/Account'
-import { useConfirmOperatorMutation } from '../../features/admin/accountAPI'
+import { useAccountDetailsQuery, useConfirmOperatorMutation } from '../../features/admin/accountAPI'
+import {
+  useParkingLotDetailsQuery,
+  useReviewParkingLotRequestMutation,
+} from '../../features/admin/parkinglotAPI'
+import type { ParkingLotRequest } from '../../types/ParkingLotRequest'
+import type { Address } from '../../types/Address'
+import { useGetAddressByIdQuery } from '../../features/operator/addressAPI'
 
 interface AccountDetailsModalProps {
   open: boolean
   onClose: () => void
   account: Account | null
 }
-
+interface ParkingLotRequestReponse {
+  data: {
+    data: ParkingLotRequest[]
+  }
+}
+interface AddressResponse {
+  data: {
+    data: Address[]
+  }
+  isLoading: boolean
+}
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
   const [confirmOperator, { isLoading: isConfirmingOperator }] = useConfirmOperatorMutation()
+  const [rejectionReason, setRejectionReason] = React.useState('')
+  const { data: accountDetails } = useAccountDetailsQuery(account?._id || '')
+  const operatorId = accountDetails?.data?.operatorDetail?._id || ''
+
+  const { data: parkingLotDetails } = useParkingLotDetailsQuery<ParkingLotRequestReponse>({
+    parkingLotOperatorId: operatorId,
+    status: 'PENDING',
+    type: 'CREATE',
+  })
+
+  const parkingLotDetailsData = parkingLotDetails?.data?.[0]
+  const addressId = parkingLotDetailsData?.payload?.addressId
+  const requestId = parkingLotDetailsData?._id
+
+  const { data: addressDetails } = useGetAddressByIdQuery<AddressResponse>({ id: addressId })
+
+  const [reviewParkingLotRequest, { isLoading: isReviewingParkingLotRequest }] =
+    useReviewParkingLotRequestMutation()
+
+  const addressDetailsData = addressDetails?.data?.[0] || null
+
+  const extractBackendMessage = (error: unknown) =>
+    (error as { data?: { message?: string; error?: string } })?.data?.message ||
+    (error as { data?: { message?: string; error?: string } })?.data?.error
 
   const handleConfirmOperator = async () => {
-    if (account?._id) {
+    if (!account?._id) return
+    try {
       await confirmOperator(account._id).unwrap()
       message.success('Xác nhận tài khoản operator thành công')
+    } catch (error) {
+      const backendMessage = extractBackendMessage(error)
+      message.error(backendMessage || 'Xác nhận tài khoản operator thất bại')
+    }
+  }
+
+  const handleApproveParkingLotRequest = async () => {
+    if (!requestId) return
+    try {
+      await reviewParkingLotRequest({ requestId, status: 'APPROVED' }).unwrap()
+      message.success('Duyệt bãi đỗ xe thành công')
+      onClose()
+    } catch (error) {
+      const backendMessage = extractBackendMessage(error)
+      message.error(backendMessage || 'Duyệt bãi đỗ xe thất bại')
+    }
+  }
+
+  const handleRejectParkingLotRequest = async () => {
+    if (!requestId) return
+    if (!rejectionReason.trim()) {
+      message.warning('Vui lòng nhập lý do từ chối')
+      return
+    }
+    try {
+      await reviewParkingLotRequest({
+        requestId,
+        status: 'REJECTED',
+        rejectionReason: rejectionReason.trim(),
+      }).unwrap()
+      message.success('Đã từ chối bãi đỗ xe')
+      setRejectionReason('')
+      onClose()
+    } catch (error) {
+      const backendMessage = extractBackendMessage(error)
+      message.error(backendMessage || 'Từ chối bãi đỗ xe thất bại')
     }
   }
   const getRoleBadgeColor = (roleName: string) => {
@@ -112,9 +190,77 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                   type="primary"
                   onClick={handleConfirmOperator}
                   loading={isConfirmingOperator}
+                  disabled={account.isActive}
                 >
                   {isConfirmingOperator ? 'Đang duyệt...' : 'Duyệt'}
                 </Button>
+              </Descriptions.Item>
+            </Descriptions>
+          )}
+
+          {account.operatorDetail && parkingLotDetailsData && (
+            <Descriptions title="Bãi xe đăng ký" bordered column={2} style={{ marginTop: 16 }}>
+              <Descriptions.Item label="Tên bãi xe">
+                {parkingLotDetailsData.payload?.name || 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Loại yêu cầu">
+                {parkingLotDetailsData.requestType}
+              </Descriptions.Item>
+              <Descriptions.Item label="Trạng thái yêu cầu">
+                <Tag color="blue">{parkingLotDetailsData.status}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Địa chỉ" span={2}>
+                {addressDetailsData?.fullAddress || 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Tổng tầng">
+                {parkingLotDetailsData.payload?.totalLevel ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa mỗi tầng">
+                {parkingLotDetailsData.payload?.totalCapacityEachLevel ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa đặt trước">
+                {parkingLotDetailsData.payload?.bookableCapacity ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa thuê dài hạn">
+                {parkingLotDetailsData.payload?.leasedCapacity ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Sức chứa vãng lai">
+                {parkingLotDetailsData.payload?.walkInCapacity ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Thời lượng slot (giờ)">
+                {parkingLotDetailsData.payload?.bookingSlotDurationHours ?? 'Chưa cung cấp'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Ngày hiệu lực">
+                {parkingLotDetailsData.effectiveDate
+                  ? new Date(parkingLotDetailsData.effectiveDate).toLocaleDateString('vi-VN')
+                  : 'Chưa xác định'}
+              </Descriptions.Item>
+              <Descriptions.Item label="Lý do từ chối" span={2}>
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Nhập lý do từ chối (nếu có)"
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  disabled={isReviewingParkingLotRequest}
+                />
+              </Descriptions.Item>
+              <Descriptions.Item label="Hành động" span={2}>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  <Button
+                    type="primary"
+                    onClick={handleApproveParkingLotRequest}
+                    loading={isReviewingParkingLotRequest}
+                  >
+                    Duyệt
+                  </Button>
+                  <Button
+                    danger
+                    onClick={handleRejectParkingLotRequest}
+                    loading={isReviewingParkingLotRequest}
+                  >
+                    Từ chối
+                  </Button>
+                </div>
               </Descriptions.Item>
             </Descriptions>
           )}

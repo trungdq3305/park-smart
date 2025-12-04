@@ -13,6 +13,41 @@ export class ReservationRepository implements IReservationRepository {
     private reservationModel: Model<Reservation>,
   ) {}
 
+  async getParkingLotIdByReservationId(
+    reservationId: string,
+    session: ClientSession,
+  ): Promise<string | null> {
+    const query = this.reservationModel
+      .findById(reservationId)
+      .select('parkingLotId')
+      .lean<{ parkingLotId: Types.ObjectId }>()
+      .session(session)
+
+    return query
+      .exec()
+      .then((result) => (result ? result.parkingLotId.toString() : null))
+  }
+
+  async updateReservationRefundAmount(
+    id: string,
+    refundAmount: number,
+    session: ClientSession,
+  ): Promise<boolean> {
+    const result = await this.reservationModel
+      .updateOne(
+        { _id: id },
+        {
+          $set: {
+            refundedAmount: refundAmount,
+            updatedAt: new Date(),
+          },
+        },
+        { session },
+      )
+      .exec()
+    return result.modifiedCount > 0
+  }
+
   findReservationByIdWithoutPopulate(
     id: string,
     session?: ClientSession,

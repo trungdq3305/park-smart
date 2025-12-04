@@ -38,7 +38,41 @@ namespace CoreService.Repository.Repositories
             _ = _col.Indexes.CreateMany(idx);
         }
 
-        public Task AddAsync(PaymentRecord entity) => _col.InsertOneAsync(entity);
+        // Trong PaymentRepository (hoặc lớp chứa hàm này)
+
+        public async Task AddAsync(PaymentRecord entity)
+        {
+            try
+            {
+                // Thực hiện thao tác Insert
+                await _col.InsertOneAsync(entity);
+            }
+            catch (MongoBulkWriteException<PaymentRecord> ex)
+            {
+                // 🚨 BẮT LỖI BULK WRITE (thường xảy ra cả với InsertOneAsync) 🚨
+                // Ném lại lỗi để tầng Service có thể kiểm tra cụ thể.
+                Console.WriteLine("--- LỖI BULK WRITE/DUPLICATE KEY MONGODB ---");
+                Console.WriteLine($"Thông báo lỗi: {ex.Message}");
+
+                // Ném lỗi lên trên để tầng service xử lý business logic
+                throw;
+            }
+            catch (MongoDB.Bson.BsonSerializationException ex)
+            {
+                // 🚨 BẮT LỖI SERIALIZATION CỦA MONGODB 🚨
+                Console.WriteLine("--- LỖI SERIALIZATION MONGODB RẤT CHI TIẾT ---");
+                Console.WriteLine($"Thông báo lỗi: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Bắt các lỗi khác (ví dụ: lỗi kết nối, lỗi cấu hình index, etc.)
+                Console.WriteLine("--- LỖI CHUNG KHÁC KHI THÊM PAYMENTRECORD ---");
+                Console.WriteLine($"Thông báo lỗi: {ex.Message}");
+                throw;
+            }
+        }
 
         public Task UpdateAsync(PaymentRecord entity) =>
             _col.ReplaceOneAsync(x => x.Id == entity.Id, entity);
@@ -178,6 +212,77 @@ namespace CoreService.Repository.Repositories
             var combinedFilter = filters.Any() ? filterBuilder.And(filters) : filterBuilder.Empty;
 
             return await _col.CountDocumentsAsync(combinedFilter);
+        }
+        public async Task<PaymentRecord?> GetUnpaidMainInvoiceForMonth(string operatorId, DateTime invoiceMonth)
+        {
+            // Lấy ngày đầu tiên của tháng được truyền vào (ví dụ: 2025-12-01 00:00:00)
+            var startDate = new DateTime(invoiceMonth.Year, invoiceMonth.Month, 1).Date;
+            // Lấy ngày đầu tiên của tháng tiếp theo (ví dụ: 2026-01-01 00:00:00)
+            var endDate = startDate.AddMonths(1);
+
+            var unpaidStatuses = new[] { "CREATED", "PENDING", "EXPIRED" };
+
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),
+                Builders<PaymentRecord>.Filter.Eq(p => p.PaymentType, PaymentType.OperatorCharge),
+                // Lọc theo phạm vi tháng: InvoiceMonth >= startDate VÀ InvoiceMonth < endDate
+                Builders<PaymentRecord>.Filter.Gte(p => p.InvoiceMonth, startDate),
+                Builders<PaymentRecord>.Filter.Lt(p => p.InvoiceMonth, endDate),
+                Builders<PaymentRecord>.Filter.In(p => p.Status, unpaidStatuses)
+            );
+
+            return await _col.Find(filter).FirstOrDefaultAsync();
+        }
+        public async Task<PaymentRecord?> GetMainInvoiceForMonth(string operatorId, DateTime invoiceMonth)
+        {
+            // Lấy ngày đầu tiên của tháng được truyền vào
+            var startDate = new DateTime(invoiceMonth.Year, invoiceMonth.Month, 1).Date;
+            // Lấy ngày đầu tiên của tháng tiếp theo
+            var endDate = startDate.AddMonths(1);
+
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),
+                Builders<PaymentRecord>.Filter.Eq(p => p.PaymentType, PaymentType.OperatorCharge),
+                // Lọc theo phạm vi tháng: InvoiceMonth >= startDate VÀ InvoiceMonth < endDate
+                Builders<PaymentRecord>.Filter.Gte(p => p.InvoiceMonth, startDate),
+                Builders<PaymentRecord>.Filter.Lt(p => p.InvoiceMonth, endDate)
+            );
+
+            return await _col.Find(filter).FirstOrDefaultAsync();
+        }
+        /// <summary>
+        /// 2. Tìm hóa đơn Phạt (PEN) liên quan đến một hóa đơn chính bị quá hạn.
+        /// </summary>
+        public async Task<PaymentRecord?> GetPenaltyInvoiceForRelatedInvoice(string relatedInvoiceId)
+        {
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.Eq(p => p.PaymentType, PaymentType.PenaltyCharge),
+                Builders<PaymentRecord>.Filter.Eq(p => p.RelatedInvoiceId, relatedInvoiceId)
+            );
+
+            // Ta chỉ cần một bản ghi duy nhất, vì chỉ tạo 1 hóa đơn phạt cho 1 hóa đơn chính
+            return await _col.Find(filter).FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// 3. Kiểm tra xem Operator có bất kỳ hóa đơn (OPR/PEN) nào chưa thanh toán và đã quá hạn không.
+        /// </summary>
+        public async Task<bool> HasUnpaidOverdueInvoices(string operatorId)
+        {
+            var unpaidStatuses = new[] { "CREATED", "PENDING", "EXPIRED" };
+            var now = DateTime.UtcNow; // Hoặc dùng TimeConverter.ToVietnamTime(DateTime.UtcNow);
+
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),
+                // Chỉ check OPR và PEN
+                Builders<PaymentRecord>.Filter.In(p => p.PaymentType, new[] { PaymentType.OperatorCharge, PaymentType.PenaltyCharge }),
+                Builders<PaymentRecord>.Filter.In(p => p.Status, unpaidStatuses),
+                // Chỉ kiểm tra những hóa đơn đã quá ngày đáo hạn
+                Builders<PaymentRecord>.Filter.Lte(p => p.DueDate, now)
+            );
+
+            // Trả về true nếu tồn tại bất kỳ bản ghi nào khớp
+            return await _col.Find(filter).AnyAsync();
         }
     }
 }

@@ -11,7 +11,48 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['parkingLot'],
     }),
+    parkingLotDetails: builder.query({
+      query: ({ parkingLotOperatorId, status, type }) => ({
+        url: `/parking/parking-lots/requests-by-operator/${parkingLotOperatorId}`,
+        method: 'GET',
+        params: { status, type },
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['parkingLot'],
+    }),
+    reviewParkingLotRequest: builder.mutation({
+      query: ({ requestId, status, rejectionReason }) => ({
+        url: `/parking/parking-lots/requests/${requestId}/review`,
+        method: 'PATCH',
+        body: { status, rejectionReason },
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['parkingLot', 'parkingLotRequest'],
+    }),
+    parkingLotRequests: builder.query({
+      query: ({ status, type, page, pageSize }) => ({
+        url: '/parking/parking-lots/all-requests',
+        method: 'GET',
+        params: { status, type, page, pageSize },
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['parkingLotRequest'],
+    }),
+    parkingLotRequestDetail: builder.query({
+      query: ({ id }) => ({
+        url: `/parking/parking-lots/requests/${id}`,
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['parkingLotRequest'],
+    }),
   }),
 })
 
-export const { useGetParkingLotsAdminQuery } = parkingLotAPI
+export const {
+  useGetParkingLotsAdminQuery,
+  useParkingLotDetailsQuery,
+  useReviewParkingLotRequestMutation,
+  useParkingLotRequestsQuery,
+  useParkingLotRequestDetailQuery,
+} = parkingLotAPI

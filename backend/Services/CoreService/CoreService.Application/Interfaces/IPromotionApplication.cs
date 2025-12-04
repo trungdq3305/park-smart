@@ -17,8 +17,8 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<List<PromotionResponseDto>>> GetAllAsync();
         Task<ApiResponse<PromotionRuleResponseDto>> AddRuleAsync(PromotionRuleCreateDto dto, string actorAccountId);
         Task<ApiResponse<object>> RemoveRuleAsync(string ruleId, string actorAccountId);
-        Task<ApiResponse<object>> UsePromotionAsync(PromotionCalculateRequestDto dto);
-        Task<ApiResponse<PromotionCalculateResponseDto>> CalculateAsync(PromotionCalculateRequestDto dto);
+        Task<ApiResponse<object>> UsePromotionAsync(PromotionCalculateRequestDto dto, string accId);
+        Task<ApiResponse<PromotionCalculateResponseDto>> CalculateAsync(PromotionCalculateRequestDto dto, string accId);
         Task<ApiResponse<List<PromotionResponseDto>>> GetByOperatorIdAsync(string operatorId);
         Task<ApiResponse<object>> RefundPromotionUsageAsync(string paymentId, string actorAccountId);
     }

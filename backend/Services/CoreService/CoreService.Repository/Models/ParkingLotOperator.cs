@@ -25,6 +25,10 @@ namespace CoreService.Repository.Models
         public string BussinessName { get; set; }
 
         public bool IsVerified { get; set; } = false;
+        public DateTime? RegistrationDate { get; set; } // Ngày đăng ký
+        public bool? IsSuspended { get; set; } = false; // Trạng thái bị khóa dịch vụ
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string? SubscriptionPlanId { get; set; }
 
         public DateTime CreatedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 

@@ -67,6 +67,16 @@ export class ParkingLotService implements IParkingLotService {
     private readonly sessionRepository: IParkingLotSessionRepository,
   ) {}
 
+  async findParkingLotRequestById(
+    id: string,
+  ): Promise<ParkingLotRequestResponseDto> {
+    const data = await this.parkingLotRequestRepository.findById(id)
+    if (!data) {
+      throw new NotFoundException('Không tìm thấy yêu cầu bãi đỗ xe.')
+    }
+    return this.returnParkingLotRequestResponseDto(data)
+  }
+
   private returnParkingLotRequestResponseDto(
     parkingLotRequest: ParkingLotRequest,
   ): ParkingLotRequestResponseDto {
@@ -727,15 +737,32 @@ export class ParkingLotService implements IParkingLotService {
   async getAllRequest(
     status: string,
     type: string,
-  ): Promise<ParkingLotRequestResponseDto[]> {
+    paginationQuery: PaginationQueryDto,
+  ): Promise<{
+    data: ParkingLotRequestResponseDto[]
+    pagination: PaginationDto
+  }> {
+    const { page, pageSize } = paginationQuery
     const requests = await this.parkingLotRequestRepository.findAllRequests(
       status,
       type,
+      page,
+      pageSize,
     )
-    if (requests.length === 0) {
+    if (requests.data.length === 0) {
       throw new NotFoundException('Không tìm thấy yêu cầu bãi đỗ xe nào')
     }
-    return requests.map((item) => this.returnParkingLotRequestResponseDto(item))
+    return {
+      data: requests.data.map((item) =>
+        this.returnParkingLotRequestResponseDto(item),
+      ),
+      pagination: {
+        currentPage: page,
+        pageSize: pageSize,
+        totalItems: requests.total,
+        totalPages: Math.ceil(requests.total / pageSize),
+      },
+    }
   }
 
   hardDeleteRequestById(id: string): Promise<boolean> {

@@ -35,6 +35,7 @@ namespace CoreService.Repository
             services.AddScoped<IReportCategoryRepository, ReportCategoryRepository>();
             services.AddScoped<IReportRepository, ReportRepository>();
             services.AddScoped<IUserPromotionUsageRepository, UserPromotionUsageRepository>();
+            services.AddScoped<ISubscriptionPlanRepository, SubscriptionPlanRepository>();
             return services;
         }
     }

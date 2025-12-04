@@ -101,6 +101,23 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
       }),
       transformResponse: (res: any) => res.data, // Chỉ lấy mảng data[]
     }),
+    getParkingSessionHistory: builder.query({
+      query: ({ parkingLotId, params }) => ({
+        url: `/parking/parking-sessions/history/${parkingLotId}`,
+        method: 'GET',
+        params: params, // { page, pageSize }
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['ParkingSession'],
+    }),
+    getParkingSessionHistoryDetail: builder.query({
+      query: ({ sessionId }) => ({
+        url: `/parking/parking-sessions/${sessionId}/details`,
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['ParkingSession'],
+    }),
   }),
 })
 
@@ -114,4 +131,6 @@ export const {
   useGetParkingLotHistoryQuery,
   useGetSessionDetailsQuery,
   useGetActivePricingPoliciesQuery,
+  useGetParkingSessionHistoryQuery,
+  useGetParkingSessionHistoryDetailQuery,
 } = parkingLotSessionAPI

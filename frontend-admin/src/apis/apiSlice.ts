@@ -30,6 +30,9 @@ export const apiSlice = createApi({
     'pricingPolicy',
     'basis',
     'ParkingSession',
+    'parkingLotRequest',
+    'dashboard',
+    'events',
   ],
 
   endpoints: () => ({}),

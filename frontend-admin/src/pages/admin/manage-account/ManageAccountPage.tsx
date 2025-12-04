@@ -17,6 +17,7 @@ import {
   useDeleteAccountMutation,
   useToggleAccountStatusMutation,
   useGetInactiveAccountQuery,
+  useBannedAccountListQuery,
 } from '../../../features/admin/accountAPI'
 import type { Account } from '../../../types/Account'
 import './ManageAccountPage.css'
@@ -52,6 +53,17 @@ interface ListInactiveAccountResponse {
   isLoading: boolean
 }
 
+interface ListBannedAccountResponse {
+  data: {
+    data: Account[]
+    totalItems: number
+    pageSize: number
+    totalPages: number
+    currentPage: number
+  }
+  isLoading: boolean
+}
+
 const translateRoleName = (roleName: string) => {
   switch (roleName.toLowerCase()) {
     case 'admin':
@@ -80,6 +92,7 @@ const ManageAccountPage: React.FC = () => {
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
   const [isPageLoading, setIsPageLoading] = useState(false)
   const [showInactiveAccounts, setShowInactiveAccounts] = useState(false)
+  const [showBannedAccounts, setShowBannedAccounts] = useState(false)
 
   const { data, isLoading } = useGetAccountQuery<ListAccountResponse>({
     page: currentPage,
@@ -92,20 +105,34 @@ const ManageAccountPage: React.FC = () => {
       pageSize,
     }) as { data: ListInactiveAccountResponse | undefined; isLoading: boolean }
 
+  const { data: bannedAccountData, isLoading: isBannedAccountLoading } = useBannedAccountListQuery({
+    page: currentPage,
+    pageSize,
+  }) as { data: ListBannedAccountResponse | undefined; isLoading: boolean }
+
   const [deleteAccount] = useDeleteAccountMutation()
   const [toggleAccountStatus] = useToggleAccountStatusMutation()
 
   const activeAccounts = data?.data?.pagedAccounts?.data || []
   const inActiveAccounts = inactiveAccountData?.data?.data || []
+  const bannedAccounts = bannedAccountData?.data?.data || []
 
   // Determine which accounts to display based on toggle state
-  const accounts = showInactiveAccounts ? inActiveAccounts : activeAccounts
-  const totalItems = showInactiveAccounts
-    ? inactiveAccountData?.data?.totalItems || 0
-    : data?.data?.pagedAccounts?.totalItems || 0
-  const totalPages = showInactiveAccounts
-    ? inactiveAccountData?.data?.totalPages || 0
-    : Math.ceil(totalItems / pageSize)
+  const accounts = showBannedAccounts
+    ? bannedAccounts
+    : showInactiveAccounts
+      ? inActiveAccounts
+      : activeAccounts
+  const totalItems = showBannedAccounts
+    ? bannedAccountData?.data?.totalItems || 0
+    : showInactiveAccounts
+      ? inactiveAccountData?.data?.totalItems || 0
+      : data?.data?.pagedAccounts?.totalItems || 0
+  const totalPages = showBannedAccounts
+    ? bannedAccountData?.data?.totalPages || 0
+    : showInactiveAccounts
+      ? inactiveAccountData?.data?.totalPages || 0
+      : Math.ceil(totalItems / pageSize)
 
   const totalAdmins = data?.data?.totalAdmins || 0
   const totalOperators = data?.data?.totalOperators || 0
@@ -229,11 +256,23 @@ const ManageAccountPage: React.FC = () => {
 
   const handleToggleView = () => {
     setShowInactiveAccounts(!showInactiveAccounts)
+    setShowBannedAccounts(false)
     // Reset to page 1 when switching views
     updateSearchParams({ page: 1 })
   }
 
-  const isLoadingData = showInactiveAccounts ? isInactiveAccountLoading : isLoading
+  const handleToggleBannedView = () => {
+    setShowBannedAccounts(!showBannedAccounts)
+    setShowInactiveAccounts(false)
+    // Reset to page 1 when switching views
+    updateSearchParams({ page: 1 })
+  }
+
+  const isLoadingData = showBannedAccounts
+    ? isBannedAccountLoading
+    : showInactiveAccounts
+      ? isInactiveAccountLoading
+      : isLoading
 
   if (isLoadingData && !isPageLoading) {
     return (
@@ -292,10 +331,26 @@ const ManageAccountPage: React.FC = () => {
             <h3>Danh sách tài khoản</h3>
             <div className="table-controls">
               <button
+                className={`filter-btn ${!showInactiveAccounts && !showBannedAccounts ? 'active' : ''}`}
+                onClick={() => {
+                  setShowInactiveAccounts(false)
+                  setShowBannedAccounts(false)
+                  updateSearchParams({ page: 1 })
+                }}
+              >
+                Tài khoản hoạt động
+              </button>
+              <button
                 className={`filter-btn ${showInactiveAccounts ? 'active' : ''}`}
                 onClick={handleToggleView}
               >
-                {showInactiveAccounts ? 'Tài khoản không hoạt động' : 'Tài khoản hoạt động'}
+                Tài khoản không hoạt động
+              </button>
+              <button
+                className={`filter-btn ${showBannedAccounts ? 'active' : ''}`}
+                onClick={handleToggleBannedView}
+              >
+                Tài khoản bị cấm
               </button>
               <span className="table-count">{accounts.length} tài khoản</span>
             </div>
@@ -303,99 +358,121 @@ const ManageAccountPage: React.FC = () => {
 
           <div className="table-wrapper">
             <PaginationLoading isLoading={isPageLoading} loadingText="Đang tải trang...">
-              <table className="accounts-table">
-                <thead>
-                  <tr>
-                    <th>Thông tin tài khoản</th>
-                    <th>Vai trò</th>
-                    <th>Trạng thái</th>
-                    <th>Lần đăng nhập cuối</th>
-                    <th>Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {accounts.map((account: Account) => (
-                    <tr key={account._id}>
-                      <td>
-                        <div className="account-info">
-                          <div className="account-avatar">
-                            {account.email.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="account-details">
-                            <h4>{account.email}</h4>
-                            <p>{account.phoneNumber}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
-                          {translateRoleName(account.roleName)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`status-badge ${getStatusBadge(account.isActive)}`}>
-                          {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
-                        </span>
-                      </td>
-                      <td>
-                        {account.lastLoginAt
-                          ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
-                          : 'Chưa đăng nhập'}
-                      </td>
-                      <td>
-                        <div className="action-cell">
-                          <Dropdown
-                            menu={{ items: getMenuItems(account) }}
-                            trigger={['click']}
-                            placement="bottomRight"
-                          >
-                            <Button
-                              type="text"
-                              icon={<MoreOutlined />}
-                              className="action-dropdown-trigger"
-                              title="Thao tác"
-                            />
-                          </Dropdown>
-                        </div>
-                      </td>
+              {accounts.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-state-icon">📭</div>
+                  <h3 className="empty-state-title">
+                    {showBannedAccounts
+                      ? 'Không có tài khoản bị cấm'
+                      : showInactiveAccounts
+                        ? 'Không có tài khoản không hoạt động'
+                        : 'Không có tài khoản hoạt động'}
+                  </h3>
+                  <p className="empty-state-message">
+                    {showBannedAccounts
+                      ? 'Hiện tại không có tài khoản nào bị cấm trong hệ thống.'
+                      : showInactiveAccounts
+                        ? 'Hiện tại không có tài khoản nào không hoạt động trong hệ thống.'
+                        : 'Hiện tại không có tài khoản nào đang hoạt động trong hệ thống.'}
+                  </p>
+                </div>
+              ) : (
+                <table className="accounts-table">
+                  <thead>
+                    <tr>
+                      <th>Thông tin tài khoản</th>
+                      <th>Vai trò</th>
+                      <th>Trạng thái</th>
+                      <th>Lần đăng nhập cuối</th>
+                      <th>Thao tác</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {accounts.map((account: Account) => (
+                      <tr key={account._id}>
+                        <td>
+                          <div className="account-info">
+                            <div className="account-avatar">
+                              {account.email.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="account-details">
+                              <h4>{account.email}</h4>
+                              <p>{account.phoneNumber}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`role-badge ${getRoleBadgeColor(account.roleName)}`}>
+                            {translateRoleName(account.roleName)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${getStatusBadge(account.isActive)}`}>
+                            {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                          </span>
+                        </td>
+                        <td>
+                          {account.lastLoginAt
+                            ? new Date(account.lastLoginAt).toLocaleDateString('vi-VN')
+                            : 'Chưa đăng nhập'}
+                        </td>
+                        <td>
+                          <div className="action-cell">
+                            <Dropdown
+                              menu={{ items: getMenuItems(account) }}
+                              trigger={['click']}
+                              placement="bottomRight"
+                            >
+                              <Button
+                                type="text"
+                                icon={<MoreOutlined />}
+                                className="action-dropdown-trigger"
+                                title="Thao tác"
+                              />
+                            </Dropdown>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </PaginationLoading>
           </div>
 
           {/* Pagination */}
-          <div className="pagination">
-            <button
-              className="pagination-btn"
-              disabled={currentPage === 1 || isPageLoading}
-              onClick={() => handlePageChange(currentPage - 1)}
-            >
-              {isPageLoading ? '...' : 'Trước'}
-            </button>
+          {accounts.length > 0 && (
+            <div className="pagination">
+              <button
+                className="pagination-btn"
+                disabled={currentPage === 1 || isPageLoading}
+                onClick={() => handlePageChange(currentPage - 1)}
+              >
+                {isPageLoading ? '...' : 'Trước'}
+              </button>
 
-            <div className="pagination-numbers">
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  className={`pagination-number ${currentPage === page ? 'active' : ''} ${isPageLoading ? 'loading' : ''}`}
-                  onClick={() => handlePageChange(page)}
-                  disabled={isPageLoading}
-                >
-                  {page}
-                </button>
-              ))}
+              <div className="pagination-numbers">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <button
+                    key={page}
+                    className={`pagination-number ${currentPage === page ? 'active' : ''} ${isPageLoading ? 'loading' : ''}`}
+                    onClick={() => handlePageChange(page)}
+                    disabled={isPageLoading}
+                  >
+                    {page}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                className="pagination-btn"
+                disabled={currentPage === totalPages || isPageLoading}
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
+                {isPageLoading ? '...' : 'Sau'}
+              </button>
             </div>
-
-            <button
-              className="pagination-btn"
-              disabled={currentPage === totalPages || isPageLoading}
-              onClick={() => handlePageChange(currentPage + 1)}
-            >
-              {isPageLoading ? '...' : 'Sau'}
-            </button>
-          </div>
+          )}
         </div>
       </div>
 
