@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
-import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Empty } from 'antd'
+import { Card, Tag, Table, Select, Space, Typography, Tooltip, Button, Badge, Empty, Modal, Input, notification } from 'antd'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
-import { EditOutlined, EyeOutlined } from '@ant-design/icons'
-import { useParkingLotRequestsQuery } from '../../../features/admin/parkinglotAPI'
+import { EyeOutlined } from '@ant-design/icons'
+import { useParkingLotRequestsQuery, useReviewParkingLotRequestMutation } from '../../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../../types/ParkingLotRequest'
 import './ManageRequest.css'
 import { useSearchParams } from 'react-router-dom'
@@ -67,7 +67,11 @@ const ManageRequest: React.FC = () => {
   )
   const [selectedRequest, setSelectedRequest] = useState<ParkingLotRequest | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false)
+  const [requestBeingReviewed, setRequestBeingReviewed] = useState<ParkingLotRequest | null>(null)
+  const [rejectReason, setRejectReason] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
+  const [reviewParkingLotRequest, { isLoading: isReviewLoading }] = useReviewParkingLotRequestMutation()
 
   // Get values from URL parameters with defaults
   const currentPage = parseInt(searchParams.get('page') || '1', 10)
@@ -79,6 +83,7 @@ const ManageRequest: React.FC = () => {
     page: currentPage,
     pageSize,
   })
+
 
   const parkingLotRequests: ParkingLotRequest[] = data?.data || []
   const totalRequests = parkingLotRequests.length
@@ -130,6 +135,62 @@ const ManageRequest: React.FC = () => {
     return { total, pending, approved, rejected }
   }, [parkingLotRequests])
 
+  const handleApproveRequest = async (record: ParkingLotRequest) => {
+    try {
+      await reviewParkingLotRequest({
+        requestId: record._id,
+        status: RequestStatus.APPROVED,
+        rejectionReason: undefined,
+      }).unwrap()
+
+      notification.success({
+        message: 'Chấp thuận yêu cầu thành công',
+        description: `Yêu cầu bãi đỗ xe "${record.payload.name}" đã được chấp thuận.`,
+      })
+    } catch (err: any) {
+      notification.error({
+        message: 'Chấp thuận yêu cầu thất bại',
+        description: err?.data?.message || 'Đã có lỗi xảy ra, vui lòng thử lại.',
+      })
+    }
+  }
+
+  const openRejectModal = (record: ParkingLotRequest) => {
+    setRequestBeingReviewed(record)
+    setRejectReason('')
+    setIsRejectModalOpen(true)
+  }
+
+  const handleCancelRejectModal = () => {
+    setIsRejectModalOpen(false)
+    setRejectReason('')
+    setRequestBeingReviewed(null)
+  }
+
+  const handleConfirmReject = async () => {
+    if (!requestBeingReviewed) return
+
+    try {
+      await reviewParkingLotRequest({
+        requestId: requestBeingReviewed._id,
+        status: RequestStatus.REJECTED,
+        rejectionReason: rejectReason.trim(),
+      }).unwrap()
+
+      notification.success({
+        message: 'Từ chối yêu cầu thành công',
+        description: `Yêu cầu bãi đỗ xe "${requestBeingReviewed.payload.name}" đã bị từ chối.`,
+      })
+
+      handleCancelRejectModal()
+    } catch (err: any) {
+      notification.error({
+        message: 'Từ chối yêu cầu thất bại',
+        description: err?.data?.message || 'Đã có lỗi xảy ra, vui lòng thử lại.',
+      })
+    }
+  }
+
   const columns: ColumnsType<ParkingLotRequest> = [
     {
       title: 'Bãi đỗ xe',
@@ -177,7 +238,7 @@ const ManageRequest: React.FC = () => {
     {
       title: 'Hành động',
       key: 'actions',
-      width: 150,
+      width: 260,
       render: (_, record) => (
         <Space>
           <Tooltip title="Xem chi tiết yêu cầu">
@@ -190,8 +251,25 @@ const ManageRequest: React.FC = () => {
               }}
             />
           </Tooltip>
-          <Tooltip title="Xử lý yêu cầu">
-            <Button size="small" type="primary" icon={<EditOutlined />} disabled={record.status !== 'PENDING'} />
+          <Tooltip title="Chấp thuận yêu cầu">
+            <Button
+              size="small"
+              type="primary"
+              disabled={record.status !== RequestStatus.PENDING || isReviewLoading}
+              onClick={() => handleApproveRequest(record)}
+            >
+              Chấp thuận
+            </Button>
+          </Tooltip>
+          <Tooltip title="Từ chối yêu cầu">
+            <Button
+              size="small"
+              danger
+              disabled={record.status !== RequestStatus.PENDING}
+              onClick={() => openRejectModal(record)}
+            >
+              Từ chối
+            </Button>
           </Tooltip>
         </Space>
       ),
@@ -288,6 +366,27 @@ const ManageRequest: React.FC = () => {
           />
         )}
       </Card>
+
+      <Modal
+        open={isRejectModalOpen}
+        title="Lý do từ chối yêu cầu"
+        onCancel={handleCancelRejectModal}
+        onOk={handleConfirmReject}
+        okText="Từ chối"
+        okButtonProps={{ danger: true, disabled: !rejectReason.trim(), loading: isReviewLoading }}
+        cancelText="Hủy"
+      >
+        <Typography.Paragraph>
+          Vui lòng nhập lý do từ chối cho yêu cầu bãi đỗ xe
+          {requestBeingReviewed ? ` "${requestBeingReviewed.payload.name}"` : ''}.
+        </Typography.Paragraph>
+        <Input.TextArea
+          rows={4}
+          placeholder="Nhập lý do từ chối..."
+          value={rejectReason}
+          onChange={(e) => setRejectReason(e.target.value)}
+        />
+      </Modal>
 
       <RequestDetailModal
         open={isDetailModalOpen}
