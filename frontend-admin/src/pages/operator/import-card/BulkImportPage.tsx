@@ -113,8 +113,9 @@ const useSocketConnection = (onNfcScanned: (uid: string) => void, isAudioEnabled
 
     socketRef.current.on('connect', () => setIsConnected(true))
     socketRef.current.on('disconnect', () => setIsConnected(false))
-    socketRef.current.on('nfc_scanned', (data: SocketNfcData) => {
-      onNfcScanned(data.identifier)
+    socketRef.current.on('nfc_scanned', (data: ScannedCardItem) => {
+      onNfcScanned(data.nfcUid)
+      console.log(data)
     })
 
     return () => {
@@ -129,7 +130,7 @@ const useSocketConnection = (onNfcScanned: (uid: string) => void, isAudioEnabled
 const bulkImportService = {
   save: async (cards: ScannedCardItem[]): Promise<BulkImportResult> => {
     const payload = createBulkImportPayload(CONFIG.CURRENT_PARKING_ID, cards)
-    const response = await axios.post(`${CONFIG.NEST_API}/bulk`, payload, {
+    const response = await axios.post(`${CONFIG.NEST_API}/parking/guest-cards/bulk`, payload, {
       headers: { Authorization: `Bearer ${CONFIG.AUTH_TOKEN}` },
     })
     return response.data.data[0]
