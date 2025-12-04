@@ -2,7 +2,7 @@ import { apiSlice } from '../../apis/apiSlice'
 
 export const eventAPI = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getReports: builder.query({
+    getEvents: builder.query({
       query: () => ({
         url: '/core/events',
         method: 'GET',
@@ -11,10 +11,10 @@ export const eventAPI = apiSlice.injectEndpoints({
       providesTags: ['events'],
     }),
     createEvent: builder.mutation({
-      query: (reportData) => ({
+      query: (eventData) => ({
         url: '/core/events',
         method: 'POST',
-        body: reportData,
+        body: eventData,
       }),
       transformResponse: (res) => res,
       invalidatesTags: ['events'],
@@ -22,4 +22,4 @@ export const eventAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const { useGetReportsQuery, useCreateEventMutation } = eventAPI
+export const { useGetEventsQuery, useCreateEventMutation } = eventAPI
