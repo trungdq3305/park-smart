@@ -6,9 +6,7 @@ class PermissionDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
         children: [
           Icon(Icons.location_on, color: Colors.green.shade600, size: 28),
@@ -58,10 +56,7 @@ class PermissionDialog extends StatelessWidget {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 12,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           ),
           child: const Text(
             'Cho phép',
@@ -97,11 +92,7 @@ class PermissionDialog extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.info_outline,
-            color: Colors.blue.shade600,
-            size: 20,
-          ),
+          Icon(Icons.info_outline, color: Colors.blue.shade600, size: 20),
           const SizedBox(width: 8),
           const Expanded(
             child: Text(

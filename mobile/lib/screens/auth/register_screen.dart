@@ -77,6 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         phone,
         fullName,
         genderIsMale,
+        isAgreeToTerms,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(

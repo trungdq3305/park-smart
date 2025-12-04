@@ -1,46 +1,54 @@
 import 'package:flutter/material.dart';
 
-class MyReservationCard extends StatelessWidget {
-  const MyReservationCard({
+class SubscriptionCard extends StatelessWidget {
+  const SubscriptionCard({
     super.key,
-    required this.statusText,
-    required this.statusColor,
-    required this.isCheckedIn,
-    required this.isExtending,
     required this.policyName,
     required this.parkingLotName,
-    required this.addressText,
-    required this.userExpectedTimeText,
-    required this.prepaidAmountText,
-    this.onTapQr,
-    this.onExtend,
-    this.onCancel,
+    required this.statusText,
+    required this.statusColor,
+    required this.dateRangeText,
+    required this.onTap,
+    this.showRenewButton = false,
+    this.isProcessingRenew = false,
+    this.renewButtonLabel = 'Gia hạn thêm',
+    this.onRenew,
+    this.showCancelButton = false,
     this.isProcessingCancel = false,
+    this.cancelButtonLabel = 'Hủy gói đăng ký',
+    this.onCancel,
+    this.showRenewalNotice = false,
+    this.renewalNoticeMessage =
+        'Gói thuê bao đã đến hạn. Vui lòng gia hạn để tiếp tục sử dụng.',
+    this.renewalNoticeButtonLabel = 'Gia hạn ngay',
   });
-
-  final String statusText;
-  final Color statusColor;
-  final bool isCheckedIn;
-  final bool isExtending;
 
   final String policyName;
   final String parkingLotName;
-  final String? addressText;
-  final String userExpectedTimeText;
-  final String? prepaidAmountText;
+  final String statusText;
+  final Color statusColor;
+  final String dateRangeText;
+  final VoidCallback? onTap;
 
-  final VoidCallback? onTapQr;
-  final VoidCallback? onExtend;
-  final VoidCallback? onCancel;
+  final bool showRenewButton;
+  final bool isProcessingRenew;
+  final String renewButtonLabel;
+  final VoidCallback? onRenew;
+
+  final bool showCancelButton;
   final bool isProcessingCancel;
+  final String cancelButtonLabel;
+  final VoidCallback? onCancel;
+
+  final bool showRenewalNotice;
+  final String renewalNoticeMessage;
+  final String renewalNoticeButtonLabel;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: onTapQr,
+      onTap: onTap,
       borderRadius: BorderRadius.circular(20),
-      splashColor: onTapQr != null ? null : Colors.transparent,
-      highlightColor: onTapQr != null ? null : Colors.transparent,
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
         decoration: BoxDecoration(
@@ -63,7 +71,14 @@ class MyReservationCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [_buildHeader(), _buildContent(context)],
+          children: [
+            _buildHeader(),
+            _buildContent(context),
+            if (showRenewalNotice) ...[
+              const Divider(height: 1),
+              _buildRenewalNotice(),
+            ],
+          ],
         ),
       ),
     );
@@ -95,7 +110,11 @@ class MyReservationCard extends StatelessWidget {
               color: statusColor.withOpacity(0.2),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(Icons.event_available, color: statusColor, size: 24),
+            child: Icon(
+              Icons.confirmation_number,
+              color: statusColor,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -112,47 +131,26 @@ class MyReservationCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 16,
-                          color: Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            parkingLotName,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                    Icon(
+                      Icons.location_on,
+                      size: 16,
+                      color: Colors.grey.shade600,
                     ),
-                    if (addressText != null && addressText!.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20),
-                        child: Text(
-                          addressText!,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                            fontWeight: FontWeight.w400,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Text(
+                        parkingLotName,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ],
+                    ),
                   ],
                 ),
               ],
@@ -160,7 +158,10 @@ class MyReservationCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 8,
+            ),
             decoration: BoxDecoration(
               color: statusColor,
               borderRadius: BorderRadius.circular(20),
@@ -206,26 +207,42 @@ class MyReservationCard extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          _buildTimeCard(),
-          if (prepaidAmountText != null) ...[
-            const SizedBox(height: 12),
-            _buildAmountCard(),
-          ],
-          if (isCheckedIn && onExtend != null) ...[
+          _buildDateRangeCard(),
+          if (showRenewButton) ...[
             const SizedBox(height: 16),
-            _buildExtendButton(),
+            _buildRenewButton(context),
           ],
-          if (onCancel != null) ...[
+          if (showCancelButton) ...[
             const SizedBox(height: 12),
-            _buildCancelButton(),
+            _buildCancelButton(context),
           ],
-          if (onTapQr != null) ...[const SizedBox(height: 16), _buildTapHint()],
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.touch_app,
+                size: 16,
+                color: Colors.grey.shade400,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Chạm để xem mã QR',
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTimeCard() {
+  Widget _buildDateRangeCard() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -242,7 +259,7 @@ class MyReservationCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
-              Icons.access_time,
+              Icons.calendar_today,
               size: 20,
               color: Colors.green.shade700,
             ),
@@ -253,7 +270,7 @@ class MyReservationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Thời gian vào',
+                  'Thời hạn',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -262,7 +279,7 @@ class MyReservationCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  userExpectedTimeText,
+                  dateRangeText,
                   style: TextStyle(
                     fontSize: 15,
                     color: Colors.grey.shade900,
@@ -277,64 +294,12 @@ class MyReservationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAmountCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.blue.shade100, width: 1),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade100,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              Icons.attach_money,
-              size: 20,
-              color: Colors.blue.shade700,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Số tiền đã thanh toán',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.blue.shade700,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  prepaidAmountText ?? '',
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.blue.shade900,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildExtendButton() {
+  Widget _buildRenewButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: isExtending ? null : onExtend,
-        icon: isExtending
+        onPressed: isProcessingRenew ? null : onRenew,
+        icon: isProcessingRenew
             ? const SizedBox(
                 width: 18,
                 height: 18,
@@ -343,9 +308,9 @@ class MyReservationCard extends StatelessWidget {
                   color: Colors.white,
                 ),
               )
-            : const Icon(Icons.timer),
+            : const Icon(Icons.refresh),
         label: Text(
-          isExtending ? 'Đang xử lý...' : 'Gia hạn thêm giờ',
+          isProcessingRenew ? 'Đang xử lý...' : renewButtonLabel,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         style: ElevatedButton.styleFrom(
@@ -360,7 +325,7 @@ class MyReservationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCancelButton() {
+  Widget _buildCancelButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
@@ -376,7 +341,7 @@ class MyReservationCard extends StatelessWidget {
               )
             : const Icon(Icons.cancel_schedule_send_outlined),
         label: Text(
-          isProcessingCancel ? 'Đang hủy...' : 'Hủy đặt lịch',
+          isProcessingCancel ? 'Đang hủy...' : cancelButtonLabel,
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
         style: OutlinedButton.styleFrom(
@@ -391,22 +356,73 @@ class MyReservationCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTapHint() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.touch_app, size: 16, color: Colors.grey.shade400),
-        const SizedBox(width: 6),
-        Text(
-          'Chạm để xem mã QR',
-          style: TextStyle(
-            fontSize: 13,
-            color: Colors.grey.shade500,
-            fontWeight: FontWeight.w500,
-            fontStyle: FontStyle.italic,
+  Widget _buildRenewalNotice() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.orange.shade600,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    renewalNoticeMessage,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.orange.shade900,
+                      fontWeight: FontWeight.w600,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: isProcessingRenew ? null : onRenew,
+              icon: isProcessingRenew
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.refresh),
+              label: Text(
+                isProcessingRenew ? 'Đang xử lý...' : renewalNoticeButtonLabel,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orange.shade600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
+

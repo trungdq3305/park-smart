@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../helpers/tiered_pricing_helper.dart';
 
 class ReservationTimeSelector extends StatelessWidget {
   final TimeOfDay? userExpectedTime;
@@ -99,7 +98,8 @@ class ReservationTimeSelector extends StatelessWidget {
                     }
                     final TimeOfDay? picked = await showTimePicker(
                       context: context,
-                      initialTime: estimatedEndTime ??
+                      initialTime:
+                          estimatedEndTime ??
                           TimeOfDay(
                             hour: (userExpectedTime!.hour + 2) % 24,
                             minute: userExpectedTime!.minute,
@@ -120,12 +120,15 @@ class ReservationTimeSelector extends StatelessWidget {
                     if (picked != null) {
                       // Validate end time is after start time
                       final startMinutes =
-                          userExpectedTime!.hour * 60 + userExpectedTime!.minute;
+                          userExpectedTime!.hour * 60 +
+                          userExpectedTime!.minute;
                       final endMinutes = picked.hour * 60 + picked.minute;
                       if (endMinutes <= startMinutes) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Thời gian ra phải sau thời gian vào'),
+                            content: Text(
+                              'Thời gian ra phải sau thời gian vào',
+                            ),
                             backgroundColor: Colors.red,
                           ),
                         );
@@ -138,21 +141,20 @@ class ReservationTimeSelector extends StatelessWidget {
               ),
             ],
           ),
-          // Estimated price display
+          // Duration display (without price calculation)
           if (userExpectedTime != null &&
               estimatedEndTime != null &&
-              selectedDate != null &&
-              tieredRateSetId != null) ...[
+              selectedDate != null) ...[
             const SizedBox(height: 16),
-            _buildEstimatedPriceCard(),
+            _buildDurationCard(),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildEstimatedPriceCard() {
-    // Calculate estimated price
+  Widget _buildDurationCard() {
+    // Calculate duration
     final startDateTime = DateTime(
       selectedDate!.year,
       selectedDate!.month,
@@ -169,13 +171,6 @@ class ReservationTimeSelector extends StatelessWidget {
       estimatedEndTime!.minute,
     );
 
-    final estimatedPrice = TieredPricingHelper.calculatePrice(
-      tieredRateSetId: tieredRateSetId,
-      startDateTime: startDateTime,
-      endDateTime: endDateTime,
-    );
-
-    // Calculate duration
     final duration = endDateTime.difference(startDateTime);
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
@@ -189,10 +184,7 @@ class ReservationTimeSelector extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.green.shade300,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.green.shade300, width: 1.5),
       ),
       child: Row(
         children: [
@@ -202,11 +194,7 @@ class ReservationTimeSelector extends StatelessWidget {
               color: Colors.green.shade100,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              Icons.attach_money_rounded,
-              color: Colors.green.shade700,
-              size: 24,
-            ),
+            child: Icon(Icons.timer, color: Colors.green.shade700, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -232,39 +220,6 @@ class ReservationTimeSelector extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'Tổng tiền dự kiến',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Colors.green.shade400,
-                    width: 1.5,
-                  ),
-                ),
-                child: Text(
-                  '${TieredPricingHelper.formatPrice(estimatedPrice)} đ',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.green.shade700,
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -311,19 +266,12 @@ class _TimePickerCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-            children: [
-              Icon(
-                icon,
-                color: iconColor,
-                size: 20,
-              ),
+              children: [
+                Icon(icon, color: iconColor, size: 20),
                 const SizedBox(width: 8),
                 Text(
                   label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -346,4 +294,3 @@ class _TimePickerCard extends StatelessWidget {
     );
   }
 }
-

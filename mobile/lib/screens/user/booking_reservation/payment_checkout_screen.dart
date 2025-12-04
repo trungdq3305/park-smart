@@ -6,7 +6,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 class PaymentCheckoutScreen extends StatefulWidget {
   final String checkoutUrl;
   final String? paymentId;
-  final Function(bool success, String? paymentId)? onPaymentComplete;
+  final Function(bool success, String? paymentId, String? type)?
+  onPaymentComplete;
 
   const PaymentCheckoutScreen({
     super.key,
@@ -85,11 +86,13 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
                   final uri = Uri.parse(url);
                   final result = uri.queryParameters['result'];
                   final paymentIdFromUrl = uri.queryParameters['paymentId'];
+                  final typeFromUrl = uri.queryParameters['type'];
 
                   print('🔍 Payment result URL detected:');
                   print('  Full URL: $url');
                   print('  Result: $result');
                   print('  Payment ID from URL: $paymentIdFromUrl');
+                  print('  Type from URL: $typeFromUrl');
                   print('  Payment ID from widget: ${widget.paymentId}');
 
                   if (result != null) {
@@ -107,7 +110,8 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
                       final finalPaymentId =
                           paymentIdFromUrl ?? widget.paymentId;
                       print('  Using Payment ID: $finalPaymentId');
-                      _handlePaymentSuccess(finalPaymentId);
+                      print('  Using Type: $typeFromUrl');
+                      _handlePaymentSuccess(finalPaymentId, typeFromUrl);
                       return NavigationDecision.prevent;
                     } else if (result.toLowerCase() == 'failure') {
                       _handlePaymentFailure();
@@ -126,7 +130,7 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
               if (lowerUrl.contains('success') ||
                   lowerUrl.contains('completed') ||
                   lowerUrl.contains('paid')) {
-                _handlePaymentSuccess(widget.paymentId);
+                _handlePaymentSuccess(widget.paymentId, null);
                 return NavigationDecision.prevent;
               }
 
@@ -167,11 +171,13 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
         final uri = Uri.parse(url);
         final result = uri.queryParameters['result'];
         final paymentIdFromUrl = uri.queryParameters['paymentId'];
+        final typeFromUrl = uri.queryParameters['type'];
 
         print('🔍 Payment result URL detected in onPageFinished:');
         print('  Full URL: $url');
         print('  Result: $result');
         print('  Payment ID from URL: $paymentIdFromUrl');
+        print('  Type from URL: $typeFromUrl');
         print('  Payment ID from widget: ${widget.paymentId}');
 
         if (result != null) {
@@ -184,7 +190,8 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
             }
             final finalPaymentId = paymentIdFromUrl ?? widget.paymentId;
             print('  Using Payment ID: $finalPaymentId');
-            _handlePaymentSuccess(finalPaymentId);
+            print('  Using Type: $typeFromUrl');
+            _handlePaymentSuccess(finalPaymentId, typeFromUrl);
             return;
           } else if (result.toLowerCase() == 'failure') {
             _handlePaymentFailure();
@@ -202,7 +209,7 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
     if (lowerUrl.contains('success') ||
         lowerUrl.contains('completed') ||
         lowerUrl.contains('paid')) {
-      _handlePaymentSuccess(widget.paymentId);
+      _handlePaymentSuccess(widget.paymentId, null);
     } else if (lowerUrl.contains('failed') ||
         lowerUrl.contains('error') ||
         lowerUrl.contains('cancelled')) {
@@ -210,12 +217,13 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
     }
   }
 
-  void _handlePaymentSuccess(String? paymentId) {
+  void _handlePaymentSuccess(String? paymentId, String? type) {
     print('✅ Payment successful');
     print('  Using Payment ID: $paymentId');
+    print('  Payment Type: $type');
     // Call callback first - navigation will be handled in the callback
     if (widget.onPaymentComplete != null) {
-      widget.onPaymentComplete!(true, paymentId);
+      widget.onPaymentComplete!(true, paymentId, type);
     }
     // Close WebView after callback is called
     // The callback will handle navigation to result screen
@@ -232,7 +240,7 @@ class _PaymentCheckoutScreenState extends State<PaymentCheckoutScreen> {
     print('❌ Payment failed or cancelled');
     // Call callback first - navigation will be handled in the callback
     if (widget.onPaymentComplete != null) {
-      widget.onPaymentComplete!(false, widget.paymentId);
+      widget.onPaymentComplete!(false, widget.paymentId, null);
     }
     // Close WebView after callback is called
     // The callback will handle navigation to result screen
