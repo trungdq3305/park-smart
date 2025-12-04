@@ -28,10 +28,10 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
   bool _hasMore = true;
   final Map<String, Map<String, dynamic>> _parkingLotCache = {};
   final Set<String> _extendingReservationIds = {};
+  final Set<String> _cancellingReservationIds = {};
 
   // Danh sách trạng thái đặt chỗ mới
   final List<String> _allStatuses = const [
-    'PENDING_PAYMENT',
     'CONFIRMED',
     'CHECKED_IN',
     'CHECKED_OUT',
@@ -244,8 +244,6 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   String _getStatusText(String? status) {
     switch (status?.toUpperCase()) {
-      case 'PENDING_PAYMENT':
-        return 'Chờ thanh toán';
       case 'CONFIRMED':
         return 'Đã xác nhận';
       case 'CHECKED_IN':
@@ -271,8 +269,6 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
   Color _getStatusColor(String? status) {
     switch (status?.toUpperCase()) {
-      case 'PENDING_PAYMENT':
-        return Colors.orange;
       case 'CONFIRMED':
       case 'CHECKED_IN':
       case 'CHECKED_OUT':
@@ -413,7 +409,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
           builder: (_) => PaymentCheckoutScreen(
             checkoutUrl: checkoutUrl!,
             paymentId: paymentId,
-            onPaymentComplete: (success, returnedPaymentId) async {
+            onPaymentComplete: (success, returnedPaymentId, type) async {
               await Future.delayed(const Duration(milliseconds: 300));
 
               if (!success) {
@@ -444,11 +440,41 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
               }
 
               try {
+                // Step 0: Validate IDs
+                if (finalPaymentId.isEmpty || finalPaymentId.length < 20) {
+                  throw Exception('Payment ID không hợp lệ: $finalPaymentId');
+                }
+
+                if (reservationId.isEmpty || reservationId.length < 20) {
+                  throw Exception(
+                    'Reservation ID không hợp lệ: $reservationId',
+                  );
+                }
+
+                // Step 1: Confirm payment first
+                print('💳 Step 1: Confirming payment:');
+                print('  Payment ID: $finalPaymentId');
+
+                await PaymentService.confirmPayment(paymentId: finalPaymentId);
+
+                print('✅ Payment confirmed successfully');
+
+                // Small delay to ensure backend processes payment confirmation
+                await Future.delayed(const Duration(milliseconds: 500));
+
+                // Step 2: Confirm reservation extension
+                print('💳 Step 2: Confirming reservation extension:');
+                print('  Reservation ID: $reservationId');
+                print('  Payment ID: $finalPaymentId');
+                print('  Additional Hours: $additionalHours');
+
                 await ReservationService.confirmReservationExtension(
                   reservationId: reservationId,
                   additionalHours: additionalHours,
                   paymentId: finalPaymentId,
                 );
+
+                print('✅ Reservation extension confirmed successfully');
 
                 scaffoldMessenger.showSnackBar(
                   const SnackBar(
@@ -658,6 +684,294 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     );
   }
 
+  Future<void> _handleCancelReservation(
+    Map<String, dynamic> reservation,
+  ) async {
+    final reservationId =
+        reservation['_id']?.toString() ?? reservation['id']?.toString();
+    if (reservationId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy ID của đặt chỗ để hủy.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _cancellingReservationIds.add(reservationId);
+    });
+
+    try {
+      final preview = await ReservationService.previewCancelReservation(
+        reservationId: reservationId,
+      );
+      final bool canCancel = preview['canCancel'] == true;
+
+      if (!mounted) return;
+
+      if (!canCancel) {
+        final warningMessage =
+            preview['warningMessage']?.toString() ??
+            'Đặt chỗ này không thể hủy.';
+        await showDialog<void>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text(
+              'Không thể hủy đặt chỗ',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            content: Text(warningMessage),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Đóng'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        final refundAmount = preview['refundAmount'] as num?;
+        final minutesUntilStart = preview['minutesUntilStart'] as num?;
+        final warningMessage =
+            preview['warningMessage']?.toString() ??
+            'Bạn có chắc chắn muốn hủy đặt chỗ này?';
+
+        final bool? confirmed = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              'Xác nhận hủy đặt chỗ',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: Colors.orange.shade600,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          warningMessage,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.orange.shade900,
+                            fontWeight: FontWeight.w500,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildPreviewRow(
+                  'Số phút trước giờ đặt',
+                  minutesUntilStart != null
+                      ? '${minutesUntilStart.toInt()} phút'
+                      : 'N/A',
+                ),
+                _buildPreviewRow(
+                  'Tiền hoàn dự kiến',
+                  _formatPrice(refundAmount?.toInt() ?? 0) + ' đ',
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Đóng'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red.shade600,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Xác nhận hủy'),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed == true && mounted) {
+          try {
+            // Show loading indicator
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      Text('Đang hủy đặt chỗ...'),
+                    ],
+                  ),
+                  backgroundColor: Colors.blue,
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            }
+
+            final cancelResponse = await ReservationService.cancelReservation(
+              reservationId,
+            );
+
+            if (!mounted) return;
+
+            // Extract message from response (could be in different fields)
+            String successMessage = 'Hủy đặt chỗ thành công.';
+            final message =
+                cancelResponse['message']?.toString() ??
+                cancelResponse['data']?['message']?.toString() ??
+                cancelResponse['data']?.toString();
+            if (message != null && message.isNotEmpty) {
+              successMessage = message;
+            }
+
+            // Reload reservations immediately to update the UI
+            await _loadReservations();
+
+            // Show success message after reload
+            if (mounted) {
+              // Dismiss any existing snackbars first
+              ScaffoldMessenger.of(context).clearSnackBars();
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          successMessage,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  backgroundColor: Colors.green,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  duration: const Duration(seconds: 3),
+                  margin: const EdgeInsets.all(16),
+                ),
+              );
+            }
+          } catch (cancelError) {
+            if (!mounted) return;
+
+            // Dismiss any existing snackbars first
+            ScaffoldMessenger.of(context).clearSnackBars();
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Lỗi khi hủy đặt chỗ: $cancelError',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                duration: const Duration(seconds: 4),
+                margin: const EdgeInsets.all(16),
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể hủy đặt chỗ: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _cancellingReservationIds.remove(reservationId);
+        });
+      }
+    }
+  }
+
+  Widget _buildPreviewRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -851,13 +1165,22 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final status = reservation['status'] as String?;
     final statusColor = _getStatusColor(status);
     final statusText = _getStatusText(status);
-    final isCheckedIn = status?.toUpperCase() == 'CHECKED_IN';
+    final statusUpper = status?.toUpperCase() ?? '';
+    final isCheckedIn = statusUpper == 'CHECKED_IN';
+    final isConfirmed = statusUpper == 'CONFIRMED';
+    final isCheckedOut = statusUpper == 'CHECKED_OUT';
+
+    // Chỉ cho phép xem QR code với các status: CONFIRMED, CHECKED_IN, CHECKED_OUT
+    final canViewQr = isConfirmed || isCheckedIn || isCheckedOut;
 
     final reservationId =
         reservation['_id']?.toString() ?? reservation['id']?.toString();
     final isExtending =
         reservationId != null &&
         _extendingReservationIds.contains(reservationId);
+    final isCancelling =
+        reservationId != null &&
+        _cancellingReservationIds.contains(reservationId);
 
     // Extract reservation details
     final parkingLot = reservation['parkingLotId'];
@@ -906,10 +1229,14 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       addressText: addressText,
       userExpectedTimeText: userExpectedTimeText,
       prepaidAmountText: prepaidAmountText,
-      onTapQr: () => _showQRCodeDialog(reservation),
+      onTapQr: canViewQr ? () => _showQRCodeDialog(reservation) : null,
       onExtend: isCheckedIn && reservationId != null
           ? () => _handleExtendReservation(reservation)
           : null,
+      onCancel: isConfirmed && reservationId != null
+          ? () => _handleCancelReservation(reservation)
+          : null,
+      isProcessingCancel: isCancelling,
     );
   }
 

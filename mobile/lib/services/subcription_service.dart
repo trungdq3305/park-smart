@@ -89,7 +89,7 @@ class SubscriptionService {
 
   /// Kích hoạt Gói thuê bao (Xác nhận thanh toán)
   /// PATCH /subscriptions/{id}/confirm-payment
-  static Future<Map<String, dynamic>> confirmPayment({
+  static Future<Map<String, dynamic>> confirmSubcriptionPayment({
     required String subscriptionId,
     required String paymentId,
   }) async {
@@ -107,19 +107,26 @@ class SubscriptionService {
 
       print('💳 Confirming payment for subscription:');
       print('  URL: $uri');
+      print('  Subscription ID: $subscriptionId');
+      print('  Payment ID: $paymentId');
       print('  Request body: $requestBody');
       print('  Token: ${token.substring(0, 20)}...');
+
+      final requestBodyJson = jsonEncode(requestBody);
+      print('  Request body JSON: $requestBodyJson');
 
       final response = await http.patch(
         uri,
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
           'Authorization': 'Bearer $token',
         },
-        body: jsonEncode(requestBody),
+        body: requestBodyJson,
       );
 
       print('📡 Response status: ${response.statusCode}');
+      print('📡 Response headers: ${response.headers}');
       print('📡 Response body: ${response.body}');
 
       if (response.statusCode == 200) {
@@ -128,13 +135,41 @@ class SubscriptionService {
         return responseData;
       } else {
         final errorBody = response.body;
-        print('❌ Error confirming payment: $errorBody');
-        throw Exception(
-          'Failed to confirm payment: ${response.statusCode} - $errorBody',
-        );
+        print('❌ Error confirming payment:');
+        print('  Status Code: ${response.statusCode}');
+        print('  Subscription ID: $subscriptionId');
+        print('  Payment ID: $paymentId');
+        print('  Error Body: $errorBody');
+
+        // Try to parse error message from response
+        String errorMessage = 'Failed to confirm payment';
+        String? detailedError;
+        try {
+          final errorData = jsonDecode(errorBody);
+          if (errorData is Map) {
+            errorMessage =
+                errorData['message']?.toString() ??
+                errorData['error']?.toString() ??
+                errorData['errorMessage']?.toString() ??
+                errorMessage;
+            detailedError =
+                errorData['details']?.toString() ??
+                errorData['stack']?.toString();
+          }
+        } catch (_) {
+          // If parsing fails, use raw error body
+          errorMessage = errorBody.isNotEmpty ? errorBody : errorMessage;
+        }
+
+        // Add more context to error message
+        final fullErrorMessage = detailedError != null
+            ? '$errorMessage\nDetails: $detailedError'
+            : errorMessage;
+
+        throw Exception('$fullErrorMessage (Status: ${response.statusCode})');
       }
     } catch (e) {
-      print('❌ Exception in confirmPayment: $e');
+      print('❌ Exception in confirmSubcriptionPayment: $e');
       rethrow;
     }
   }
@@ -236,6 +271,104 @@ class SubscriptionService {
       }
     } catch (e) {
       print('❌ Exception in renewSubscription: $e');
+      rethrow;
+    }
+  }
+
+  /// Xem trước thông tin hoàn tiền khi hủy gói (chính sách thời gian)
+  /// GET /subscriptions/{id}/cancel/preview
+  static Future<Map<String, dynamic>> previewCancelSubscription({
+    required String subscriptionId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/subscriptions/$subscriptionId/cancel/preview',
+      );
+
+      print('👀 Preview cancel subscription:');
+      print('  URL: $uri');
+      print('  Subscription ID: $subscriptionId');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully previewed cancel subscription');
+        return responseData;
+      }
+
+      final errorBody = response.body;
+      print('❌ Error previewing cancel subscription: $errorBody');
+      throw Exception(
+        'Failed to preview cancel subscription: ${response.statusCode} - $errorBody',
+      );
+    } catch (e) {
+      print('❌ Exception in previewCancelSubscription: $e');
+      rethrow;
+    }
+  }
+
+  /// Hủy một gói thuê bao (do người dùng thực hiện)
+  /// DELETE /subscriptions/{id}
+  static Future<Map<String, dynamic>> cancelSubscription({
+    required String subscriptionId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse('$baseUrl/parking/subscriptions/$subscriptionId');
+
+      print('🛑 Cancelling subscription:');
+      print('  URL: $uri');
+      print('  Subscription ID: $subscriptionId');
+      print('  Token: ${token.substring(0, 20)}...');
+
+      final response = await http.delete(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      print('📡 Response status: ${response.statusCode}');
+      print('📡 Response body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        final responseData = response.body.isNotEmpty
+            ? jsonDecode(response.body)
+            : <String, dynamic>{};
+        print('✅ Successfully cancelled subscription');
+        return responseData;
+      }
+
+      final errorBody = response.body;
+      print('❌ Error cancelling subscription: $errorBody');
+      throw Exception(
+        'Failed to cancel subscription: ${response.statusCode} - $errorBody',
+      );
+    } catch (e) {
+      print('❌ Exception in cancelSubscription: $e');
       rethrow;
     }
   }

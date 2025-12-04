@@ -383,7 +383,7 @@ class _PricingTableCardState extends State<PricingTableCard> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Chưa có thông tin bảng giá',
+              'Vui lòng chọn phương thức đăng ký để xem bảng giá',
               style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ],
@@ -448,7 +448,8 @@ class _PricingTableCardState extends State<PricingTableCard> {
             return InkWell(
               onTap: () {
                 // Select pricing policy when clicking on card
-                if (widget.onPricingSelected != null && pricingPolicyId != null) {
+                if (widget.onPricingSelected != null &&
+                    pricingPolicyId != null) {
                   widget.onPricingSelected!(pricingPolicyId, link);
                 }
               },

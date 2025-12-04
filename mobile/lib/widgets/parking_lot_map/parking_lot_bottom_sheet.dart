@@ -22,9 +22,9 @@ class ParkingLotBottomSheet extends StatelessWidget {
     final totalSlots = totalCapacityEachLevel * totalLevel;
     final occupancyRate = totalSlots > 0 ? (availableSpots / totalSlots) : 0.0;
     final address = addressId?['fullAddress'] ?? 'Không có địa chỉ';
-    final openTime = parkingLot['openTime'] ?? 'N/A';
-    final closeTime = parkingLot['closeTime'] ?? 'N/A';
-    final is24Hours = parkingLot['is24Hours'] ?? false;
+    // final openTime = parkingLot['openTime'] ?? 'N/A';
+    // final closeTime = parkingLot['closeTime'] ?? 'N/A';
+    // final is24Hours = parkingLot['is24Hours'] ?? false;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -38,8 +38,8 @@ class ParkingLotBottomSheet extends StatelessWidget {
           const SizedBox(height: 8),
           _buildAddress(address),
           const SizedBox(height: 8),
-          _buildOperatingHours(is24Hours, openTime, closeTime),
-          const SizedBox(height: 16),
+          // _buildOperatingHours(is24Hours, openTime, closeTime),
+          // const SizedBox(height: 16),
           _buildAvailabilityStatus(availableSpots, totalSlots, occupancyRate),
           const SizedBox(height: 16),
           _buildPriceInfo(),
@@ -86,28 +86,30 @@ class ParkingLotBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildOperatingHours(bool is24Hours, String openTime, String closeTime) {
-    return Row(
-      children: [
-        Icon(Icons.access_time, color: Colors.grey.shade600, size: 20),
-        const SizedBox(width: 8),
-        Text(
-          is24Hours
-              ? 'Mở cửa 24/7'
-              : 'Giờ mở cửa: $openTime - $closeTime',
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
-        ),
-      ],
-    );
-  }
+  // Widget _buildOperatingHours(bool is24Hours, String openTime, String closeTime) {
+  //   return Row(
+  //     children: [
+  //       Icon(Icons.access_time, color: Colors.grey.shade600, size: 20),
+  //       const SizedBox(width: 8),
+  //       Text(
+  //         is24Hours
+  //             ? 'Mở cửa 24/7'
+  //             : 'Giờ mở cửa: $openTime - $closeTime',
+  //         style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
+  //       ),
+  //     ],
+  //   );
+  // }
 
-  Widget _buildAvailabilityStatus(int availableSpots, int totalSlots, double occupancyRate) {
+  Widget _buildAvailabilityStatus(
+    int availableSpots,
+    int totalSlots,
+    double occupancyRate,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: occupancyRate > 0.3
-            ? Colors.green.shade50
-            : Colors.red.shade50,
+        color: occupancyRate > 0.3 ? Colors.green.shade50 : Colors.red.shade50,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: occupancyRate > 0.3
@@ -139,10 +141,7 @@ class ParkingLotBottomSheet extends StatelessWidget {
                 ),
                 Text(
                   '$availableSpots/$totalSlots chỗ trống',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                 ),
               ],
             ),

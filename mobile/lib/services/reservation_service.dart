@@ -185,9 +185,7 @@ class ReservationService {
         'additionalCost': additionalCost,
       };
 
-      print(
-        '⏱️ Checking reservation extension for $reservationId: $payload',
-      );
+      print('⏱️ Checking reservation extension for $reservationId: $payload');
 
       final response = await http.post(
         uri,
@@ -231,24 +229,54 @@ class ReservationService {
         'paymentId': paymentId,
       };
 
-      print('✅ Confirming reservation extension: $payload');
+      print('✅ Confirming reservation extension:');
+      print('  URL: $uri');
+      print('  Reservation ID: $reservationId');
+      print('  Payment ID: $paymentId');
+      print('  Additional Hours: $additionalHours');
+      print('  Payload: $payload');
+
+      final payloadJson = jsonEncode(payload);
+      print('  Payload JSON: $payloadJson');
 
       final response = await http.post(
         uri,
         headers: _buildHeaders(token, hasBody: true),
-        body: jsonEncode(payload),
+        body: payloadJson,
       );
 
       print('📡 Extension confirm status: ${response.statusCode}');
+      print('📡 Extension confirm headers: ${response.headers}');
       print('📡 Extension confirm body: ${response.body}');
 
       if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully confirmed reservation extension');
+        return responseData;
+      } else {
+        final errorBody = response.body;
+        print('❌ Error confirming reservation extension:');
+        print('  Status Code: ${response.statusCode}');
+        print('  Error Body: $errorBody');
+
+        // Try to parse error message from response
+        String errorMessage = 'Failed to confirm reservation extension';
+        try {
+          final errorData = jsonDecode(errorBody);
+          if (errorData is Map) {
+            errorMessage =
+                errorData['message']?.toString() ??
+                errorData['error']?.toString() ??
+                errorData['errorMessage']?.toString() ??
+                errorMessage;
+          }
+        } catch (_) {
+          // If parsing fails, use raw error body
+          errorMessage = errorBody.isNotEmpty ? errorBody : errorMessage;
+        }
+
+        throw Exception('$errorMessage (${response.statusCode})');
       }
-      throw Exception(
-        'Failed to confirm reservation extension: '
-        '${response.statusCode} - ${response.body}',
-      );
     } catch (e) {
       print('❌ Exception in confirmReservationExtension: $e');
       rethrow;
@@ -271,8 +299,9 @@ class ReservationService {
         if (status != null && status.isNotEmpty) 'status': status,
       };
 
-      final uri = Uri.parse('$baseUrl/parking/reservations/my')
-          .replace(queryParameters: query);
+      final uri = Uri.parse(
+        '$baseUrl/parking/reservations/my',
+      ).replace(queryParameters: query);
 
       print('📋 Fetching my reservations page=$page size=$pageSize');
 
@@ -377,6 +406,47 @@ class ReservationService {
     }
   }
 
+  /// GET /reservations/{id}/cancel/preview
+  /// Step 1: Preview cancellation information
+  static Future<Map<String, dynamic>> previewCancelReservation({
+    required String reservationId,
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('Authentication token not found');
+      }
+
+      final uri = Uri.parse(
+        '$baseUrl/parking/reservations/$reservationId/cancel/preview',
+      );
+
+      print('👀 Preview cancel reservation:');
+      print('  URL: $uri');
+      print('  Reservation ID: $reservationId');
+
+      final response = await http.get(uri, headers: _buildHeaders(token));
+
+      print('📡 Preview cancel status: ${response.statusCode}');
+      print('📡 Preview cancel body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Successfully previewed cancel reservation');
+        return responseData;
+      }
+
+      final errorBody = response.body;
+      print('❌ Error previewing cancel reservation: $errorBody');
+      throw Exception(
+        'Failed to preview cancel reservation: ${response.statusCode} - $errorBody',
+      );
+    } catch (e) {
+      print('❌ Exception in previewCancelReservation: $e');
+      rethrow;
+    }
+  }
+
   /// DELETE /reservations/{id}
   static Future<Map<String, dynamic>> cancelReservation(
     String reservationId,
@@ -385,7 +455,9 @@ class ReservationService {
       final token = await _getToken();
       if (token == null) throw Exception('Authentication token not found');
 
-      final uri = Uri.parse('$baseUrl/parking/reservations/$reservationId');
+      final uri = Uri.parse(
+        '$baseUrl/parking/reservations/cancel-confirm/$reservationId',
+      );
 
       print('🗑️ Cancelling reservation: $reservationId');
 
