@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import {
   useGetGuestCardsQuery,
   useUpdateGuestCardStatusMutation,
@@ -10,42 +10,17 @@ import { message } from 'antd'
 import './ManageGuestCard.css'
 import { getParkingLotId } from '../../../utils/parkingLotId'
 import type { Pagination } from '../../../types/Pagination'
+import {
+  GuestCardStats,
+  GuestCardFilters,
+  GuestCardGrid,
+  GuestCardEmptyState,
+  type GuestCardFilter,
+} from '../../../components/guest-cards'
 
 interface GuestCardsResponse {
   data: GuestCard[]
   pagination: Pagination
-}
-
-type GuestCardFilter = 'all' | 'ACTIVE' | 'INACTIVE' | 'LOST' | 'DAMAGED' | 'LOCKED'
-
-const getStatusLabel = (status: string) => {
-  const statusMap: Record<string, string> = {
-    ACTIVE: 'Đang hoạt động',
-    INACTIVE: 'Không hoạt động',
-    LOST: 'Bị mất',
-    DAMAGED: 'Bị hỏng',
-    LOCKED: 'Đã khóa',
-  }
-  return statusMap[status] || status
-}
-
-const getStatusClass = (status: string) => {
-  if (status === 'ACTIVE') return 'guest-card-status-active'
-  if (status === 'INACTIVE') return 'guest-card-status-inactive'
-  if (status === 'LOST') return 'guest-card-status-lost'
-  if (status === 'DAMAGED') return 'guest-card-status-damaged'
-  if (status === 'LOCKED') return 'guest-card-status-locked'
-  return 'guest-card-status-pending'
-}
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('vi-VN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
 }
 
 const ManageGuestCard: React.FC = () => {
@@ -54,7 +29,6 @@ const ManageGuestCard: React.FC = () => {
   const [debouncedSearchNfcUid, setDebouncedSearchNfcUid] = useState<string>('')
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [allGuestCards, setAllGuestCards] = useState<GuestCard[]>([])
-  const observerTarget = useRef<HTMLDivElement>(null)
   const parkingLotId = getParkingLotId()
 
   // Debounce search input to avoid calling API on every keystroke
@@ -98,6 +72,7 @@ const ManageGuestCard: React.FC = () => {
       }
     }
   }, [data, currentPage])
+
   const [updateStatus] = useUpdateGuestCardStatusMutation()
   const [deleteCard] = useDeleteGuestCardMutation()
 
@@ -142,34 +117,11 @@ const ManageGuestCard: React.FC = () => {
     return guestCards.filter((card) => card.status === filter)
   }, [guestCards, filter, debouncedSearchNfcUid, searchedCard])
 
-  // Intersection Observer for infinite scroll
-  const loadMore = useCallback(() => {
+  const handleLoadMore = useCallback(() => {
     if (!isLoading && hasMorePages && !debouncedSearchNfcUid) {
       setCurrentPage((prev) => prev + 1)
     }
   }, [isLoading, hasMorePages, debouncedSearchNfcUid])
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          loadMore()
-        }
-      },
-      { threshold: 0.1 }
-    )
-
-    const currentTarget = observerTarget.current
-    if (currentTarget) {
-      observer.observe(currentTarget)
-    }
-
-    return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget)
-      }
-    }
-  }, [loadMore])
 
   const handleStatusToggle = async (card: GuestCard) => {
     try {
@@ -183,7 +135,7 @@ const ManageGuestCard: React.FC = () => {
         (response as { message?: string })?.message ||
         `Đã ${newStatus === 'ACTIVE' ? 'kích hoạt' : 'vô hiệu hóa'} thẻ ${card.code}`
       message.success(successMsg)
-      
+
       // Reset to page 1 and refetch
       setCurrentPage(1)
       setAllGuestCards([])
@@ -204,7 +156,7 @@ const ManageGuestCard: React.FC = () => {
 
       const successMsg = (response as { message?: string })?.message || `Đã xóa thẻ ${card.code}`
       message.success(successMsg)
-      
+
       // Reset to page 1 and refetch
       setCurrentPage(1)
       setAllGuestCards([])
@@ -219,7 +171,22 @@ const ManageGuestCard: React.FC = () => {
     }
   }
 
-  if (isLoading) {
+  const handleSearchChange = (value: string) => {
+    setSearchNfcUid(value)
+  }
+
+  const handleSearchClear = () => {
+    setSearchNfcUid('')
+    setDebouncedSearchNfcUid('')
+  }
+
+  const handleFilterChange = (newFilter: GuestCardFilter) => {
+    setFilter(newFilter)
+    setSearchNfcUid('')
+    setDebouncedSearchNfcUid('')
+  }
+
+  if (isLoading && currentPage === 1) {
     return (
       <div className="manage-guest-card-page">
         <div className="guest-card-loading">
@@ -250,132 +217,21 @@ const ManageGuestCard: React.FC = () => {
 
       <div className="guest-card-page-content">
         {/* Stats */}
-        <div className="guest-card-stats-section">
-          <div className="guest-card-stat-card">
-            <div className="guest-card-stat-icon active">✅</div>
-            <div className="guest-card-stat-content">
-              <h3>{stats.active}</h3>
-              <p>Đang hoạt động</p>
-              <div className="guest-card-stat-sub">Thẻ đang được sử dụng</div>
-            </div>
-          </div>
-          <div className="guest-card-stat-card">
-            <div className="guest-card-stat-icon inactive">⏸️</div>
-            <div className="guest-card-stat-content">
-              <h3>{stats.inactive}</h3>
-              <p>Không hoạt động</p>
-              <div className="guest-card-stat-sub">Thẻ đã bị vô hiệu hóa</div>
-            </div>
-          </div>
-          <div className="guest-card-stat-card">
-            <div className="guest-card-stat-icon lost">🔍</div>
-            <div className="guest-card-stat-content">
-              <h3>{stats.lost}</h3>
-              <p>Bị mất</p>
-              <div className="guest-card-stat-sub">Thẻ đã bị mất</div>
-            </div>
-          </div>
-          <div className="guest-card-stat-card">
-            <div className="guest-card-stat-icon damaged">⚠️</div>
-            <div className="guest-card-stat-content">
-              <h3>{stats.damaged}</h3>
-              <p>Bị hỏng</p>
-              <div className="guest-card-stat-sub">Thẻ đã bị hỏng</div>
-            </div>
-          </div>
-          <div className="guest-card-stat-card">
-            <div className="guest-card-stat-icon locked">🔒</div>
-            <div className="guest-card-stat-content">
-              <h3>{stats.locked}</h3>
-              <p>Đã khóa</p>
-              <div className="guest-card-stat-sub">Thẻ đã bị khóa</div>
-            </div>
-          </div>
-        </div>
+        <GuestCardStats stats={stats} />
 
         {/* Search and Filters */}
-        <div className="guest-card-controls-card">
-          <div className="guest-card-search-wrapper">
-            <label htmlFor="nfc-search" className="guest-card-search-label">
-              Tìm kiếm theo NFC UID:
-            </label>
-            <div className="guest-card-search-input-wrapper">
-              <input
-                id="nfc-search"
-                type="text"
-                className="guest-card-search-input"
-                placeholder="Nhập NFC UID để tìm kiếm..."
-                value={searchNfcUid}
-                onChange={(e) => setSearchNfcUid(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    setSearchNfcUid('')
-                    setDebouncedSearchNfcUid('')
-                  }
-                }}
-              />
-              {searchNfcUid && (
-                <button
-                  type="button"
-                  className="guest-card-search-clear"
-                  onClick={() => {
-                    setSearchNfcUid('')
-                    setDebouncedSearchNfcUid('')
-                  }}
-                  title="Xóa tìm kiếm"
-                >
-                  ✕
-                </button>
-              )}
-              {isSearching && (
-                <div className="guest-card-search-loading">🔍</div>
-              )}
-            </div>
-          </div>
-          <div className="guest-card-filter-wrapper">
-            <label htmlFor="status-filter" className="guest-card-filter-label">
-              Lọc theo trạng thái:
-            </label>
-            <select
-              id="status-filter"
-              className="guest-card-filter-select"
-              value={filter}
-              onChange={(e) => {
-                setFilter(e.target.value as GuestCardFilter)
-                setSearchNfcUid('') // Clear search when changing filter
-                setDebouncedSearchNfcUid('')
-              }}
-              disabled={!!searchNfcUid}
-            >
-              <option value="all">--</option>
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="INACTIVE">INACTIVE</option>
-              <option value="LOST">LOST</option>
-              <option value="DAMAGED">DAMAGED</option>
-              <option value="LOCKED">LOCKED</option>
-            </select>
-          </div>
-          <div className="guest-card-counter">
-            {debouncedSearchNfcUid ? (
-              <>
-                {isSearching ? (
-                  <span>Đang tìm kiếm...</span>
-                ) : searchedCard ? (
-                  <span>
-                    Tìm thấy <strong>1</strong> thẻ
-                  </span>
-                ) : (
-                  <span>Không tìm thấy thẻ</span>
-                )}
-              </>
-            ) : (
-              <>
-                Đang hiển thị <strong>{filteredCards.length}</strong>
-                {pagination && ` / ${pagination.totalItems}`} thẻ
-              </>
-            )}
-          </div>
-        </div>
+        <GuestCardFilters
+          searchNfcUid={searchNfcUid}
+          onSearchChange={handleSearchChange}
+          onSearchClear={handleSearchClear}
+          isSearching={isSearching}
+          filter={filter}
+          onFilterChange={handleFilterChange}
+          filteredCount={filteredCards.length}
+          totalCount={pagination?.totalItems}
+          searchResultCount={searchedCard ? 1 : null}
+          isSearchMode={!!debouncedSearchNfcUid}
+        />
 
         {/* Search Error */}
         {debouncedSearchNfcUid && searchError && (
@@ -391,143 +247,17 @@ const ManageGuestCard: React.FC = () => {
 
         {/* Guest Cards Grid */}
         {filteredCards.length === 0 ? (
-          <div className="guest-card-empty-state">
-            <div className="guest-card-empty-icon">💳</div>
-            <h3 className="guest-card-empty-title">
-              {debouncedSearchNfcUid ? 'Không tìm thấy thẻ' : 'Chưa có thẻ khách nào'}
-            </h3>
-            <p className="guest-card-empty-text">
-              {debouncedSearchNfcUid
-                ? `Không tìm thấy thẻ với NFC UID: ${debouncedSearchNfcUid}. Vui lòng kiểm tra lại.`
-                : 'Tạo mới thẻ khách để quản lý và theo dõi các thẻ NFC trong hệ thống Park Smart.'}
-            </p>
-          </div>
+          <GuestCardEmptyState searchNfcUid={debouncedSearchNfcUid || undefined} />
         ) : (
-          <div className="guest-card-grid">
-            {filteredCards.map((card, index) => {
-              const statusClass = getStatusClass(card.status)
-              const statusLabel = getStatusLabel(card.status)
-
-              // Generate gradient colors based on index for visual variety
-              const gradients = [
-                'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-                'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
-              ]
-              const cardGradient = gradients[index % gradients.length]
-
-              return (
-                <article
-                  key={card._id}
-                  className="guest-card-item"
-                  style={{ '--card-index': index % 10 } as React.CSSProperties}
-                >
-                  <div className="guest-card-header" style={{ background: cardGradient }}>
-                    <div className="guest-card-chip">
-                      <div className="guest-card-chip-line" />
-                      <div className="guest-card-chip-line" />
-                      <div className="guest-card-chip-line" />
-                    </div>
-                    <div className={`guest-card-status-badge ${statusClass}`}>
-                      <span className="guest-card-status-dot" />
-                      <span>{statusLabel}</span>
-                    </div>
-                  </div>
-
-                  <div className="guest-card-body">
-                    <div className="guest-card-code-section">
-                      <div className="guest-card-code-label">Mã thẻ</div>
-                      <div className="guest-card-code-value">{card.code || 'N/A'}</div>
-                    </div>
-
-                    <div className="guest-card-details">
-                      <div className="guest-card-detail-item">
-                        <div className="guest-card-detail-icon">📡</div>
-                        <div className="guest-card-detail-content">
-                          <span className="guest-card-detail-label">NFC UID</span>
-                          <span className="guest-card-detail-value">
-                            {card.nfcUid || 'Chưa có'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="guest-card-detail-item">
-                        <div className="guest-card-detail-icon">🆔</div>
-                        <div className="guest-card-detail-content">
-                          <span className="guest-card-detail-label">ID thẻ</span>
-                          <span className="guest-card-detail-value">{card._id}...</span>
-                        </div>
-                      </div>
-
-                      <div className="guest-card-detail-item">
-                        <div className="guest-card-detail-icon">🏢</div>
-                        <div className="guest-card-detail-content">
-                          <span className="guest-card-detail-label">Bãi đỗ xe</span>
-                          <span className="guest-card-detail-value">
-                            {card.parkingLotId || 'N/A'}...
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="guest-card-footer">
-                    <div className="guest-card-date-info">
-                      <div className="guest-card-date-item">
-                        <span className="guest-card-date-label">Tạo lúc:</span>
-                        <span className="guest-card-date-value">{formatDate(card.createdAt)}</span>
-                      </div>
-                      <div className="guest-card-date-item">
-                        <span className="guest-card-date-label">Cập nhật:</span>
-                        <span className="guest-card-date-value">{formatDate(card.updatedAt)}</span>
-                      </div>
-                    </div>
-
-                    <div className="guest-card-actions">
-                      <button
-                        type="button"
-                        className="guest-card-action-btn toggle"
-                        onClick={() => handleStatusToggle(card)}
-                        title={card.status === 'ACTIVE' ? 'Vô hiệu hóa' : 'Kích hoạt'}
-                      >
-                        {card.status === 'ACTIVE' ? '⏸️' : '▶️'}
-                      </button>
-                      <button
-                        type="button"
-                        className="guest-card-action-btn delete"
-                        onClick={() => handleDelete(card)}
-                        title="Xóa thẻ"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        )}
-
-        {/* Infinite Scroll Observer Target */}
-        {!debouncedSearchNfcUid && hasMorePages && (
-          <div ref={observerTarget} className="guest-card-load-more-trigger">
-            {isLoading && (
-              <div className="guest-card-load-more-loading">
-                <div className="guest-card-loading-spinner" />
-                <p>Đang tải thêm thẻ...</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* End of list message */}
-        {!debouncedSearchNfcUid && !hasMorePages && filteredCards.length > 0 && (
-          <div className="guest-card-end-message">
-            <p>Đã hiển thị tất cả {pagination?.totalItems || filteredCards.length} thẻ</p>
-          </div>
+          <GuestCardGrid
+            cards={filteredCards}
+            hasMorePages={!debouncedSearchNfcUid && hasMorePages}
+            isLoading={isLoading}
+            onLoadMore={handleLoadMore}
+            onStatusToggle={handleStatusToggle}
+            onDelete={handleDelete}
+            totalItems={pagination?.totalItems}
+          />
         )}
       </div>
     </div>
@@ -535,4 +265,3 @@ const ManageGuestCard: React.FC = () => {
 }
 
 export default ManageGuestCard
-
