@@ -1,5 +1,5 @@
 .manage-guest-card-page {
-  padding: 24px;
+  padding: 2.4vh;
   background: #f8fafc;
   min-height: 100vh;
   font-family:
@@ -12,14 +12,14 @@
 }
 
 .guest-card-page-header {
-  margin-bottom: 32px;
+  margin-bottom: 3.2vh;
 }
 
 .guest-card-header-content {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 24px;
+  gap: 2.4vh;
   flex-wrap: wrap;
 }
 
@@ -27,7 +27,7 @@
   font-size: 30px;
   font-weight: 700;
   color: #111827;
-  margin: 0 0 8px 0;
+  margin: 0 0 0.8vh 0;
   line-height: 1.2;
 }
 
@@ -41,8 +41,8 @@
 .guest-card-add-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
+  gap: 0.8vh;
+  padding: 1.2vh 2.4vh;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
   border: none;
@@ -54,19 +54,19 @@
     transform 0.2s ease,
     box-shadow 0.2s ease,
     background 0.2s ease;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.3);
   white-space: nowrap;
 }
 
 .guest-card-add-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  transform: translateY(-0.2vh);
+  box-shadow: 0 0.6vh 2vh rgba(59, 130, 246, 0.4);
   background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
 }
 
 .guest-card-add-btn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0.2vh 0.8vh rgba(59, 130, 246, 0.3);
 }
 
 .guest-card-add-btn-icon {
@@ -77,25 +77,25 @@
 .guest-card-page-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 2.4vh;
 }
 
 /* Stats Section */
 .guest-card-stats-section {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px;
+  gap: 2vh;
 }
 
 .guest-card-stat-card {
   background: white;
-  padding: 20px 22px;
+  padding: 2vh 2.2vh;
   border-radius: 16px;
   border: 1px solid #e5e7eb;
   display: flex;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+  gap: 1.6vh;
+  box-shadow: 0 1.2vh 3vh rgba(15, 23, 42, 0.08);
   position: relative;
   overflow: hidden;
   transition:
@@ -104,8 +104,8 @@
 }
 
 .guest-card-stat-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+  transform: translateY(-0.1vh);
+  box-shadow: 0 1.6vh 4vh rgba(15, 23, 42, 0.12);
 }
 
 .guest-card-stat-card::before {
@@ -184,7 +184,7 @@
   font-size: 26px;
   font-weight: 700;
   color: #0f172a;
-  margin: 0 0 4px 0;
+  margin: 0 0 0.4vh 0;
 }
 
 .guest-card-stat-content p {
@@ -197,7 +197,7 @@
 .guest-card-stat-sub {
   font-size: 12px;
   color: #9ca3af;
-  margin-top: 4px;
+  margin-top: 0.4vh;
 }
 
 /* Controls Section */
@@ -205,19 +205,19 @@
   background: white;
   border-radius: 16px;
   border: 1px solid #e5e7eb;
-  padding: 18px 20px;
+  padding: 1.8vh 2vh;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 1.6vh;
   flex-wrap: wrap;
-  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1vh 2.5vh rgba(15, 23, 42, 0.06);
 }
 
 .guest-card-search-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 1.2vh;
   flex: 1;
   min-width: 280px;
 }
@@ -238,7 +238,7 @@
 
 .guest-card-search-input {
   flex: 1;
-  padding: 8px 16px;
+  padding: 0.8vh 1.6vh;
   padding-right: 40px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
@@ -259,18 +259,18 @@
 
 .guest-card-search-input:hover {
   border-color: #9ca3af;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.05);
 }
 
 .guest-card-search-input:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 0.3vh rgba(59, 130, 246, 0.1);
 }
 
 .guest-card-search-clear {
   position: absolute;
-  right: 8px;
+  right: 0.8vh;
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -295,7 +295,7 @@
 
 .guest-card-search-loading {
   position: absolute;
-  right: 8px;
+  right: 0.8vh;
   width: 24px;
   height: 24px;
   display: flex;
@@ -318,7 +318,7 @@
 .guest-card-filter-wrapper {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 1.2vh;
 }
 
 .guest-card-filter-label {
@@ -329,7 +329,7 @@
 }
 
 .guest-card-filter-select {
-  padding: 8px 16px;
+  padding: 0.8vh 1.6vh;
   padding-right: 40px;
   border-radius: 8px;
   border: 1px solid #d1d5db;
@@ -345,20 +345,20 @@
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 12px;
+  background-position: right 1.2vh center;
+  background-size: 1.2vh;
   min-width: 180px;
 }
 
 .guest-card-filter-select:hover {
   border-color: #9ca3af;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.05);
 }
 
 .guest-card-filter-select:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 0.3vh rgba(59, 130, 246, 0.1);
 }
 
 .guest-card-filter-select:disabled {
@@ -377,7 +377,7 @@
   color: #6b7280;
   background: #f3f4f6;
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 0.6vh 1.4vh;
   font-weight: 500;
 }
 
@@ -385,7 +385,7 @@
 .guest-card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 24px;
+  gap: 2.4vh;
 }
 
 .guest-card-item {
@@ -395,7 +395,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 1.8vh 4.5vh rgba(15, 23, 42, 0.12);
   transition:
     transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -403,7 +403,7 @@
   position: relative;
   animation: lazyLoadCard 0.6s ease-out forwards;
   opacity: 0;
-  transform: translateY(30px);
+  transform: translateY(3vh);
 }
 
 @keyframes lazyLoadCard {
@@ -425,7 +425,7 @@
 .guest-card-item:hover {
   transform: translateY(-6px) scale(1.01);
   box-shadow:
-    0 28px 70px rgba(15, 23, 42, 0.22),
+    0 2.8vh 7vh rgba(15, 23, 42, 0.22),
     0 0 0 1px rgba(59, 130, 246, 0.12);
   border-color: rgba(59, 130, 246, 0.8);
 }
@@ -434,7 +434,7 @@
 .guest-card-header {
   position: relative;
   height: 140px;
-  padding: 20px;
+  padding: 2vh;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -452,8 +452,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
-  padding: 0 8px;
+  gap: 0.4vh;
+  padding: 0 0.8vh;
 }
 
 .guest-card-chip-line {
@@ -463,7 +463,7 @@
 }
 
 .guest-card-status-badge {
-  padding: 6px 12px;
+  padding: 0.6vh 1.2vh;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 600;
@@ -521,15 +521,15 @@
 
 /* Card Body */
 .guest-card-body {
-  padding: 20px;
+  padding: 2vh;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1.6vh;
 }
 
 .guest-card-code-section {
   text-align: center;
-  padding: 16px;
+  padding: 1.6vh;
   background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   border-radius: 12px;
   border: 1px dashed #d1d5db;
@@ -541,7 +541,7 @@
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 0.8vh;
 }
 
 .guest-card-code-value {
@@ -554,13 +554,13 @@
 .guest-card-details {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1.2vh;
 }
 
 .guest-card-detail-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 1.2vh;
 }
 
 .guest-card-detail-icon {
@@ -578,7 +578,7 @@
 .guest-card-detail-content {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.2vh;
   flex: 1;
 }
 
@@ -605,7 +605,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 1.2vh;
   flex-wrap: wrap;
 }
 
@@ -620,7 +620,7 @@
 .guest-card-date-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.8vh;
   font-size: 11px;
 }
 
@@ -636,7 +636,7 @@
 
 .guest-card-actions {
   display: flex;
-  gap: 8px;
+  gap: 0.8vh;
 }
 
 .guest-card-action-btn {
@@ -657,8 +657,8 @@
 }
 
 .guest-card-action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-0.2vh);
+  box-shadow: 0 0.4vh 1.2vh rgba(0, 0, 0, 0.1);
 }
 
 .guest-card-action-btn.edit:hover {
@@ -678,8 +678,8 @@
 
 /* Empty State */
 .guest-card-empty-state {
-  margin-top: 24px;
-  padding: 48px 20px;
+  margin-top: 2.4vh;
+  padding: 4.8vh 2vh;
   border-radius: 16px;
   border: 1px dashed #d1d5db;
   background: linear-gradient(135deg, #f9fafb, #eff6ff);
@@ -687,13 +687,13 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 8px;
+  gap: 0.8vh;
   color: #6b7280;
 }
 
 .guest-card-empty-icon {
   font-size: 48px;
-  margin-bottom: 8px;
+  margin-bottom: 0.8vh;
   opacity: 0.6;
 }
 
@@ -746,7 +746,7 @@
 }
 
 .guest-card-error-badge {
-  padding: 4px 10px;
+  padding: 0.4vh 1vh;
   border-radius: 999px;
   background: #fef2f2;
   color: #b91c1c;
@@ -759,11 +759,11 @@
   border-radius: 12px;
   border: 1px solid #fecaca;
   padding: 16px 20px;
-  margin-bottom: 24px;
+  margin-bottom: 2.4vh;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.1);
+  gap: 0.8vh;
+  box-shadow: 0 0.4vh 1.2vh rgba(239, 68, 68, 0.1);
 }
 
 .guest-card-search-error p {
@@ -787,7 +787,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 2.4vh;
   animation: fadeIn 0.4s ease-out;
 }
 
@@ -804,7 +804,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 1.2vh;
   color: #6b7280;
   animation: slideUpFadeIn 0.5s ease-out;
 }
@@ -812,7 +812,7 @@
 @keyframes slideUpFadeIn {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(2vh);
   }
   to {
     opacity: 1;
@@ -839,11 +839,11 @@
 
 .guest-card-end-message {
   text-align: center;
-  padding: 32px 20px;
+  padding: 3.2vh 2vh;
   color: #6b7280;
   font-size: 14px;
   border-top: 1px dashed #e5e7eb;
-  margin-top: 24px;
+  margin-top: 2.4vh;
   animation: fadeInScale 0.5s ease-out;
 }
 
@@ -866,7 +866,7 @@
 /* Responsive Design */
 @media (max-width: 768px) {
   .manage-guest-card-page {
-    padding: 16px;
+    padding: 1.6vh;
   }
 
   .guest-card-controls-card {
@@ -926,7 +926,7 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 2vh;
   animation: fadeIn 0.3s ease-out;
   backdrop-filter: blur(4px);
 }
@@ -958,7 +958,7 @@
 }
 
 .guest-card-edit-modal-header {
-  padding: 20px 24px;
+  padding: 2vh 2.4vh;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -1003,13 +1003,13 @@
 }
 
 .guest-card-edit-modal-body {
-  padding: 24px;
+  padding: 2.4vh;
   overflow-y: auto;
   flex: 1;
 }
 
 .guest-card-edit-field {
-  margin-bottom: 24px;
+  margin-bottom: 2.4vh;
 }
 
 .guest-card-edit-label {
@@ -1017,7 +1017,7 @@
   font-size: 14px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 8px;
+  margin-bottom: 0.8vh;
 }
 
 .guest-card-edit-label .required {
@@ -1027,7 +1027,7 @@
 
 .guest-card-edit-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 1.2vh 1.6vh;
   border-radius: 8px;
   border: 1px solid #d1d5db;
   background: #ffffff;
@@ -1042,7 +1042,7 @@
 .guest-card-edit-input:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 0.3vh rgba(59, 130, 246, 0.1);
 }
 
 .guest-card-edit-input:disabled {
@@ -1054,7 +1054,7 @@
 .guest-card-edit-hint {
   font-size: 12px;
   color: #6b7280;
-  margin-top: 6px;
+  margin-top: 0.6vh;
   margin-bottom: 0;
 }
 
@@ -1062,10 +1062,10 @@
   background: #f9fafb;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  padding: 16px;
+  padding: 1.6vh;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1.2vh;
 }
 
 .guest-card-edit-info-item {
@@ -1088,16 +1088,16 @@
 }
 
 .guest-card-edit-modal-footer {
-  padding: 20px 24px;
+  padding: 2vh 2.4vh;
   border-top: 1px solid #e5e7eb;
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 1.2vh;
   background: #f9fafb;
 }
 
 .guest-card-edit-btn {
-  padding: 10px 20px;
+  padding: 1vh 2vh;
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
@@ -1129,8 +1129,8 @@
 .guest-card-edit-btn.save:hover:not(:disabled) {
   background: #2563eb;
   border-color: #2563eb;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  transform: translateY(-0.1vh);
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.4);
 }
 
 .guest-card-edit-btn:disabled {
