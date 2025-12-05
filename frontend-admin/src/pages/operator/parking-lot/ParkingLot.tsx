@@ -60,7 +60,6 @@ const OperatorParkingLot: React.FC = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedPolicyForEdit, setSelectedPolicyForEdit] = useState<PricingPolicyLink | null>(null)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
-
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
@@ -204,6 +203,7 @@ const OperatorParkingLot: React.FC = () => {
             Gửi yêu cầu cập nhật
           </Button>
         )}
+             
       </div>
 
       <Row gutter={[16, 16]} className="overview-grid">
