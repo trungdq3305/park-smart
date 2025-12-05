@@ -52,5 +52,3 @@ export const EventsStats: React.FC<EventsStatsProps> = ({
 }
 
 export default EventsStats
-
-

@@ -74,5 +74,3 @@ export const EventsFilters: React.FC<EventsFiltersProps> = ({
 }
 
 export default EventsFilters
-
-
