@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   useGetGuestCardsQuery,
   useUpdateGuestCardStatusMutation,
@@ -26,6 +27,7 @@ interface GuestCardsResponse {
 }
 
 const ManageGuestCard: React.FC = () => {
+  const navigate = useNavigate()
   const [filter, setFilter] = useState<GuestCardFilter>('all')
   const [searchNfcUid, setSearchNfcUid] = useState<string>('')
   const [debouncedSearchNfcUid, setDebouncedSearchNfcUid] = useState<string>('')
@@ -253,8 +255,20 @@ const ManageGuestCard: React.FC = () => {
   return (
     <div className="manage-guest-card-page">
       <div className="guest-card-page-header">
-        <h1>Quản lý thẻ khách</h1>
-        <p>Quản lý và theo dõi tất cả thẻ NFC khách trong hệ thống Park Smart</p>
+        <div className="guest-card-header-content">
+          <div>
+            <h1>Quản lý thẻ khách</h1>
+            <p>Quản lý và theo dõi tất cả thẻ NFC khách trong hệ thống Park Smart</p>
+          </div>
+          <button
+            type="button"
+            className="guest-card-add-btn"
+            onClick={() => navigate('/operator/import-card')}
+          >
+            <span className="guest-card-add-btn-icon">➕</span>
+            <span>Thêm thẻ</span>
+          </button>
+        </div>
       </div>
 
       <div className="guest-card-page-content">

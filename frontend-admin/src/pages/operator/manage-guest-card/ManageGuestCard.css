@@ -15,6 +15,14 @@
   margin-bottom: 32px;
 }
 
+.guest-card-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
 .guest-card-page-header h1 {
   font-size: 30px;
   font-weight: 700;
@@ -28,6 +36,42 @@
   color: #6b7280;
   margin: 0;
   line-height: 1.5;
+}
+
+.guest-card-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  white-space: nowrap;
+}
+
+.guest-card-add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.guest-card-add-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.guest-card-add-btn-icon {
+  font-size: 18px;
+  line-height: 1;
 }
 
 .guest-card-page-content {
@@ -844,6 +888,18 @@
   }
 }
 
+@media (max-width: 768px) {
+  .guest-card-header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .guest-card-add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 480px) {
   .guest-card-stats-section {
     grid-template-columns: 1fr;
@@ -851,6 +907,10 @@
 
   .guest-card-code-value {
     font-size: 20px;
+  }
+
+  .guest-card-page-header h1 {
+    font-size: 24px;
   }
 }
 
