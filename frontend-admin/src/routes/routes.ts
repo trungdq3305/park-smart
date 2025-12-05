@@ -23,7 +23,10 @@ const ParkingLotSessionHistory = lazy(
 const PaymentOperator = lazy(() => import('../pages/operator/payment/PaymentOperator'))
 const DashboardOperator = lazy(() => import('../pages/operator/dashboard/dashboardOperator'))
 const ManageEventsAdmin = lazy(() => import('../pages/admin/manage-events/ManageEventsAdmin'))
-const ManageEventsOperator = lazy(() => import('../pages/operator/manage-events/ManageEventsOperator'))
+const ManageEventsOperator = lazy(
+  () => import('../pages/operator/manage-events/ManageEventsOperator')
+)
+const ManageGuestCard = lazy(() => import('../pages/operator/manage-guest-card/ManageGuestCard'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -125,6 +128,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/events',
         component: ManageEventsOperator,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/manage-guest-card',
+        component: ManageGuestCard,
         role: ['Operator'],
       },
     ],

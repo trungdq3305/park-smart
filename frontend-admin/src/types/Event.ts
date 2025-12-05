@@ -10,6 +10,6 @@ export interface Event {
   updatedAt: string
   createdBy: string
   updatedBy: string
-  parkingLotId : string
-  operatorId : string
-}       
+  parkingLotId: string
+  operatorId: string
+}

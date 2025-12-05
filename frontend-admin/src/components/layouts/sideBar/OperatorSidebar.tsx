@@ -5,7 +5,6 @@ import {
   BarChartOutlined,
   FileTextOutlined,
   AppstoreOutlined,
-  BankOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CarOutlined,
@@ -70,19 +69,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Tạo báo cáo',
     },
     {
-      key: '/integrations',
+      key: '/operator/manage-guest-card',
       icon: <AppstoreOutlined />,
-      label: 'Tích hợp',
-    },
-    {
-      key: '/companies',
-      icon: <BankOutlined />,
-      label: 'Doanh nghiệp',
-    },
-    {
-      key: '/vehicles',
-      icon: <CarOutlined />,
-      label: 'Phương tiện',
+      label: 'Quản lý thẻ khách',
     },
     {
       key: '/operator/payment',

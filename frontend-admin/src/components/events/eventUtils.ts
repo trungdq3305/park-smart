@@ -28,5 +28,3 @@ export const formatDateRange = (start: string, end: string) => {
 
   return `${startDate.toLocaleDateString('vi-VN', options)} - ${endDate.toLocaleDateString('vi-VN', options)}`
 }
-
-
