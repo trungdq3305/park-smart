@@ -39,4 +39,3 @@ export const getCardGradient = (index: number): string => {
   ]
   return gradients[index % gradients.length]
 }
-

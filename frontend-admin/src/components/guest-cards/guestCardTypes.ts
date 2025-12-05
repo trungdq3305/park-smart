@@ -7,4 +7,3 @@ export interface GuestCardStats {
   damaged: number
   locked: number
 }
-

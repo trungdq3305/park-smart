@@ -6,4 +6,3 @@ export { GuestCardEmptyState } from './GuestCardEmptyState'
 export { GuestCardEditModal } from './GuestCardEditModal'
 export * from './guestCardTypes'
 export * from './guestCardUtils'
-

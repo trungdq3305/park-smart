@@ -54,4 +54,3 @@ export const GuestCardStats: React.FC<GuestCardStatsProps> = ({ stats }) => {
 }
 
 export default GuestCardStats
-

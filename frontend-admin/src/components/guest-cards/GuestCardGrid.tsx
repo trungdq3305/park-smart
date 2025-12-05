@@ -92,4 +92,3 @@ export const GuestCardGrid: React.FC<GuestCardGridProps> = ({
 }
 
 export default GuestCardGrid
-

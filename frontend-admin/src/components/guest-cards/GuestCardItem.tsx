@@ -117,4 +117,3 @@ export const GuestCardItem: React.FC<GuestCardItemProps> = ({
 }
 
 export default GuestCardItem
-

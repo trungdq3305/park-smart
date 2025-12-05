@@ -22,4 +22,3 @@ export const GuestCardEmptyState: React.FC<GuestCardEmptyStateProps> = ({ search
 }
 
 export default GuestCardEmptyState
-
