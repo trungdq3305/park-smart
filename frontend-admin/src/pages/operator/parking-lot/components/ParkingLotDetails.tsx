@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Button, Card, Col, Progress, Row, Space, Tag, Typography } from 'antd'
-import { ClockCircleOutlined, EnvironmentOutlined } from '@ant-design/icons'
+import { ClockCircleOutlined, EnvironmentOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
 import type { ParkingLot } from '../../../../types/ParkingLot'
 import parkingIllustration from '../../../../assets/db5449b9db71eda8231d6f1fd6476623.jpg'
 
@@ -10,6 +11,7 @@ interface ParkingLotDetailsProps {
 }
 
 const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
+  const [isSecretVisible, setIsSecretVisible] = useState(false)
   const totalCapacity = lot.totalCapacityEachLevel * lot.totalLevel
   const occupied = totalCapacity - lot.availableSpots
   const occupancy = totalCapacity === 0 ? 0 : Math.round((occupied / totalCapacity) * 100)
@@ -56,6 +58,22 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
                 </div>
               </Col>
             </Row>
+            <Row gutter={[16, 16]}>
+              <Col span={24}>
+                <Text type="secondary">Secret Key</Text>
+                <div className="area-card__text compact" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>{isSecretVisible ? lot.secretKey || '—' : '********'}</span>
+                  <Button
+                    size="small"
+                    type="link"
+                    icon={isSecretVisible ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                    onClick={() => setIsSecretVisible((prev) => !prev)}
+                  >
+                    {isSecretVisible ? 'Ẩn' : 'Hiện'}
+                  </Button>
+                </div>
+              </Col>
+            </Row>
             <Row gutter={[16, 16]} align="middle">
               <Col xs={24} md={12}>
                 <div className="area-card__progress">
@@ -66,6 +84,8 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
                   <Progress percent={occupancy} showInfo={false} strokeColor="#1890ff" />
                   <div className="area-card__progress-foot">
                     {occupied} / {totalCapacity} chỗ
+                  </div>
+                  <div>
                   </div>
                 </div>
                 <div className="area-card__map-button">
