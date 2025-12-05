@@ -27,7 +27,7 @@ import {
     forwardRef(() => SubscriptionModule),
     forwardRef(() => ReservationModule),
     ClientModule,
-    GuestCardModule,
+    forwardRef(() => GuestCardModule),
     PricingPolicyModule,
     ParkingTransactionModule,
   ],

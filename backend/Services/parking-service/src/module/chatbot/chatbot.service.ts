@@ -1,12 +1,12 @@
 // src/chatbot/chatbot.service.ts
 
-import { Content,GoogleGenAI } from '@google/genai'; // Import Content type
-import { Injectable } from '@nestjs/common';
+import { Content, GoogleGenAI } from '@google/genai' // Import Content type
+import { Injectable } from '@nestjs/common'
 
 @Injectable()
 export class ChatbotService {
-  private ai: GoogleGenAI;
-  private readonly MODEL = 'gemini-2.5-flash';
+  private ai: GoogleGenAI
+  private readonly MODEL = 'gemini-2.5-flash'
 
   // System Instruction và Nền tảng Kiến thức của Chatbot
   // CHÚ Ý: DÁN TOÀN BỘ PHẦN HƯỚNG DẪN DÀI CỦA BẠN VÀO ĐÂY
@@ -104,13 +104,13 @@ Các câu hỏi thường gặp được phân loại rõ ràng theo chủ đề
 2.  **Đặt Chỗ & Gửi Xe (Booking & Parking):** Hướng dẫn về tìm kiếm, đặt chỗ (trả trước/trả sau), gia hạn, Check-in/Check-out.
 3.  **Thanh Toán & Hoàn Tiền (Payment & Refund):** Các vấn đề về thêm thẻ, ví điện tử, thanh toán tự động, và các chính sách hoàn tiền.
 4.  **Sự Cố & Báo Cáo (Incidents & Reports):** Hướng dẫn tạo báo cáo, các quy tắc về điểm Uy Tín (Reputation Score) và danh sách đen (Blacklist).
-5.  **Quy Định Chung (General Rules):** Giải thích về các chính sách chung, bình luận/đánh giá, và sử dụng khuyến mãi.`;
+5.  **Quy Định Chung (General Rules):** Giải thích về các chính sách chung, bình luận/đánh giá, và sử dụng khuyến mãi.`
 
   constructor() {
     // Khởi tạo Gemini Client với API Key từ biến môi trường
     this.ai = new GoogleGenAI({
       apiKey: process.env.GEMINI_API_KEY,
-    });
+    })
   }
 
   /**
@@ -118,14 +118,18 @@ Các câu hỏi thường gặp được phân loại rõ ràng theo chủ đề
    * và gọi API để nhận phản hồi.
    * @param history Lịch sử hội thoại hiện tại.
    */
-  async getChatResponse(history: { text: string; sender: 'user' | 'model' }[]): Promise<string> {
-    const validHistory = history.filter(msg => msg.text && msg.text.trim() !== '');
+  async getChatResponse(
+    history: { text: string; sender: 'user' | 'model' }[],
+  ): Promise<string> {
+    const validHistory = history.filter(
+      (msg) => msg.text && msg.text.trim() !== '',
+    )
     // Chuyển đổi định dạng lịch sử của bạn sang định dạng Content[] của Gemini
-    const contents: Content[] = validHistory.map(msg => ({
+    const contents: Content[] = validHistory.map((msg) => ({
       role: msg.sender === 'user' ? 'user' : 'model',
       // Đảm bảo rằng text không rỗng
-      parts: [{ text: msg.text }], 
-    }));
+      parts: [{ text: msg.text }],
+    }))
 
     try {
       const response = await this.ai.models.generateContent({
@@ -134,20 +138,23 @@ Các câu hỏi thường gặp được phân loại rõ ràng theo chủ đề
         config: {
           systemInstruction: this.SYSTEM_INSTRUCTION,
         },
-      });
+      })
 
       if (!response.text) {
-          throw new Error('Chatbot không tạo ra phản hồi văn bản hợp lệ.');
+        throw new Error('Chatbot không tạo ra phản hồi văn bản hợp lệ.')
       }
-      
-      return response.text;
+
+      return response.text
     } catch (error) {
-      console.error('Lỗi khi gọi Gemini API:', error);
+      console.error('Lỗi khi gọi Gemini API:', error)
       // Xử lý lỗi quota hoặc API Key không hợp lệ
-      if (error.message.includes('API key is not valid') || error.message.includes('Quota exceeded')) {
-        return "Xin lỗi, dịch vụ AI hiện đang quá tải hoặc khóa API không hợp lệ. Vui lòng thử lại sau.";
+      if (
+        error.message.includes('API key is not valid') ||
+        error.message.includes('Quota exceeded')
+      ) {
+        return 'Xin lỗi, dịch vụ AI hiện đang quá tải hoặc khóa API không hợp lệ. Vui lòng thử lại sau.'
       }
-      throw new Error('Lỗi Server: Không thể tạo phản hồi từ Chatbot.');
+      throw new Error('Lỗi Server: Không thể tạo phản hồi từ Chatbot.')
     }
   }
 }

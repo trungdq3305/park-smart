@@ -97,7 +97,7 @@ export interface IGuestCardService {
    * Cập nhật trạng thái của thẻ (Ví dụ: ACTIVE, INACTIVE).
    * @param id ID của thẻ.
    * @param status Trạng thái mới cần cập nhật.
-   * @param userId ID người dùng thực hiện cập nhật (để lưu log).
+   * @param userId ID người dùng thực hiện cập nhật (để lưu log). xe).
    * @returns Thông tin thẻ sau khi cập nhật trạng thái.
    */
   updateGuestCardStatus(
