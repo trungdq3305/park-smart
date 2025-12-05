@@ -420,7 +420,11 @@ const ManageGuestCard: React.FC = () => {
               const cardGradient = gradients[index % gradients.length]
 
               return (
-                <article key={card._id} className="guest-card-item">
+                <article
+                  key={card._id}
+                  className="guest-card-item"
+                  style={{ '--card-index': index % 10 } as React.CSSProperties}
+                >
                   <div className="guest-card-header" style={{ background: cardGradient }}>
                     <div className="guest-card-chip">
                       <div className="guest-card-chip-line" />
