@@ -1,9 +1,9 @@
 import { BadRequestException, Body, Controller, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiProperty, ApiResponse, ApiTags } from '@nestjs/swagger'; 
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, ValidateNested, IsArray } from 'class-validator'; // Thêm IsArray
-
+import { IsArray,IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator'; // Thêm IsArray
 import { ApiResponseDto } from 'src/common/dto/apiResponse.dto';
+
 import { ChatHistoryItemDto } from './chat-history.dto';
 import { ChatbotService } from './chatbot.service';
 

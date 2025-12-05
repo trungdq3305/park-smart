@@ -113,6 +113,10 @@ export interface IParkingLotSessionRepository {
     reservationId: string,
     parkingLotId?: string,
   ): Promise<ParkingLotSession | null>
+
+  findActiveSessionByGuestCardId(
+    guestCardId: string,
+  ): Promise<ParkingLotSession | null>
 }
 
 export const IParkingLotSessionRepository = Symbol(
