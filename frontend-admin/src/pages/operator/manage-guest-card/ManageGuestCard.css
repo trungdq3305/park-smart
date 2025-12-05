@@ -54,11 +54,13 @@
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
   position: relative;
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .guest-card-stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
 }
 
@@ -251,7 +253,7 @@
 }
 
 .guest-card-item:hover {
-  transform: translateY(-6px);
+  transform: translateY(-2px);
   box-shadow:
     0 24px 60px rgba(15, 23, 42, 0.18),
     0 0 0 1px rgba(59, 130, 246, 0.08);
@@ -608,4 +610,3 @@
     font-size: 20px;
   }
 }
-

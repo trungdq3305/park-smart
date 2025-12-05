@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from 'react'
-import { useGetGuestCardsQuery, useUpdateGuestCardStatusMutation, useDeleteGuestCardMutation } from '../../../features/operator/guestCardAPI'
+import {
+  useGetGuestCardsQuery,
+  useUpdateGuestCardStatusMutation,
+  useDeleteGuestCardMutation,
+} from '../../../features/operator/guestCardAPI'
 import type { GuestCard } from '../../../types/guestCard'
 import { message } from 'antd'
 import './ManageGuestCard.css'
@@ -84,7 +88,7 @@ const ManageGuestCard: React.FC = () => {
         id: card._id,
         status: newStatus,
       }).unwrap()
-      
+
       const successMsg =
         (response as { message?: string })?.message ||
         `Đã ${newStatus === 'ACTIVE' ? 'kích hoạt' : 'vô hiệu hóa'} thẻ ${card.code}`
@@ -102,10 +106,8 @@ const ManageGuestCard: React.FC = () => {
   const handleDelete = async (card: GuestCard) => {
     try {
       const response = await deleteCard({ id: card._id }).unwrap()
-      
-      const successMsg =
-        (response as { message?: string })?.message ||
-        `Đã xóa thẻ ${card.code}`
+
+      const successMsg = (response as { message?: string })?.message || `Đã xóa thẻ ${card.code}`
       message.success(successMsg)
     } catch (error: unknown) {
       const errorMsg =
@@ -267,7 +269,9 @@ const ManageGuestCard: React.FC = () => {
                         <div className="guest-card-detail-icon">📡</div>
                         <div className="guest-card-detail-content">
                           <span className="guest-card-detail-label">NFC UID</span>
-                          <span className="guest-card-detail-value">{card.nfcUid || 'Chưa có'}</span>
+                          <span className="guest-card-detail-value">
+                            {card.nfcUid || 'Chưa có'}
+                          </span>
                         </div>
                       </div>
 

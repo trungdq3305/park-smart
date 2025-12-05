@@ -1,7 +1,5 @@
 import Cookies from 'js-cookie'
 
-
-
 const USER_DATA_COOKIE_KEY = 'parkingLotId'
 
 export function getParkingLotIdCookie(): string | null {
