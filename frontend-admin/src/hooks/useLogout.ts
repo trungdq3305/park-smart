@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import Cookies from 'js-cookie'
 import { notification } from 'antd'
-export function useLogout(redirectTo: string = '/login') {
+export function useLogout(redirectTo: string = '/') {
   const navigate = useNavigate()
 
   const logout = async () => {

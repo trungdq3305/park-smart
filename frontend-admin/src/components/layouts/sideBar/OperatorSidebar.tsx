@@ -5,14 +5,13 @@ import {
   BarChartOutlined,
   FileTextOutlined,
   AppstoreOutlined,
-  BankOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CarOutlined,
   EnvironmentOutlined,
   WalletOutlined,
-  HistoryOutlined,
   SafetyOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -40,6 +39,11 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
   // Menu items aligned to Admin sidebar
   const menuItems = [
     {
+      key: '/operator',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard',
+    },
+    {
       key: '/operator/parking-lot',
       icon: <CarOutlined />,
       label: 'Bãi đỗ xe',
@@ -55,9 +59,9 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Lịch sử phiên đỗ xe',
     },
     {
-      key: '/analytics',
+      key: '/operator/dashboard',
       icon: <BarChartOutlined />,
-      label: 'Phân tích',
+      label: 'Phân tích nâng cao',
     },
     {
       key: '/operator/create-report',
@@ -65,29 +69,19 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Tạo báo cáo',
     },
     {
-      key: '/integrations',
+      key: '/operator/manage-guest-card',
       icon: <AppstoreOutlined />,
-      label: 'Tích hợp',
+      label: 'Quản lý thẻ khách',
     },
     {
-      key: '/companies',
-      icon: <BankOutlined />,
-      label: 'Doanh nghiệp',
-    },
-    {
-      key: '/vehicles',
-      icon: <CarOutlined />,
-      label: 'Phương tiện',
-    },
-    {
-      key: '/payments',
+      key: '/operator/payment',
       icon: <WalletOutlined />,
       label: 'Thanh toán',
     },
     {
-      key: '/history',
-      icon: <HistoryOutlined />,
-      label: 'Lịch sử',
+      key: '/operator/events',
+      icon: <CalendarOutlined />,
+      label: 'Sự kiện',
     },
     {
       key: '/operator/import-card',

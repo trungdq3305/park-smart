@@ -131,9 +131,7 @@ export interface IParkingLotService {
     type: string,
   ): Promise<ParkingLotRequestResponseDto[]>
 
-  findParkingLotRequestById(
-    id: string,
-  ): Promise<ParkingLotRequestResponseDto>
+  findParkingLotRequestById(id: string): Promise<ParkingLotRequestResponseDto>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

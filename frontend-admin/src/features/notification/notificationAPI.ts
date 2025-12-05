@@ -7,7 +7,7 @@ export const notificationAPI = apiSlice.injectEndpoints({
     // 1. Lấy danh sách thông báo
     getNotifications: builder.query<any, string>({
       // Thay 'any' bằng interface Notification[] nếu có
-      query: (userId) => ({
+      query: (_userId) => ({
         url: `/parking/notifications`,
         method: 'GET',
       }),
@@ -17,7 +17,7 @@ export const notificationAPI = apiSlice.injectEndpoints({
 
     // 2. Lấy số lượng thông báo chưa đọc
     getUnreadCount: builder.query<number, string>({
-      query: (userId) => ({
+      query: (_userId) => ({
         url: `/parking/notifications/unread-count`,
         method: 'GET',
       }),
@@ -27,10 +27,10 @@ export const notificationAPI = apiSlice.injectEndpoints({
 
     // 3. Đánh dấu tất cả là đã đọc
     markAllAsRead: builder.mutation<number, string>({
-      query: (userId) => ({
+      query: (_userId) => ({
         url: `/parking/notifications/read-all`,
         method: 'PATCH',
-        body: { userId },
+        body: { _userId },
       }),
       invalidatesTags: ['Notification', 'NotificationCount'],
       transformResponse: (res: any) => res.data[0],
@@ -54,9 +54,9 @@ export const notificationAPI = apiSlice.injectEndpoints({
       }),
       // Khi đánh dấu một mục, chúng ta cần cập nhật cache của cả danh sách
       // và số lượng chưa đọc.
-      async onQueryStarted(notificationId, { dispatch, queryFulfilled, getState }) {
+      async onQueryStarted(_notificationId, { dispatch, queryFulfilled }) {
         try {
-          const { data: updatedNotification } = await queryFulfilled
+          await queryFulfilled
 
           // Cập nhật lại số lượng chưa đọc và danh sách bằng cách vô hiệu hóa tags
           // Đây là cách tối ưu để RTK tự re-fetch:

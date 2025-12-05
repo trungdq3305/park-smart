@@ -1,9 +1,9 @@
 // src/chatbot/chatbot.module.ts
 
-import { Module } from '@nestjs/common';
+import { Module } from '@nestjs/common'
 
-import { ChatbotController } from './chatbot.controller';
-import { ChatbotService } from './chatbot.service';
+import { ChatbotController } from './chatbot.controller'
+import { ChatbotService } from './chatbot.service'
 
 @Module({
   imports: [],
