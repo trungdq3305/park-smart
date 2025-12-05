@@ -3,6 +3,7 @@ import {
   useGetGuestCardsQuery,
   useUpdateGuestCardStatusMutation,
   useDeleteGuestCardMutation,
+  useUpdateGuestCardMutation,
   useGuestCardNfcLookupQuery,
 } from '../../../features/operator/guestCardAPI'
 import type { GuestCard } from '../../../types/guestCard'
@@ -15,6 +16,7 @@ import {
   GuestCardFilters,
   GuestCardGrid,
   GuestCardEmptyState,
+  GuestCardEditModal,
   type GuestCardFilter,
 } from '../../../components/guest-cards'
 
@@ -29,6 +31,8 @@ const ManageGuestCard: React.FC = () => {
   const [debouncedSearchNfcUid, setDebouncedSearchNfcUid] = useState<string>('')
   const [currentPage, setCurrentPage] = useState<number>(1)
   const [allGuestCards, setAllGuestCards] = useState<GuestCard[]>([])
+  const [selectedCard, setSelectedCard] = useState<GuestCard | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false)
   const parkingLotId = getParkingLotId()
 
   // Debounce search input to avoid calling API on every keystroke
@@ -75,6 +79,7 @@ const ManageGuestCard: React.FC = () => {
 
   const [updateStatus] = useUpdateGuestCardStatusMutation()
   const [deleteCard] = useDeleteGuestCardMutation()
+  const [updateCard, { isLoading: isUpdatingCard }] = useUpdateGuestCardMutation()
 
   // NFC Lookup query - only run when debouncedSearchNfcUid is provided
   const {
@@ -186,6 +191,43 @@ const ManageGuestCard: React.FC = () => {
     setDebouncedSearchNfcUid('')
   }
 
+  const handleEdit = (card: GuestCard) => {
+    setSelectedCard(card)
+    setIsEditModalOpen(true)
+  }
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false)
+    setSelectedCard(null)
+  }
+
+  const handleUpdateCard = async (cardId: string, code: string) => {
+    try {
+      const response = await updateCard({
+        id: cardId,
+        data: { code },
+      }).unwrap()
+
+      const successMsg =
+        (response as { message?: string })?.message || 'Đã cập nhật thông tin thẻ thành công'
+      message.success(successMsg)
+
+      // Reset to page 1 and refetch
+      setCurrentPage(1)
+      setAllGuestCards([])
+      refetch()
+      handleCloseEditModal()
+    } catch (error: unknown) {
+      const errorMsg =
+        (error as { data?: { message?: string } })?.data?.message ||
+        (error as { message?: string })?.message ||
+        (error as { error?: string })?.error ||
+        'Có lỗi xảy ra khi cập nhật thông tin thẻ'
+      message.error(errorMsg)
+      throw error // Re-throw to prevent modal from closing
+    }
+  }
+
   if (isLoading && currentPage === 1) {
     return (
       <div className="manage-guest-card-page">
@@ -256,10 +298,20 @@ const ManageGuestCard: React.FC = () => {
             onLoadMore={handleLoadMore}
             onStatusToggle={handleStatusToggle}
             onDelete={handleDelete}
+            onEdit={handleEdit}
             totalItems={pagination?.totalItems}
           />
         )}
       </div>
+
+      {/* Edit Modal */}
+      <GuestCardEditModal
+        card={selectedCard}
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSave={handleUpdateCard}
+        isLoading={isUpdatingCard}
+      />
     </div>
   )
 }

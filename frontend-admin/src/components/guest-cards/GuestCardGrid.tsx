@@ -10,6 +10,7 @@ interface GuestCardGridProps {
   onLoadMore: () => void
   onStatusToggle: (card: GuestCard) => void
   onDelete: (card: GuestCard) => void
+  onEdit: (card: GuestCard) => void
   totalItems?: number
 }
 
@@ -20,6 +21,7 @@ export const GuestCardGrid: React.FC<GuestCardGridProps> = ({
   onLoadMore,
   onStatusToggle,
   onDelete,
+  onEdit,
   totalItems,
 }) => {
   const observerTarget = useRef<HTMLDivElement>(null)
@@ -62,6 +64,7 @@ export const GuestCardGrid: React.FC<GuestCardGridProps> = ({
             index={index}
             onStatusToggle={onStatusToggle}
             onDelete={onDelete}
+            onEdit={onEdit}
           />
         ))}
       </div>

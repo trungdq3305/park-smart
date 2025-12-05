@@ -8,6 +8,7 @@ interface GuestCardItemProps {
   index: number
   onStatusToggle: (card: GuestCard) => void
   onDelete: (card: GuestCard) => void
+  onEdit: (card: GuestCard) => void
 }
 
 export const GuestCardItem: React.FC<GuestCardItemProps> = ({
@@ -15,6 +16,7 @@ export const GuestCardItem: React.FC<GuestCardItemProps> = ({
   index,
   onStatusToggle,
   onDelete,
+  onEdit,
 }) => {
   const statusClass = getStatusClass(card.status)
   const statusLabel = getStatusLabel(card.status)
@@ -84,6 +86,14 @@ export const GuestCardItem: React.FC<GuestCardItemProps> = ({
         </div>
 
         <div className="guest-card-actions">
+          <button
+            type="button"
+            className="guest-card-action-btn edit"
+            onClick={() => onEdit(card)}
+            title="Chỉnh sửa thẻ"
+          >
+            ✏️
+          </button>
           <button
             type="button"
             className="guest-card-action-btn toggle"
