@@ -43,6 +43,7 @@ export const guestCardAPI = apiSlice.injectEndpoints({
         params: { parkingLotId, page, pageSize, status },
       }),
       transformResponse: (res) => res,
+      providesTags: ['guestCard'],
     }),
     guestCardNfcLookup: builder.query({
       query: ({ nfcUid, parkingLotId }) => ({
@@ -61,4 +62,5 @@ export const {
   useDeleteGuestCardMutation,
   useUpdateGuestCardMutation,
   useGetGuestCardsQuery,
+  useGuestCardNfcLookupQuery,
 } = guestCardAPI

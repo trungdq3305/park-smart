@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import {
   useGetGuestCardsQuery,
   useUpdateGuestCardStatusMutation,
   useDeleteGuestCardMutation,
+  useGuestCardNfcLookupQuery,
 } from '../../../features/operator/guestCardAPI'
 import type { GuestCard } from '../../../types/guestCard'
 import { message } from 'antd'
@@ -49,9 +50,21 @@ const formatDate = (dateString: string) => {
 
 const ManageGuestCard: React.FC = () => {
   const [filter, setFilter] = useState<GuestCardFilter>('all')
+  const [searchNfcUid, setSearchNfcUid] = useState<string>('')
+  const [debouncedSearchNfcUid, setDebouncedSearchNfcUid] = useState<string>('')
   const parkingLotId = getParkingLotId()
-  console.log(parkingLotId)
-  const { data, isLoading, error } = useGetGuestCardsQuery({
+
+  // Debounce search input to avoid calling API on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchNfcUid(searchNfcUid)
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => {
+      clearTimeout(timer)
+    }
+  }, [searchNfcUid])
+  const { data, isLoading, error, refetch } = useGetGuestCardsQuery({
     parkingLotId,
     page: 1,
     pageSize: 10,
@@ -60,11 +73,28 @@ const ManageGuestCard: React.FC = () => {
     data?: GuestCardsResponse
     isLoading: boolean
     error?: unknown
+    refetch: () => void
   }
   const [updateStatus] = useUpdateGuestCardStatusMutation()
   const [deleteCard] = useDeleteGuestCardMutation()
 
+  // NFC Lookup query - only run when debouncedSearchNfcUid is provided
+  const {
+    data: searchResult,
+    isLoading: isSearching,
+    error: searchError,
+  } = useGuestCardNfcLookupQuery(
+    {
+      nfcUid: debouncedSearchNfcUid,
+      parkingLotId: parkingLotId || '',
+    },
+    {
+      skip: !debouncedSearchNfcUid || debouncedSearchNfcUid.trim() === '' || !parkingLotId,
+    }
+  )
+
   const guestCards: GuestCard[] = data?.data || []
+  const searchedCard: GuestCard | null = searchResult?.data[0] || null
 
   const stats = useMemo(() => {
     const active = guestCards.filter((card) => card.status === 'ACTIVE').length
@@ -77,9 +107,15 @@ const ManageGuestCard: React.FC = () => {
   }, [guestCards])
 
   const filteredCards = useMemo(() => {
+    // If searching, show only the searched card
+    if (debouncedSearchNfcUid && searchedCard) {
+      return [searchedCard]
+    }
+
+    // Otherwise, apply filter
     if (filter === 'all') return guestCards
     return guestCards.filter((card) => card.status === filter)
-  }, [guestCards, filter])
+  }, [guestCards, filter, debouncedSearchNfcUid, searchedCard])
 
   const handleStatusToggle = async (card: GuestCard) => {
     try {
@@ -93,6 +129,9 @@ const ManageGuestCard: React.FC = () => {
         (response as { message?: string })?.message ||
         `Đã ${newStatus === 'ACTIVE' ? 'kích hoạt' : 'vô hiệu hóa'} thẻ ${card.code}`
       message.success(successMsg)
+      
+      // Refetch data to update UI
+      refetch()
     } catch (error: unknown) {
       const errorMsg =
         (error as { data?: { message?: string } })?.data?.message ||
@@ -109,6 +148,9 @@ const ManageGuestCard: React.FC = () => {
 
       const successMsg = (response as { message?: string })?.message || `Đã xóa thẻ ${card.code}`
       message.success(successMsg)
+      
+      // Refetch data to update UI
+      refetch()
     } catch (error: unknown) {
       const errorMsg =
         (error as { data?: { message?: string } })?.data?.message ||
@@ -193,8 +235,45 @@ const ManageGuestCard: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters */}
+        {/* Search and Filters */}
         <div className="guest-card-controls-card">
+          <div className="guest-card-search-wrapper">
+            <label htmlFor="nfc-search" className="guest-card-search-label">
+              Tìm kiếm theo NFC UID:
+            </label>
+            <div className="guest-card-search-input-wrapper">
+              <input
+                id="nfc-search"
+                type="text"
+                className="guest-card-search-input"
+                placeholder="Nhập NFC UID để tìm kiếm..."
+                value={searchNfcUid}
+                onChange={(e) => setSearchNfcUid(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearchNfcUid('')
+                    setDebouncedSearchNfcUid('')
+                  }
+                }}
+              />
+              {searchNfcUid && (
+                <button
+                  type="button"
+                  className="guest-card-search-clear"
+                  onClick={() => {
+                    setSearchNfcUid('')
+                    setDebouncedSearchNfcUid('')
+                  }}
+                  title="Xóa tìm kiếm"
+                >
+                  ✕
+                </button>
+              )}
+              {isSearching && (
+                <div className="guest-card-search-loading">🔍</div>
+              )}
+            </div>
+          </div>
           <div className="guest-card-filter-wrapper">
             <label htmlFor="status-filter" className="guest-card-filter-label">
               Lọc theo trạng thái:
@@ -203,7 +282,12 @@ const ManageGuestCard: React.FC = () => {
               id="status-filter"
               className="guest-card-filter-select"
               value={filter}
-              onChange={(e) => setFilter(e.target.value as GuestCardFilter)}
+              onChange={(e) => {
+                setFilter(e.target.value as GuestCardFilter)
+                setSearchNfcUid('') // Clear search when changing filter
+                setDebouncedSearchNfcUid('')
+              }}
+              disabled={!!searchNfcUid}
             >
               <option value="all">--</option>
               <option value="ACTIVE">ACTIVE</option>
@@ -214,17 +298,49 @@ const ManageGuestCard: React.FC = () => {
             </select>
           </div>
           <div className="guest-card-counter">
-            Đang hiển thị <strong>{filteredCards.length}</strong> / {guestCards.length} thẻ
+            {debouncedSearchNfcUid ? (
+              <>
+                {isSearching ? (
+                  <span>Đang tìm kiếm...</span>
+                ) : searchedCard ? (
+                  <span>
+                    Tìm thấy <strong>1</strong> thẻ
+                  </span>
+                ) : (
+                  <span>Không tìm thấy thẻ</span>
+                )}
+              </>
+            ) : (
+              <>
+                Đang hiển thị <strong>{filteredCards.length}</strong> / {guestCards.length} thẻ
+              </>
+            )}
           </div>
         </div>
+
+        {/* Search Error */}
+        {debouncedSearchNfcUid && searchError && (
+          <div className="guest-card-search-error">
+            <span className="guest-card-error-badge">Lỗi tìm kiếm</span>
+            <p>
+              {(searchError as { data?: { message?: string } })?.data?.message ||
+                (searchError as { message?: string })?.message ||
+                'Không thể tìm kiếm thẻ. Vui lòng thử lại.'}
+            </p>
+          </div>
+        )}
 
         {/* Guest Cards Grid */}
         {filteredCards.length === 0 ? (
           <div className="guest-card-empty-state">
             <div className="guest-card-empty-icon">💳</div>
-            <h3 className="guest-card-empty-title">Chưa có thẻ khách nào</h3>
+            <h3 className="guest-card-empty-title">
+              {debouncedSearchNfcUid ? 'Không tìm thấy thẻ' : 'Chưa có thẻ khách nào'}
+            </h3>
             <p className="guest-card-empty-text">
-              Tạo mới thẻ khách để quản lý và theo dõi các thẻ NFC trong hệ thống Park Smart.
+              {debouncedSearchNfcUid
+                ? `Không tìm thấy thẻ với NFC UID: ${debouncedSearchNfcUid}. Vui lòng kiểm tra lại.`
+                : 'Tạo mới thẻ khách để quản lý và theo dõi các thẻ NFC trong hệ thống Park Smart.'}
             </p>
           </div>
         ) : (
@@ -279,7 +395,7 @@ const ManageGuestCard: React.FC = () => {
                         <div className="guest-card-detail-icon">🆔</div>
                         <div className="guest-card-detail-content">
                           <span className="guest-card-detail-label">ID thẻ</span>
-                          <span className="guest-card-detail-value">{card._id.slice(0, 8)}...</span>
+                          <span className="guest-card-detail-value">{card._id}...</span>
                         </div>
                       </div>
 
@@ -288,7 +404,7 @@ const ManageGuestCard: React.FC = () => {
                         <div className="guest-card-detail-content">
                           <span className="guest-card-detail-label">Bãi đỗ xe</span>
                           <span className="guest-card-detail-value">
-                            {card.parkingLotId?.slice(0, 8) || 'N/A'}...
+                            {card.parkingLotId || 'N/A'}...
                           </span>
                         </div>
                       </div>
@@ -337,3 +453,4 @@ const ManageGuestCard: React.FC = () => {
 }
 
 export default ManageGuestCard
+
