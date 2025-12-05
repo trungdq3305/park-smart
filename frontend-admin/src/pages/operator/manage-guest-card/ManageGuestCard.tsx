@@ -256,7 +256,7 @@ const ManageGuestCard: React.FC = () => {
     <div className="manage-guest-card-page">
       <div className="guest-card-page-header">
         <div className="guest-card-header-content">
-          <div>
+    <div>
             <h1>Quản lý thẻ khách</h1>
             <p>Quản lý và theo dõi tất cả thẻ NFC khách trong hệ thống Park Smart</p>
           </div>
