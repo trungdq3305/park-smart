@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import {
   useGetGuestCardsQuery,
   useUpdateGuestCardStatusMutation,
@@ -52,6 +52,9 @@ const ManageGuestCard: React.FC = () => {
   const [filter, setFilter] = useState<GuestCardFilter>('all')
   const [searchNfcUid, setSearchNfcUid] = useState<string>('')
   const [debouncedSearchNfcUid, setDebouncedSearchNfcUid] = useState<string>('')
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [allGuestCards, setAllGuestCards] = useState<GuestCard[]>([])
+  const observerTarget = useRef<HTMLDivElement>(null)
   const parkingLotId = getParkingLotId()
 
   // Debounce search input to avoid calling API on every keystroke
@@ -64,9 +67,16 @@ const ManageGuestCard: React.FC = () => {
       clearTimeout(timer)
     }
   }, [searchNfcUid])
+
+  // Reset page and cards when filter or search changes
+  useEffect(() => {
+    setCurrentPage(1)
+    setAllGuestCards([])
+  }, [filter, debouncedSearchNfcUid])
+
   const { data, isLoading, error, refetch } = useGetGuestCardsQuery({
     parkingLotId,
-    page: 1,
+    page: currentPage,
     pageSize: 10,
     status: filter !== 'all' ? filter : undefined,
   }) as {
@@ -75,6 +85,19 @@ const ManageGuestCard: React.FC = () => {
     error?: unknown
     refetch: () => void
   }
+
+  // Accumulate data when new page is loaded
+  useEffect(() => {
+    if (data?.data) {
+      if (currentPage === 1) {
+        // First page - replace all
+        setAllGuestCards(data.data)
+      } else {
+        // Subsequent pages - append
+        setAllGuestCards((prev) => [...prev, ...data.data])
+      }
+    }
+  }, [data, currentPage])
   const [updateStatus] = useUpdateGuestCardStatusMutation()
   const [deleteCard] = useDeleteGuestCardMutation()
 
@@ -93,8 +116,10 @@ const ManageGuestCard: React.FC = () => {
     }
   )
 
-  const guestCards: GuestCard[] = data?.data || []
+  const guestCards: GuestCard[] = allGuestCards
   const searchedCard: GuestCard | null = searchResult?.data[0] || null
+  const pagination = data?.pagination
+  const hasMorePages = pagination ? currentPage < pagination.totalPages : false
 
   const stats = useMemo(() => {
     const active = guestCards.filter((card) => card.status === 'ACTIVE').length
@@ -117,6 +142,35 @@ const ManageGuestCard: React.FC = () => {
     return guestCards.filter((card) => card.status === filter)
   }, [guestCards, filter, debouncedSearchNfcUid, searchedCard])
 
+  // Intersection Observer for infinite scroll
+  const loadMore = useCallback(() => {
+    if (!isLoading && hasMorePages && !debouncedSearchNfcUid) {
+      setCurrentPage((prev) => prev + 1)
+    }
+  }, [isLoading, hasMorePages, debouncedSearchNfcUid])
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    const currentTarget = observerTarget.current
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
+      }
+    }
+  }, [loadMore])
+
   const handleStatusToggle = async (card: GuestCard) => {
     try {
       const newStatus = card.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
@@ -130,7 +184,9 @@ const ManageGuestCard: React.FC = () => {
         `Đã ${newStatus === 'ACTIVE' ? 'kích hoạt' : 'vô hiệu hóa'} thẻ ${card.code}`
       message.success(successMsg)
       
-      // Refetch data to update UI
+      // Reset to page 1 and refetch
+      setCurrentPage(1)
+      setAllGuestCards([])
       refetch()
     } catch (error: unknown) {
       const errorMsg =
@@ -149,7 +205,9 @@ const ManageGuestCard: React.FC = () => {
       const successMsg = (response as { message?: string })?.message || `Đã xóa thẻ ${card.code}`
       message.success(successMsg)
       
-      // Refetch data to update UI
+      // Reset to page 1 and refetch
+      setCurrentPage(1)
+      setAllGuestCards([])
       refetch()
     } catch (error: unknown) {
       const errorMsg =
@@ -312,7 +370,8 @@ const ManageGuestCard: React.FC = () => {
               </>
             ) : (
               <>
-                Đang hiển thị <strong>{filteredCards.length}</strong> / {guestCards.length} thẻ
+                Đang hiển thị <strong>{filteredCards.length}</strong>
+                {pagination && ` / ${pagination.totalItems}`} thẻ
               </>
             )}
           </div>
@@ -445,6 +504,25 @@ const ManageGuestCard: React.FC = () => {
                 </article>
               )
             })}
+          </div>
+        )}
+
+        {/* Infinite Scroll Observer Target */}
+        {!debouncedSearchNfcUid && hasMorePages && (
+          <div ref={observerTarget} className="guest-card-load-more-trigger">
+            {isLoading && (
+              <div className="guest-card-load-more-loading">
+                <div className="guest-card-loading-spinner" />
+                <p>Đang tải thêm thẻ...</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* End of list message */}
+        {!debouncedSearchNfcUid && !hasMorePages && filteredCards.length > 0 && (
+          <div className="guest-card-end-message">
+            <p>Đã hiển thị tất cả {pagination?.totalItems || filteredCards.length} thẻ</p>
           </div>
         )}
       </div>
