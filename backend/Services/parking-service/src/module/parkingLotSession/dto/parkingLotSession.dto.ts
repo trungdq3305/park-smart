@@ -149,6 +149,20 @@ class SubscriptionSimpleDto {
  * DTO Phản hồi Chính cho ParkingLotSession
  * (Sử dụng với ClassSerializerInterceptor)
  */
+
+@Exclude()
+export class GuestCardResponseDto {
+  @Expose()
+  @Transform(({ obj }) => obj?._id?.toString())
+  _id: string
+
+  @Expose()
+  nfcUid: string
+
+  @Expose()
+  code: string
+}
+
 @Exclude()
 export class ParkingLotSessionResponseDto {
   @Expose()
@@ -199,6 +213,10 @@ export class ParkingLotSessionResponseDto {
 
   @Expose()
   updatedAt: Date
+
+  @Expose()
+  @Type(() => GuestCardResponseDto)
+  guestCardId: GuestCardResponseDto | null // ⭐️ Đã populate nếu có liên kết thẻ
 }
 
 export class HistoryFilterDto {
@@ -249,4 +267,20 @@ export class ConfirmCheckoutDto {
   @Type(() => Number) // 👈 QUAN TRỌNG: Tự động chuyển chuỗi "50000" -> số 50000
   @IsNumber()
   amountPayAfterCheckOut: number
+
+  @ApiPropertyOptional({
+    description: 'File ảnh chứng từ thanh toán (nếu có)',
+    type: 'string',
+    format: 'binary',
+  })
+  @IsOptional()
+  file: any
+
+  @ApiPropertyOptional({
+    description: 'Ghi chú tùy chọn khi checkout',
+    example: 'Khách làm mất thẻ',
+  })
+  @IsOptional()
+  @IsString()
+  note?: string
 }
