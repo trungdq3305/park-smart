@@ -1,4 +1,5 @@
 ﻿using CoreService.Repository.Models;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +12,9 @@ namespace CoreService.Repository.Interfaces
     {
         Task<Driver?> GetByIdAsync(string id);
         Task<IEnumerable<Driver>> GetAllAsync();
-        Task AddAsync(Driver entity);
-        Task UpdateAsync(Driver entity);
-        Task DeleteAsync(string id);
+        Task AddAsync(Driver entity, IClientSessionHandle session = null);
+        Task UpdateAsync(Driver entity, IClientSessionHandle session = null);
+        Task DeleteAsync(string id, IClientSessionHandle session = null);
         Task<Driver?> GetByAccountIdAsync(string accountId);
         Task<bool> UpdateCreditPointByAccountIdAsync(string accountId, int newCreditPoint);
     }

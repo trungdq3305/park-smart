@@ -1,5 +1,6 @@
 ﻿using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.DashboardDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
@@ -507,6 +508,149 @@ namespace CoreService.Application.Applications
                 pagedResult,
                 true,
                 "Lấy danh sách tài khoản bị cấm thành công",
+                StatusCodes.Status200OK
+            );
+        }
+        // Trong CoreService.Application.Applications/AccountApplication.cs
+
+        // ... (Trong class AccountApplication) ...
+
+        public async Task<ApiResponse<NewRegistrationByRoleDto>> GetNewRegistrationsByRoleAsync(DateTime startDate, DateTime endDate)
+        {
+            // 1. Lấy dữ liệu cần thiết một cách đồng thời (các tài khoản mới và tất cả thông tin Role)
+            var newAccountsTask = _accountRepo.GetAccountsCreatedInRangeAsync(startDate, endDate);
+            var driversTask = _driverRepo.GetAllAsync();
+            var operatorsTask = _operatorRepo.GetAllAsync();
+            var adminsTask = _adminRepo.GetAllAsync();
+
+            await Task.WhenAll(newAccountsTask, driversTask, operatorsTask, adminsTask);
+
+            var newAccounts = await newAccountsTask;
+
+            if (newAccounts == null || !newAccounts.Any())
+            {
+                // Trả về kết quả rỗng
+                var emptyCounts = new Dictionary<string, int> {
+             { "Driver", 0 }, { "Operator", 0 }, { "Admin", 0 }, { "Unknown", 0 }
+         };
+                return new ApiResponse<NewRegistrationByRoleDto>(
+                    new NewRegistrationByRoleDto { StartDate = startDate, EndDate = endDate, TotalNewAccounts = 0, CountsByRole = emptyCounts },
+                    true,
+                    "Không có tài khoản mới nào trong khoảng thời gian này.",
+                    StatusCodes.Status200OK
+                );
+            }
+
+            // 2. Tạo Dictionary để tra cứu role nhanh
+            var driversByAccountId = (await driversTask).ToDictionary(d => d.AccountId);
+            var operatorsByAccountId = (await operatorsTask).ToDictionary(o => o.AccountId);
+            var adminsByAccountId = (await adminsTask).ToDictionary(a => a.AccountId);
+
+            var roleCounts = new Dictionary<string, int>
+    {
+        { "Driver", 0 },
+        { "Operator", 0 },
+        { "Admin", 0 },
+        { "Unknown", 0 }
+    };
+
+            // 3. Xác định Role và đếm
+            foreach (var account in newAccounts)
+            {
+                string roleName = "Unknown";
+
+                if (driversByAccountId.ContainsKey(account.Id))
+                {
+                    roleName = "Driver";
+                }
+                else if (operatorsByAccountId.ContainsKey(account.Id))
+                {
+                    roleName = "Operator";
+                }
+                else if (adminsByAccountId.ContainsKey(account.Id))
+                {
+                    roleName = "Admin";
+                }
+
+                // Tăng số lượng của Role tương ứng
+                roleCounts[roleName] = roleCounts.GetValueOrDefault(roleName, 0) + 1;
+            }
+
+            // 4. Tạo DTO phản hồi
+            var responseData = new NewRegistrationByRoleDto
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalNewAccounts = newAccounts.Count(),
+                CountsByRole = roleCounts
+            };
+
+            return new ApiResponse<NewRegistrationByRoleDto>(
+                responseData,
+                true,
+                "Lấy số lượng đăng ký mới theo role thành công",
+                StatusCodes.Status200OK
+            );
+        }
+        // Trong CoreService.Application.Applications/AccountApplication.cs
+
+        // ... (Trong class AccountApplication) ...
+
+        // THÊM phương thức GetDashboardStatsAsync
+        public async Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync()
+        {
+            // Tính toán mốc 7 ngày trước (cho việc đếm đăng ký mới)
+            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+            // Lấy tất cả dữ liệu cần thiết một cách đồng thời (Tối ưu performance)
+            var accountsTask = _accountRepo.GetAllAsync();
+            var driversTask = _driverRepo.GetAllAsync();
+            var operatorsTask = _operatorRepo.GetAllAsync();
+            var adminsTask = _adminRepo.GetAllAsync();
+            var bannedAccountsTask = _accountRepo.GetAllBannedAccountsAsync();
+            var activeAccountsTask = _accountRepo.CountActiveAccountsAsync();
+            var newRegistrationsTask = _accountRepo.CountNewAccountsSinceAsync(sevenDaysAgo);
+            var registrationsByDateTask = _accountRepo.GetRegistrationsByDateRangeAsync(sevenDaysAgo, DateTime.UtcNow);
+
+            await Task.WhenAll(
+                accountsTask,
+                driversTask,
+                operatorsTask,
+                adminsTask,
+                bannedAccountsTask,
+                activeAccountsTask,
+                newRegistrationsTask,
+                registrationsByDateTask
+            );
+
+            var allAccounts = await accountsTask;
+            var allDrivers = await driversTask;
+            var allOperators = await operatorsTask;
+            var allAdmins = await adminsTask;
+            var bannedAccounts = await bannedAccountsTask;
+            var totalActiveUsers = await activeAccountsTask;
+            var newRegistrations = await newRegistrationsTask;
+            var registrationsByDate = await registrationsByDateTask;
+
+            var responseData = new DashboardStatsDto
+            {
+                TotalUsers = allAccounts.Count(),
+                TotalDrivers = allDrivers.Count(),
+                TotalOperators = allOperators.Count(),
+                TotalAdmins = allAdmins.Count(),
+
+                TotalBannedUsers = bannedAccounts.Count(),
+                TotalActiveUsers = (int)totalActiveUsers,
+                TotalInactiveUsers = allAccounts.Count() - (int)totalActiveUsers, // Tính Inactive dựa trên Total - Active
+
+                NewRegistrationsLast7Days = (int)newRegistrations,
+                RegistrationsByDateLast7Days = registrationsByDate
+            };
+
+            return new ApiResponse<DashboardStatsDto>(
+                responseData,
+                true,
+                "Lấy số liệu dashboard thành công",
                 StatusCodes.Status200OK
             );
         }

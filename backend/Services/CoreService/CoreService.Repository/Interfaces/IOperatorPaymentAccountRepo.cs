@@ -1,4 +1,5 @@
 ﻿using CoreService.Repository.Models;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,8 +13,8 @@ namespace CoreService.Repository.Interfaces
         Task<OperatorPaymentAccount?> GetByOperatorAsync(string operatorId);
         Task<OperatorPaymentAccount?> GetByIdAsync(string Id);
         Task<OperatorPaymentAccount?> GetByXenditUserAsync(string xenditUserId);
-        Task AddAsync(OperatorPaymentAccount entity);
-        Task UpdateAsync(OperatorPaymentAccount entity);
+        Task AddAsync(OperatorPaymentAccount entity, IClientSessionHandle session = null);
+        Task UpdateAsync(OperatorPaymentAccount entity, IClientSessionHandle session = null);
         Task DeleteAsync(string id);
     }
 }
