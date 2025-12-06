@@ -15,6 +15,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Collections.Specialized.BitVector32;
 
 namespace CoreService.Application.Applications
 {
@@ -120,62 +121,82 @@ namespace CoreService.Application.Applications
             acc.EmailOtpExpiresAt = now.AddMinutes(10);
             acc.EmailOtpAttemptCount = 0;
             acc.EmailOtpLastSentAt = now;
-
+            
             // Lưu account trước để có Id thật (Mongo tạo Id sau khi insert)
-            await _accountRepo.AddAsync(acc);
-
-            // Cập nhật lại hash theo Id thật (tránh trường hợp "precreate")
-            acc.EmailOtpHash = OtpHelper.ComputeHash(otp, acc.Id, pepper);
-            await _accountRepo.UpdateAsync(acc);
-
-            var driver = new Driver
+            using var session = await _accountRepo.StartSessionAsync();
+            session.StartTransaction();
+            try
             {
-                Id = null,
-                FullName = request.FullName,
-                Gender = request.Gender,
-                AccountId = acc.Id,
-            };
-            await _driverRepo.AddAsync(driver);
+                await _accountRepo.AddAsync(acc, session);
 
-            await _emailApplication.SendEmailConfirmationCodeAsync(acc.Email, otp);
+                // Cập nhật lại hash theo Id thật (tránh trường hợp "precreate")
+                acc.EmailOtpHash = OtpHelper.ComputeHash(otp, acc.Id, pepper);
+                await _accountRepo.UpdateAsync(acc, session);
 
-            return new ApiResponse<string>(
-                data: null,
-                success: true,
-                message: "Đăng ký thành công. Mã xác nhận đã được gửi tới Email của bạn.",
-                statusCode: StatusCodes.Status200OK
-            );
+                var driver = new Driver
+                {
+                    Id = null,
+                    FullName = request.FullName,
+                    Gender = request.Gender,
+                    AccountId = acc.Id,
+                };
+                await _driverRepo.AddAsync(driver, session);
+
+                await session.CommitTransactionAsync();
+                await _emailApplication.SendEmailConfirmationCodeAsync(acc.Email, otp);
+
+                return new ApiResponse<string>(
+                    data: null,
+                    success: true,
+                    message: "Đăng ký thành công. Mã xác nhận đã được gửi tới Email của bạn.",
+                    statusCode: StatusCodes.Status200OK
+                );
+            }
+            catch (Exception ex)
+            {
+                // ROLLBACK khi có lỗi
+                await session.AbortTransactionAsync();
+
+                // Xử lý lỗi (Nếu là ApiException thì rethrow, nếu là lỗi hệ thống thì trả về 500)
+                if (ex is ApiException apiEx) throw;
+
+                // Log lỗi hệ thống không xác định
+                throw new ApiException("Lỗi hệ thống: Đăng ký thất bại và đã được hoàn tác.", StatusCodes.Status500InternalServerError);
+            }
         }
 
         public async Task<ApiResponse<string>> OperatorRegisterAndCreateParkingLotAsync(FullOperatorCreationRequest fullRequest)
         {
+
             var registerReq = fullRequest.RegisterRequest;
             var addressReq = fullRequest.AddressRequest;
             var parkingLotReq = fullRequest.ParkingLotRequest;
+            // 1. KIỂM TRA XÁC THỰC CƠ BẢN (Không cần Rollback nếu thất bại ở đây)
+            var existingUser = await _accountRepo.GetByEmailAsync(registerReq.Email);
+            if (existingUser != null)
+                throw new ApiException("Email đã tồn tại hoặc chưa được duyệt", StatusCodes.Status400BadRequest);
 
+            var existingphoneUser = await _accountRepo.GetByPhoneAsync(registerReq.PhoneNumber);
+            if (existingphoneUser != null)
+                throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
+
+            var existingPaymentOperator = await _opRepo.GetByPaymentEmailAsync(registerReq.PaymentEmail); // Giả định có _opRepo.GetByPaymentEmailAsync
+            if (existingPaymentOperator != null)
+                throw new ApiException("Payment Email đã được sử dụng bởi Operator khác", StatusCodes.Status400BadRequest);
+
+            if (registerReq.IsAgreeToP != true)
+                throw new ApiException("Vui lòng đồng ý Chính Sách & Điều Khoản", StatusCodes.Status400BadRequest);
             // Biến lưu trữ đối tượng/ID đã tạo thành công
             Account createdAccount = null;
             ParkingLotOperator createdOperator = null;
             string createdAddressId = null;
             string createdParkingLotRequestId = null; // <--- BIẾN MỚI
 
+            using var session = await _accountRepo.StartSessionAsync();
+            session.StartTransaction();
             try
             {
-                // 1. KIỂM TRA XÁC THỰC CƠ BẢN (Không cần Rollback nếu thất bại ở đây)
-                var existingUser = await _accountRepo.GetByEmailAsync(registerReq.Email);
-                if (existingUser != null)
-                    throw new ApiException("Email đã tồn tại hoặc chưa được duyệt", StatusCodes.Status400BadRequest);
-
-                var existingphoneUser = await _accountRepo.GetByPhoneAsync(registerReq.PhoneNumber);
-                if (existingphoneUser != null)
-                    throw new ApiException("Số điện thoại đã được sử dụng", StatusCodes.Status400BadRequest);
-
-                var existingPaymentOperator = await _opRepo.GetByPaymentEmailAsync(registerReq.PaymentEmail); // Giả định có _opRepo.GetByPaymentEmailAsync
-                if (existingPaymentOperator != null)
-                    throw new ApiException("Payment Email đã được sử dụng bởi Operator khác", StatusCodes.Status400BadRequest);
-
-                if (registerReq.IsAgreeToP != true)
-                    throw new ApiException("Vui lòng đồng ý Chính Sách & Điều Khoản", StatusCodes.Status400BadRequest);
+                
 
                 // 2. TẠO ACCOUNT VÀ OPERATOR (DB)
                 var acc = new Account
@@ -187,7 +208,7 @@ namespace CoreService.Application.Applications
                     IsActive = false,
                     IsAgreeToP = registerReq.IsAgreeToP
                 };
-                await _accountRepo.AddAsync(acc);
+                await _accountRepo.AddAsync(acc, session);
                 createdAccount = acc; // Lưu trữ để Rollback
 
                 var op = new ParkingLotOperator
@@ -197,7 +218,7 @@ namespace CoreService.Application.Applications
                     BussinessName = registerReq.BussinessName,
                     AccountId = acc.Id,
                 };
-                await _opRepo.AddAsync(op);
+                await _opRepo.AddAsync(op, session);
                 createdOperator = op; // Lưu trữ để Rollback
 
                 // 3. GỌI API TẠO ĐỊA CHỈ (/addresses)
@@ -222,11 +243,15 @@ namespace CoreService.Application.Applications
 
                 // 5. TẠO PAYMENT ACCOUNT VÀ XENDIT SUB-ACCOUNT (DB/Service)
                 var paymentAcc = new OperatorPaymentAccount { OperatorId = op.Id, XenditUserId = null };
-                await _operatorPaymentAccountRepo.AddAsync(paymentAcc);
+                await _operatorPaymentAccountRepo.AddAsync(paymentAcc, session);
 
                 // Tạo Sub-Account Xendit và cập nhật XenditUserId vào DB
                 var xenditUserId = await _paymentService.CreateSubAccountAsync(op.Id, registerReq.PaymentEmail, registerReq.BussinessName, paymentAcc.Id);
 
+                paymentAcc.XenditUserId = xenditUserId;
+                await _operatorPaymentAccountRepo.UpdateAsync(paymentAcc, session);
+
+                await session.CommitTransactionAsync();
                 // 6. HOÀN TẤT
                 return new ApiResponse<string>(
                     data: null,
