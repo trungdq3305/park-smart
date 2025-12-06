@@ -59,10 +59,16 @@ export class ParkingLotSessionRepository
   ): Promise<ParkingLotSession | null> {
     return this.parkingLotSessionModel
       .findById(sessionId)
-      .populate({
-        path: 'parkingLotId',
-        select: '_id name',
-      })
+      .populate([
+        {
+          path: 'parkingLotId',
+          select: '_id name',
+        },
+        {
+          path: 'guestCardId',
+          select: '_id nfcUid code',
+        },
+      ])
       .session(session ?? null)
       .lean()
       .exec()
