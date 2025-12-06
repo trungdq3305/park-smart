@@ -1,4 +1,5 @@
-﻿using CoreService.Application.DTOs.ApiResponse;
+﻿using CoreService.Application.Applications;
+using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.DashboardDtos;
 using CoreService.Application.DTOs.PaymentDtos;
 using CoreService.Application.DTOs.PaymentDtos.CoreService.Application.DTOs.PaymentDtos;
@@ -157,6 +158,27 @@ namespace CoreService.API.Controllers
                 request.ToDate);
 
             return Ok(counts);
+        }
+
+        [HttpGet("account-stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetDashboardStats()
+        {
+            var response = await _accountApp.GetDashboardStatsAsync();
+            return StatusCode(response.StatusCode, response);
+        }
+
+        // 🌟 API MỚI 2: Số lượng đăng ký mới theo Role và Khoảng thời gian
+        // GET api/accounts/new-registrations?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+        [HttpGet("new-registrations")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetNewRegistrationsByRole(
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            // ... (Kiểm tra startDate/endDate) ...
+            var response = await _accountApp.GetNewRegistrationsByRoleAsync(startDate, endDate);
+            return StatusCode(response.StatusCode, response);
         }
     }
 }

@@ -28,14 +28,41 @@ namespace CoreService.Repository.Repositories
         public async Task<IEnumerable<ParkingLotOperator>> GetAllAsync() =>
             await _collection.Find(e => e.DeletedAt == null).ToListAsync();
 
-        public async Task AddAsync(ParkingLotOperator entity) =>
-            await _collection.InsertOneAsync(entity);
+        public async Task AddAsync(ParkingLotOperator entity, IClientSessionHandle session = null)
+        {
+            if (session != null)
+            {
+                await _collection.InsertOneAsync(session, entity);
+            }
+            else
+            {
+                await _collection.InsertOneAsync(entity);
+            }
+        }
 
-        public async Task UpdateAsync(ParkingLotOperator entity) =>
-            await _collection.ReplaceOneAsync(e => e.Id == entity.Id, entity);
+        public async Task UpdateAsync(ParkingLotOperator entity, IClientSessionHandle session = null)
+        {
+            if (session != null)
+            {
+                await _collection.ReplaceOneAsync(session, e => e.Id == entity.Id, entity);
+            }
+            else
+            {
+                await _collection.ReplaceOneAsync(e => e.Id == entity.Id, entity);
+            }
+        }
 
-        public async Task DeleteAsync(string id) =>
-            await _collection.DeleteOneAsync(e => e.Id == id);
+        public async Task DeleteAsync(string id, IClientSessionHandle session = null)
+        {
+            if (session != null)
+            {
+                await _collection.DeleteOneAsync(session, e => e.Id == id);
+            }
+            else
+            {
+                await _collection.DeleteOneAsync(e => e.Id == id);
+            }
+        }
         public async Task<ParkingLotOperator?> GetByAccountIdAsync(string accountId) =>
     await _collection.Find(d => d.AccountId == accountId && d.DeletedAt == null).FirstOrDefaultAsync();
         public async Task<ParkingLotOperator?> GetByPaymentEmailAsync(string PaymentEmail) =>

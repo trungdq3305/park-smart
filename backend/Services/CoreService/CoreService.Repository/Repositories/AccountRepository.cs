@@ -34,15 +34,47 @@ namespace CoreService.Repository.Repositories
         public async Task<IEnumerable<Account>> GetAllAsync() =>
             await _users.Find(u => u.DeletedAt == null).ToListAsync();
 
-        public async Task AddAsync(Account user) =>
-            await _users.InsertOneAsync(user);
+        public async Task<IClientSessionHandle> StartSessionAsync()
+        {
+            // Lấy client từ collection để bắt đầu session
+            return await _users.Database.Client.StartSessionAsync();
+        }
 
-        public async Task UpdateAsync(Account user) =>
-            await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+        public async Task AddAsync(Account user, IClientSessionHandle session = null)
+        {
+            if (session != null)
+            {
+                await _users.InsertOneAsync(session, user);
+            }
+            else
+            {
+                await _users.InsertOneAsync(user);
+            }
+        }
 
-        public async Task DeleteAsync(string id) =>
-            await _users.DeleteOneAsync(u => u.Id == id);
+        public async Task UpdateAsync(Account user, IClientSessionHandle session = null)
+        {
+            if (session != null)
+            {
+                await _users.ReplaceOneAsync(session, u => u.Id == user.Id, user);
+            }
+            else
+            {
+                await _users.ReplaceOneAsync(u => u.Id == user.Id, user);
+            }
+        }
 
+        public async Task DeleteAsync(string id, IClientSessionHandle session = null)
+        {
+            if (session != null)
+            {
+                await _users.DeleteOneAsync(session, u => u.Id == id);
+            }
+            else
+            {
+                await _users.DeleteOneAsync(u => u.Id == id);
+            }
+        }
         public async Task<Account> GetByRefreshTokenAsync(string emailConfirmToken)
         {
             return await _users.Find(x => x.RefreshToken == emailConfirmToken).FirstOrDefaultAsync();
@@ -72,5 +104,41 @@ namespace CoreService.Repository.Repositories
         // Trong CoreService.Repository.Repositories/AccountRepository.cs
         public async Task<IEnumerable<Account>> GetAllBannedAccountsAsync() =>
             await _users.Find(u => u.IsBanned == true && u.DeletedAt == null).ToListAsync(); // Thêm phương thức này
+
+        public async Task<long> CountActiveAccountsAsync()
+        {
+            return await _users.CountDocumentsAsync(u => u.IsActive == true && u.DeletedAt == null);
+        }
+
+        public async Task<IEnumerable<Account>> GetAccountsCreatedInRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            return await _users.Find(u =>
+                u.CreatedAt >= startDate &&
+                u.CreatedAt <= endDate &&
+                u.DeletedAt == null
+            ).ToListAsync();
+        }
+        public async Task<Dictionary<string, int>> GetRegistrationsByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            // Lấy tất cả tài khoản trong phạm vi ngày
+            var accounts = await _users.Find(u =>
+                u.CreatedAt >= startDate &&
+                u.CreatedAt <= endDate &&
+                u.DeletedAt == null
+            ).ToListAsync();
+
+            // Nhóm theo ngày (chỉ phần ngày/tháng/năm) và đếm
+            var registrationsByDate = accounts
+                .GroupBy(u => u.CreatedAt.Date.ToString("yyyy-MM-dd")) // Nhóm theo ngày
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToDictionary(x => x.Date, x => x.Count);
+
+            return registrationsByDate;
+        }
+        public async Task<long> CountNewAccountsSinceAsync(DateTime since)
+        {
+            // Đếm tài khoản được tạo từ sau mốc thời gian 'since' và chưa bị xóa
+            return await _users.CountDocumentsAsync(u => u.CreatedAt >= since && u.DeletedAt == null);
+        }
     }
 }

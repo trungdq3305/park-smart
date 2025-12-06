@@ -39,10 +39,29 @@ namespace CoreService.Repository.Repositories
         public async Task<OperatorPaymentAccount?> GetByXenditUserAsync(string xenditUserId) =>
             await _col.Find(x => x.XenditUserId == xenditUserId).FirstOrDefaultAsync();
 
-        public Task AddAsync(OperatorPaymentAccount entity) => _col.InsertOneAsync(entity);
+        public async Task AddAsync(OperatorPaymentAccount entity, IClientSessionHandle session = null)
+        {
+            if (session != null)
+            {
+                await _col.InsertOneAsync(session, entity);
+            }
+            else
+            {
+                await _col.InsertOneAsync(entity);
+            }
+        }
 
-        public Task UpdateAsync(OperatorPaymentAccount entity) =>
-            _col.ReplaceOneAsync(x => x.Id == entity.Id, entity);
+        public async Task UpdateAsync(OperatorPaymentAccount entity, IClientSessionHandle session = null)
+        {
+            if (session != null)
+            {
+                await _col.ReplaceOneAsync(session, u => u.Id == entity.Id, entity);
+            }
+            else
+            {
+                await _col.ReplaceOneAsync(u => u.Id == entity.Id, entity);
+            }
+        }
         public async Task DeleteAsync(string id) =>
             await _col.DeleteOneAsync(u => u.Id == id);
     }
