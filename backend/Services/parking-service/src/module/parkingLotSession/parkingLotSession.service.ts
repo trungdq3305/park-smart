@@ -831,6 +831,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     paginationQuery: PaginationQueryDto,
     startDate: string,
     endDate: string,
+    plateNumber?: string,
   ): Promise<{
     data: ParkingLotSessionResponseDto[]
     pagination: PaginationDto
@@ -845,6 +846,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         pageSize,
         startDateObj,
         endDateObj,
+        plateNumber,
       )
 
     return {

@@ -96,6 +96,7 @@ export interface IParkingLotSessionRepository {
     pageSize: number,
     startTime: Date,
     endTime: Date,
+    plateNumber?: string,
     session?: ClientSession,
   ): Promise<{ data: ParkingLotSession[]; total: number }>
 
