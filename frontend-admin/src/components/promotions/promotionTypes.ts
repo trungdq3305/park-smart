@@ -13,4 +13,3 @@ export interface PromotionStatus {
   label: string
   class: string
 }
-

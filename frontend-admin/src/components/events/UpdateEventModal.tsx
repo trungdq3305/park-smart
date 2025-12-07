@@ -108,12 +108,7 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
         </Form.Item>
 
         <Form.Item name="description" label="Mô tả">
-          <Input.TextArea
-            placeholder="Nhập mô tả sự kiện"
-            rows={4}
-            showCount
-            maxLength={500}
-          />
+          <Input.TextArea placeholder="Nhập mô tả sự kiện" rows={4} showCount maxLength={500} />
         </Form.Item>
 
         <Form.Item
@@ -150,9 +145,7 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
                   return Promise.resolve()
                 }
                 if (value.isBefore(startDate) || value.isSame(startDate)) {
-                  return Promise.reject(
-                    new Error('Ngày kết thúc phải sau ngày bắt đầu')
-                  )
+                  return Promise.reject(new Error('Ngày kết thúc phải sau ngày bắt đầu'))
                 }
                 return Promise.resolve()
               },
@@ -168,11 +161,7 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
           />
         </Form.Item>
 
-        <Form.Item
-          name="includedPromotions"
-          label="Bao gồm khuyến mãi"
-          valuePropName="checked"
-        >
+        <Form.Item name="includedPromotions" label="Bao gồm khuyến mãi" valuePropName="checked">
           <Switch />
         </Form.Item>
       </Form>
@@ -181,4 +170,3 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
 }
 
 export default UpdateEventModal
-

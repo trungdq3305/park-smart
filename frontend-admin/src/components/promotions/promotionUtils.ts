@@ -60,4 +60,3 @@ export const getStatusLabel = (filter: PromotionFilter): string => {
   }
   return statusMap[filter] || filter
 }
-

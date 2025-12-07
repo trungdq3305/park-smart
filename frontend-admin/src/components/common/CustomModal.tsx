@@ -27,7 +27,7 @@ const CustomModal: React.FC<CustomModalProps> = ({
     if (open) {
       // Lưu vị trí scroll hiện tại
       scrollPositionRef.current = window.pageYOffset || document.documentElement.scrollTop
-      
+
       // Set overflow hidden và giữ nguyên vị trí scroll
       document.body.style.overflow = 'hidden'
       document.body.style.position = 'fixed'
@@ -39,11 +39,11 @@ const CustomModal: React.FC<CustomModalProps> = ({
       document.body.style.position = ''
       document.body.style.top = ''
       document.body.style.width = ''
-      
+
       // Scroll về vị trí cũ
       window.scrollTo(0, scrollPositionRef.current)
     }
-    
+
     return () => {
       // Cleanup khi component unmount
       document.body.style.overflow = ''
@@ -81,4 +81,3 @@ const CustomModal: React.FC<CustomModalProps> = ({
 }
 
 export default CustomModal
-

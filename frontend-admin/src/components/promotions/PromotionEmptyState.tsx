@@ -22,4 +22,3 @@ const PromotionEmptyState: React.FC<PromotionEmptyStateProps> = ({ filter }) => 
 }
 
 export default PromotionEmptyState
-

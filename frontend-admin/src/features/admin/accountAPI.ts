@@ -89,7 +89,7 @@ export const accountAPI = apiSlice.injectEndpoints({
       providesTags: ['account'],
     }),
     getOperatorDetails: builder.query({
-      query: (operatorId : string) => ({
+      query: (operatorId: string) => ({
         url: `/core/accounts/operator/${operatorId}`,
         method: 'GET',
       }),

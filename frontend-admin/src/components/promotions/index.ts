@@ -5,4 +5,3 @@ export { default as PromotionItem } from './PromotionItem'
 export { default as PromotionEmptyState } from './PromotionEmptyState'
 export * from './promotionTypes'
 export * from './promotionUtils'
-

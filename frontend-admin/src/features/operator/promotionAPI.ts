@@ -29,7 +29,7 @@ export const promotionAPI = apiSlice.injectEndpoints({
       invalidatesTags: ['promotion'],
     }),
     getPromotionsOperator: builder.query({
-      query: ({operatorId}) => ({
+      query: ({ operatorId }) => ({
         url: '/core/promotions/operator',
         method: 'GET',
         params: { operatorId },

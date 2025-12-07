@@ -4,7 +4,7 @@ import { getUserData } from '../utils/userData'
 /**
  * Custom hook để lấy thông tin operator details
  * Tự động lấy operatorId từ userData và fetch operator details
- * 
+ *
  * @returns {Object} - Object chứa operator, operatorId, và operatorDetails query result
  */
 export const useOperatorId = (): string => {
@@ -16,4 +16,3 @@ export const useOperatorId = (): string => {
 
   return operatorDetailsQuery.data?.data?.operatorDetail?._id || ''
 }
-

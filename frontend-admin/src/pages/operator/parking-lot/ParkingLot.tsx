@@ -210,10 +210,7 @@ const OperatorParkingLot: React.FC = () => {
             <p>Theo dõi hiệu suất vận hành và tình trạng bãi đỗ của bạn</p>
           </div>
           {parkingLot && (
-            <button
-              className="parking-lot-update-btn"
-              onClick={() => setIsUpdateModalOpen(true)}
-            >
+            <button className="parking-lot-update-btn" onClick={() => setIsUpdateModalOpen(true)}>
               <EditOutlined />
               <span>Gửi yêu cầu cập nhật</span>
             </button>
@@ -227,7 +224,8 @@ const OperatorParkingLot: React.FC = () => {
             <div className="parking-lot-empty-icon">🚗</div>
             <h3 className="parking-lot-empty-title">Chưa có bãi đỗ xe</h3>
             <p className="parking-lot-empty-text">
-              Bạn chưa có bãi đỗ nào được duyệt. Vui lòng liên hệ quản trị viên để được duyệt bãi đỗ.
+              Bạn chưa có bãi đỗ nào được duyệt. Vui lòng liên hệ quản trị viên để được duyệt bãi
+              đỗ.
             </p>
           </div>
         ) : (

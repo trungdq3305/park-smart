@@ -93,9 +93,7 @@ const EventPromotionsDropdown: React.FC<EventPromotionsDropdownProps> = ({ event
                 const discountText = getDiscountText(promotion)
                 const usagePercentage =
                   promotion.totalUsageLimit > 0
-                    ? Math.round(
-                        (promotion.currentUsageCount / promotion.totalUsageLimit) * 100
-                      )
+                    ? Math.round((promotion.currentUsageCount / promotion.totalUsageLimit) * 100)
                     : 0
 
                 return (
@@ -236,4 +234,3 @@ const EventPromotionsDropdown: React.FC<EventPromotionsDropdownProps> = ({ event
 }
 
 export default EventPromotionsDropdown
-

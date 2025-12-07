@@ -1,4 +1,4 @@
-import type { Promotion } from "./Promotion"
+import type { Promotion } from './Promotion'
 
 export interface Event {
   _id: string

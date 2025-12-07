@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { EnvironmentOutlined, EyeInvisibleOutlined, EyeOutlined, ClockCircleOutlined } from '@ant-design/icons'
+import {
+  EnvironmentOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
+  ClockCircleOutlined,
+} from '@ant-design/icons'
 import type { ParkingLot } from '../../types/ParkingLot'
 import parkingIllustration from '../../assets/db5449b9db71eda8231d6f1fd6476623.jpg'
 import '../../pages/operator/parking-lot/ParkingLot.css'

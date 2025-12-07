@@ -125,7 +125,9 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
                           <span>Đã vô hiệu</span>
                         </div>
                       )}
-                      <div className={`pricing-policy-badge pricing-policy-badge--${priorityClass}`}>
+                      <div
+                        className={`pricing-policy-badge pricing-policy-badge--${priorityClass}`}
+                      >
                         <span>Ưu tiên {link.priority}</span>
                         <span className="pricing-policy-priority-label">({priorityLabel})</span>
                       </div>
@@ -273,7 +275,9 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
                     {link.updatedAt && (
                       <div className="pricing-policy-date-item">
                         <span className="pricing-policy-date-label">Cập nhật:</span>
-                        <span className="pricing-policy-date-value">{formatDate(link.updatedAt)}</span>
+                        <span className="pricing-policy-date-value">
+                          {formatDate(link.updatedAt)}
+                        </span>
                       </div>
                     )}
                   </div>

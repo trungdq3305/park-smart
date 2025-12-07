@@ -43,4 +43,3 @@ const PromotionFilters: React.FC<PromotionFiltersProps> = ({
 }
 
 export default PromotionFilters
-

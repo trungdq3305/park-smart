@@ -9,7 +9,7 @@ import { getEventStatus } from '../../../components/events/eventUtils'
 import type { EventFilter } from '../../../components/events/eventTypes'
 
 interface EventsResponse {
-    data: Event[]
+  data: Event[]
 }
 
 const ManageEventsAdmin: React.FC = () => {

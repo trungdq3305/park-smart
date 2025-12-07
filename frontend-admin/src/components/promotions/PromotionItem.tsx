@@ -103,10 +103,7 @@ const PromotionItem: React.FC<PromotionItemProps> = ({ promotion }) => {
             <span className="promotion-usage-percentage">{usagePercentage}%</span>
           </div>
           <div className="promotion-usage-bar">
-            <div
-              className="promotion-usage-fill"
-              style={{ width: `${usagePercentage}%` }}
-            />
+            <div className="promotion-usage-fill" style={{ width: `${usagePercentage}%` }} />
           </div>
         </div>
 
@@ -165,4 +162,3 @@ const PromotionItem: React.FC<PromotionItemProps> = ({ promotion }) => {
 }
 
 export default PromotionItem
-

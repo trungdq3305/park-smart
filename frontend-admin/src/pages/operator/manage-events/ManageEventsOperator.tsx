@@ -1,13 +1,19 @@
 import React, { useMemo, useState } from 'react'
-import { useGetEventsByOperatorQuery, useDeleteEventMutation } from '../../../features/admin/eventAPI'
-import type { Event } from '../../../types/Event'                                       
+import {
+  useGetEventsByOperatorQuery,
+  useDeleteEventMutation,
+} from '../../../features/admin/eventAPI'
+import type { Event } from '../../../types/Event'
 import { getEventStatus, formatDateRange } from '../../../components/events/eventUtils'
 import type { EventFilter } from '../../../components/events/eventTypes'
-import { CreateEventModal, UpdateEventModal, EventPromotionsDropdown } from '../../../components/events'
+import {
+  CreateEventModal,
+  UpdateEventModal,
+  EventPromotionsDropdown,
+} from '../../../components/events'
 import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { Modal, message } from 'antd'
 import './ManageEventsOperator.css'
-
 
 interface EventsResponse {
   data: Event[]
@@ -50,9 +56,7 @@ const ManageEventsOperator: React.FC = () => {
     error?: unknown
   }
   const [deleteEvent, { isLoading: isDeleting }] = useDeleteEventMutation()
-  const events: Event[] = Array.isArray(data)
-    ? data
-    : (data as { data?: Event[] })?.data || []
+  const events: Event[] = Array.isArray(data) ? data : (data as { data?: Event[] })?.data || []
 
   const now = useMemo(() => new Date(), [])
 
@@ -136,14 +140,11 @@ const ManageEventsOperator: React.FC = () => {
     <div className="manage-events-operator-page">
       <div className="event-page-header">
         <div className="event-header-content">
-    <div>
+          <div>
             <h1>Quản lý sự kiện</h1>
             <p>Xem và theo dõi tất cả sự kiện trong hệ thống Park Smart</p>
           </div>
-          <button
-            className="event-create-btn"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
+          <button className="event-create-btn" onClick={() => setIsCreateModalOpen(true)}>
             <PlusOutlined />
             <span>Tạo mới</span>
           </button>
@@ -281,7 +282,9 @@ const ManageEventsOperator: React.FC = () => {
                         <div className="event-detail-icon">📅</div>
                         <div className="event-detail-content">
                           <span className="event-detail-label">Bắt đầu</span>
-                          <span className="event-detail-value">{formatDateTime(event.startDate)}</span>
+                          <span className="event-detail-value">
+                            {formatDateTime(event.startDate)}
+                          </span>
                         </div>
                       </div>
 
@@ -289,7 +292,9 @@ const ManageEventsOperator: React.FC = () => {
                         <div className="event-detail-icon">🏁</div>
                         <div className="event-detail-content">
                           <span className="event-detail-label">Kết thúc</span>
-                          <span className="event-detail-value">{formatDateTime(event.endDate)}</span>
+                          <span className="event-detail-value">
+                            {formatDateTime(event.endDate)}
+                          </span>
                         </div>
                       </div>
 
@@ -312,7 +317,9 @@ const ManageEventsOperator: React.FC = () => {
                       {event.updatedAt !== event.createdAt && (
                         <div className="event-date-item">
                           <span className="event-date-label">Cập nhật:</span>
-                          <span className="event-date-value">{formatDateTime(event.updatedAt)}</span>
+                          <span className="event-date-value">
+                            {formatDateTime(event.updatedAt)}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -337,9 +344,7 @@ const ManageEventsOperator: React.FC = () => {
                     </div>
                   </div>
 
-                  {event.includedPromotions && (
-                    <EventPromotionsDropdown eventId={event._id} />
-                  )}
+                  {event.includedPromotions && <EventPromotionsDropdown eventId={event._id} />}
                 </div>
               )
             })}
@@ -347,10 +352,7 @@ const ManageEventsOperator: React.FC = () => {
         )}
       </div>
 
-      <CreateEventModal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-      />
+      <CreateEventModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
       <UpdateEventModal
         open={isUpdateModalOpen}
         onClose={handleCloseUpdateModal}

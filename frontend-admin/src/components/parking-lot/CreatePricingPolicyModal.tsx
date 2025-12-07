@@ -1,14 +1,5 @@
 import { useState, useEffect } from 'react'
-import {
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  DatePicker,
-  TimePicker,
-  Button,
-  Space,
-} from 'antd'
+import { Form, Input, InputNumber, Select, DatePicker, TimePicker, Button, Space } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { Basis } from '../../types/Basis'
 import type { PricingPolicyLink } from '../../types/PricingPolicyLink'

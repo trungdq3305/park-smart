@@ -94,7 +94,6 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       icon: <SafetyOutlined />,
       label: 'Thêm thẻ',
     },
-    
   ]
 
   const handleMenuClick = ({ key }: { key: string }) => {

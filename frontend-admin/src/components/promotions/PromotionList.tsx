@@ -18,4 +18,3 @@ const PromotionList: React.FC<PromotionListProps> = ({ promotions }) => {
 }
 
 export default PromotionList
-
