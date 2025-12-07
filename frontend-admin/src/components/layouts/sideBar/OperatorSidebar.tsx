@@ -12,6 +12,7 @@ import {
   WalletOutlined,
   SafetyOutlined,
   CalendarOutlined,
+  GiftOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -84,10 +85,16 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Sự kiện',
     },
     {
+      key: '/operator/promotions',
+      icon: <GiftOutlined />,
+      label: 'Khuyến mãi',
+    },
+    {
       key: '/operator/import-card',
       icon: <SafetyOutlined />,
       label: 'Thêm thẻ',
     },
+    
   ]
 
   const handleMenuClick = ({ key }: { key: string }) => {

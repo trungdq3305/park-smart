@@ -136,7 +136,7 @@ const ManageEventsOperator: React.FC = () => {
     <div className="manage-events-operator-page">
       <div className="event-page-header">
         <div className="event-header-content">
-          <div>
+    <div>
             <h1>Quản lý sự kiện</h1>
             <p>Xem và theo dõi tất cả sự kiện trong hệ thống Park Smart</p>
           </div>
