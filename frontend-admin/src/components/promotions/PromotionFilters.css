@@ -1,0 +1,79 @@
+.promotion-controls-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 1.8vh 2vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.6vh;
+  flex-wrap: wrap;
+  box-shadow: 0 1vh 2.5vh rgba(15, 23, 42, 0.06);
+}
+
+.promotion-filter-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.2vh;
+}
+
+.promotion-filter-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.promotion-filter-select {
+  padding: 0.8vh 1.6vh;
+  padding-right: 4vh;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1.2vh center;
+  background-size: 1.2vh;
+  min-width: 200px;
+}
+
+.promotion-filter-select:hover {
+  border-color: #9ca3af;
+  box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.05);
+}
+
+.promotion-filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.3vh rgba(59, 130, 246, 0.1);
+}
+
+.promotion-counter {
+  font-size: 13px;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 0.6vh 1.4vh;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .promotion-controls-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .promotion-filter-select {
+    width: 100%;
+  }
+}
+
