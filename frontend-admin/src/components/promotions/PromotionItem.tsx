@@ -148,24 +148,30 @@ const PromotionItem: React.FC<PromotionItemProps> = ({ promotion, onEdit, onDele
             </div>
           )}
         </div>
-        <div className="promotion-item-actions">
-          <button
-            className="promotion-edit-btn"
-            title="Chỉnh sửa khuyến mãi"
-            onClick={() => onEdit?.(promotion)}
-          >
-            <EditOutlined />
-            <span>Chỉnh sửa</span>
-          </button>
-          <button
-            className="promotion-delete-btn"
-            title="Xóa khuyến mãi"
-            onClick={() => onDelete?.(promotion._id, promotion.name)}
-          >
-            <DeleteOutlined />
-            <span>Xóa</span>
-          </button>
-        </div>
+        {(onEdit || onDelete) && (
+          <div className="promotion-item-actions">
+            {onEdit && (
+              <button
+                className="promotion-edit-btn"
+                title="Chỉnh sửa khuyến mãi"
+                onClick={() => onEdit(promotion)}
+              >
+                <EditOutlined />
+                <span>Chỉnh sửa</span>
+              </button>
+            )}
+            {onDelete && (
+              <button
+                className="promotion-delete-btn"
+                title="Xóa khuyến mãi"
+                onClick={() => onDelete(promotion._id, promotion.name)}
+              >
+                <DeleteOutlined />
+                <span>Xóa</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

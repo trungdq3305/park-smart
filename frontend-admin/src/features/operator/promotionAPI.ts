@@ -37,6 +37,14 @@ export const promotionAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['promotion'],
     }),
+    getPromotions: builder.query({
+      query: () => ({
+        url: '/core/promotions',
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['promotion'],
+    }),
   }),
 })
 
@@ -45,4 +53,5 @@ export const {
   useUpdatePromotionMutation,
   useDeletePromotionMutation,
   useGetPromotionsOperatorQuery,
+  useGetPromotionsQuery,
 } = promotionAPI

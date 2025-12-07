@@ -28,6 +28,7 @@ const ManageEventsOperator = lazy(
 )
 const ManageGuestCard = lazy(() => import('../pages/operator/manage-guest-card/ManageGuestCard'))
 const ManagePromotion = lazy(() => import('../pages/operator/manage-promotion/ManagePromotion'))
+const ManagePromotionsAdmin = lazy(() => import('../pages/admin/manage-promotions/ManagePromotionsAdmin'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -74,6 +75,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/admin/events',
         component: ManageEventsAdmin,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/promotions',
+        component: ManagePromotionsAdmin,
         role: ['Admin'],
       },
     ],
