@@ -8,6 +8,7 @@ import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { Modal, message } from 'antd'
 import './ManageEventsOperator.css'
 
+
 interface EventsResponse {
   data: Event[]
 }
@@ -49,7 +50,6 @@ const ManageEventsOperator: React.FC = () => {
     error?: unknown
   }
   const [deleteEvent, { isLoading: isDeleting }] = useDeleteEventMutation()
-
   const events: Event[] = Array.isArray(data)
     ? data
     : (data as { data?: Event[] })?.data || []
