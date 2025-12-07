@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react'
-import { useGetEventsByOperatorQuery } from '../../../features/admin/eventAPI'
+import { useGetEventsByOperatorQuery, useDeleteEventMutation } from '../../../features/admin/eventAPI'
 import type { Event } from '../../../types/Event'                                       
 import { getEventStatus, formatDateRange } from '../../../components/events/eventUtils'
 import type { EventFilter } from '../../../components/events/eventTypes'
 import { CreateEventModal } from '../../../components/events'
-import { PlusOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Modal, message } from 'antd'
 import './ManageEventsOperator.css'
 
 interface EventsResponse {
@@ -45,6 +46,7 @@ const ManageEventsOperator: React.FC = () => {
     isLoading: boolean
     error?: unknown
   }
+  const [deleteEvent, { isLoading: isDeleting }] = useDeleteEventMutation()
 
   const events: Event[] = Array.isArray(data)
     ? data
@@ -77,6 +79,24 @@ const ManageEventsOperator: React.FC = () => {
     if (filter === 'all') return events
     return events.filter((event) => getEventStatus(event, now) === filter)
   }, [events, filter, now])
+
+  const handleDeleteEvent = (eventId: string, eventTitle: string) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa sự kiện',
+      content: `Bạn có chắc chắn muốn xóa sự kiện "${eventTitle}"? Hành động này không thể hoàn tác.`,
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          const result = await deleteEvent(eventId).unwrap()
+          message.success(result?.message || 'Xóa sự kiện thành công')
+        } catch (error: any) {
+          message.error(error?.data?.message || 'Xóa sự kiện thất bại')
+        }
+      },
+    })
+  }
 
   if (isLoading) {
     return (
@@ -284,6 +304,15 @@ const ManageEventsOperator: React.FC = () => {
                         </div>
                       )}
                     </div>
+                    <button
+                      className="event-delete-btn"
+                      onClick={() => handleDeleteEvent(event._id, event.title)}
+                      disabled={isDeleting}
+                      title="Xóa sự kiện"
+                    >
+                      <DeleteOutlined />
+                      <span>Xóa</span>
+                    </button>
                   </div>
                 </div>
               )

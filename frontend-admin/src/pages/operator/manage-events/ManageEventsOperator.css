@@ -481,6 +481,33 @@
   font-weight: 400;
 }
 
+.event-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 0.6vh 1.2vh;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 0.2vh 0.6vh rgba(239, 68, 68, 0.3);
+}
+
+.event-delete-btn:hover:not(:disabled) {
+  box-shadow: 0 0.4vh 1.2vh rgba(239, 68, 68, 0.4);
+}
+
+.event-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Empty State */
 .event-empty-state {
   margin-top: 2.4vh;

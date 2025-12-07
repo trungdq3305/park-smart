@@ -38,4 +38,9 @@ export const eventAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const { useGetEventsQuery, useCreateEventMutation, useGetEventsByOperatorQuery } = eventAPI
+export const {
+  useGetEventsQuery,
+  useCreateEventMutation,
+  useGetEventsByOperatorQuery,
+  useDeleteEventMutation,
+} = eventAPI
