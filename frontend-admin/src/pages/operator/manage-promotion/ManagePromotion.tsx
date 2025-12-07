@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react'
-import { useGetPromotionsOperatorQuery } from '../../../features/operator/promotionAPI'
+import { useGetPromotionsOperatorQuery, useDeletePromotionMutation } from '../../../features/operator/promotionAPI'
 import { useOperatorId } from '../../../hooks/useOperatorId'
 import type { Promotion } from '../../../types/Promotion'
 import { PlusOutlined } from '@ant-design/icons'
+import { Modal, message } from 'antd'
 import {
   PromotionStats,
   PromotionFilters,
@@ -22,6 +23,7 @@ const ManagePromotion: React.FC = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null)
   const { data, isLoading, error } = useGetPromotionsOperatorQuery({ operatorId })
+  const [deletePromotion] = useDeletePromotionMutation()
 
   const promotions: Promotion[] = Array.isArray(data)
     ? data
@@ -59,6 +61,24 @@ const ManagePromotion: React.FC = () => {
       return true
     })
   }, [promotions, filter])
+
+  const handleDeletePromotion = (promotionId: string, promotionName: string) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa khuyến mãi',
+      content: `Bạn có chắc chắn muốn xóa khuyến mãi "${promotionName}"? Hành động này không thể hoàn tác.`,
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          await deletePromotion(promotionId).unwrap()
+          message.success('Xóa khuyến mãi thành công')
+        } catch (error: any) {
+          message.error(error?.data?.message || 'Xóa khuyến mãi thất bại')
+        }
+      },
+    })
+  }
 
   if (isLoading) {
     return (
@@ -119,6 +139,7 @@ const ManagePromotion: React.FC = () => {
               setSelectedPromotion(promotion)
               setIsUpdateModalOpen(true)
             }}
+            onDelete={handleDeletePromotion}
           />
         )}
       </div>

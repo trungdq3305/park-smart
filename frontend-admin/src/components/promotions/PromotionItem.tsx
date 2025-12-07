@@ -8,9 +8,10 @@ import '../promotions/PromotionItem.css'
 interface PromotionItemProps {
   promotion: Promotion
   onEdit?: (promotion: Promotion) => void
+  onDelete?: (promotionId: string, promotionName: string) => void
 }
 
-const PromotionItem: React.FC<PromotionItemProps> = ({ promotion, onEdit }) => {
+const PromotionItem: React.FC<PromotionItemProps> = ({ promotion, onEdit, onDelete }) => {
   const status = getPromotionStatus(promotion)
   const discountText = getDiscountText(promotion)
   const usagePercentage =
@@ -156,7 +157,11 @@ const PromotionItem: React.FC<PromotionItemProps> = ({ promotion, onEdit }) => {
             <EditOutlined />
             <span>Chỉnh sửa</span>
           </button>
-          <button className="promotion-delete-btn" title="Xóa khuyến mãi">
+          <button
+            className="promotion-delete-btn"
+            title="Xóa khuyến mãi"
+            onClick={() => onDelete?.(promotion._id, promotion.name)}
+          >
             <DeleteOutlined />
             <span>Xóa</span>
           </button>
