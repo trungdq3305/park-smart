@@ -1,20 +1,19 @@
 import { useEffect } from 'react'
 import { Form, Input, InputNumber, DatePicker, Switch, Button, Select, message } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
-import { useCreatePromotionMutation } from '../../features/operator/promotionAPI'
-import { useGetEventsByOperatorQuery } from '../../features/admin/eventAPI'
+import { useUpdatePromotionMutation } from '../../features/operator/promotionAPI'
 import { CustomModal } from '../common'
-import type { Event } from '../../types/Event'
-interface CreatePromotionModalProps {
+import type { Promotion } from '../../types/Promotion'
+
+interface UpdatePromotionModalProps {
   open: boolean
   onClose: () => void
+  promotion: Promotion | null
 }
 
-const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClose }) => {
+const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({ open, onClose, promotion }) => {
   const [form] = Form.useForm()
-  const [createPromotion, { isLoading }] = useCreatePromotionMutation()
-  const { data: eventsData } = useGetEventsByOperatorQuery({})
-  const events: Event[] = Array.isArray(eventsData) ? eventsData : (eventsData as { data?: Event[] })?.data || []
+  const [updatePromotion, { isLoading }] = useUpdatePromotionMutation()
   const discountType = Form.useWatch('discountType', form)
 
   const parseCurrency = (value: string | undefined): number => {
@@ -42,30 +41,38 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
   }
 
   useEffect(() => {
-    if (open) {
-      form.resetFields()
+    if (open && promotion) {
       form.setFieldsValue({
-        discountType: 'Percentage',
-        isActive: true,
-        totalUsageLimit: 10,
-        maxDiscountAmount: 100000,
-        discountValue: 10,
+        name: promotion.name,
+        description: promotion.description || '',
+        discountType: promotion.discountType === 'PERCENTAGE' ? 'Percentage' : promotion.discountType,
+        discountValue: promotion.discountValue,
+        maxDiscountAmount: promotion.maxDiscountAmount || 0,
+        startDate: dayjs(promotion.startDate),
+        endDate: dayjs(promotion.endDate),
+        totalUsageLimit: promotion.totalUsageLimit || 10,
+        isActive: promotion.isActive !== undefined ? promotion.isActive : true,
       })
+    } else if (open) {
+      form.resetFields()
     }
-  }, [open, form])
+  }, [open, promotion, form])
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields()
 
-      const discountValue = values.discountValue
+      if (!promotion?._id) {
+        message.error('Không tìm thấy thông tin khuyến mãi')
+        return
+      }
+
       const promotionData = {
-        eventId: values.eventId || null,
-        code: values.code,
+        id: promotion._id,
         name: values.name,
         description: values.description || '',
         discountType: values.discountType,
-        discountValue: discountValue,
+        discountValue: values.discountValue,
         maxDiscountAmount: values.maxDiscountAmount || 0,
         startDate: values.startDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
         endDate: values.endDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
@@ -73,22 +80,32 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
         isActive: values.isActive !== undefined ? values.isActive : true,
       }
 
-      await createPromotion(promotionData).unwrap()
-      message.success('Tạo khuyến mãi thành công')
+      await updatePromotion(promotionData).unwrap()
+      message.success('Cập nhật khuyến mãi thành công')
       form.resetFields()
       onClose()
     } catch (error: any) {
-      message.error(error?.data?.message || 'Tạo khuyến mãi thất bại')
+      message.error(error?.data?.message || 'Cập nhật khuyến mãi thất bại')
     }
   }
 
   const disabledStartDate = (current: Dayjs) => {
+    // Cho phép chọn ngày trong quá khứ nếu đó là ngày bắt đầu hiện tại của promotion
+    if (promotion?.startDate) {
+      const promotionStartDate = dayjs(promotion.startDate).startOf('day')
+      return current && current < promotionStartDate
+    }
     return current && current < dayjs().startOf('day')
   }
 
   const disabledEndDate = (current: Dayjs) => {
     const startDate = form.getFieldValue('startDate')
     if (!startDate) {
+      // Nếu chưa chọn startDate, cho phép chọn ngày >= ngày kết thúc hiện tại của promotion
+      if (promotion?.endDate) {
+        const promotionEndDate = dayjs(promotion.endDate).startOf('day')
+        return current && current < promotionEndDate
+      }
       return current && current < dayjs().startOf('day')
     }
     return current && current < startDate.startOf('day')
@@ -98,7 +115,7 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
     <CustomModal
       open={open}
       onClose={onClose}
-      title="Tạo mới khuyến mãi"
+      title="Chỉnh sửa khuyến mãi"
       width={700}
       loading={isLoading}
       footer={
@@ -107,42 +124,12 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
             Hủy
           </Button>
           <Button type="primary" onClick={handleSubmit} loading={isLoading}>
-            Tạo mới
+            Cập nhật
           </Button>
         </>
       }
     >
-      <Form form={form} layout="vertical" className="create-promotion-form">
-        <Form.Item
-          name="eventId"
-          label="Sự kiện (tùy chọn)"
-          tooltip="Chọn sự kiện để gắn khuyến mãi này, hoặc để trống nếu không gắn với sự kiện"
-        >
-          <Select
-            placeholder="Chọn sự kiện (tùy chọn)"
-            allowClear
-            showSearch
-            optionFilterProp="children"
-            filterOption={(input, option) =>
-              (option?.label ?? '').toString().toLowerCase().includes(input.toString().toLowerCase())
-            }
-          >
-            {events.map((event: Event) => (
-              <Select.Option key={event._id} value={event._id} label={event.title}>
-                {event.title}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-
-        <Form.Item
-          name="code"
-          label="Mã khuyến mãi"
-          rules={[{ required: true, message: 'Vui lòng nhập mã khuyến mãi' }]}
-        >
-          <Input placeholder="Nhập mã khuyến mãi" />
-        </Form.Item>
-
+      <Form form={form} layout="vertical" className="update-promotion-form">
         <Form.Item
           name="name"
           label="Tên khuyến mãi"
@@ -252,5 +239,5 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
   )
 }
 
-export default CreatePromotionModal
+export default UpdatePromotionModal
 

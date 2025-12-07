@@ -9,15 +9,18 @@ import {
   PromotionList,
   PromotionEmptyState,
   CreatePromotionModal,
+  UpdatePromotionModal,
   getPromotionStatus,
+  type PromotionFilter,
 } from '../../../components/promotions'
-import type { PromotionFilter } from '../../../components/promotions'
 import './ManagePromotion.css'
 
 const ManagePromotion: React.FC = () => {
   const operatorId = useOperatorId()
   const [filter, setFilter] = useState<PromotionFilter>('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null)
   const { data, isLoading, error } = useGetPromotionsOperatorQuery({ operatorId })
 
   const promotions: Promotion[] = Array.isArray(data)
@@ -110,13 +113,27 @@ const ManagePromotion: React.FC = () => {
         {filteredPromotions.length === 0 ? (
           <PromotionEmptyState filter={filter} />
         ) : (
-          <PromotionList promotions={filteredPromotions} />
+          <PromotionList
+            promotions={filteredPromotions}
+            onEdit={(promotion) => {
+              setSelectedPromotion(promotion)
+              setIsUpdateModalOpen(true)
+            }}
+          />
         )}
       </div>
 
       <CreatePromotionModal
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+      <UpdatePromotionModal
+        open={isUpdateModalOpen}
+        onClose={() => {
+          setIsUpdateModalOpen(false)
+          setSelectedPromotion(null)
+        }}
+        promotion={selectedPromotion}
       />
     </div>
   )

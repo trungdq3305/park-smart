@@ -7,9 +7,10 @@ import '../promotions/PromotionItem.css'
 
 interface PromotionItemProps {
   promotion: Promotion
+  onEdit?: (promotion: Promotion) => void
 }
 
-const PromotionItem: React.FC<PromotionItemProps> = ({ promotion }) => {
+const PromotionItem: React.FC<PromotionItemProps> = ({ promotion, onEdit }) => {
   const status = getPromotionStatus(promotion)
   const discountText = getDiscountText(promotion)
   const usagePercentage =
@@ -147,7 +148,11 @@ const PromotionItem: React.FC<PromotionItemProps> = ({ promotion }) => {
           )}
         </div>
         <div className="promotion-item-actions">
-          <button className="promotion-edit-btn" title="Chỉnh sửa khuyến mãi">
+          <button
+            className="promotion-edit-btn"
+            title="Chỉnh sửa khuyến mãi"
+            onClick={() => onEdit?.(promotion)}
+          >
             <EditOutlined />
             <span>Chỉnh sửa</span>
           </button>
