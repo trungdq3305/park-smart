@@ -19,11 +19,13 @@ namespace CoreService.Application.Applications
         private readonly IEventRepository _repo;
         private readonly IAccountApplication _accountApp;
         private readonly IPromotionRepository _promoRepo; // <<< THÊM
-        public EventApplication(IEventRepository repo, IAccountApplication accountApp, IPromotionRepository promoRepo)
+        private readonly IPromotionRuleRepository _ruleRepo; // <<< THÊM
+        public EventApplication(IEventRepository repo, IAccountApplication accountApp, IPromotionRepository promoRepo, IPromotionRuleRepository ruleRepo)
         {
             _repo = repo;
             _accountApp = accountApp;
             _promoRepo = promoRepo;
+            _ruleRepo = ruleRepo;
         }
 
         public async Task<ApiResponse<EventResponseDto>> CreateAsync(EventCreateDto dto, string actorAccountId, string actorRole)
@@ -190,27 +192,47 @@ namespace CoreService.Application.Applications
             // Chỉ lấy Promotions nếu sự kiện cho phép
             if (x.IncludedPromotions)
             {
-                // Sử dụng PromotionRepository để lấy các khuyến mãi liên quan đến EventId này
-                var promoEntities = await _promoRepo.GetByEventIdAsync(x.Id); // Phương thức này cần được thêm vào IPromotionRepository/PromotionRepository
+                var promoEntities = await _promoRepo.GetByEventIdAsync(x.Id);
 
-                // Cần ánh xạ Promotion Entity sang PromotionResponseDto.
-                // TÔI GIẢ ĐỊNH BẠN CÓ PHƯƠNG THỨC ÁNH XẠ KHUYẾN MÃI Ở ĐÂY HOẶC CHỈ CẦN CÁC THÔNG TIN CƠ BẢN.
-                // Vì PromotionApplication đã có logic Map phức tạp, ở đây tôi sẽ ánh xạ đơn giản các trường cơ bản.
-                // Tối ưu nhất là EventApplication không nên gọi trực tiếp repo của Promotion.
-                // Tuy nhiên, theo yêu cầu, tôi sẽ giả định có một phương thức GetByEventIdAsync đơn giản.
-
-                if (promoEntities != null)
+                if (promoEntities != null && promoEntities.Any())
                 {
-                    dto.Promotions = promoEntities.Select(p => new PromotionResponseDto
+                    // Tạo danh sách các Task để ánh xạ từng Promotion và lấy Rules của nó
+                    var promotionTasks = promoEntities.Select(async p =>
                     {
-                        Id = p.Id,
-                        Code = p.Code,
-                        Name = p.Name,
-                        DiscountType = p.DiscountType,
-                        DiscountValue = p.DiscountValue,
-                        MaxDiscountAmount = p.MaxDiscountAmount,
-                        // ... chỉ gán các trường cần thiết để tránh vòng lặp tham chiếu và truy vấn đệ quy
-                    }).ToList();
+                        // Lấy Rules cho từng khuyến mãi bằng IPromotionRuleRepository
+                        var rules = await _ruleRepo.GetByPromotionIdAsync(p.Id);
+
+                        // Ánh xạ Promotion và Rules
+                        return new PromotionResponseDto
+                        {
+                            Id = p.Id,
+                            Code = p.Code,
+                            Name = p.Name,
+                            Description = p.Description,
+                            DiscountType = p.DiscountType,
+                            DiscountValue = p.DiscountValue,
+                            MaxDiscountAmount = p.MaxDiscountAmount,
+                            StartDate = p.StartDate,
+                            EndDate = p.EndDate,
+                            TotalUsageLimit = p.TotalUsageLimit,
+                            CurrentUsageCount = p.CurrentUsageCount,
+                            IsActive = p.IsActive,
+                            CreatedAt = p.CreatedAt,
+                            UpdatedBy = p.UpdatedBy,
+                            EventId = p.EventId,
+                            EventTitle = x.Title,
+                            Rules = rules.Select(r => new PromotionRuleResponseDto
+                            {
+                                Id = r.Id,
+                                PromotionId = r.PromotionId,
+                                RuleType = r.RuleType,
+                                RuleValue = r.RuleValue
+                            }).ToList() // <<< ĐÃ ÁNH XẠ RULES ĐẦY ĐỦ
+                        };
+                    });
+
+                    // Chờ tất cả các Task hoàn thành
+                    dto.Promotions = (await Task.WhenAll(promotionTasks)).ToList();
                 }
             }
 

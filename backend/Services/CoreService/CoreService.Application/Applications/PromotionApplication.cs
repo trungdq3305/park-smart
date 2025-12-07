@@ -189,8 +189,19 @@ namespace CoreService.Application.Applications
 
         public async Task<ApiResponse<PromotionRuleResponseDto>> AddRuleAsync(PromotionRuleCreateDto dto, string actorAccountId)
         {
+            // 1. Kiểm tra sự tồn tại của khuyến mãi
             _ = await _promoRepo.GetByIdAsync(dto.PromotionId) ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
 
+            // 2. Kiểm tra xem đã có rule nào cho khuyến mãi này chưa
+            var existingRules = await _ruleRepo.GetByPromotionIdAsync(dto.PromotionId);
+
+            if (existingRules != null && existingRules.Any())
+            {
+                // Nếu đã có rule, ném lỗi với thông báo phù hợp
+                throw new ApiException("Mỗi khuyến mãi chỉ được phép có 1 điều kiện (Rule) duy nhất.", StatusCodes.Status400BadRequest);
+            }
+
+            // 3. Nếu chưa có rule, tiến hành thêm rule mới
             var ruleEntity = new PromotionRule
             {
                 PromotionId = dto.PromotionId,
@@ -199,6 +210,7 @@ namespace CoreService.Application.Applications
             };
             await _ruleRepo.AddAsync(ruleEntity);
 
+            // 4. Trả về phản hồi thành công
             var res = new PromotionRuleResponseDto
             {
                 Id = ruleEntity.Id,
