@@ -16,5 +16,6 @@ namespace CoreService.Repository.Interfaces
         Task AddAsync(Promotion entity);
         Task UpdateAsync(Promotion entity);
         Task SoftDeleteAsync(string id, string deletedBy, DateTime deletedAt);
+        Task<IEnumerable<Promotion>> GetByEventIdAsync(string eventId); // <<< THÊM
     }
 }

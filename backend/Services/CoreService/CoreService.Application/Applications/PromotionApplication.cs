@@ -220,6 +220,16 @@ namespace CoreService.Application.Applications
         private async Task<PromotionResponseDto> MapToResponseDto(Promotion x)
         {
             var rules = await _ruleRepo.GetByPromotionIdAsync(x.Id);
+            string eventTitle = null;
+
+            // Lấy EventTitle nếu có EventId
+            if (!string.IsNullOrEmpty(x.EventId))
+            {
+                var eventEntity = await _eventRepository.GetByIdAsync(x.EventId);
+                eventTitle = eventEntity?.Title;
+            }
+
+            // Ánh xạ
             return new PromotionResponseDto
             {
                 Id = x.Id,
@@ -238,6 +248,8 @@ namespace CoreService.Application.Applications
                 UpdatedAt = x.UpdatedAt,
                 CreatedBy = x.CreatedBy,
                 UpdatedBy = x.UpdatedBy,
+                EventId = x.EventId,      // <<< Gán EventId
+                EventTitle = eventTitle,  // <<< Gán EventTitle
                 Rules = rules.Select(r => new PromotionRuleResponseDto
                 {
                     Id = r.Id,
