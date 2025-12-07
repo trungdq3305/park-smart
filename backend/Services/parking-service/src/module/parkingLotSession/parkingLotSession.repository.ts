@@ -80,6 +80,7 @@ export class ParkingLotSessionRepository
     pageSize: number,
     startTime: Date,
     endTime: Date,
+    plateNumber?: string,
     session?: ClientSession,
   ): Promise<{ data: ParkingLotSession[]; total: number }> {
     const filter = {
@@ -88,6 +89,9 @@ export class ParkingLotSessionRepository
         $gte: startTime, // Lớn hơn hoặc bằng Start
         $lte: endTime, // Nhỏ hơn hoặc bằng End
       },
+      ...(plateNumber
+        ? { plateNumber: { $regex: plateNumber, $options: 'i' } }
+        : {}),
     }
 
     const [data, total] = await Promise.all([

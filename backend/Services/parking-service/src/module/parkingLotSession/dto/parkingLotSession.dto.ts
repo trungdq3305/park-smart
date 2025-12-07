@@ -235,6 +235,16 @@ export class HistoryFilterDto {
   })
   @IsDateString()
   endDate: string
+
+  @ApiPropertyOptional({
+    description:
+      'Biển số xe để lọc (tìm kiếm gần đúng, không phân biệt hoa thường)',
+    example: '51A12345',
+  })
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value?.toUpperCase())
+  plateNumber?: string
 }
 
 export class GetHistorySessionDto extends IntersectionType(
