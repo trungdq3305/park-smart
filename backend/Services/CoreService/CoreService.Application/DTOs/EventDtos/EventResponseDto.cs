@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CoreService.Application.DTOs.PromotionDtos;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,6 +21,7 @@ namespace CoreService.Application.DTOs.EventDtos
         public DateTime EndDate { get; set; }
         public string Location { get; set; }
         public bool IncludedPromotions { get; set; }
+        public List<PromotionResponseDto> Promotions { get; set; } // <<< THÊM THUỘC TÍNH NÀY
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string CreatedBy { get; set; }
