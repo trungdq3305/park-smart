@@ -11,6 +11,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   CrownOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons'
 import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parkingLotAPI'
 import {
@@ -411,6 +412,13 @@ const ParkingLotSessionHistory: React.FC = () => {
                           <div className="session-subscription-badge">
                             <CrownOutlined className="session-subscription-icon" />
                             <span>Khách dùng vé tháng</span>
+                          </div>
+                        </div>
+                      ) : session.reservationId ? (
+                        <div className="session-reservation-info">
+                          <div className="session-reservation-badge">
+                            <CalendarOutlined className="session-reservation-icon" />
+                            <span>Đặt trước</span>
                           </div>
                         </div>
                       ) : (
