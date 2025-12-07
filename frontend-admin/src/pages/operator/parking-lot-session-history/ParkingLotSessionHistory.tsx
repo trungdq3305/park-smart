@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { skipToken } from '@reduxjs/toolkit/query'
 import dayjs, { type Dayjs } from 'dayjs'
@@ -12,6 +12,8 @@ import {
   CloseCircleOutlined,
   CrownOutlined,
   CalendarOutlined,
+  SearchOutlined,
+  CloseOutlined,
 } from '@ant-design/icons'
 import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parkingLotAPI'
 import {
@@ -96,6 +98,9 @@ const ParkingLotSessionHistory: React.FC = () => {
   const pageSize = 5
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [plateNumberSearch, setPlateNumberSearch] = useState<string>('')
+  const [debouncedPlateNumberSearch, setDebouncedPlateNumberSearch] = useState<string>('')
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(() => {
     const end = dayjs()
     const start = end.subtract(7, 'day')
@@ -132,6 +137,28 @@ const ParkingLotSessionHistory: React.FC = () => {
     }
   }, [page, searchParams, setSearchParams])
 
+  // Debounce plate number search
+  useEffect(() => {
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedPlateNumberSearch(plateNumberSearch)
+      // Reset to page 1 when search changes
+      setPage(1)
+    }, 500) // 500ms delay
+
+    // Cleanup function
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [plateNumberSearch])
+
   const {
     data: parkingSessionHistoryResponse,
     isFetching: isFetchingSessions,
@@ -145,6 +172,7 @@ const ParkingLotSessionHistory: React.FC = () => {
             pageSize,
             startDate: dateRange[0].startOf('day').toISOString(),
             endDate: dateRange[1].endOf('day').toISOString(),
+            ...(debouncedPlateNumberSearch.trim() && { plateNumber: debouncedPlateNumberSearch.trim() }),
           },
         }
       : skipToken
@@ -208,6 +236,17 @@ const ParkingLotSessionHistory: React.FC = () => {
   const handleDateChange = (value: [Dayjs | null, Dayjs | null] | null) => {
     if (!value || !value[0] || !value[1]) return
     setDateRange([value[0], value[1]])
+    setPage(1)
+  }
+
+  const handlePlateNumberSearchChange = (value: string) => {
+    setPlateNumberSearch(value)
+    // Don't reset page here, let debounce handle it
+  }
+
+  const handleClearPlateNumberSearch = () => {
+    setPlateNumberSearch('')
+    setDebouncedPlateNumberSearch('')
     setPage(1)
   }
 
@@ -286,6 +325,31 @@ const ParkingLotSessionHistory: React.FC = () => {
                 format="DD/MM/YYYY"
                 className="session-date-picker"
               />
+            </div>
+            <div className="session-filter-item">
+              <label htmlFor="plate-search" className="session-filter-label">
+                Tìm kiếm biển số:
+              </label>
+              <div className="session-search-wrapper">
+                <SearchOutlined className="session-search-icon" />
+                <input
+                  id="plate-search"
+                  type="text"
+                  className="session-search-input"
+                  placeholder="Nhập biển số xe..."
+                  value={plateNumberSearch}
+                  onChange={(e) => handlePlateNumberSearchChange(e.target.value)}
+                />
+                {plateNumberSearch && (
+                  <button
+                    className="session-search-clear"
+                    onClick={handleClearPlateNumberSearch}
+                    title="Xóa tìm kiếm"
+                  >
+                    <CloseOutlined />
+                  </button>
+                )}
+              </div>
             </div>
             <button className="session-refresh-btn" onClick={handleRefresh}>
               <ReloadOutlined />
