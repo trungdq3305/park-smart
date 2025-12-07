@@ -68,6 +68,14 @@ export class ParkingLotSessionRepository
           path: 'guestCardId',
           select: '_id nfcUid code',
         },
+        {
+          path: 'reservationId',
+          select: '_id reservationIdentifier',
+        },
+        {
+          path: 'subscriptionId',
+          select: '_id subscriptionIdentifier',
+        },
       ])
       .session(session ?? null)
       .lean()
