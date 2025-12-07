@@ -27,6 +27,14 @@ export const eventAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['events'],
     }),
+    deleteEvent: builder.mutation({
+      query: (eventId) => ({
+        url: `/core/events/${eventId}`,
+        method: 'DELETE',
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['events'],
+    }),
   }),
 })
 
