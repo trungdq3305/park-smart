@@ -118,6 +118,14 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['ParkingSession'],
     }),
+    calculateFeeManual: builder.query({
+      query: ({ parkingLotId, data }) => ({
+        url: `/parking/parking-sessions/check-out/calculate-fee/${parkingLotId}`,
+        method: 'POST',
+        body: data, // { identifier, uidCard, pricingPolicyId }
+      }),
+      transformResponse: (res) => res,
+    }),
   }),
 })
 
@@ -133,4 +141,5 @@ export const {
   useGetActivePricingPoliciesQuery,
   useGetParkingSessionHistoryQuery,
   useGetParkingSessionHistoryDetailQuery,
+  useCalculateFeeManualQuery,
 } = parkingLotSessionAPI
