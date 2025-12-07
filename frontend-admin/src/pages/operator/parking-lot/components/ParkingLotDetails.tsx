@@ -1,10 +1,8 @@
 import { useState } from 'react'
-import { Button, Card, Col, Progress, Row, Space, Tag, Typography } from 'antd'
-import { ClockCircleOutlined, EnvironmentOutlined, EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
+import { EnvironmentOutlined, EyeInvisibleOutlined, EyeOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import type { ParkingLot } from '../../../../types/ParkingLot'
 import parkingIllustration from '../../../../assets/db5449b9db71eda8231d6f1fd6476623.jpg'
-
-const { Title, Text } = Typography
+import '../ParkingLot.css'
 
 interface ParkingLotDetailsProps {
   lot: ParkingLot
@@ -17,114 +15,123 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
   const occupancy = totalCapacity === 0 ? 0 : Math.round((occupied / totalCapacity) * 100)
 
   return (
-    <Card className="area-card area-card--single">
-      <Row gutter={[24, 24]} align="middle">
-        <Col xs={24} md={10}>
-          <div className="area-card__media">
-            <img src={parkingIllustration} alt="Parking lot" />
-            <Tag
-              color={lot.parkingLotStatus === 'APPROVED' ? 'green' : 'orange'}
-              className="area-card__status"
-            >
-              {lot.parkingLotStatus}
-            </Tag>
+    <div className="parking-lot-details-section">
+      <div className="parking-lot-details-content">
+        <div className="parking-lot-details-media">
+          <img src={parkingIllustration} alt="Parking lot" />
+          <div
+            className={`parking-lot-details-status ${
+              lot.parkingLotStatus === 'APPROVED' ? 'approved' : 'pending'
+            }`}
+          >
+            {lot.parkingLotStatus}
           </div>
-        </Col>
-        <Col xs={24} md={14}>
-          <Space direction="vertical" className="area-card__content" size={16}>
-            <div className="area-card__header">
-              <div>
-                <Text type="secondary">Tên bãi đỗ xe</Text>
-                <Title level={4} className="area-card__title">
-                  {lot.name || 'N/A'}
-                </Title>
-              </div>
-              <Button size="small" icon={<ClockCircleOutlined />}>
-                {lot.bookingSlotDurationHours}h / slot
-              </Button>
+        </div>
+        <div className="parking-lot-details-info">
+          <div className="parking-lot-details-header">
+            <div className="parking-lot-details-title-section">
+              <span className="parking-lot-details-label">Tên bãi đỗ xe</span>
+              <h2>{lot.name || 'N/A'}</h2>
             </div>
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <Text type="secondary">Địa chỉ</Text>
-                <div className="area-card__text">
-                  <EnvironmentOutlined /> {lot.addressId?.fullAddress || '—'}
-                </div>
-              </Col>
-              <Col span={12}>
-                <Text type="secondary">Kinh độ / Vĩ độ</Text>
-                <div className="area-card__text compact">
+            <div className="parking-lot-details-slot-duration">
+              <ClockCircleOutlined />
+              <span>{lot.bookingSlotDurationHours}h / slot</span>
+            </div>
+          </div>
+
+          <div className="parking-lot-details-grid">
+            <div className="parking-lot-details-field">
+              <span className="parking-lot-details-field-label">Địa chỉ</span>
+              <div className="parking-lot-details-field-value">
+                <EnvironmentOutlined />
+                <span>{lot.addressId?.fullAddress || '—'}</span>
+              </div>
+            </div>
+            <div className="parking-lot-details-field">
+              <span className="parking-lot-details-field-label">Kinh độ / Vĩ độ</span>
+              <div className="parking-lot-details-field-value">
+                <span>
                   {lot.addressId?.latitude?.toFixed(4) ?? '—'} /{' '}
                   {lot.addressId?.longitude?.toFixed(4) ?? '—'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="parking-lot-details-field">
+            <span className="parking-lot-details-field-label">Secret Key (Cho hệ thống IOT)</span>
+            <div className="parking-lot-details-secret">
+              <span className="parking-lot-details-secret-value">
+                {isSecretVisible ? lot.secretKey || '—' : '********'}
+              </span>
+              <button
+                className="parking-lot-details-secret-toggle"
+                onClick={() => setIsSecretVisible((prev) => !prev)}
+              >
+                {isSecretVisible ? (
+                  <>
+                    <EyeInvisibleOutlined /> Ẩn
+                  </>
+                ) : (
+                  <>
+                    <EyeOutlined /> Hiện
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="parking-lot-details-progress-section">
+            <div className="parking-lot-details-progress-card">
+              <div className="parking-lot-details-progress-header">
+                <span className="parking-lot-details-progress-label">Tỷ lệ lấp đầy</span>
+                <span className="parking-lot-details-progress-value">{occupancy}%</span>
+              </div>
+              <div className="parking-lot-details-progress-bar">
+                <div
+                  className="parking-lot-details-progress-fill"
+                  style={{ width: `${occupancy}%` }}
+                />
+              </div>
+              <div className="parking-lot-details-progress-foot">
+                {occupied} / {totalCapacity} chỗ
+              </div>
+            </div>
+            <div>
+              <div className="parking-lot-details-capacity-grid">
+                <div className="parking-lot-details-capacity-card">
+                  <div className="parking-lot-details-capacity-label">Bookable</div>
+                  <div className="parking-lot-details-capacity-value">{lot.bookableCapacity}</div>
                 </div>
-              </Col>
-            </Row>
-            <Row gutter={[16, 16]}>
-              <Col span={24}>
-                <Text type="secondary">Secret Key (Cho hệ thống IOT)</Text>
-                <div className="area-card__text compact" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span>{isSecretVisible ? lot.secretKey || '—' : '********'}</span>
-                  <Button
-                    size="small"
-                    type="link"
-                    icon={isSecretVisible ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-                    onClick={() => setIsSecretVisible((prev) => !prev)}
-                  >
-                    {isSecretVisible ? 'Ẩn' : 'Hiện'}
-                  </Button>
+                <div className="parking-lot-details-capacity-card">
+                  <div className="parking-lot-details-capacity-label">Leased</div>
+                  <div className="parking-lot-details-capacity-value">{lot.leasedCapacity}</div>
                 </div>
-              </Col>
-            </Row>
-            <Row gutter={[16, 16]} align="middle">
-              <Col xs={24} md={12}>
-                <div className="area-card__progress">
-                  <div className="area-card__progress-head">
-                    <Text>Tỷ lệ lấp đầy</Text>
-                    <strong>{occupancy}%</strong>
-                  </div>
-                  <Progress percent={occupancy} showInfo={false} strokeColor="#1890ff" />
-                  <div className="area-card__progress-foot">
-                    {occupied} / {totalCapacity} chỗ
-                  </div>
-                  <div>
+                <div className="parking-lot-details-capacity-card">
+                  <div className="parking-lot-details-capacity-label">Walk-in</div>
+                  <div className="parking-lot-details-capacity-value">{lot.walkInCapacity}</div>
+                </div>
+                <div className="parking-lot-details-capacity-card">
+                  <div className="parking-lot-details-capacity-label">Mỗi tầng</div>
+                  <div className="parking-lot-details-capacity-value">
+                    {lot.totalCapacityEachLevel}
                   </div>
                 </div>
-                <div className="area-card__map-button">
-                  <Button
-                    type="default"
-                    href={`https://www.google.com/maps?q=${lot.addressId?.latitude},${lot.addressId?.longitude}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    icon={<EnvironmentOutlined />}
-                  >
-                    Xem trên bản đồ
-                  </Button>
-                </div>
-              </Col>
-              <Col xs={24} md={12}>
-                <div className="capacity-grid">
-                  <div className="capacity-card">
-                    <Text type="secondary">Bookable</Text>
-                    <strong>{lot.bookableCapacity}</strong>
-                  </div>
-                  <div className="capacity-card">
-                    <Text type="secondary">Leased</Text>
-                    <strong>{lot.leasedCapacity}</strong>
-                  </div>
-                  <div className="capacity-card">
-                    <Text type="secondary">Walk-in</Text>
-                    <strong>{lot.walkInCapacity}</strong>
-                  </div>
-                  <div className="capacity-card">
-                    <Text type="secondary">Mỗi tầng</Text>
-                    <strong>{lot.totalCapacityEachLevel}</strong>
-                  </div>
-                </div>
-              </Col>
-            </Row>
-          </Space>
-        </Col>
-      </Row>
-    </Card>
+              </div>
+              <a
+                href={`https://www.google.com/maps?q=${lot.addressId?.latitude},${lot.addressId?.longitude}`}
+                target="_blank"
+                rel="noreferrer"
+                className="parking-lot-details-map-btn"
+              >
+                <EnvironmentOutlined />
+                <span>Xem trên bản đồ</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   )
 }
 
