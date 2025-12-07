@@ -402,6 +402,16 @@
   box-shadow: 0 0 0.8vh rgba(59, 130, 246, 0.6);
 }
 
+.session-status-badge.status-active {
+  background: rgba(245, 158, 11, 0.9);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.session-status-badge.status-active .session-status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0.8vh rgba(245, 158, 11, 0.6);
+}
+
 .session-status-badge.status-cancelled {
   background: rgba(107, 114, 128, 0.9);
   border-color: rgba(107, 114, 128, 0.3);

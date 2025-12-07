@@ -51,6 +51,7 @@ const formatCurrency = (value?: number) =>
 
 const getStatusLabel = (status: string): string => {
   const statusMap: Record<string, string> = {
+    ACTIVE: 'Đang đậu',
     COMPLETED: 'Hoàn thành',
     IN_PROGRESS: 'Đang diễn ra',
     CANCELLED: 'Đã hủy',
@@ -60,6 +61,7 @@ const getStatusLabel = (status: string): string => {
 
 const getStatusClass = (status: string): string => {
   const statusClassMap: Record<string, string> = {
+    ACTIVE: 'status-active',
     COMPLETED: 'status-completed',
     IN_PROGRESS: 'status-in-progress',
     CANCELLED: 'status-cancelled',
