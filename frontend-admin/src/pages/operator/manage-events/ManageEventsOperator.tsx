@@ -3,7 +3,7 @@ import { useGetEventsByOperatorQuery, useDeleteEventMutation } from '../../../fe
 import type { Event } from '../../../types/Event'                                       
 import { getEventStatus, formatDateRange } from '../../../components/events/eventUtils'
 import type { EventFilter } from '../../../components/events/eventTypes'
-import { CreateEventModal, UpdateEventModal } from '../../../components/events'
+import { CreateEventModal, UpdateEventModal, EventPromotionsDropdown } from '../../../components/events'
 import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { Modal, message } from 'antd'
 import './ManageEventsOperator.css'
@@ -336,6 +336,10 @@ const ManageEventsOperator: React.FC = () => {
                       </button>
                     </div>
                   </div>
+
+                  {event.includedPromotions && (
+                    <EventPromotionsDropdown eventId={event._id} />
+                  )}
                 </div>
               )
             })}

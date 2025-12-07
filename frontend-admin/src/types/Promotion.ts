@@ -18,5 +18,12 @@ export interface Promotion
     updatedBy: string | null
     eventId: string | null
     eventTitle: string | null
-    rules: string | null
+    rules: Rule[] | null
+  }
+
+  export interface Rule {
+    _id: string
+    promotionId: string
+    ruleType: string
+    ruleValue: string
   }
