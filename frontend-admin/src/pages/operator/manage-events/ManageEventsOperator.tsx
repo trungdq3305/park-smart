@@ -3,8 +3,8 @@ import { useGetEventsByOperatorQuery, useDeleteEventMutation } from '../../../fe
 import type { Event } from '../../../types/Event'                                       
 import { getEventStatus, formatDateRange } from '../../../components/events/eventUtils'
 import type { EventFilter } from '../../../components/events/eventTypes'
-import { CreateEventModal } from '../../../components/events'
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
+import { CreateEventModal, UpdateEventModal } from '../../../components/events'
+import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
 import { Modal, message } from 'antd'
 import './ManageEventsOperator.css'
 
@@ -41,6 +41,8 @@ const formatDateTime = (dateString: string): string => {
 const ManageEventsOperator: React.FC = () => {
   const [filter, setFilter] = useState<EventFilter>('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const { data, isLoading, error } = useGetEventsByOperatorQuery({}) as {
     data?: EventsResponse
     isLoading: boolean
@@ -96,6 +98,16 @@ const ManageEventsOperator: React.FC = () => {
         }
       },
     })
+  }
+
+  const handleOpenUpdateModal = (event: Event) => {
+    setSelectedEvent(event)
+    setIsUpdateModalOpen(true)
+  }
+
+  const handleCloseUpdateModal = () => {
+    setIsUpdateModalOpen(false)
+    setSelectedEvent(null)
   }
 
   if (isLoading) {
@@ -304,15 +316,25 @@ const ManageEventsOperator: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <button
-                      className="event-delete-btn"
-                      onClick={() => handleDeleteEvent(event._id, event.title)}
-                      disabled={isDeleting}
-                      title="Xóa sự kiện"
-                    >
-                      <DeleteOutlined />
-                      <span>Xóa</span>
-                    </button>
+                    <div className="event-item-actions">
+                      <button
+                        className="event-edit-btn"
+                        onClick={() => handleOpenUpdateModal(event)}
+                        title="Chỉnh sửa sự kiện"
+                      >
+                        <EditOutlined />
+                        <span>Chỉnh sửa</span>
+                      </button>
+                      <button
+                        className="event-delete-btn"
+                        onClick={() => handleDeleteEvent(event._id, event.title)}
+                        disabled={isDeleting}
+                        title="Xóa sự kiện"
+                      >
+                        <DeleteOutlined />
+                        <span>Xóa</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
@@ -324,6 +346,11 @@ const ManageEventsOperator: React.FC = () => {
       <CreateEventModal
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+      <UpdateEventModal
+        open={isUpdateModalOpen}
+        onClose={handleCloseUpdateModal}
+        event={selectedEvent}
       />
     </div>
   )

@@ -35,6 +35,15 @@ export const eventAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['events'],
     }),
+    updateEvent: builder.mutation({
+      query: (eventData) => ({
+        url: '/core/events',
+        method: 'PUT',
+        body: eventData,
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['events'],
+    }),
   }),
 })
 
@@ -43,4 +52,5 @@ export const {
   useCreateEventMutation,
   useGetEventsByOperatorQuery,
   useDeleteEventMutation,
+  useUpdateEventMutation,
 } = eventAPI
