@@ -10,6 +10,7 @@ import {
   EyeOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  CrownOutlined,
 } from '@ant-design/icons'
 import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parkingLotAPI'
 import {
@@ -405,26 +406,35 @@ const ParkingLotSessionHistory: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="session-payment-info">
-                        <div className="session-payment-item">
-                          <span className="session-payment-label">Phí đã thu:</span>
-                          <span className="session-payment-value paid">
-                            {formatCurrency(session.amountPaid)}
-                          </span>
+                      {session.subscriptionId ? (
+                        <div className="session-subscription-info">
+                          <div className="session-subscription-badge">
+                            <CrownOutlined className="session-subscription-icon" />
+                            <span>Khách dùng vé tháng</span>
+                          </div>
                         </div>
-                        <div className="session-payment-item">
-                          <span className="session-payment-label">Còn phải thu:</span>
-                          <span className="session-payment-value unpaid">
-                            {formatCurrency(session.amountPayAfterCheckOut)}
-                          </span>
+                      ) : (
+                        <div className="session-payment-info">
+                          <div className="session-payment-item">
+                            <span className="session-payment-label">Phí đã thu:</span>
+                            <span className="session-payment-value paid">
+                              {formatCurrency(session.amountPaid)}
+                            </span>
+                          </div>
+                          <div className="session-payment-item">
+                            <span className="session-payment-label">Phí đã trả sau check-out:</span>
+                            <span className="session-payment-value unpaid">
+                              {formatCurrency(session.amountPayAfterCheckOut)}
+                            </span>
+                          </div>
+                          <div className="session-payment-item">
+                            <span className="session-payment-label">Tổng phí:</span>
+                            <span className="session-payment-value total">
+                              {formatCurrency(totalAmount)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="session-payment-item">
-                          <span className="session-payment-label">Tổng phí:</span>
-                          <span className="session-payment-value total">
-                            {formatCurrency(totalAmount)}
-                          </span>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )
