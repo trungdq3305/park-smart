@@ -122,9 +122,7 @@ const ManageRequest: React.FC = () => {
 
   const apiError = error as any
   const isNotFoundError =
-    apiError?.status === 404 ||
-    apiError?.data?.statusCode === 404 ||
-    apiError?.statusCode === 404
+    apiError?.status === 404 || apiError?.data?.statusCode === 404 || apiError?.statusCode === 404
 
   const parkingLotRequests: ParkingLotRequest[] = isNotFoundError
     ? []
@@ -181,9 +179,7 @@ const ManageRequest: React.FC = () => {
         rejectionReason: undefined,
       }).unwrap()
 
-      message.success(
-        `Yêu cầu bãi đỗ xe "${record.payload.name}" đã được chấp thuận thành công.`
-      )
+      message.success(`Yêu cầu bãi đỗ xe "${record.payload.name}" đã được chấp thuận thành công.`)
     } catch (err: any) {
       message.error(err?.data?.message || 'Chấp thuận yêu cầu thất bại')
     }

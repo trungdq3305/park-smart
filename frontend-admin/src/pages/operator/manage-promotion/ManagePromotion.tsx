@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react'
-import { useGetPromotionsOperatorQuery, useDeletePromotionMutation } from '../../../features/operator/promotionAPI'
+import {
+  useGetPromotionsOperatorQuery,
+  useDeletePromotionMutation,
+} from '../../../features/operator/promotionAPI'
 import { useOperatorId } from '../../../hooks/useOperatorId'
 import type { Promotion } from '../../../types/Promotion'
 import { PlusOutlined } from '@ant-design/icons'
@@ -106,14 +109,11 @@ const ManagePromotion: React.FC = () => {
     <div className="manage-promotion-page">
       <div className="promotion-page-header">
         <div className="promotion-header-content">
-    <div>
+          <div>
             <h1>Quản lý khuyến mãi</h1>
             <p>Xem và quản lý tất cả các chương trình khuyến mãi của bạn</p>
           </div>
-          <button
-            className="promotion-create-btn"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
+          <button className="promotion-create-btn" onClick={() => setIsCreateModalOpen(true)}>
             <PlusOutlined />
             <span>Tạo mới</span>
           </button>
@@ -144,10 +144,7 @@ const ManagePromotion: React.FC = () => {
         )}
       </div>
 
-      <CreatePromotionModal
-        open={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-      />
+      <CreatePromotionModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
       <UpdatePromotionModal
         open={isUpdateModalOpen}
         onClose={() => {

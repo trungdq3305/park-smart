@@ -360,7 +360,8 @@ const ParkingLotSessionHistory: React.FC = () => {
                 const statusLabel = getStatusLabel(session.status)
                 const paymentStatusClass = getPaymentStatusClass(session.paymentStatus)
                 const paymentStatusLabel = getPaymentStatusLabel(session.paymentStatus)
-                const totalAmount = (session.amountPaid || 0) + (session.amountPayAfterCheckOut || 0)
+                const totalAmount =
+                  (session.amountPaid || 0) + (session.amountPayAfterCheckOut || 0)
 
                 return (
                   <div key={session._id} className="session-item">
@@ -466,7 +467,10 @@ const ParkingLotSessionHistory: React.FC = () => {
                 <button
                   className="session-pagination-btn"
                   onClick={() => handlePageChange(page + 1)}
-                  disabled={(paginationInfo.currentPage || page) >= Math.ceil(paginationInfo.totalItems / pageSize)}
+                  disabled={
+                    (paginationInfo.currentPage || page) >=
+                    Math.ceil(paginationInfo.totalItems / pageSize)
+                  }
                 >
                   Sau
                 </button>

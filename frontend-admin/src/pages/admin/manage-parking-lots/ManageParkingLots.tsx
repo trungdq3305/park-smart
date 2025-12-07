@@ -11,13 +11,7 @@ import {
 } from '@ant-design/icons'
 import './ManageParkingLots.css'
 
-type ParkingLotStatus =
-  | 'APPLIED'
-  | 'APPROVED'
-  | 'CANCELLED'
-  | 'FAILED'
-  | 'PENDING'
-  | 'REJECTED'
+type ParkingLotStatus = 'APPLIED' | 'APPROVED' | 'CANCELLED' | 'FAILED' | 'PENDING' | 'REJECTED'
 
 const getStatusLabel = (status: string): string => {
   const statusMap: Record<string, string> = {
@@ -59,7 +53,9 @@ const ManageParkingLots: React.FC = () => {
       (error as any)?.data?.statusCode === 404 ||
       (error as any)?.statusCode === 404)
 
-  const parkingLots: ParkingLot[] = isNotFoundError ? [] : (data as { data?: ParkingLot[] })?.data || []
+  const parkingLots: ParkingLot[] = isNotFoundError
+    ? []
+    : (data as { data?: ParkingLot[] })?.data || []
 
   const stats = useMemo(() => {
     const total = parkingLots.length
@@ -237,7 +233,8 @@ const ManageParkingLots: React.FC = () => {
             {filteredLots.map((lot) => {
               const totalCapacity = lot.totalCapacityEachLevel * lot.totalLevel
               const occupied = totalCapacity - lot.availableSpots
-              const occupancy = totalCapacity === 0 ? 0 : Math.round((occupied / totalCapacity) * 100)
+              const occupancy =
+                totalCapacity === 0 ? 0 : Math.round((occupied / totalCapacity) * 100)
               const isExpanded = expandedLotId === lot._id
               const statusClass = getStatusClass(lot.parkingLotStatus)
               const statusLabel = getStatusLabel(lot.parkingLotStatus)

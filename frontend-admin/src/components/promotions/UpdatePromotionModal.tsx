@@ -11,7 +11,11 @@ interface UpdatePromotionModalProps {
   promotion: Promotion | null
 }
 
-const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({ open, onClose, promotion }) => {
+const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({
+  open,
+  onClose,
+  promotion,
+}) => {
   const [form] = Form.useForm()
   const [updatePromotion, { isLoading }] = useUpdatePromotionMutation()
   const discountType = Form.useWatch('discountType', form)
@@ -45,7 +49,8 @@ const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({ open, onClo
       form.setFieldsValue({
         name: promotion.name,
         description: promotion.description || '',
-        discountType: promotion.discountType === 'PERCENTAGE' ? 'Percentage' : promotion.discountType,
+        discountType:
+          promotion.discountType === 'PERCENTAGE' ? 'Percentage' : promotion.discountType,
         discountValue: promotion.discountValue,
         maxDiscountAmount: promotion.maxDiscountAmount || 0,
         startDate: dayjs(promotion.startDate),
@@ -163,7 +168,9 @@ const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({ open, onClo
         >
           <InputNumber
             style={{ width: '100%' }}
-            placeholder={discountType === 'Percentage' ? 'Nhập phần trăm (ví dụ: 10)' : 'Nhập số tiền giảm giá'}
+            placeholder={
+              discountType === 'Percentage' ? 'Nhập phần trăm (ví dụ: 10)' : 'Nhập số tiền giảm giá'
+            }
             min={0.01}
             step={discountType === 'Percentage' ? 1 : 0.01}
             precision={discountType === 'Percentage' ? 0 : 2}
@@ -216,11 +223,7 @@ const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({ open, onClo
           />
         </Form.Item>
 
-        <Form.Item
-          name="totalUsageLimit"
-          label="Giới hạn sử dụng"
-          tooltip="Số lượt sử dụng tối đa"
-        >
+        <Form.Item name="totalUsageLimit" label="Giới hạn sử dụng" tooltip="Số lượt sử dụng tối đa">
           <InputNumber
             style={{ width: '100%' }}
             placeholder="Nhập số lượt sử dụng tối đa"
@@ -240,4 +243,3 @@ const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({ open, onClo
 }
 
 export default UpdatePromotionModal
-

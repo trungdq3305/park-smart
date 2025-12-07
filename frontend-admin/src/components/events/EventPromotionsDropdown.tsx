@@ -203,9 +203,7 @@ const EventPromotionsDropdown: React.FC<EventPromotionsDropdownProps> = ({ event
                           <div className="promotion-rules-list">
                             {promotion.rules.map((rule) => (
                               <div key={rule._id} className="promotion-rule-item">
-                                <span className="promotion-rule-type-label">
-                                  {rule.ruleType}:
-                                </span>
+                                <span className="promotion-rule-type-label">{rule.ruleType}:</span>
                                 <span className="promotion-rule-value">
                                   {formatRuleValue(rule.ruleValue)}
                                 </span>

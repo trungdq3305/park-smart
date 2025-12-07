@@ -63,10 +63,10 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
       footer={
         <>
           <Button onClick={onCancel} disabled={loading}>
-          Hủy
+            Hủy
           </Button>
           <Button type="primary" onClick={handleSubmit} loading={loading}>
-          Gửi yêu cầu
+            Gửi yêu cầu
           </Button>
         </>
       }

@@ -14,7 +14,9 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
   const [form] = Form.useForm()
   const [createPromotion, { isLoading }] = useCreatePromotionMutation()
   const { data: eventsData } = useGetEventsByOperatorQuery({})
-  const events: Event[] = Array.isArray(eventsData) ? eventsData : (eventsData as { data?: Event[] })?.data || []
+  const events: Event[] = Array.isArray(eventsData)
+    ? eventsData
+    : (eventsData as { data?: Event[] })?.data || []
   const discountType = Form.useWatch('discountType', form)
 
   const parseCurrency = (value: string | undefined): number => {
@@ -124,7 +126,10 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
             showSearch
             optionFilterProp="children"
             filterOption={(input, option) =>
-              (option?.label ?? '').toString().toLowerCase().includes(input.toString().toLowerCase())
+              (option?.label ?? '')
+                .toString()
+                .toLowerCase()
+                .includes(input.toString().toLowerCase())
             }
           >
             {events.map((event: Event) => (
@@ -176,7 +181,9 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
         >
           <InputNumber
             style={{ width: '100%' }}
-            placeholder={discountType === 'Percentage' ? 'Nhập phần trăm (ví dụ: 10)' : 'Nhập số tiền giảm giá'}
+            placeholder={
+              discountType === 'Percentage' ? 'Nhập phần trăm (ví dụ: 10)' : 'Nhập số tiền giảm giá'
+            }
             min={0.01}
             step={discountType === 'Percentage' ? 1 : 0.01}
             precision={discountType === 'Percentage' ? 0 : 2}
@@ -229,11 +236,7 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
           />
         </Form.Item>
 
-        <Form.Item
-          name="totalUsageLimit"
-          label="Giới hạn sử dụng"
-          tooltip="Số lượt sử dụng tối đa"
-        >
+        <Form.Item name="totalUsageLimit" label="Giới hạn sử dụng" tooltip="Số lượt sử dụng tối đa">
           <InputNumber
             style={{ width: '100%' }}
             placeholder="Nhập số lượt sử dụng tối đa"
@@ -253,4 +256,3 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
 }
 
 export default CreatePromotionModal
-
