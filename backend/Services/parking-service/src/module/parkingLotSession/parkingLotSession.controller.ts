@@ -276,12 +276,13 @@ export class ParkingLotSessionController {
     @Param('parkingLotId') parkingLotId: string,
     @Query() query: GetHistorySessionDto, // 👈 Dùng DTO đã gộp ở đây
   ): Promise<PaginatedResponseDto<ParkingLotSessionResponseDto>> {
-    const { page, pageSize, startDate, endDate } = query
+    const { page, pageSize, startDate, endDate, plateNumber } = query
     const result = await this.sessionService.findAllSessionsByParkingLot(
       parkingLotId,
       { page, pageSize },
       startDate,
       endDate,
+      plateNumber,
     )
 
     return {
