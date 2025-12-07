@@ -60,7 +60,7 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
             </Row>
             <Row gutter={[16, 16]}>
               <Col span={24}>
-                <Text type="secondary">Secret Key</Text>
+                <Text type="secondary">Secret Key (Cho hệ thống IOT)</Text>
                 <div className="area-card__text compact" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span>{isSecretVisible ? lot.secretKey || '—' : '********'}</span>
                   <Button
