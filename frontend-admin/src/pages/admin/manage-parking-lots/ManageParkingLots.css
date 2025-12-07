@@ -1,0 +1,569 @@
+.manage-parking-lots-page {
+  padding: 2.4vh;
+  background: #f8fafc;
+  min-height: 100vh;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+}
+
+.parking-lots-page-header {
+  margin-bottom: 3.2vh;
+}
+
+.parking-lots-page-header h1 {
+  font-size: 30px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.8vh 0;
+  line-height: 1.2;
+}
+
+.parking-lots-page-header p {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.parking-lots-page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2.4vh;
+}
+
+/* Stats Section */
+.parking-lots-stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 2vh;
+}
+
+.parking-lots-stat-card {
+  background: white;
+  padding: 2vh 2.2vh;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  gap: 1.6vh;
+  box-shadow: 0 1.2vh 3vh rgba(15, 23, 42, 0.08);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.parking-lots-stat-card:hover {
+  box-shadow: 0 2vh 5vh rgba(15, 23, 42, 0.15);
+}
+
+.parking-lots-stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.18), transparent 55%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.parking-lots-stat-card:nth-child(2)::before {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.2), transparent 55%);
+}
+
+.parking-lots-stat-card:nth-child(3)::before {
+  background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.2), transparent 55%);
+}
+
+.parking-lots-stat-card:nth-child(4)::before {
+  background: radial-gradient(circle at top left, rgba(245, 158, 11, 0.2), transparent 55%);
+}
+
+.parking-lots-stat-card:nth-child(5)::before {
+  background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.2), transparent 55%);
+}
+
+.parking-lots-stat-card:nth-child(6)::before {
+  background: radial-gradient(circle at top left, rgba(107, 114, 128, 0.2), transparent 55%);
+}
+
+.parking-lots-stat-card:nth-child(7)::before {
+  background: radial-gradient(circle at top left, rgba(139, 92, 246, 0.2), transparent 55%);
+}
+
+.parking-lots-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.parking-lots-stat-icon.total {
+  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+}
+
+.parking-lots-stat-icon.applied {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.parking-lots-stat-icon.approved {
+  background: linear-gradient(135deg, #059669, #22c55e);
+}
+
+.parking-lots-stat-icon.pending {
+  background: linear-gradient(135deg, #f59e0b, #f97316);
+}
+
+.parking-lots-stat-icon.rejected {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.parking-lots-stat-icon.cancelled {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+}
+
+.parking-lots-stat-icon.failed {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.parking-lots-stat-content {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.parking-lots-stat-content h3 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 0.4vh 0;
+}
+
+.parking-lots-stat-content p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 500;
+}
+
+.parking-lots-stat-sub {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 0.4vh;
+}
+
+/* Controls Section */
+.parking-lots-controls-card {
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  padding: 1.8vh 2vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.6vh;
+  flex-wrap: wrap;
+  box-shadow: 0 1vh 2.5vh rgba(15, 23, 42, 0.06);
+}
+
+.parking-lots-filter-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1.2vh;
+}
+
+.parking-lots-filter-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.parking-lots-filter-select {
+  padding: 0.8vh 1.6vh;
+  padding-right: 4vh;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1.2vh center;
+  background-size: 1.2vh;
+  min-width: 200px;
+}
+
+.parking-lots-filter-select:hover {
+  border-color: #9ca3af;
+  box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.05);
+}
+
+.parking-lots-filter-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.3vh rgba(59, 130, 246, 0.1);
+}
+
+.parking-lots-counter {
+  font-size: 13px;
+  color: #6b7280;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 0.6vh 1.4vh;
+  font-weight: 500;
+}
+
+/* Parking Lots List */
+.parking-lots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2vh;
+}
+
+.parking-lot-item {
+  background: white;
+  border-radius: 20px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  box-shadow: 0 1.8vh 4.5vh rgba(15, 23, 42, 0.12);
+  transition:
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s ease;
+  position: relative;
+}
+
+.parking-lot-item:hover {
+  box-shadow:
+    0 2.8vh 7vh rgba(15, 23, 42, 0.22),
+    0 0 0 0.1vh rgba(59, 130, 246, 0.12);
+  border-color: rgba(59, 130, 246, 0.8);
+}
+
+.parking-lot-item-header {
+  padding: 2vh 2.4vh;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-bottom: 1px dashed #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2vh;
+  flex-wrap: wrap;
+}
+
+.parking-lot-item-title-section {
+  display: flex;
+  align-items: center;
+  gap: 1.2vh;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.parking-lot-item-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.parking-lot-status-badge {
+  padding: 0.6vh 1.2vh;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6vh;
+  color: #f9fafb;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.parking-lot-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.parking-lot-status-badge.status-applied {
+  background: rgba(59, 130, 246, 0.9);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.parking-lot-status-badge.status-applied .parking-lot-status-dot {
+  background: #3b82f6;
+  box-shadow: 0 0 0.8vh rgba(59, 130, 246, 0.6);
+}
+
+.parking-lot-status-badge.status-approved {
+  background: rgba(16, 185, 129, 0.9);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.parking-lot-status-badge.status-approved .parking-lot-status-dot {
+  background: #22c55e;
+  box-shadow: 0 0 0.8vh rgba(34, 197, 94, 0.6);
+}
+
+.parking-lot-status-badge.status-pending {
+  background: rgba(245, 158, 11, 0.9);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.parking-lot-status-badge.status-pending .parking-lot-status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0.8vh rgba(245, 158, 11, 0.6);
+}
+
+.parking-lot-status-badge.status-rejected {
+  background: rgba(239, 68, 68, 0.9);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.parking-lot-status-badge.status-rejected .parking-lot-status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0.8vh rgba(239, 68, 68, 0.6);
+}
+
+.parking-lot-status-badge.status-cancelled {
+  background: rgba(107, 114, 128, 0.9);
+  border-color: rgba(107, 114, 128, 0.3);
+}
+
+.parking-lot-status-badge.status-cancelled .parking-lot-status-dot {
+  background: #6b7280;
+  box-shadow: 0 0 0.8vh rgba(107, 114, 128, 0.6);
+}
+
+.parking-lot-status-badge.status-failed {
+  background: rgba(139, 92, 246, 0.9);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.parking-lot-status-badge.status-failed .parking-lot-status-dot {
+  background: #8b5cf6;
+  box-shadow: 0 0 0.8vh rgba(139, 92, 246, 0.6);
+}
+
+.parking-lot-item-summary {
+  display: flex;
+  gap: 2vh;
+  flex-wrap: wrap;
+}
+
+.parking-lot-summary-item {
+  text-align: right;
+}
+
+.parking-lot-summary-label {
+  font-size: 11px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.4vh;
+}
+
+.parking-lot-summary-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  display: block;
+}
+
+.parking-lot-item-body {
+  padding: 2vh 2.4vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.6vh;
+  flex-wrap: wrap;
+}
+
+.parking-lot-item-info {
+  display: flex;
+  align-items: center;
+  gap: 2vh;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.parking-lot-info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6vh;
+  font-size: 14px;
+  color: #374151;
+}
+
+.parking-lot-info-label {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.parking-lot-info-value {
+  font-weight: 600;
+  color: #111827;
+}
+
+.parking-lot-expand-btn {
+  padding: 0.8vh 1.6vh;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 0.2vh 0.6vh rgba(59, 130, 246, 0.3);
+}
+
+.parking-lot-expand-btn:hover {
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.4);
+}
+
+.parking-lot-item-details {
+  padding: 2vh 2.4vh;
+  border-top: 1px dashed #e5e7eb;
+  background: #f9fafb;
+}
+
+/* Empty State */
+.parking-lots-empty-state {
+  margin-top: 2.4vh;
+  padding: 4.8vh 2vh;
+  border-radius: 16px;
+  border: 1px dashed #d1d5db;
+  background: linear-gradient(135deg, #f9fafb, #eff6ff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.8vh;
+  color: #6b7280;
+}
+
+.parking-lots-empty-icon {
+  font-size: 48px;
+  margin-bottom: 0.8vh;
+  opacity: 0.6;
+}
+
+.parking-lots-empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.parking-lots-empty-text {
+  font-size: 14px;
+  max-width: 420px;
+  margin: 0;
+}
+
+/* Loading & Error States */
+.parking-lots-loading,
+.parking-lots-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 32vh;
+  color: #6b7280;
+  gap: 1vh;
+}
+
+.parking-lots-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 4px solid #e5e7eb;
+  border-top-color: #3b82f6;
+  position: relative;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.parking-lots-error-badge {
+  padding: 0.4vh 1vh;
+  border-radius: 999px;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .manage-parking-lots-page {
+    padding: 1.6vh;
+  }
+
+  .parking-lots-stats-section {
+    grid-template-columns: 1fr;
+  }
+
+  .parking-lots-controls-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .parking-lots-filter-select {
+    width: 100%;
+  }
+
+  .parking-lot-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .parking-lot-item-summary {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .parking-lot-item-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .parking-lots-page-header h1 {
+    font-size: 24px;
+  }
+
+  .parking-lot-item-title {
+    font-size: 18px;
+  }
+}
+
