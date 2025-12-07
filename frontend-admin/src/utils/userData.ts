@@ -2,6 +2,7 @@ import Cookies from 'js-cookie'
 
 export interface MinimalUserData {
   fullName?: string
+  id?: string
 }
 
 const USER_DATA_COOKIE_KEY = 'userData'

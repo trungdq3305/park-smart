@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react'
 import { useGetEventsByOperatorQuery } from '../../../features/admin/eventAPI'
-import type { Event } from '../../../types/Event'
+import type { Event } from '../../../types/Event'                                       
 import { getEventStatus, formatDateRange } from '../../../components/events/eventUtils'
 import type { EventFilter } from '../../../components/events/eventTypes'
+import { CreateEventModal } from '../../../components/events'
+import { PlusOutlined } from '@ant-design/icons'
 import './ManageEventsOperator.css'
 
 interface EventsResponse {
@@ -37,6 +39,7 @@ const formatDateTime = (dateString: string): string => {
 
 const ManageEventsOperator: React.FC = () => {
   const [filter, setFilter] = useState<EventFilter>('all')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { data, isLoading, error } = useGetEventsByOperatorQuery({}) as {
     data?: EventsResponse
     isLoading: boolean
@@ -105,6 +108,13 @@ const ManageEventsOperator: React.FC = () => {
             <h1>Quản lý sự kiện</h1>
             <p>Xem và theo dõi tất cả sự kiện trong hệ thống Park Smart</p>
           </div>
+          <button
+            className="event-create-btn"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <PlusOutlined />
+            <span>Tạo mới</span>
+          </button>
         </div>
       </div>
 
@@ -281,6 +291,11 @@ const ManageEventsOperator: React.FC = () => {
           </div>
         )}
       </div>
+
+      <CreateEventModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   )
 }

@@ -38,6 +38,26 @@
   line-height: 1.5;
 }
 
+.event-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 1vh 2vh;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.3);
+}
+
+.event-create-btn:hover {
+  box-shadow: 0 0.8vh 2.4vh rgba(59, 130, 246, 0.4);
+}
+
 .event-page-content {
   display: flex;
   flex-direction: column;
