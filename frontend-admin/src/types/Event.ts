@@ -1,3 +1,5 @@
+import type { Promotion } from "./Promotion"
+
 export interface Event {
   _id: string
   title: string
@@ -12,4 +14,5 @@ export interface Event {
   updatedBy: string
   parkingLotId: string
   operatorId: string
+  promotions: Promotion[]
 }
