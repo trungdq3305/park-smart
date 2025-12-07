@@ -106,7 +106,7 @@ const ManagePromotion: React.FC = () => {
     <div className="manage-promotion-page">
       <div className="promotion-page-header">
         <div className="promotion-header-content">
-          <div>
+    <div>
             <h1>Quản lý khuyến mãi</h1>
             <p>Xem và quản lý tất cả các chương trình khuyến mãi của bạn</p>
           </div>

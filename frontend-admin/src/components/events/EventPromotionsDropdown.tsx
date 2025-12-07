@@ -28,6 +28,15 @@ const getDiscountText = (promotion: Promotion): string => {
   return `Giảm ${promotion.discountValue.toLocaleString('vi-VN')} ₫`
 }
 
+const formatRuleValue = (ruleValue: string): string => {
+  // Kiểm tra xem có phải là số không
+  const numValue = Number(ruleValue)
+  if (!isNaN(numValue) && numValue !== 0) {
+    return `${numValue.toLocaleString('vi-VN')} ₫`
+  }
+  return ruleValue
+}
+
 const getPromotionStatus = (promotion: Promotion): { label: string; class: string } => {
   const now = new Date()
   const startDate = new Date(promotion.startDate)
@@ -194,12 +203,12 @@ const EventPromotionsDropdown: React.FC<EventPromotionsDropdownProps> = ({ event
                           <div className="promotion-rules-list">
                             {promotion.rules.map((rule) => (
                               <div key={rule._id} className="promotion-rule-item">
-                                <div className="promotion-rule-type">
-                                  <span className="promotion-rule-type-label">
-                                    {rule.ruleType}:
-                                  </span>
-                                </div>
-                                <div className="promotion-rule-value">{rule.ruleValue}</div>
+                                <span className="promotion-rule-type-label">
+                                  {rule.ruleType}:
+                                </span>
+                                <span className="promotion-rule-value">
+                                  {formatRuleValue(rule.ruleValue)}
+                                </span>
                               </div>
                             ))}
                           </div>

@@ -394,7 +394,7 @@
 
 .promotion-rule-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.8vh;
   padding: 0.8vh 1vh;
   background: white;
@@ -402,16 +402,13 @@
   border: 1px solid #e5e7eb;
 }
 
-.promotion-rule-type {
-  flex-shrink: 0;
-  min-width: 120px;
-}
-
 .promotion-rule-type-label {
   font-size: 11px;
   color: #6b7280;
   font-weight: 600;
   text-transform: capitalize;
+  flex-shrink: 0;
+  min-width: 120px;
 }
 
 .promotion-rule-value {
