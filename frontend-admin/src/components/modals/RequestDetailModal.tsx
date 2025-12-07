@@ -1,6 +1,13 @@
-import { Modal, Button, Spin, Alert, Space, Descriptions, Tag } from 'antd'
 import { useParkingLotRequestDetailQuery } from '../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../types/ParkingLotRequest'
+import CustomModal from '../common/CustomModal'
+import {
+  FileTextOutlined,
+  CalendarOutlined,
+  ClockCircleOutlined,
+  CarOutlined,
+} from '@ant-design/icons'
+import './RequestDetailModal.css'
 
 type Option = { label: string; value: string }
 
@@ -14,14 +21,51 @@ interface RequestDetailModalProps {
   typeTagColor: Record<string, string>
 }
 
+const getStatusLabel = (status: string, statusOptions: Option[]): string => {
+  return statusOptions.find((s) => s.value === status)?.label || status
+}
+
+const getStatusClass = (status: string): string => {
+  const statusClassMap: Record<string, string> = {
+    PENDING: 'status-pending',
+    APPROVED: 'status-approved',
+    REJECTED: 'status-rejected',
+    APPLIED: 'status-applied',
+    FAILED: 'status-failed',
+    CANCELLED: 'status-cancelled',
+  }
+  return statusClassMap[status] || 'status-default'
+}
+
+const getTypeLabel = (type: string, typeOptions: Option[]): string => {
+  return typeOptions.find((t) => t.value === type)?.label || type
+}
+
+const getTypeClass = (type: string): string => {
+  const typeClassMap: Record<string, string> = {
+    CREATE: 'type-create',
+    UPDATE: 'type-update',
+    DELETE: 'type-delete',
+  }
+  return typeClassMap[type] || 'type-default'
+}
+
+const formatDateTime = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
   open,
   request,
   onClose,
   statusOptions,
   typeOptions,
-  statusTagColor,
-  typeTagColor,
 }) => {
   const shouldFetchRequestDetail = Boolean(
     open && request?._id && request?.requestType === 'UPDATE'
@@ -47,137 +91,207 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
     return null
   }
 
+  const statusClass = getStatusClass(resolvedRequest?.status || request.status)
+  const statusLabel = getStatusLabel(resolvedRequest?.status || request.status, statusOptions)
+  const typeClass = getTypeClass(resolvedRequest?.requestType || request.requestType)
+  const typeLabel = getTypeLabel(resolvedRequest?.requestType || request.requestType, typeOptions)
+
+  const footer = (
+    <button className="request-detail-close-btn" onClick={onClose}>
+      Đóng
+    </button>
+  )
+
   return (
-    <Modal
+    <CustomModal
       open={open}
+      onClose={onClose}
       title="Chi tiết yêu cầu bãi đỗ xe"
-      onCancel={onClose}
-      footer={[
-        <Button key="close" onClick={onClose}>
-          Đóng
-        </Button>,
-      ]}
-      width={720}
+      footer={footer}
+      width="900px"
+      loading={isRequestDetailLoading}
     >
-      {shouldFetchRequestDetail && isRequestDetailLoading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-          <Spin tip="Đang tải chi tiết yêu cầu..." />
+      {isRequestDetailLoading ? (
+        <div className="request-detail-loading">
+          <div className="request-detail-loading-spinner" />
+          <p>Đang tải chi tiết yêu cầu...</p>
         </div>
-      ) : shouldFetchRequestDetail && requestDetailError ? (
-        <Alert
-          type="error"
-          message="Không thể tải chi tiết yêu cầu"
-          description={(requestDetailError as any)?.data?.message || 'Vui lòng thử lại sau.'}
-          showIcon
-        />
+      ) : requestDetailError ? (
+        <div className="request-detail-error">
+          <span className="request-detail-error-badge">Lỗi</span>
+          <p>{(requestDetailError as any)?.data?.message || 'Không thể tải chi tiết yêu cầu'}</p>
+        </div>
       ) : resolvedRequest ? (
-        <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <Descriptions column={2} bordered size="small" labelStyle={{ width: 180 }}>
-            <Descriptions.Item label="Tên bãi đỗ xe">
-              {resolvedRequest.payload?.name}
-            </Descriptions.Item>
-            <Descriptions.Item label="Trạng thái yêu cầu">
-              <Tag color={statusTagColor[resolvedRequest.status] || 'default'}>
-                {statusOptions.find((s) => s.value === resolvedRequest.status)?.label ||
-                  resolvedRequest.status}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Loại yêu cầu">
-              <Tag color={typeTagColor[resolvedRequest.requestType] || 'default'}>
-                {typeOptions.find((t) => t.value === resolvedRequest.requestType)?.label ||
-                  resolvedRequest.requestType}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Ngày tạo">
-              {resolvedRequest.createdAt
-                ? new Date(resolvedRequest.createdAt).toLocaleString('vi-VN')
-                : '--'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Ngày hiệu lực">
-              {resolvedRequest.effectiveDate
-                ? new Date(resolvedRequest.effectiveDate).toLocaleDateString('vi-VN')
-                : '--'}
-            </Descriptions.Item>
-          </Descriptions>
+        <div className="request-detail-content">
+          {/* Header Info */}
+          <div className="request-detail-header">
+            <div className="request-detail-header-main">
+              <h3 className="request-detail-title">{resolvedRequest.payload?.name || 'N/A'}</h3>
+              <div className="request-detail-badges">
+                <div className={`request-detail-type-badge ${typeClass}`}>
+                  <span>{typeLabel}</span>
+                </div>
+                <div className={`request-detail-status-badge ${statusClass}`}>
+                  <span className="request-detail-status-dot" />
+                  <span>{statusLabel}</span>
+                </div>
+              </div>
+            </div>
+            <div className="request-detail-header-meta">
+              <div className="request-detail-meta-item">
+                <CalendarOutlined />
+                <div>
+                  <span className="request-detail-meta-label">Ngày tạo</span>
+                  <span className="request-detail-meta-value">
+                    {resolvedRequest.createdAt
+                      ? formatDateTime(resolvedRequest.createdAt)
+                      : '--'}
+                  </span>
+                </div>
+              </div>
+              <div className="request-detail-meta-item">
+                <ClockCircleOutlined />
+                <div>
+                  <span className="request-detail-meta-label">Ngày hiệu lực</span>
+                  <span className="request-detail-meta-value">
+                    {resolvedRequest.effectiveDate
+                      ? new Date(resolvedRequest.effectiveDate).toLocaleDateString('vi-VN')
+                      : '--'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <Descriptions
-            title="Thông tin bãi đỗ xe theo yêu cầu"
-            column={2}
-            bordered
-            size="small"
-            labelStyle={{ width: 180 }}
-          >
-            <Descriptions.Item label="Tên bãi đỗ xe">
-              {resolvedRequest.payload?.name || 'Chưa cập nhật'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ">
-              {resolvedRequest.payload?.addressId?.fullAddress || 'Chưa cập nhật'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Tổng tầng">
-              {resolvedRequest.payload?.totalLevel ?? 'Chưa cập nhật'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Sức chứa mỗi tầng">
-              {resolvedRequest.payload?.totalCapacityEachLevel ?? 'Chưa cập nhật'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Sức chứa đặt chỗ">
-              {resolvedRequest.payload?.bookableCapacity ?? 'Chưa cập nhật'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Sức chứa gói tháng">
-              {resolvedRequest.payload?.leasedCapacity ?? 'Chưa cập nhật'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Sức chứa gửi lượt">
-              {resolvedRequest.payload?.walkInCapacity ?? 'Chưa cập nhật'}
-            </Descriptions.Item>
-            <Descriptions.Item label="Thời lượng slot đặt chỗ (giờ)">
-              {resolvedRequest.payload?.bookingSlotDurationHours ?? 'Chưa cập nhật'}
-            </Descriptions.Item>
-          </Descriptions>
+          {/* Request Info Section */}
+          <div className="request-detail-section">
+            <div className="request-detail-section-header">
+              <FileTextOutlined />
+              <h4 className="request-detail-section-title">Thông tin yêu cầu</h4>
+            </div>
+            <div className="request-detail-info-grid">
+              <div className="request-detail-info-item">
+                <span className="request-detail-info-label">Tên bãi đỗ xe</span>
+                <span className="request-detail-info-value">
+                  {resolvedRequest.payload?.name || 'Chưa cập nhật'}
+                </span>
+              </div>
+              <div className="request-detail-info-item">
+                <span className="request-detail-info-label">Địa chỉ</span>
+                <span className="request-detail-info-value">
+                  {resolvedRequest.payload?.addressId?.fullAddress || 'Chưa cập nhật'}
+                </span>
+              </div>
+              <div className="request-detail-info-item">
+                <span className="request-detail-info-label">Tổng số tầng</span>
+                <span className="request-detail-info-value">
+                  {resolvedRequest.payload?.totalLevel ?? 'Chưa cập nhật'}
+                </span>
+              </div>
+              <div className="request-detail-info-item">
+                <span className="request-detail-info-label">Sức chứa mỗi tầng</span>
+                <span className="request-detail-info-value">
+                  {resolvedRequest.payload?.totalCapacityEachLevel ?? 'Chưa cập nhật'}
+                </span>
+              </div>
+              <div className="request-detail-info-item">
+                <span className="request-detail-info-label">Sức chứa đặt chỗ</span>
+                <span className="request-detail-info-value">
+                  {resolvedRequest.payload?.bookableCapacity ?? 'Chưa cập nhật'}
+                </span>
+              </div>
+              <div className="request-detail-info-item">
+                <span className="request-detail-info-label">Sức chứa gói tháng</span>
+                <span className="request-detail-info-value">
+                  {resolvedRequest.payload?.leasedCapacity ?? 'Chưa cập nhật'}
+                </span>
+              </div>
+              <div className="request-detail-info-item">
+                <span className="request-detail-info-label">Sức chứa gửi lượt</span>
+                <span className="request-detail-info-value">
+                  {resolvedRequest.payload?.walkInCapacity ?? 'Chưa cập nhật'}
+                </span>
+              </div>
+              <div className="request-detail-info-item">
+                <span className="request-detail-info-label">Thời lượng slot đặt chỗ (giờ)</span>
+                <span className="request-detail-info-value">
+                  {resolvedRequest.payload?.bookingSlotDurationHours ?? 'Chưa cập nhật'}
+                </span>
+              </div>
+            </div>
+          </div>
 
+          {/* Current Parking Lot Info (if exists) */}
           {resolvedRequest.parkingLotId && (
-            <Descriptions
-              title="Thông tin bãi đỗ xe hiện tại"
-              column={2}
-              bordered
-              size="small"
-              labelStyle={{ width: 180 }}
-            >
-              <Descriptions.Item label="Tên bãi đỗ xe">
-                {resolvedRequest.parkingLotId.name || 'Không xác định'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái">
-                <Tag
-                  color={
-                    (resolvedRequest.parkingLotId.parkingLotStatus &&
-                      statusTagColor[resolvedRequest.parkingLotId.parkingLotStatus]) ||
-                    'default'
-                  }
-                >
-                  {resolvedRequest.parkingLotId.parkingLotStatus || 'Không xác định'}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Tổng tầng">
-                {resolvedRequest.parkingLotId.totalLevel ?? 'Không xác định'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa mỗi tầng">
-                {resolvedRequest.parkingLotId.totalCapacityEachLevel ?? 'Không xác định'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa đặt chỗ">
-                {resolvedRequest.parkingLotId.bookableCapacity ?? 'Không xác định'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa gói tháng">
-                {resolvedRequest.parkingLotId.leasedCapacity ?? 'Không xác định'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa gửi lượt">
-                {resolvedRequest.parkingLotId.walkInCapacity ?? 'Không xác định'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Số chỗ khả dụng hiển thị">
-                {resolvedRequest.parkingLotId.availableSpots ?? 'Không xác định'}
-              </Descriptions.Item>
-            </Descriptions>
+            <div className="request-detail-section">
+              <div className="request-detail-section-header">
+                <CarOutlined />
+                <h4 className="request-detail-section-title">Thông tin bãi đỗ xe hiện tại</h4>
+              </div>
+              <div className="request-detail-info-grid">
+                <div className="request-detail-info-item">
+                  <span className="request-detail-info-label">Tên bãi đỗ xe</span>
+                  <span className="request-detail-info-value">
+                    {resolvedRequest.parkingLotId.name || 'Không xác định'}
+                  </span>
+                </div>
+                <div className="request-detail-info-item">
+                  <span className="request-detail-info-label">Trạng thái</span>
+                  <span className="request-detail-info-value">
+                    <div
+                      className={`request-detail-status-badge ${getStatusClass(
+                        resolvedRequest.parkingLotId.parkingLotStatus || ''
+                      )}`}
+                    >
+                      <span className="request-detail-status-dot" />
+                      <span>
+                        {resolvedRequest.parkingLotId.parkingLotStatus || 'Không xác định'}
+                      </span>
+                    </div>
+                  </span>
+                </div>
+                <div className="request-detail-info-item">
+                  <span className="request-detail-info-label">Tổng số tầng</span>
+                  <span className="request-detail-info-value">
+                    {resolvedRequest.parkingLotId.totalLevel ?? 'Không xác định'}
+                  </span>
+                </div>
+                <div className="request-detail-info-item">
+                  <span className="request-detail-info-label">Sức chứa mỗi tầng</span>
+                  <span className="request-detail-info-value">
+                    {resolvedRequest.parkingLotId.totalCapacityEachLevel ?? 'Không xác định'}
+                  </span>
+                </div>
+                <div className="request-detail-info-item">
+                  <span className="request-detail-info-label">Sức chứa đặt chỗ</span>
+                  <span className="request-detail-info-value">
+                    {resolvedRequest.parkingLotId.bookableCapacity ?? 'Không xác định'}
+                  </span>
+                </div>
+                <div className="request-detail-info-item">
+                  <span className="request-detail-info-label">Sức chứa gói tháng</span>
+                  <span className="request-detail-info-value">
+                    {resolvedRequest.parkingLotId.leasedCapacity ?? 'Không xác định'}
+                  </span>
+                </div>
+                <div className="request-detail-info-item">
+                  <span className="request-detail-info-label">Sức chứa gửi lượt</span>
+                  <span className="request-detail-info-value">
+                    {resolvedRequest.parkingLotId.walkInCapacity ?? 'Không xác định'}
+                  </span>
+                </div>
+                <div className="request-detail-info-item">
+                  <span className="request-detail-info-label">Số chỗ khả dụng</span>
+                  <span className="request-detail-info-value">
+                    {resolvedRequest.parkingLotId.availableSpots ?? 'Không xác định'}
+                  </span>
+                </div>
+              </div>
+            </div>
           )}
-        </Space>
+        </div>
       ) : null}
-    </Modal>
+    </CustomModal>
   )
 }
 
