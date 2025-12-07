@@ -1,5 +1,5 @@
 import { Card, Col, Empty, Row, Skeleton, Switch, Tag, Typography, Button } from 'antd'
-import { CloseCircleOutlined, PlusOutlined, EditOutlined } from '@ant-design/icons'
+import { CloseCircleOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
 import '../ParkingLot.css'
 
@@ -12,6 +12,7 @@ interface PricingPolicyListProps {
   onIsDeletedChange: (isDeleted: boolean) => void
   onOpenCreateModal?: () => void
   onOpenEditModal?: (policy: PricingPolicyLink) => void
+  onDelete?: (policyId: string) => void
 }
 
 const getPriorityColor = (priority: number): string | undefined => {
@@ -31,6 +32,7 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
   onIsDeletedChange,
   onOpenCreateModal,
   onOpenEditModal,
+  onDelete,
 }) => {
   return (
     <Card className="policy-card-list">
@@ -193,16 +195,29 @@ const PricingPolicyList: React.FC<PricingPolicyListProps> = ({
                             </Text>
                           )}
                         </div>
-                        {!isDisabled && onOpenEditModal && (
-                          <Button
-                            type="primary"
-                            icon={<EditOutlined />}
-                            onClick={() => onOpenEditModal(link)}
-                            size="small"
-                          >
-                            Chỉnh sửa
-                          </Button>
-                        )}
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          {!isDisabled && onOpenEditModal && (
+                            <Button
+                              type="primary"
+                              icon={<EditOutlined />}
+                              onClick={() => onOpenEditModal(link)}
+                              size="small"
+                            >
+                              Chỉnh sửa
+                            </Button>
+                          )}
+                          {onDelete && (
+                            <Button
+                              type="primary"
+                              danger
+                              icon={<DeleteOutlined />}
+                              onClick={() => onDelete(link._id)}
+                              size="small"
+                            >
+                              Xóa
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Card>

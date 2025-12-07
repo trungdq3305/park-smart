@@ -28,7 +28,7 @@ import UpdateParkingLotModal from './components/UpdateParkingLotModal'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 import type { Basis } from '../../../types/Basis'
 import { useGetBasisQuery } from '../../../features/operator/basisAPI'
-import { message } from 'antd'
+import { message, Modal } from 'antd'
 import Cookies from 'js-cookie'
 
 const { Title, Text } = Typography
@@ -129,6 +129,24 @@ const OperatorParkingLot: React.FC = () => {
   const handleOpenEditModal = (policy: PricingPolicyLink) => {
     setSelectedPolicyForEdit(policy)
     setIsEditModalOpen(true)
+  }
+
+  const handleDeletePricingPolicy = (policyId: string) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa chính sách giá',
+      content: 'Bạn có chắc chắn muốn xóa chính sách giá này? Hành động này không thể hoàn tác.',
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          const result = await deletePricingPolicyLink(policyId).unwrap()
+          message.success(result?.message || 'Xóa chính sách giá thành công')
+        } catch (error: any) {
+          message.error(error?.data?.message || 'Xóa chính sách giá thất bại')
+        }
+      },
+    })
   }
 
   const handleUpdateParkingLot = async (values: any) => {
@@ -244,6 +262,7 @@ const OperatorParkingLot: React.FC = () => {
             onIsDeletedChange={handleIsDeletedChange}
             onOpenCreateModal={() => setIsCreateModalOpen(true)}
             onOpenEditModal={handleOpenEditModal}
+            onDelete={handleDeletePricingPolicy}
           />
           <CreatePricingPolicyModal
             open={isCreateModalOpen}
