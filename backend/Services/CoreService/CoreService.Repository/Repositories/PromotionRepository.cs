@@ -47,5 +47,9 @@ namespace CoreService.Repository.Repositories
         await _collection.Find(x => x.OperatorId == operatorId && x.DeletedAt == null)
             .SortByDescending(x => x.CreatedAt)
             .ToListAsync();
+        public async Task<IEnumerable<Promotion>> GetByEventIdAsync(string eventId) =>
+    await _collection.Find(x => x.EventId == eventId && x.DeletedAt == null)
+        .SortByDescending(x => x.CreatedAt)
+        .ToListAsync();
     }
 }
