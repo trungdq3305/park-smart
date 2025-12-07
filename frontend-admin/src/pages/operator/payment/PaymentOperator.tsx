@@ -45,7 +45,6 @@ const formatMonth = (monthString: string): string => {
   return `Tháng ${month}/${year}`
 }
 
-
 const PaymentOperator: React.FC = () => {
   const [filter, setFilter] = useState<InvoiceFilter>('all')
   const { data, isLoading, error } = useGetInvoicesQuery({})
@@ -259,7 +258,6 @@ const PaymentOperator: React.FC = () => {
                         <span className="invoice-paid-value">{formatDate(invoice.paidAt)}</span>
                       </div>
                     )}
-
                   </div>
 
                   <div className="invoice-item-footer">

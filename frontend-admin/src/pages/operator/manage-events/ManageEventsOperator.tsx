@@ -1,8 +1,18 @@
 import React, { useMemo, useState } from 'react'
-import { useGetEventsByOperatorQuery } from '../../../features/admin/eventAPI'
+import {
+  useGetEventsByOperatorQuery,
+  useDeleteEventMutation,
+} from '../../../features/admin/eventAPI'
 import type { Event } from '../../../types/Event'
 import { getEventStatus, formatDateRange } from '../../../components/events/eventUtils'
 import type { EventFilter } from '../../../components/events/eventTypes'
+import {
+  CreateEventModal,
+  UpdateEventModal,
+  EventPromotionsDropdown,
+} from '../../../components/events'
+import { PlusOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons'
+import { Modal, message } from 'antd'
 import './ManageEventsOperator.css'
 
 interface EventsResponse {
@@ -37,15 +47,16 @@ const formatDateTime = (dateString: string): string => {
 
 const ManageEventsOperator: React.FC = () => {
   const [filter, setFilter] = useState<EventFilter>('all')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
   const { data, isLoading, error } = useGetEventsByOperatorQuery({}) as {
     data?: EventsResponse
     isLoading: boolean
     error?: unknown
   }
-
-  const events: Event[] = Array.isArray(data)
-    ? data
-    : (data as { data?: Event[] })?.data || []
+  const [deleteEvent, { isLoading: isDeleting }] = useDeleteEventMutation()
+  const events: Event[] = Array.isArray(data) ? data : (data as { data?: Event[] })?.data || []
 
   const now = useMemo(() => new Date(), [])
 
@@ -74,6 +85,34 @@ const ManageEventsOperator: React.FC = () => {
     if (filter === 'all') return events
     return events.filter((event) => getEventStatus(event, now) === filter)
   }, [events, filter, now])
+
+  const handleDeleteEvent = (eventId: string, eventTitle: string) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa sự kiện',
+      content: `Bạn có chắc chắn muốn xóa sự kiện "${eventTitle}"? Hành động này không thể hoàn tác.`,
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          const result = await deleteEvent(eventId).unwrap()
+          message.success(result?.message || 'Xóa sự kiện thành công')
+        } catch (error: any) {
+          message.error(error?.data?.message || 'Xóa sự kiện thất bại')
+        }
+      },
+    })
+  }
+
+  const handleOpenUpdateModal = (event: Event) => {
+    setSelectedEvent(event)
+    setIsUpdateModalOpen(true)
+  }
+
+  const handleCloseUpdateModal = () => {
+    setIsUpdateModalOpen(false)
+    setSelectedEvent(null)
+  }
 
   if (isLoading) {
     return (
@@ -105,6 +144,10 @@ const ManageEventsOperator: React.FC = () => {
             <h1>Quản lý sự kiện</h1>
             <p>Xem và theo dõi tất cả sự kiện trong hệ thống Park Smart</p>
           </div>
+          <button className="event-create-btn" onClick={() => setIsCreateModalOpen(true)}>
+            <PlusOutlined />
+            <span>Tạo mới</span>
+          </button>
         </div>
       </div>
 
@@ -239,7 +282,9 @@ const ManageEventsOperator: React.FC = () => {
                         <div className="event-detail-icon">📅</div>
                         <div className="event-detail-content">
                           <span className="event-detail-label">Bắt đầu</span>
-                          <span className="event-detail-value">{formatDateTime(event.startDate)}</span>
+                          <span className="event-detail-value">
+                            {formatDateTime(event.startDate)}
+                          </span>
                         </div>
                       </div>
 
@@ -247,7 +292,9 @@ const ManageEventsOperator: React.FC = () => {
                         <div className="event-detail-icon">🏁</div>
                         <div className="event-detail-content">
                           <span className="event-detail-label">Kết thúc</span>
-                          <span className="event-detail-value">{formatDateTime(event.endDate)}</span>
+                          <span className="event-detail-value">
+                            {formatDateTime(event.endDate)}
+                          </span>
                         </div>
                       </div>
 
@@ -270,17 +317,47 @@ const ManageEventsOperator: React.FC = () => {
                       {event.updatedAt !== event.createdAt && (
                         <div className="event-date-item">
                           <span className="event-date-label">Cập nhật:</span>
-                          <span className="event-date-value">{formatDateTime(event.updatedAt)}</span>
+                          <span className="event-date-value">
+                            {formatDateTime(event.updatedAt)}
+                          </span>
                         </div>
                       )}
                     </div>
+                    <div className="event-item-actions">
+                      <button
+                        className="event-edit-btn"
+                        onClick={() => handleOpenUpdateModal(event)}
+                        title="Chỉnh sửa sự kiện"
+                      >
+                        <EditOutlined />
+                        <span>Chỉnh sửa</span>
+                      </button>
+                      <button
+                        className="event-delete-btn"
+                        onClick={() => handleDeleteEvent(event._id, event.title)}
+                        disabled={isDeleting}
+                        title="Xóa sự kiện"
+                      >
+                        <DeleteOutlined />
+                        <span>Xóa</span>
+                      </button>
+                    </div>
                   </div>
+
+                  {event.includedPromotions && <EventPromotionsDropdown eventId={event._id} />}
                 </div>
               )
             })}
           </div>
         )}
       </div>
+
+      <CreateEventModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <UpdateEventModal
+        open={isUpdateModalOpen}
+        onClose={handleCloseUpdateModal}
+        event={selectedEvent}
+      />
     </div>
   )
 }

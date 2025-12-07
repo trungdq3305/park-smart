@@ -1,4 +1,4 @@
-.payment-operator-page {
+.manage-parking-lots-page {
   padding: 2.4vh;
   background: #f8fafc;
   min-height: 100vh;
@@ -11,19 +11,11 @@
     sans-serif;
 }
 
-.invoice-page-header {
+.parking-lots-page-header {
   margin-bottom: 3.2vh;
 }
 
-.invoice-header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 2.4vh;
-  flex-wrap: wrap;
-}
-
-.invoice-page-header h1 {
+.parking-lots-page-header h1 {
   font-size: 30px;
   font-weight: 700;
   color: #111827;
@@ -31,27 +23,27 @@
   line-height: 1.2;
 }
 
-.invoice-page-header p {
+.parking-lots-page-header p {
   font-size: 16px;
   color: #6b7280;
   margin: 0;
   line-height: 1.5;
 }
 
-.invoice-page-content {
+.parking-lots-page-content {
   display: flex;
   flex-direction: column;
   gap: 2.4vh;
 }
 
 /* Stats Section */
-.invoice-stats-section {
+.parking-lots-stats-section {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 2vh;
 }
 
-.invoice-stat-card {
+.parking-lots-stat-card {
   background: white;
   padding: 2vh 2.2vh;
   border-radius: 16px;
@@ -65,11 +57,11 @@
   transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.invoice-stat-card:hover {
+.parking-lots-stat-card:hover {
   box-shadow: 0 2vh 5vh rgba(15, 23, 42, 0.15);
 }
 
-.invoice-stat-card::before {
+.parking-lots-stat-card::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -78,23 +70,31 @@
   pointer-events: none;
 }
 
-.invoice-stat-card:nth-child(2)::before {
+.parking-lots-stat-card:nth-child(2)::before {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.2), transparent 55%);
+}
+
+.parking-lots-stat-card:nth-child(3)::before {
   background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.2), transparent 55%);
 }
 
-.invoice-stat-card:nth-child(3)::before {
+.parking-lots-stat-card:nth-child(4)::before {
   background: radial-gradient(circle at top left, rgba(245, 158, 11, 0.2), transparent 55%);
 }
 
-.invoice-stat-card:nth-child(4)::before {
+.parking-lots-stat-card:nth-child(5)::before {
   background: radial-gradient(circle at top left, rgba(239, 68, 68, 0.2), transparent 55%);
 }
 
-.invoice-stat-card:nth-child(5)::before {
+.parking-lots-stat-card:nth-child(6)::before {
+  background: radial-gradient(circle at top left, rgba(107, 114, 128, 0.2), transparent 55%);
+}
+
+.parking-lots-stat-card:nth-child(7)::before {
   background: radial-gradient(circle at top left, rgba(139, 92, 246, 0.2), transparent 55%);
 }
 
-.invoice-stat-icon {
+.parking-lots-stat-icon {
   width: 48px;
   height: 48px;
   border-radius: 16px;
@@ -108,50 +108,62 @@
   z-index: 1;
 }
 
-.invoice-stat-icon.total {
+.parking-lots-stat-icon.total {
   background: linear-gradient(135deg, #0f172a, #1d4ed8);
 }
 
-.invoice-stat-icon.paid {
+.parking-lots-stat-icon.applied {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.parking-lots-stat-icon.approved {
   background: linear-gradient(135deg, #059669, #22c55e);
 }
 
-.invoice-stat-icon.pending {
+.parking-lots-stat-icon.pending {
   background: linear-gradient(135deg, #f59e0b, #f97316);
 }
 
-.invoice-stat-icon.expired {
+.parking-lots-stat-icon.rejected {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.parking-lots-stat-icon.cancelled {
   background: linear-gradient(135deg, #6b7280, #4b5563);
 }
 
-.invoice-stat-content {
+.parking-lots-stat-icon.failed {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.parking-lots-stat-content {
   position: relative;
   z-index: 1;
   flex: 1;
 }
 
-.invoice-stat-content h3 {
+.parking-lots-stat-content h3 {
   font-size: 26px;
   font-weight: 700;
   color: #0f172a;
   margin: 0 0 0.4vh 0;
 }
 
-.invoice-stat-content p {
+.parking-lots-stat-content p {
   font-size: 14px;
   color: #6b7280;
   margin: 0;
   font-weight: 500;
 }
 
-.invoice-stat-sub {
+.parking-lots-stat-sub {
   font-size: 12px;
   color: #9ca3af;
   margin-top: 0.4vh;
 }
 
 /* Controls Section */
-.invoice-controls-card {
+.parking-lots-controls-card {
   background: white;
   border-radius: 16px;
   border: 1px solid #e5e7eb;
@@ -164,20 +176,20 @@
   box-shadow: 0 1vh 2.5vh rgba(15, 23, 42, 0.06);
 }
 
-.invoice-filter-wrapper {
+.parking-lots-filter-wrapper {
   display: flex;
   align-items: center;
   gap: 1.2vh;
 }
 
-.invoice-filter-label {
+.parking-lots-filter-label {
   font-size: 14px;
   font-weight: 500;
   color: #374151;
   white-space: nowrap;
 }
 
-.invoice-filter-select {
+.parking-lots-filter-select {
   padding: 0.8vh 1.6vh;
   padding-right: 4vh;
   border-radius: 8px;
@@ -199,18 +211,18 @@
   min-width: 200px;
 }
 
-.invoice-filter-select:hover {
+.parking-lots-filter-select:hover {
   border-color: #9ca3af;
   box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.05);
 }
 
-.invoice-filter-select:focus {
+.parking-lots-filter-select:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 0.3vh rgba(59, 130, 246, 0.1);
 }
 
-.invoice-counter {
+.parking-lots-counter {
   font-size: 13px;
   color: #6b7280;
   background: #f3f4f6;
@@ -219,14 +231,14 @@
   font-weight: 500;
 }
 
-/* Invoice List */
-.invoice-list {
+/* Parking Lots List */
+.parking-lots-list {
   display: flex;
   flex-direction: column;
   gap: 2vh;
 }
 
-.invoice-item {
+.parking-lot-item {
   background: white;
   border-radius: 20px;
   border: 1px solid #e5e7eb;
@@ -238,14 +250,14 @@
   position: relative;
 }
 
-.invoice-item:hover {
+.parking-lot-item:hover {
   box-shadow:
     0 2.8vh 7vh rgba(15, 23, 42, 0.22),
     0 0 0 0.1vh rgba(59, 130, 246, 0.12);
   border-color: rgba(59, 130, 246, 0.8);
 }
 
-.invoice-item-header {
+.parking-lot-item-header {
   padding: 2vh 2.4vh;
   background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
   border-bottom: 1px dashed #e5e7eb;
@@ -256,7 +268,7 @@
   flex-wrap: wrap;
 }
 
-.invoice-item-title-section {
+.parking-lot-item-title-section {
   display: flex;
   align-items: center;
   gap: 1.2vh;
@@ -264,14 +276,14 @@
   flex: 1;
 }
 
-.invoice-item-title {
-  font-size: 20px;
+.parking-lot-item-title {
+  font-size: 22px;
   font-weight: 700;
   color: #111827;
   margin: 0;
 }
 
-.invoice-status-badge {
+.parking-lot-status-badge {
   padding: 0.6vh 1.2vh;
   border-radius: 999px;
   font-size: 11px;
@@ -286,204 +298,161 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.invoice-status-dot {
+.parking-lot-status-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
 }
 
-.invoice-status-paid {
+.parking-lot-status-badge.status-applied {
+  background: rgba(59, 130, 246, 0.9);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.parking-lot-status-badge.status-applied .parking-lot-status-dot {
+  background: #3b82f6;
+  box-shadow: 0 0 0.8vh rgba(59, 130, 246, 0.6);
+}
+
+.parking-lot-status-badge.status-approved {
   background: rgba(16, 185, 129, 0.9);
   border-color: rgba(16, 185, 129, 0.3);
 }
 
-.invoice-status-paid .invoice-status-dot {
+.parking-lot-status-badge.status-approved .parking-lot-status-dot {
   background: #22c55e;
   box-shadow: 0 0 0.8vh rgba(34, 197, 94, 0.6);
 }
 
-.invoice-status-pending {
+.parking-lot-status-badge.status-pending {
   background: rgba(245, 158, 11, 0.9);
   border-color: rgba(245, 158, 11, 0.3);
 }
 
-.invoice-status-pending .invoice-status-dot {
+.parking-lot-status-badge.status-pending .parking-lot-status-dot {
   background: #f59e0b;
   box-shadow: 0 0 0.8vh rgba(245, 158, 11, 0.6);
 }
 
-.invoice-status-expired {
+.parking-lot-status-badge.status-rejected {
+  background: rgba(239, 68, 68, 0.9);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.parking-lot-status-badge.status-rejected .parking-lot-status-dot {
+  background: #ef4444;
+  box-shadow: 0 0 0.8vh rgba(239, 68, 68, 0.6);
+}
+
+.parking-lot-status-badge.status-cancelled {
   background: rgba(107, 114, 128, 0.9);
   border-color: rgba(107, 114, 128, 0.3);
 }
 
-.invoice-status-expired .invoice-status-dot {
+.parking-lot-status-badge.status-cancelled .parking-lot-status-dot {
   background: #6b7280;
   box-shadow: 0 0 0.8vh rgba(107, 114, 128, 0.6);
 }
 
-.invoice-amount-section {
+.parking-lot-status-badge.status-failed {
+  background: rgba(139, 92, 246, 0.9);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.parking-lot-status-badge.status-failed .parking-lot-status-dot {
+  background: #8b5cf6;
+  box-shadow: 0 0 0.8vh rgba(139, 92, 246, 0.6);
+}
+
+.parking-lot-item-summary {
+  display: flex;
+  gap: 2vh;
+  flex-wrap: wrap;
+}
+
+.parking-lot-summary-item {
   text-align: right;
 }
 
-.invoice-amount-label {
+.parking-lot-summary-label {
   font-size: 11px;
   color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   font-weight: 600;
+  display: block;
   margin-bottom: 0.4vh;
 }
 
-.invoice-amount-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #059669;
-  letter-spacing: 0.05em;
-}
-
-.invoice-item-body {
-  padding: 2vh 2.4vh;
-  display: flex;
-  flex-direction: column;
-  gap: 1.6vh;
-}
-
-.invoice-details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.6vh;
-}
-
-.invoice-detail-item {
-  display: flex;
-  align-items: center;
-  gap: 1.2vh;
-}
-
-.invoice-detail-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.parking-lot-summary-value {
   font-size: 16px;
-  flex-shrink: 0;
-}
-
-.invoice-detail-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2vh;
-  flex: 1;
-}
-
-.invoice-detail-label {
-  font-size: 11px;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-weight: 600;
-}
-
-.invoice-detail-value {
-  font-size: 13px;
+  font-weight: 700;
   color: #111827;
-  font-weight: 500;
-  word-break: break-all;
+  display: block;
 }
 
-.invoice-expired-date {
-  color: #6b7280;
-  font-weight: 600;
-}
-
-.invoice-paid-info {
-  padding: 1.2vh 1.6vh;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 0.8vh;
-  font-size: 13px;
-  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-  color: #065f46;
-}
-
-.invoice-paid-label {
-  font-weight: 600;
-}
-
-.invoice-paid-value {
-  font-weight: 500;
-}
-
-.invoice-item-footer {
-  padding: 1.6vh 2.4vh;
-  border-top: 1px dashed #e5e7eb;
-  background: #f9fafb;
+.parking-lot-item-body {
+  padding: 2vh 2.4vh;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1.2vh;
+  gap: 1.6vh;
   flex-wrap: wrap;
 }
 
-.invoice-date-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6vh;
-  flex: 1;
-  min-width: 0;
-}
-
-.invoice-date-item {
+.parking-lot-item-info {
   display: flex;
   align-items: center;
-  gap: 0.8vh;
-  font-size: 11px;
+  gap: 2vh;
+  flex-wrap: wrap;
+  flex: 1;
 }
 
-.invoice-date-label {
-  color: #9ca3af;
+.parking-lot-info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6vh;
+  font-size: 14px;
+  color: #374151;
+}
+
+.parking-lot-info-label {
   font-weight: 500;
-}
-
-.invoice-date-value {
   color: #6b7280;
-  font-weight: 400;
 }
 
-.invoice-pay-btn {
-  padding: 1vh 2vh;
-  border-radius: 12px;
+.parking-lot-info-value {
+  font-weight: 600;
+  color: #111827;
+}
+
+.parking-lot-expand-btn {
+  padding: 0.8vh 1.6vh;
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: white;
-  font-size: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
   font-weight: 600;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  cursor: pointer;
   transition:
-    box-shadow 0.2s ease,
-    background 0.2s ease;
-  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.3);
-  white-space: nowrap;
+    background-color 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 0.2vh 0.6vh rgba(59, 130, 246, 0.3);
 }
 
-.invoice-pay-btn:hover {
-  box-shadow: 0 0.6vh 2vh rgba(59, 130, 246, 0.4);
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+.parking-lot-expand-btn:hover {
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.4);
 }
 
-.invoice-pay-btn:active {
-  box-shadow: 0 0.2vh 0.8vh rgba(59, 130, 246, 0.3);
+.parking-lot-item-details {
+  padding: 2vh 2.4vh;
+  border-top: 1px dashed #e5e7eb;
+  background: #f9fafb;
 }
 
 /* Empty State */
-.invoice-empty-state {
+.parking-lots-empty-state {
   margin-top: 2.4vh;
   padding: 4.8vh 2vh;
   border-radius: 16px;
@@ -497,28 +466,28 @@
   color: #6b7280;
 }
 
-.invoice-empty-icon {
+.parking-lots-empty-icon {
   font-size: 48px;
   margin-bottom: 0.8vh;
   opacity: 0.6;
 }
 
-.invoice-empty-title {
+.parking-lots-empty-title {
   font-size: 18px;
   font-weight: 600;
   color: #111827;
   margin: 0;
 }
 
-.invoice-empty-text {
+.parking-lots-empty-text {
   font-size: 14px;
   max-width: 420px;
   margin: 0;
 }
 
 /* Loading & Error States */
-.invoice-loading,
-.invoice-error {
+.parking-lots-loading,
+.parking-lots-error {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -528,16 +497,23 @@
   gap: 1vh;
 }
 
-.invoice-loading-spinner {
+.parking-lots-loading-spinner {
   width: 40px;
   height: 40px;
   border-radius: 999px;
   border: 4px solid #e5e7eb;
   border-top-color: #3b82f6;
   position: relative;
+  animation: spin 1s linear infinite;
 }
 
-.invoice-error-badge {
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.parking-lots-error-badge {
   padding: 0.4vh 1vh;
   border-radius: 999px;
   background: #fef2f2;
@@ -548,58 +524,46 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .payment-operator-page {
+  .manage-parking-lots-page {
     padding: 1.6vh;
   }
 
-  .invoice-stats-section {
+  .parking-lots-stats-section {
     grid-template-columns: 1fr;
   }
 
-  .invoice-controls-card {
+  .parking-lots-controls-card {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .invoice-filter-select {
+  .parking-lots-filter-select {
     width: 100%;
   }
 
-  .invoice-item-header {
+  .parking-lot-item-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .invoice-amount-section {
-    text-align: left;
+  .parking-lot-item-summary {
     width: 100%;
+    justify-content: space-between;
   }
 
-  .invoice-details-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .invoice-item-footer {
+  .parking-lot-item-body {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .invoice-pay-btn {
-    width: 100%;
-    justify-content: center;
   }
 }
 
 @media (max-width: 480px) {
-  .invoice-page-header h1 {
+  .parking-lots-page-header h1 {
     font-size: 24px;
   }
 
-  .invoice-item-title {
+  .parking-lot-item-title {
     font-size: 18px;
   }
-
-  .invoice-amount-value {
-    font-size: 20px;
-  }
 }
+

@@ -3,28 +3,15 @@ import { useSearchParams } from 'react-router-dom'
 import { skipToken } from '@reduxjs/toolkit/query'
 import dayjs, { type Dayjs } from 'dayjs'
 import {
-  Card,
-  Typography,
-  Space,
-  Select,
-  DatePicker,
-  Table,
-  Tag,
-  Row,
-  Col,
-  Statistic,
-  Button,
-  Empty,
-  Modal,
-  Spin,
-} from 'antd'
-import {
   CarOutlined,
   ClockCircleOutlined,
   DollarCircleOutlined,
   ReloadOutlined,
+  EyeOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  CrownOutlined,
 } from '@ant-design/icons'
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parkingLotAPI'
 import {
   useGetParkingSessionHistoryDetailQuery,
@@ -33,11 +20,11 @@ import {
 import type { Pagination } from '../../../types/Pagination'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import type { ParkingLotSession } from '../../../types/ParkingLotSession'
-import PaginationLoading from '../../../components/common/PaginationLoading'
-import './ParkingLotSessionHistory.css'
 import type { SessionImage } from '../../../types/Session.images'
+import CustomModal from '../../../components/common/CustomModal'
+import { DatePicker } from 'antd'
+import './ParkingLotSessionHistory.css'
 
-const { Title, Text } = Typography
 const { RangePicker } = DatePicker
 
 interface ParkingLotSessionHistoryResponse {
@@ -48,6 +35,7 @@ interface ParkingLotSessionHistoryResponse {
 interface ParkingLotSessionHistoryDetailResponse {
   data: Array<ParkingLotSession & { images?: SessionImage[] }>
 }
+
 interface ParkingLotsListResponse {
   data: ParkingLot[]
 }
@@ -57,6 +45,42 @@ const dateFormatter = (value?: string | null) =>
 
 const formatCurrency = (value?: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
+
+const getStatusLabel = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    COMPLETED: 'Hoàn thành',
+    IN_PROGRESS: 'Đang diễn ra',
+    CANCELLED: 'Đã hủy',
+  }
+  return statusMap[status] || status
+}
+
+const getStatusClass = (status: string): string => {
+  const statusClassMap: Record<string, string> = {
+    COMPLETED: 'status-completed',
+    IN_PROGRESS: 'status-in-progress',
+    CANCELLED: 'status-cancelled',
+  }
+  return statusClassMap[status] || 'status-default'
+}
+
+const getPaymentStatusLabel = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    PAID: 'Đã thanh toán',
+    UNPAID: 'Chưa thanh toán',
+    PENDING: 'Đang chờ',
+  }
+  return statusMap[status] || status
+}
+
+const getPaymentStatusClass = (status: string): string => {
+  const statusClassMap: Record<string, string> = {
+    PAID: 'payment-paid',
+    UNPAID: 'payment-unpaid',
+    PENDING: 'payment-pending',
+  }
+  return statusClassMap[status] || 'payment-default'
+}
 
 const ParkingLotSessionHistory: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -68,7 +92,7 @@ const ParkingLotSessionHistory: React.FC = () => {
 
   const [selectedLotId, setSelectedLotId] = useState<string>()
   const [page, setPage] = useState<number>(() => getPageFromParams())
-  const [pageSize, setPageSize] = useState(5)
+  const pageSize = 5
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(() => {
@@ -129,7 +153,6 @@ const ParkingLotSessionHistory: React.FC = () => {
     | ParkingLotSessionHistoryResponse
     | undefined
   const parkingSessions: ParkingLotSession[] = typedParkingSessions?.data ?? []
-  console.log(parkingSessions)
   const paginationInfo: Pagination | undefined = typedParkingSessions?.pagination
 
   const { data: parkingSessionHistoryDetailResponse, isFetching: isFetchingSessionDetail } =
@@ -176,72 +199,6 @@ const ParkingLotSessionHistory: React.FC = () => {
     }
   }, [parkingSessions])
 
-  const columns: ColumnsType<ParkingLotSession> = [
-    {
-      title: 'Biển số',
-      dataIndex: 'plateNumber',
-      key: 'plateNumber',
-      render: (value: string) => <span className="plate-badge">{value}</span>,
-    },
-    {
-      title: 'Check-in',
-      dataIndex: 'checkInTime',
-      key: 'checkInTime',
-      render: (value: string) => dateFormatter(value),
-    },
-    {
-      title: 'Check-out',
-      dataIndex: 'checkOutTime',
-      key: 'checkOutTime',
-      render: (value: string | null) => dateFormatter(value),
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <Tag
-          color={status === 'COMPLETED' ? 'green' : status === 'IN_PROGRESS' ? 'blue' : 'default'}
-        >
-          {status}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Thanh toán',
-      dataIndex: 'paymentStatus',
-      key: 'paymentStatus',
-      render: (status: string) => (
-        <Tag color={status === 'PAID' ? 'green' : status === 'UNPAID' ? 'orange' : 'purple'}>
-          {status}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Phí đã thu',
-      dataIndex: 'amountPaid',
-      key: 'amountPaid',
-      align: 'right' as const,
-      render: (value: number) => formatCurrency(value),
-    },
-    {
-      title: 'Còn phải thu',
-      dataIndex: 'amountPayAfterCheckOut',
-      key: 'amountPayAfterCheckOut',
-      align: 'right' as const,
-      render: (value: number) => formatCurrency(value),
-    },
-    {
-      title: 'Hình ảnh',
-      key: 'images',
-      render: (_, record) => (
-        <Button type="link" onClick={() => handleViewSessionImages(record._id)}>
-          Xem ảnh
-        </Button>
-      ),
-    },
-  ]
-
   const handleLotChange = (value: string) => {
     setSelectedLotId(value)
     setPage(1)
@@ -253,9 +210,11 @@ const ParkingLotSessionHistory: React.FC = () => {
     setPage(1)
   }
 
-  const handleTableChange = (pagination: TablePaginationConfig) => {
-    if (pagination.current) setPage(pagination.current)
-    if (pagination.pageSize) setPageSize(pagination.pageSize)
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage)
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.set('page', newPage.toString())
+    setSearchParams(nextParams, { replace: true })
   }
 
   const handleViewSessionImages = (sessionId: string) => {
@@ -272,123 +231,274 @@ const ParkingLotSessionHistory: React.FC = () => {
     refetchSessions()
   }
 
+  if (isParkingLotsLoading) {
+    return (
+      <div className="parking-session-history-page">
+        <div className="session-loading">
+          <div className="session-loading-spinner" />
+          <p>Đang tải thông tin bãi đỗ xe...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="parking-session-history-page">
-      <Card className="parking-session-history-card">
-        <div className="page-header">
-          <div>
-            <Title level={3}>Lịch sử ra / vào bãi xe</Title>
-            <Text type="secondary">
-              Theo dõi lưu lượng phương tiện và doanh thu của bãi xe theo thời gian thực.
-            </Text>
+      <div className="session-page-header">
+        <div>
+          <h1>Lịch sử ra / vào bãi xe</h1>
+          <p>Theo dõi lưu lượng phương tiện và doanh thu của bãi xe theo thời gian thực</p>
+        </div>
+      </div>
+
+      <div className="session-page-content">
+        {/* Filters */}
+        <div className="session-controls-card">
+          <div className="session-filter-wrapper">
+            <div className="session-filter-item">
+              <label htmlFor="lot-select" className="session-filter-label">
+                Bãi đỗ xe:
+              </label>
+              <select
+                id="lot-select"
+                className="session-filter-select"
+                value={selectedLotId || ''}
+                onChange={(e) => handleLotChange(e.target.value)}
+              >
+                <option value="">-- Chọn bãi đỗ xe --</option>
+                {parkingLots.map((lot) => (
+                  <option key={lot._id} value={lot._id}>
+                    {lot.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="session-filter-item">
+              <label htmlFor="date-range" className="session-filter-label">
+                Khoảng thời gian:
+              </label>
+              <RangePicker
+                id="date-range"
+                value={dateRange}
+                onChange={handleDateChange}
+                allowClear={false}
+                format="DD/MM/YYYY"
+                className="session-date-picker"
+              />
+            </div>
+            <button className="session-refresh-btn" onClick={handleRefresh}>
+              <ReloadOutlined />
+              <span>Làm mới</span>
+            </button>
           </div>
-          <Space className="filters" wrap>
-            <Select
-              placeholder="Chọn bãi xe"
-              style={{ minWidth: 220 }}
-              value={selectedLotId}
-              loading={isParkingLotsLoading}
-              onChange={handleLotChange}
-              options={parkingLots.map((lot) => ({ value: lot._id, label: lot.name }))}
-            />
-            <RangePicker
-              value={dateRange}
-              onChange={handleDateChange}
-              allowClear={false}
-              format="DD/MM/YYYY"
-            />
-            <Button icon={<ReloadOutlined />} onClick={handleRefresh}>
-              Làm mới
-            </Button>
-          </Space>
         </div>
 
-        <Row gutter={16} className="summary-row">
-          <Col xs={24} md={6}>
-            <Card className="summary-card">
-              <Statistic
-                title="Tổng phiên (trang hiện tại)"
-                value={summary.total}
-                prefix={<CarOutlined className="summary-icon" />}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} md={6}>
-            <Card className="summary-card">
-              <Statistic
-                title="Đang đậu"
-                value={summary.active}
-                prefix={<ClockCircleOutlined className="summary-icon warning" />}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} md={6}>
-            <Card className="summary-card">
-              <Statistic
-                title="Doanh thu (trang hiện tại)"
-                value={summary.revenue}
-                formatter={(value) => formatCurrency(Number(value))}
-                prefix={<DollarCircleOutlined className="summary-icon success" />}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} md={6}>
-            <Card className="summary-card">
-              <Statistic title="Thời gian đậu trung bình" value={summary.avgDuration} />
-            </Card>
-          </Col>
-        </Row>
+        {/* Stats Section */}
+        <div className="session-stats-section">
+          <div className="session-stat-card">
+            <div className="session-stat-icon total">
+              <CarOutlined />
+            </div>
+            <div className="session-stat-content">
+              <h3>{summary.total}</h3>
+              <p>Tổng phiên</p>
+              <div className="session-stat-sub">Trang hiện tại</div>
+            </div>
+          </div>
+          <div className="session-stat-card">
+            <div className="session-stat-icon active">
+              <ClockCircleOutlined />
+            </div>
+            <div className="session-stat-content">
+              <h3>{summary.active}</h3>
+              <p>Đang đậu</p>
+              <div className="session-stat-sub">Chưa check-out</div>
+            </div>
+          </div>
+          <div className="session-stat-card">
+            <div className="session-stat-icon revenue">
+              <DollarCircleOutlined />
+            </div>
+            <div className="session-stat-content">
+              <h3>{formatCurrency(summary.revenue)}</h3>
+              <p>Doanh thu</p>
+              <div className="session-stat-sub">Trang hiện tại</div>
+            </div>
+          </div>
+          <div className="session-stat-card">
+            <div className="session-stat-icon duration">
+              <ClockCircleOutlined />
+            </div>
+            <div className="session-stat-content">
+              <h3>{summary.avgDuration}</h3>
+              <p>Thời gian đậu TB</p>
+              <div className="session-stat-sub">Trung bình</div>
+            </div>
+          </div>
+        </div>
 
-        <Card className="session-table-card">
-          <PaginationLoading isLoading={isFetchingSessions} loadingText="Đang tải lịch sử...">
-            {parkingSessions.length === 0 ? (
-              <Empty
-                description="Chưa có dữ liệu trong khoảng thời gian này"
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                style={{ padding: '40px 0' }}
-              />
-            ) : (
-              <Table
-                columns={columns}
-                dataSource={parkingSessions.map((session) => ({ ...session, key: session._id }))}
-                pagination={{
-                  current: paginationInfo?.currentPage ?? page,
-                  pageSize: paginationInfo?.pageSize ?? pageSize,
-                  total: paginationInfo?.totalItems ?? 0,
-                  showSizeChanger: true,
-                  pageSizeOptions: ['10', '20', '50'],
-                }}
-                onChange={handleTableChange}
-                className="session-table"
-              />
+        {/* Session List */}
+        {isFetchingSessions ? (
+          <div className="session-loading">
+            <div className="session-loading-spinner" />
+            <p>Đang tải lịch sử...</p>
+          </div>
+        ) : parkingSessions.length === 0 ? (
+          <div className="session-empty-state">
+            <div className="session-empty-icon">🚗</div>
+            <h3 className="session-empty-title">Chưa có dữ liệu</h3>
+            <p className="session-empty-text">
+              Chưa có dữ liệu trong khoảng thời gian này. Vui lòng thử chọn khoảng thời gian khác.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="session-list">
+              {parkingSessions.map((session) => {
+                const statusClass = getStatusClass(session.status)
+                const statusLabel = getStatusLabel(session.status)
+                const paymentStatusClass = getPaymentStatusClass(session.paymentStatus)
+                const paymentStatusLabel = getPaymentStatusLabel(session.paymentStatus)
+                const totalAmount = (session.amountPaid || 0) + (session.amountPayAfterCheckOut || 0)
+
+                return (
+                  <div key={session._id} className="session-item">
+                    <div className="session-item-header">
+                      <div className="session-item-title-section">
+                        <div className="session-plate-badge">{session.plateNumber}</div>
+                        <div className={`session-status-badge ${statusClass}`}>
+                          <span className="session-status-dot" />
+                          <span>{statusLabel}</span>
+                        </div>
+                        <div className={`session-payment-badge ${paymentStatusClass}`}>
+                          <span>{paymentStatusLabel}</span>
+                        </div>
+                      </div>
+                      <button
+                        className="session-view-images-btn"
+                        onClick={() => handleViewSessionImages(session._id)}
+                        title="Xem ảnh"
+                      >
+                        <EyeOutlined />
+                        <span>Xem ảnh</span>
+                      </button>
+                    </div>
+
+                    <div className="session-item-body">
+                      <div className="session-time-info">
+                        <div className="session-time-item">
+                          <CheckCircleOutlined className="session-time-icon check-in" />
+                          <div>
+                            <span className="session-time-label">Check-in</span>
+                            <span className="session-time-value">
+                              {dateFormatter(session.checkInTime)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="session-time-item">
+                          <CloseCircleOutlined className="session-time-icon check-out" />
+                          <div>
+                            <span className="session-time-label">Check-out</span>
+                            <span className="session-time-value">
+                              {dateFormatter(session.checkOutTime)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {session.subscriptionId ? (
+                        <div className="session-subscription-info">
+                          <div className="session-subscription-badge">
+                            <CrownOutlined className="session-subscription-icon" />
+                            <span>Khách dùng vé tháng</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="session-payment-info">
+                          <div className="session-payment-item">
+                            <span className="session-payment-label">Phí đã thu:</span>
+                            <span className="session-payment-value paid">
+                              {formatCurrency(session.amountPaid)}
+                            </span>
+                          </div>
+                          <div className="session-payment-item">
+                            <span className="session-payment-label">Phí đã trả sau check-out:</span>
+                            <span className="session-payment-value unpaid">
+                              {formatCurrency(session.amountPayAfterCheckOut)}
+                            </span>
+                          </div>
+                          <div className="session-payment-item">
+                            <span className="session-payment-label">Tổng phí:</span>
+                            <span className="session-payment-value total">
+                              {formatCurrency(totalAmount)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            {paginationInfo && paginationInfo.totalItems > pageSize && (
+              <div className="session-pagination">
+                <button
+                  className="session-pagination-btn"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page === 1}
+                >
+                  Trước
+                </button>
+                <span className="session-pagination-info">
+                  Trang {paginationInfo.currentPage || page} /{' '}
+                  {Math.ceil(paginationInfo.totalItems / pageSize)}
+                </span>
+                <button
+                  className="session-pagination-btn"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={(paginationInfo.currentPage || page) >= Math.ceil(paginationInfo.totalItems / pageSize)}
+                >
+                  Sau
+                </button>
+              </div>
             )}
-          </PaginationLoading>
-        </Card>
-        <Modal
-          open={isImageModalOpen}
-          title="Ảnh check-in / check-out"
-          onCancel={handleCloseImageModal}
-          footer={null}
-          width={720}
-        >
-          {isFetchingSessionDetail ? (
-            <div className="image-modal__loading">
-              <Spin />
-            </div>
-          ) : sessionImages.length === 0 ? (
-            <Empty description="Không có ảnh cho phiên này" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-          ) : (
-            <div className="session-images-grid">
-              {sessionImages.map((image) => (
-                <div key={image.id} className="session-image-card">
-                  <img src={image.url} alt={image.description || 'Ảnh phiên gửi xe'} />
-                  <Text type="secondary">{image.description || 'Không có mô tả'}</Text>
-                </div>
-              ))}
-            </div>
-          )}
-        </Modal>
-      </Card>
+          </>
+        )}
+      </div>
+
+      {/* Image Modal */}
+      <CustomModal
+        open={isImageModalOpen}
+        onClose={handleCloseImageModal}
+        title="Ảnh check-in / check-out"
+        width="900px"
+        loading={isFetchingSessionDetail}
+      >
+        {isFetchingSessionDetail ? (
+          <div className="session-image-loading">
+            <div className="session-image-loading-spinner" />
+            <p>Đang tải ảnh...</p>
+          </div>
+        ) : sessionImages.length === 0 ? (
+          <div className="session-image-empty">
+            <div className="session-image-empty-icon">📷</div>
+            <p>Không có ảnh cho phiên này</p>
+          </div>
+        ) : (
+          <div className="session-images-grid">
+            {sessionImages.map((image) => (
+              <div key={image.id} className="session-image-card">
+                <img src={image.url} alt={image.description || 'Ảnh phiên gửi xe'} />
+                <span className="session-image-description">
+                  {image.description || 'Không có mô tả'}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </CustomModal>
     </div>
   )
 }

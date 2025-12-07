@@ -13,5 +13,5 @@ export interface ParkingLot {
   leasedCapacity: number
   walkInCapacity: number
   bookingSlotDurationHours: number
-  secretKey : string
+  secretKey: string
 }

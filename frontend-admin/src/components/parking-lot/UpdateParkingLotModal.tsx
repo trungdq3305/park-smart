@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
-import { Modal, Form, InputNumber, Input, Button, DatePicker } from 'antd'
-import type { ParkingLot } from '../../../../types/ParkingLot'
+import { Form, InputNumber, Input, Button, DatePicker } from 'antd'
+import type { ParkingLot } from '../../types/ParkingLot'
 import dayjs from 'dayjs'
+import { CustomModal } from '../common'
 
 interface UpdateParkingLotModalProps {
   open: boolean
@@ -53,19 +54,22 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
   }
 
   return (
-    <Modal
-      title="Gửi yêu cầu cập nhật bãi đỗ xe"
+    <CustomModal
       open={open}
-      onCancel={onCancel}
+      onClose={onCancel}
+      title="Gửi yêu cầu cập nhật bãi đỗ xe"
       width={600}
-      footer={[
-        <Button key="cancel" onClick={onCancel}>
+      loading={loading}
+      footer={
+        <>
+          <Button onClick={onCancel} disabled={loading}>
           Hủy
-        </Button>,
-        <Button key="submit" type="primary" onClick={handleSubmit} loading={loading}>
+          </Button>
+          <Button type="primary" onClick={handleSubmit} loading={loading}>
           Gửi yêu cầu
-        </Button>,
-      ]}
+          </Button>
+        </>
+      }
     >
       <Form form={form} layout="vertical">
         <Form.Item
@@ -144,7 +148,7 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
           />
         </Form.Item>
       </Form>
-    </Modal>
+    </CustomModal>
   )
 }
 
