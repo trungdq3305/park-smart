@@ -8,6 +8,7 @@ import {
   PromotionFilters,
   PromotionList,
   PromotionEmptyState,
+  CreatePromotionModal,
   getPromotionStatus,
 } from '../../../components/promotions'
 import type { PromotionFilter } from '../../../components/promotions'
@@ -16,6 +17,7 @@ import './ManagePromotion.css'
 const ManagePromotion: React.FC = () => {
   const operatorId = useOperatorId()
   const [filter, setFilter] = useState<PromotionFilter>('all')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { data, isLoading, error } = useGetPromotionsOperatorQuery({ operatorId })
 
   const promotions: Promotion[] = Array.isArray(data)
@@ -85,7 +87,10 @@ const ManagePromotion: React.FC = () => {
             <h1>Quản lý khuyến mãi</h1>
             <p>Xem và quản lý tất cả các chương trình khuyến mãi của bạn</p>
           </div>
-          <button className="promotion-create-btn">
+          <button
+            className="promotion-create-btn"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
             <PlusOutlined />
             <span>Tạo mới</span>
           </button>
@@ -108,6 +113,11 @@ const ManagePromotion: React.FC = () => {
           <PromotionList promotions={filteredPromotions} />
         )}
       </div>
+
+      <CreatePromotionModal
+        open={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
     </div>
   )
 }

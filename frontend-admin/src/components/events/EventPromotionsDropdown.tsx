@@ -19,10 +19,13 @@ const formatDate = (dateString: string): string => {
 }
 
 const getDiscountText = (promotion: Promotion): string => {
-  if (promotion.discountType === 'PERCENTAGE') {
-    return `Giảm ${promotion.discountValue}%`
+  if (promotion.discountType === 'Percentage' || promotion.discountType === 'PERCENTAGE') {
+    // discountValue là decimal (0.1 = 10%), cần nhân với 100 để hiển thị
+    const percentage = promotion.discountValue
+    return `Giảm ${percentage}%`
   }
-  return `Giảm ${promotion.discountValue.toLocaleString()} đ`
+  // FixedAmount: hiển thị số tiền
+  return `Giảm ${promotion.discountValue.toLocaleString('vi-VN')} ₫`
 }
 
 const getPromotionStatus = (promotion: Promotion): { label: string; class: string } => {
