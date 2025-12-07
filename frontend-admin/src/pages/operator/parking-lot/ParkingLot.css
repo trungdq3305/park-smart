@@ -223,7 +223,7 @@
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(0.8vh);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 

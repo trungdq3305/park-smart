@@ -11,8 +11,8 @@ import {
   Space,
 } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { Basis } from '../../../../types/Basis'
-import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
+import type { Basis } from '../../types/Basis'
+import type { PricingPolicyLink } from '../../types/PricingPolicyLink'
 import dayjs from 'dayjs'
 
 // Định nghĩa các hằng số cho trạng thái và loại yêu cầu để dễ quản lý

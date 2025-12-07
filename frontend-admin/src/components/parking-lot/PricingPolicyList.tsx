@@ -1,8 +1,7 @@
-import { useState } from 'react'
 import { Switch } from 'antd'
 import { CloseCircleOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
-import '../ParkingLot.css'
+import type { PricingPolicyLink } from '../../types/PricingPolicyLink'
+import '../../pages/operator/parking-lot/ParkingLot.css'
 
 interface PricingPolicyListProps {
   policies: PricingPolicyLink[]

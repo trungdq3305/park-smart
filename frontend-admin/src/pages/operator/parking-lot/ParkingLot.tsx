@@ -19,10 +19,10 @@ import {
   useGetPricingPoliciesOperatorQuery,
   useDeletePricingPolicyLinkMutation,
 } from '../../../features/operator/pricingPolicyAPI'
-import ParkingLotDetails from './components/ParkingLotDetails'
-import PricingPolicyList from './components/PricingPolicyList'
-import CreatePricingPolicyModal from './components/CreatePricingPolicyModal'
-import UpdateParkingLotModal from './components/UpdateParkingLotModal'
+import ParkingLotDetails from '../../../components/parking-lot/ParkingLotDetails'
+import PricingPolicyList from '../../../components/parking-lot/PricingPolicyList'
+import CreatePricingPolicyModal from '../../../components/parking-lot/CreatePricingPolicyModal'
+import UpdateParkingLotModal from '../../../components/parking-lot/UpdateParkingLotModal'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 import type { Basis } from '../../../types/Basis'
 import { useGetBasisQuery } from '../../../features/operator/basisAPI'

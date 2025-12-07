@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Modal, Form, InputNumber, Input, Button, DatePicker } from 'antd'
-import type { ParkingLot } from '../../../../types/ParkingLot'
+import type { ParkingLot } from '../../types/ParkingLot'
 import dayjs from 'dayjs'
 
 interface UpdateParkingLotModalProps {
