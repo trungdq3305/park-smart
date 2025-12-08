@@ -267,9 +267,9 @@ const OperatorParkingLot: React.FC = () => {
                   <UserOutlined />
                 </div>
                 <div className="parking-lot-stat-content">
-                  <h3>{parkingLot.totalLevel}</h3>
-                  <p>Số tầng</p>
-                  <div className="parking-lot-stat-sub">Tổng số tầng</div>
+                  <h3>{parkingLot.bookingSlotDurationHours || 0}</h3>
+                  <p>TB thời gian</p>
+                  <div className="parking-lot-stat-sub">Thời gian đặt chỗ</div>
                 </div>
               </div>
               <div className="parking-lot-stat-card">
