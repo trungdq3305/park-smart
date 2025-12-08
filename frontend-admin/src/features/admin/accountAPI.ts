@@ -88,6 +88,14 @@ export const accountAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['account'],
     }),
+    getOperatorDetails: builder.query({
+      query: (operatorId: string) => ({
+        url: `/core/accounts/operator/${operatorId}`,
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['account'],
+    }),
   }),
 })
 
@@ -102,4 +110,5 @@ export const {
   useConfirmOperatorMutation,
   useAccountDetailsQuery,
   useBannedAccountListQuery,
+  useGetOperatorDetailsQuery,
 } = accountAPI

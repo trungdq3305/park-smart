@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Card, Col, Empty, Row, Skeleton, Typography, Button } from 'antd'
 import { skipToken } from '@reduxjs/toolkit/query'
 import {
   CarOutlined,
@@ -12,6 +11,7 @@ import {
   useGetParkingLotsOperatorQuery,
   useUpdateParkingLotRequestMutation,
 } from '../../../features/operator/parkingLotAPI'
+import { useGetParkingLotRequestOfOperatorQuery } from '../../../features/admin/parkinglotAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -20,18 +20,16 @@ import {
   useGetPricingPoliciesOperatorQuery,
   useDeletePricingPolicyLinkMutation,
 } from '../../../features/operator/pricingPolicyAPI'
-import ParkingLotDetails from './components/ParkingLotDetails'
-import StatCard from './components/StatCard'
-import PricingPolicyList from './components/PricingPolicyList'
-import CreatePricingPolicyModal from './components/CreatePricingPolicyModal'
-import UpdateParkingLotModal from './components/UpdateParkingLotModal'
+import ParkingLotDetails from '../../../components/parking-lot/ParkingLotDetails'
+import PricingPolicyList from '../../../components/parking-lot/PricingPolicyList'
+import CreatePricingPolicyModal from '../../../components/parking-lot/CreatePricingPolicyModal'
+import UpdateParkingLotModal from '../../../components/parking-lot/UpdateParkingLotModal'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 import type { Basis } from '../../../types/Basis'
 import { useGetBasisQuery } from '../../../features/operator/basisAPI'
-import { message } from 'antd'
+import { message, Modal } from 'antd'
+import OperatorRequestsModal from '../../../components/parking-lot/OperatorRequestsModal'
 import Cookies from 'js-cookie'
-
-const { Title, Text } = Typography
 
 interface ParkingLotsListResponse {
   data: {
@@ -53,13 +51,16 @@ interface BasisListResponse {
   }
   isLoading: boolean
 }
+
 const OperatorParkingLot: React.FC = () => {
+
   const [isDeleted, setIsDeleted] = useState(false)
   const [isSwitchLoading, setIsSwitchLoading] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedPolicyForEdit, setSelectedPolicyForEdit] = useState<PricingPolicyLink | null>(null)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false)
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
@@ -76,6 +77,12 @@ const OperatorParkingLot: React.FC = () => {
           }
         : skipToken
     )
+  const {
+    data: parkingLotRequestsData,
+    isLoading: isRequestLoading,
+  } = useGetParkingLotRequestOfOperatorQuery(
+    parkingLot?._id ? { parkingLotId: parkingLot._id } : skipToken
+  )
   const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
   const basis = basisData?.data ?? []
 
@@ -88,10 +95,8 @@ const OperatorParkingLot: React.FC = () => {
 
   const handleIsDeletedChange = (newValue: boolean) => {
     setIsSwitchLoading(true)
-    // Set timeout để hiển thị hiệu ứng loading (tối thiểu 500ms)
     setTimeout(() => {
       setIsDeleted(newValue)
-      // Đợi thêm một chút để đảm bảo query đã hoàn thành
       setTimeout(() => {
         setIsSwitchLoading(false)
       }, 300)
@@ -110,14 +115,10 @@ const OperatorParkingLot: React.FC = () => {
 
   const handleEditPricingPolicy = async (values: any) => {
     try {
-      // Tự động disable pricing policy cũ bằng cách delete
       if (selectedPolicyForEdit?._id) {
         await deletePricingPolicyLink(selectedPolicyForEdit._id).unwrap()
       }
-
-      // Tạo mới pricing policy với dữ liệu đã chỉnh sửa
       await createPricingPolicyLink(values).unwrap()
-
       message.success('Cập nhật chính sách giá thành công')
       setIsEditModalOpen(false)
       setSelectedPolicyForEdit(null)
@@ -129,6 +130,24 @@ const OperatorParkingLot: React.FC = () => {
   const handleOpenEditModal = (policy: PricingPolicyLink) => {
     setSelectedPolicyForEdit(policy)
     setIsEditModalOpen(true)
+  }
+
+  const handleDeletePricingPolicy = (policyId: string) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa chính sách giá',
+      content: 'Bạn có chắc chắn muốn xóa chính sách giá này? Hành động này không thể hoàn tác.',
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          const result = await deletePricingPolicyLink(policyId).unwrap()
+          message.success(result?.message || 'Xóa chính sách giá thành công')
+        } catch (error: any) {
+          message.error(error?.data?.message || 'Xóa chính sách giá thất bại')
+        }
+      },
+    })
   }
 
   const handleUpdateParkingLot = async (values: any) => {
@@ -155,6 +174,7 @@ const OperatorParkingLot: React.FC = () => {
         totalLeased: 0,
         totalWalkIn: 0,
         occupancyRate: 0,
+        bookingSlotDurationHours: 0,
       }
     }
     const totalCapacity = parkingLot.totalCapacityEachLevel * parkingLot.totalLevel
@@ -164,6 +184,7 @@ const OperatorParkingLot: React.FC = () => {
     const totalWalkIn = parkingLot.walkInCapacity
     const occupancyRate =
       totalCapacity === 0 ? 0 : Math.round(((totalCapacity - availableSpots) / totalCapacity) * 100)
+    const bookingSlotDurationHours = parkingLot.bookingSlotDurationHours || 0
 
     return {
       totalCapacity,
@@ -172,6 +193,7 @@ const OperatorParkingLot: React.FC = () => {
       totalLeased,
       totalWalkIn,
       occupancyRate,
+      bookingSlotDurationHours,
     }
   }, [parkingLot])
 
@@ -181,100 +203,182 @@ const OperatorParkingLot: React.FC = () => {
     }
   }, [parkingLot])
 
+  const operatorRequests = useMemo(() => {
+    if (!parkingLotRequestsData) return []
+    if (Array.isArray(parkingLotRequestsData)) return parkingLotRequestsData
+    // support { data: [...] } or { data: { data: [...] } }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return (
+      (parkingLotRequestsData as any).data ||
+      (parkingLotRequestsData as any).data ||
+      []
+    )
+  }, [parkingLotRequestsData])
+
   if (isLoading) {
     return (
       <div className="parking-lot-page">
-        <Skeleton active paragraph={{ rows: 8 }} />
+        <div className="parking-lot-loading">
+          <div className="parking-lot-loading-spinner" />
+          <p>Đang tải thông tin bãi đỗ xe...</p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="parking-lot-page">
-      <div className="page-header">
-        <div>
-          <Title level={3} className="page-header__title">
-            Quản lý bãi đỗ xe
-          </Title>
-          <Text type="secondary">Theo dõi hiệu suất vận hành và tình trạng bãi đỗ của bạn</Text>
+      <div className="parking-lot-page-header">
+        <div className="parking-lot-header-content">
+          <div>
+            <h1>Quản lý bãi đỗ xe</h1>
+            <p>Theo dõi hiệu suất vận hành và tình trạng bãi đỗ của bạn</p>
+          </div>
+          {parkingLot && (
+            <div className="parking-lot-header-actions">
+              <button
+                className="parking-lot-secondary-btn"
+                onClick={() => setIsRequestsModalOpen(true)}
+              >
+                <span>Yêu cầu đã gửi</span>
+              </button>
+              <button className="parking-lot-update-btn" onClick={() => setIsUpdateModalOpen(true)}>
+                <EditOutlined />
+                <span>Gửi yêu cầu cập nhật</span>
+              </button>
+            </div>
+          )}
         </div>
-        {parkingLot && (
-          <Button type="primary" icon={<EditOutlined />} onClick={() => setIsUpdateModalOpen(true)}>
-            Gửi yêu cầu cập nhật
-          </Button>
-        )}
-             
       </div>
 
-      <Row gutter={[16, 16]} className="overview-grid">
-        <Col xs={24} sm={12} md={6}>
-          <StatCard title="Tổng sức chứa" value={summary.totalCapacity} icon={<CarOutlined />} />
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <StatCard
-            title="Chỗ còn trống"
-            value={summary.availableSpots}
-            icon={<CheckCircleOutlined />}
-          />
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <StatCard
-            title="Tỷ lệ lấp đầy"
-            value={summary.occupancyRate}
-            suffix="%"
-            icon={<ThunderboltOutlined />}
-          />
-        </Col>
-        <Col xs={24} sm={12} md={6}>
-          <StatCard title="Số tầng" value={parkingLot?.totalLevel ?? 0} icon={<UserOutlined />} />
-        </Col>
-      </Row>
+      <div className="parking-lot-page-content">
+        {!parkingLot ? (
+          <div className="parking-lot-empty-state">
+            <div className="parking-lot-empty-icon">🚗</div>
+            <h3 className="parking-lot-empty-title">Chưa có bãi đỗ xe</h3>
+            <p className="parking-lot-empty-text">
+              Bạn chưa có bãi đỗ nào được duyệt. Vui lòng liên hệ quản trị viên để được duyệt bãi
+              đỗ.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Stats Section */}
+            <div className="parking-lot-stats-section">
+              <div className="parking-lot-stat-card">
+                <div className="parking-lot-stat-icon total">
+                  <CarOutlined />
+                </div>
+                <div className="parking-lot-stat-content">
+                  <h3>{summary.totalCapacity}</h3>
+                  <p>Tổng sức chứa</p>
+                  <div className="parking-lot-stat-sub">Tổng số chỗ đỗ</div>
+                </div>
+              </div>
+              <div className="parking-lot-stat-card">
+                <div className="parking-lot-stat-icon available">
+                  <CheckCircleOutlined />
+                </div>
+                <div className="parking-lot-stat-content">
+                  <h3>{summary.availableSpots}</h3>
+                  <p>Chỗ còn trống</p>
+                  <div className="parking-lot-stat-sub">Chỗ đỗ khả dụng</div>
+                </div>
+              </div>
+              <div className="parking-lot-stat-card">
+                <div className="parking-lot-stat-icon occupancy">
+                  <ThunderboltOutlined />
+                </div>
+                <div className="parking-lot-stat-content">
+                  <h3>{summary.occupancyRate}%</h3>
+                  <p>Tỷ lệ lấp đầy</p>
+                  <div className="parking-lot-stat-sub">Mức độ sử dụng</div>
+                </div>
+              </div>
+              <div className="parking-lot-stat-card">
+                <div className="parking-lot-stat-icon levels">
+                  <UserOutlined />
+                </div>
+                <div className="parking-lot-stat-content">
+                  <h3>{summary.bookingSlotDurationHours}h</h3>
+                  <p>TB thời gian</p>
+                  <div className="parking-lot-stat-sub">Thời gian đặt chỗ</div>
+                </div>
+              </div>
+              <div className="parking-lot-stat-card">
+                <div className="parking-lot-stat-icon bookable">
+                  <CarOutlined />
+                </div>
+                <div className="parking-lot-stat-content">
+                  <h3>{summary.totalBookable}</h3>
+                  <p>Bookable</p>
+                  <div className="parking-lot-stat-sub">Chỗ đặt trước</div>
+                </div>
+              </div>
+              <div className="parking-lot-stat-card">
+                <div className="parking-lot-stat-icon leased">
+                  <CarOutlined />
+                </div>
+                <div className="parking-lot-stat-content">
+                  <h3>{summary.totalLeased}</h3>
+                  <p>Leased</p>
+                  <div className="parking-lot-stat-sub">Chỗ thuê dài hạn</div>
+                </div>
+              </div>
+            </div>
 
-      {!parkingLot ? (
-        <Card className="area-card area-card--empty">
-          <Empty description="Bạn chưa có bãi đỗ nào được duyệt" />
-        </Card>
-      ) : (
-        <>
-          <ParkingLotDetails lot={parkingLot} />
-          <PricingPolicyList
-            policies={pricingPolicies}
-            loading={isPricingLoading || isSwitchLoading}
-            isDeleted={isDeleted}
-            onIsDeletedChange={handleIsDeletedChange}
-            onOpenCreateModal={() => setIsCreateModalOpen(true)}
-            onOpenEditModal={handleOpenEditModal}
-          />
-          <CreatePricingPolicyModal
-            open={isCreateModalOpen}
-            onCancel={() => setIsCreateModalOpen(false)}
-            onSubmit={handleCreatePricingPolicy}
-            parkingLotId={parkingLot._id}
-            basisList={basis}
-            loading={isCreatePricingLoading}
-          />
-          <CreatePricingPolicyModal
-            open={isEditModalOpen}
-            onCancel={() => {
-              setIsEditModalOpen(false)
-              setSelectedPolicyForEdit(null)
-            }}
-            onSubmit={handleEditPricingPolicy}
-            parkingLotId={parkingLot._id}
-            basisList={basis}
-            loading={isCreatePricingLoading || isDeletePricingLoading}
-            initialData={selectedPolicyForEdit}
-            isEditMode={true}
-          />
-          <UpdateParkingLotModal
-            open={isUpdateModalOpen}
-            onCancel={() => setIsUpdateModalOpen(false)}
-            onSubmit={handleUpdateParkingLot}
-            parkingLot={parkingLot}
-            loading={isUpdateParkingLotRequestLoading}
-          />
-        </>
-      )}
+            {/* Parking Lot Details */}
+            <ParkingLotDetails lot={parkingLot} />
+
+            {/* Pricing Policies */}
+            <PricingPolicyList
+              policies={pricingPolicies}
+              loading={isPricingLoading || isSwitchLoading}
+              isDeleted={isDeleted}
+              onIsDeletedChange={handleIsDeletedChange}
+              onOpenCreateModal={() => setIsCreateModalOpen(true)}
+              onOpenEditModal={handleOpenEditModal}
+              onDelete={handleDeletePricingPolicy}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Modals */}
+      <CreatePricingPolicyModal
+        open={isCreateModalOpen}
+        onCancel={() => setIsCreateModalOpen(false)}
+        onSubmit={handleCreatePricingPolicy}
+        parkingLotId={parkingLot?._id || ''}
+        basisList={basis}
+        loading={isCreatePricingLoading}
+      />
+      <CreatePricingPolicyModal
+        open={isEditModalOpen}
+        onCancel={() => {
+          setIsEditModalOpen(false)
+          setSelectedPolicyForEdit(null)
+        }}
+        onSubmit={handleEditPricingPolicy}
+        parkingLotId={parkingLot?._id || ''}
+        basisList={basis}
+        loading={isCreatePricingLoading || isDeletePricingLoading}
+        initialData={selectedPolicyForEdit}
+        isEditMode={true}
+      />
+      <UpdateParkingLotModal
+        open={isUpdateModalOpen}
+        onCancel={() => setIsUpdateModalOpen(false)}
+        onSubmit={handleUpdateParkingLot}
+        parkingLot={parkingLot}
+        loading={isUpdateParkingLotRequestLoading}
+      />
+      <OperatorRequestsModal
+        open={isRequestsModalOpen}
+        onClose={() => setIsRequestsModalOpen(false)}
+        requests={operatorRequests}
+        loading={isRequestLoading}
+      />
     </div>
   )
 }
