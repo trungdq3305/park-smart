@@ -1,6 +1,6 @@
 import React from 'react'
 import { Layout, Button, Dropdown, Avatar, Space } from 'antd'
-import { SettingOutlined, UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
+import { UserOutlined, LogoutOutlined, MenuOutlined } from '@ant-design/icons'
 import './AdminHeader.css'
 import { getUserFullName } from '../../../utils/userData'
 import { useLogout } from '../../../hooks/useLogout'
@@ -17,19 +17,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
   const logout = useLogout()
 
   const userMenuItems = [
-    {
-      key: '1',
-      label: 'Hồ sơ cá nhân',
-      icon: <UserOutlined />,
-    },
-    {
-      key: '2',
-      label: 'Cài đặt',
-      icon: <SettingOutlined />,
-    },
-    {
-      type: 'divider' as const,
-    },
     {
       key: '3',
       label: 'Đăng xuất',
