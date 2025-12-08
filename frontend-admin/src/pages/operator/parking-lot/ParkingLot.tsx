@@ -445,6 +445,12 @@ const OperatorParkingLot: React.FC = () => {
                       <div className="label">Vãng lai</div>
                       <div className="value">{req.payload?.walkInCapacity ?? '—'}</div>
                     </div>
+                    {req.status === 'REJECTED' && (
+                      <div className="parking-lot-request-field full">
+                        <div className="label">Lý do từ chối</div>
+                        <div className="value">{req.rejectionReason || 'Không có'}</div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
