@@ -364,6 +364,15 @@
   font-size: 12px;
 }
 
+/* Character Count */
+.create-promotion-char-count {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: right;
+  margin-top: 0.4vh;
+  font-weight: 500;
+}
+
 /* Footer Buttons */
 .create-promotion-modal-footer {
   display: flex;
