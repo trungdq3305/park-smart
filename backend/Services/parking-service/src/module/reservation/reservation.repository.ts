@@ -285,7 +285,6 @@ export class ReservationRepository implements IReservationRepository {
     return this.reservationModel
       .findOne({
         reservationIdentifier,
-        status: ReservationStatusEnum.CONFIRMED, // Chỉ tìm các vé đã xác nhận
       })
       .exec()
   }
