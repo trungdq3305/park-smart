@@ -13,7 +13,6 @@ interface CheckoutModalProps {
   open: boolean
   onClose: () => void
   onConfirm: (data: {
-    paymentId: string | null
     pricingPolicyId: string
     amountPayAfterCheckOut: number
     file?: File | null
@@ -34,7 +33,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isSubmitting,
 }) => {
   const [formData, setFormData] = useState({
-    paymentId: null as string | null,
     pricingPolicyId: pricingPolicies && pricingPolicies.length > 0 ? pricingPolicies[0]._id : '',
     amountPayAfterCheckOut: calculatedAmount || 0,
     note: '',
@@ -56,7 +54,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
     try {
       await onConfirm({
-        paymentId: formData.paymentId,
         pricingPolicyId: formData.pricingPolicyId,
         amountPayAfterCheckOut: formData.amountPayAfterCheckOut,
         file,
@@ -70,7 +67,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const handleClose = () => {
     setFormData({
-      paymentId: null,
       pricingPolicyId: pricingPolicies && pricingPolicies.length > 0 ? pricingPolicies[0]._id : '',
       amountPayAfterCheckOut: calculatedAmount || 0,
       note: '',
@@ -94,15 +90,6 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
       loading={isSubmitting}
     >
       <div className="checkout-modal-content">
-        <div className="checkout-form-item">
-          <label className="checkout-form-label">ID giao dịch thanh toán (nếu có):</label>
-          <Input
-            placeholder="Nhập payment ID (để trống nếu không có)"
-            value={formData.paymentId || ''}
-            onChange={(e) => setFormData({ ...formData, paymentId: e.target.value || null })}
-          />
-        </div>
-
         <div className="checkout-form-item">
           <label className="checkout-form-label">
             Chính sách giá: <span className="required">*</span>

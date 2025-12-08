@@ -360,7 +360,6 @@ const ParkingLotSessionHistory: React.FC = () => {
   }
 
   const handleConfirmCheckout = async (data: {
-    paymentId: string | null
     pricingPolicyId: string
     amountPayAfterCheckOut: number
     file?: File | null
@@ -375,12 +374,6 @@ const ParkingLotSessionHistory: React.FC = () => {
       const formData = new FormData()
 
       // Add fields to FormData
-      if (data.paymentId) {
-        formData.append('paymentId', data.paymentId)
-      } else {
-        formData.append('paymentId', 'null')
-      }
-
       formData.append('pricingPolicyId', data.pricingPolicyId)
       formData.append('amountPayAfterCheckOut', data.amountPayAfterCheckOut.toString())
 
