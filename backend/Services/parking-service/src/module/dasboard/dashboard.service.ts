@@ -451,7 +451,9 @@ export class DashboardService implements IDashboardService {
     let endDate: dayjs.Dayjs
     let groupByFormat: any
 
-    if (targetDate && dayjs(targetDate).isAfter(today)) {
+    const target = dayjs(targetDate).tz('Asia/Ho_Chi_Minh').startOf('day')
+
+    if (targetDate && target.isAfter(today)) {
       throw new ConflictException(
         'Ngày cần xem báo cáo không được nằm trong tương lai.',
       )

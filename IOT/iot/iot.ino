@@ -8,8 +8,8 @@
 // #include <WiFiUdp.h> 
 
 // --- CẤU HÌNH WIFI ---
-const char* ssid = "#02 Tan My";
-const char* password = "0982621234";
+const char* ssid = "Le Ngoc";
+const char* password = "66666666";
 
 // --- CẤU HÌNH TỰ ĐỘNG TÌM SERVER ---
 const int API_PORT = 1836; // Cổng API Flask
