@@ -29,7 +29,9 @@ import type { Basis } from '../../../types/Basis'
 import { useGetBasisQuery } from '../../../features/operator/basisAPI'
 import { message, Modal } from 'antd'
 import OperatorRequestsModal from '../../../components/parking-lot/OperatorRequestsModal'
+import CreateParkingLotRequestModal from '../../../components/parking-lot/CreateParkingLotRequestModal'
 import Cookies from 'js-cookie'
+import { useOperatorId } from '../../../hooks/useOperatorId'
 
 interface ParkingLotsListResponse {
   data: {
@@ -53,7 +55,7 @@ interface BasisListResponse {
 }
 
 const OperatorParkingLot: React.FC = () => {
-
+  const operatorId = useOperatorId()
   const [isDeleted, setIsDeleted] = useState(false)
   const [isSwitchLoading, setIsSwitchLoading] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
@@ -61,6 +63,7 @@ const OperatorParkingLot: React.FC = () => {
   const [selectedPolicyForEdit, setSelectedPolicyForEdit] = useState<PricingPolicyLink | null>(null)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false)
+  const [isCreateRequestModalOpen, setIsCreateRequestModalOpen] = useState(false)
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
@@ -257,9 +260,17 @@ const OperatorParkingLot: React.FC = () => {
             <div className="parking-lot-empty-icon">🚗</div>
             <h3 className="parking-lot-empty-title">Chưa có bãi đỗ xe</h3>
             <p className="parking-lot-empty-text">
-              Bạn chưa có bãi đỗ nào được duyệt. Vui lòng liên hệ quản trị viên để được duyệt bãi
-              đỗ.
+              Bạn chưa có bãi đỗ nào được duyệt. Hãy tạo yêu cầu bãi đỗ xe mới để được xét duyệt.
             </p>
+            {operatorId && (
+              <button
+                className="parking-lot-create-request-btn"
+                onClick={() => setIsCreateRequestModalOpen(true)}
+              >
+                <span>➕</span>
+                <span>Tạo yêu cầu bãi đỗ xe mới</span>
+              </button>
+            )}
           </div>
         ) : (
           <>
@@ -379,6 +390,13 @@ const OperatorParkingLot: React.FC = () => {
         requests={operatorRequests}
         loading={isRequestLoading}
       />
+      {operatorId && (
+        <CreateParkingLotRequestModal
+          open={isCreateRequestModalOpen}
+          onClose={() => setIsCreateRequestModalOpen(false)}
+          operatorId={operatorId}
+        />
+      )}
     </div>
   )
 }
