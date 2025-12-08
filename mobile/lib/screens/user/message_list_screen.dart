@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
 import 'package:mobile/services/user_service.dart';
+import 'package:mobile/services/chat_service.dart';
 import 'chat/message_chat_screen.dart';
+import 'chat/chatbot_chat_screen.dart';
 
 class MessageListScreen extends StatefulWidget {
   const MessageListScreen({super.key});
@@ -15,16 +17,68 @@ class _MessageListScreenState extends State<MessageListScreen> {
   String? _currentUserId;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  Map<String, dynamic>? _searchResult;
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserId();
-    _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.trim();
+    setState(() {
+      _searchQuery = query.toLowerCase();
+      // Clear search result if query is empty
+      if (query.isEmpty) {
+        _searchResult = null;
+        _isSearching = false;
+      }
     });
+
+    // Check if query looks like a phone number (contains only digits)
+    if (query.isNotEmpty && RegExp(r'^[0-9]+$').hasMatch(query)) {
+      _searchByPhone(query);
+    } else if (query.isNotEmpty) {
+      // If query is not empty but not a phone number, clear search result
+      setState(() {
+        _searchResult = null;
+        _isSearching = false;
+      });
+    }
+  }
+
+  Future<void> _searchByPhone(String phone) async {
+    if (phone.length < 10) {
+      setState(() {
+        _searchResult = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    try {
+      final result = await ChatService.getAccountByPhone(phone: phone);
+      if (mounted) {
+        setState(() {
+          _searchResult = result;
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      print('Error searching by phone: $e');
+      if (mounted) {
+        setState(() {
+          _searchResult = null;
+          _isSearching = false;
+        });
+      }
+    }
   }
 
   @override
@@ -212,8 +266,15 @@ class _MessageListScreenState extends State<MessageListScreen> {
 
                   var chats = snapshot.data?.docs ?? [];
 
-                  // Filter by search query
-                  if (_searchQuery.isNotEmpty) {
+                  // Filter out AI chatbot room (already shown as fixed item at top)
+                  chats = chats.where((doc) {
+                    final data = doc.data();
+                    final peerId = data['peerId']?.toString() ?? '';
+                    return peerId != 'ai_chatbot';
+                  }).toList();
+
+                  // Filter by search query (only if not searching by phone)
+                  if (_searchQuery.isNotEmpty && _searchResult == null) {
                     chats = chats.where((doc) {
                       final data = doc.data();
                       final peerName = (data['peerName'] ?? '')
@@ -227,47 +288,114 @@ class _MessageListScreenState extends State<MessageListScreen> {
                     }).toList();
                   }
 
-                  if (chats.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _searchQuery.isEmpty
-                                ? 'Chưa có cuộc trò chuyện nào'
-                                : 'Không tìm thấy cuộc trò chuyện nào',
+                  // Build list items
+                  final List<Widget> items = [];
+
+                  // Add AI chat item at the top (always visible)
+                  items.add(
+                    ListTile(
+                      leading: const Icon(
+                        Icons.smart_toy,
+                        color: Colors.green,
+                        size: 40,
+                      ),
+                      title: const Text(
+                        'Trợ lý Hướng dẫn',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      subtitle: const Text(
+                        'Hỏi tôi bất cứ điều gì về ứng dụng',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ChatbotChatScreen(),
                           ),
-                          const SizedBox(height: 16),
-                          // Test button
-                          ElevatedButton.icon(
-                            onPressed: _createTestChat,
-                            icon: const Icon(Icons.add),
-                            label: const Text('Tạo test chat'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              foregroundColor: Colors.white,
-                            ),
-                          ),
-                        ],
+                        );
+                      },
+                    ),
+                  );
+
+                  // Add search result if found
+                  if (_isSearching) {
+                    items.add(
+                      const ListTile(
+                        leading: CircularProgressIndicator(),
+                        title: Text('Đang tìm kiếm...'),
                       ),
                     );
+                  } else if (_searchResult != null) {
+                    try {
+                      final data = _searchResult!['data'];
+                      dynamic accountData = data;
+                      if (data is List && data.isNotEmpty) {
+                        accountData = data[0];
+                      }
+
+                      final accountId = accountData?['_id']?.toString() ?? '';
+                      final fullName =
+                          accountData?['driverDetail']?['fullName'] ??
+                          accountData?['adminDetail']?['fullName'] ??
+                          accountData?['operatorDetail']?['fullName'] ??
+                          accountData?['fullName'] ??
+                          'Người dùng';
+                      final phone = accountData?['phone']?.toString() ?? '';
+
+                      items.add(
+                        ListTile(
+                          leading: const Icon(
+                            Icons.person,
+                            color: Colors.blue,
+                            size: 40,
+                          ),
+                          title: Text(
+                            fullName,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: Text(
+                            phone.isNotEmpty ? phone : 'Không có số điện thoại',
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                          ),
+                          onTap: () {
+                            if (accountId.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MessageChatScreen(
+                                    peerUserId: accountId,
+                                    peerDisplayName: fullName,
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      );
+                    } catch (e) {
+                      print('Error parsing search result: $e');
+                    }
                   }
 
-                  return ListView.builder(
-                    itemCount: chats.length,
-                    itemBuilder: (context, index) {
-                      final chatDoc = chats[index];
-                      final chatData = chatDoc.data();
+                  // Add chat list items
+                  for (final chatDoc in chats) {
+                    final chatData = chatDoc.data();
 
-                      final peerId = chatData['peerId'] as String? ?? '';
-                      final peerName =
-                          chatData['peerName'] as String? ?? 'Người dùng';
-                      final lastMessage =
-                          chatData['lastMessage'] as String? ?? '';
-                      final updatedAt = chatData['updatedAt'] as Timestamp?;
-                      final unreadCount = chatData['unreadCount'] as int? ?? 0;
+                    final peerId = chatData['peerId'] as String? ?? '';
+                    final peerName =
+                        chatData['peerName'] as String? ?? 'Người dùng';
+                    final lastMessage =
+                        chatData['lastMessage'] as String? ?? '';
+                    final updatedAt = chatData['updatedAt'] as Timestamp?;
+                    final unreadCount = chatData['unreadCount'] as int? ?? 0;
 
-                      return ListTile(
+                    items.add(
+                      ListTile(
                         leading: const Icon(
                           Icons.person,
                           color: Colors.green,
@@ -327,9 +455,48 @@ class _MessageListScreenState extends State<MessageListScreen> {
                             ),
                           );
                         },
-                      );
-                    },
-                  );
+                      ),
+                    );
+                  }
+
+                  // Add empty state message if needed
+                  if (chats.isEmpty &&
+                      _searchQuery.isNotEmpty &&
+                      _searchResult == null &&
+                      !_isSearching) {
+                    items.add(
+                      const ListTile(
+                        title: Text('Không tìm thấy cuộc trò chuyện nào'),
+                        enabled: false,
+                      ),
+                    );
+                  } else if (chats.isEmpty &&
+                      _searchQuery.isEmpty &&
+                      _searchResult == null &&
+                      !_isSearching) {
+                    items.add(
+                      ListTile(
+                        title: const Text('Chưa có cuộc trò chuyện nào'),
+                        enabled: false,
+                      ),
+                    );
+                    items.add(
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: ElevatedButton.icon(
+                          onPressed: _createTestChat,
+                          icon: const Icon(Icons.add),
+                          label: const Text('Tạo test chat'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  return ListView(children: items);
                 },
               ),
             ),
