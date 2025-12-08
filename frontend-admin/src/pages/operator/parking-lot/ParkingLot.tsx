@@ -164,6 +164,7 @@ const OperatorParkingLot: React.FC = () => {
         totalLeased: 0,
         totalWalkIn: 0,
         occupancyRate: 0,
+        bookingSlotDurationHours: 0,
       }
     }
     const totalCapacity = parkingLot.totalCapacityEachLevel * parkingLot.totalLevel
@@ -173,6 +174,7 @@ const OperatorParkingLot: React.FC = () => {
     const totalWalkIn = parkingLot.walkInCapacity
     const occupancyRate =
       totalCapacity === 0 ? 0 : Math.round(((totalCapacity - availableSpots) / totalCapacity) * 100)
+    const bookingSlotDurationHours = parkingLot.bookingSlotDurationHours || 0
 
     return {
       totalCapacity,
@@ -181,6 +183,7 @@ const OperatorParkingLot: React.FC = () => {
       totalLeased,
       totalWalkIn,
       occupancyRate,
+      bookingSlotDurationHours,
     }
   }, [parkingLot])
 
@@ -267,7 +270,7 @@ const OperatorParkingLot: React.FC = () => {
                   <UserOutlined />
                 </div>
                 <div className="parking-lot-stat-content">
-                  <h3>{parkingLot.bookingSlotDurationHours || 0}</h3>
+                  <h3>{summary.bookingSlotDurationHours}h</h3>
                   <p>TB thời gian</p>
                   <div className="parking-lot-stat-sub">Thời gian đặt chỗ</div>
                 </div>
