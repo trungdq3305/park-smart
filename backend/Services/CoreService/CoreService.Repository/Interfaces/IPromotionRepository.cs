@@ -17,5 +17,6 @@ namespace CoreService.Repository.Interfaces
         Task UpdateAsync(Promotion entity);
         Task SoftDeleteAsync(string id, string deletedBy, DateTime deletedAt);
         Task<IEnumerable<Promotion>> GetByEventIdAsync(string eventId); // <<< THÊM
+        Task<IEnumerable<Promotion>> GetExpiredActivePromotionsAsync(DateTime now);
     }
 }
