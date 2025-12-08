@@ -31,11 +31,6 @@ namespace CoreService.Application.DTOs.PromotionDtos
 
         public decimal? MaxDiscountAmount { get; set; }
 
-        [Required]
-        public DateTime StartDate { get; set; }
-
-        [Required]
-        public DateTime EndDate { get; set; }
 
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "Giới hạn sử dụng phải lớn hơn 0")]
