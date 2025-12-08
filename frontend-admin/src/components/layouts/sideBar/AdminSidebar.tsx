@@ -56,9 +56,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Bãi đỗ xe',
     },
     {
-      key: '/analytics',
+      key: '/admin/dashboard-admin',
       icon: <BarChartOutlined />,
-      label: 'Phân tích',
+      label: 'Dashboard',
     },
     {
       key: '/admin/reports',

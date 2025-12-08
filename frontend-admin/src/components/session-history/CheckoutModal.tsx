@@ -120,9 +120,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
             style={{ width: '100%' }}
             placeholder="Nhập số tiền"
             value={formData.amountPayAfterCheckOut}
-            onChange={(value) =>
-              setFormData({ ...formData, amountPayAfterCheckOut: value || 0 })
-            }
+            onChange={(value) => setFormData({ ...formData, amountPayAfterCheckOut: value || 0 })}
             formatter={(value) => formatCurrency(Number(value))}
             parser={(value) => {
               const parsed = value?.replace(/[^\d]/g, '') || '0'
@@ -162,11 +160,7 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
           <button className="checkout-cancel-btn" onClick={handleClose} disabled={isSubmitting}>
             Hủy
           </button>
-          <button
-            className="checkout-confirm-btn"
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-          >
+          <button className="checkout-confirm-btn" onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting ? 'Đang xử lý...' : 'Xác nhận checkout'}
           </button>
         </div>
@@ -176,4 +170,3 @@ const CheckoutModal: React.FC<CheckoutModalProps> = ({
 }
 
 export default CheckoutModal
-

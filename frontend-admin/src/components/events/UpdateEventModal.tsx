@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
-import { Form, Input, DatePicker, Switch, Button, message } from 'antd'
+import { useEffect, useState } from 'react'
+import { message } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
 import { useUpdateEventMutation } from '../../features/admin/eventAPI'
 import { CustomModal } from '../common'
 import type { Event } from '../../types/Event'
+import '../promotions/CreatePromotionModal.css'
 
 interface UpdateEventModalProps {
   open: boolean
@@ -11,13 +12,39 @@ interface UpdateEventModalProps {
   event: Event | null
 }
 
+interface FormData {
+  title: string
+  description: string
+  location: string
+  startDate: Dayjs | null
+  endDate: Dayjs | null
+  includedPromotions: boolean
+}
+
+interface FormErrors {
+  title?: string
+  location?: string
+  startDate?: string
+  endDate?: string
+}
+
 const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, event }) => {
-  const [form] = Form.useForm()
   const [updateEvent, { isLoading }] = useUpdateEventMutation()
+
+  const [formData, setFormData] = useState<FormData>({
+    title: '',
+    description: '',
+    location: '',
+    startDate: null,
+    endDate: null,
+    includedPromotions: false,
+  })
+
+  const [errors, setErrors] = useState<FormErrors>({})
 
   useEffect(() => {
     if (open && event) {
-      form.setFieldsValue({
+      setFormData({
         title: event.title,
         description: event.description || '',
         location: event.location || '',
@@ -25,59 +52,108 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
         endDate: dayjs(event.endDate),
         includedPromotions: event.includedPromotions || false,
       })
-    } else if (open) {
-      form.resetFields()
+      setErrors({})
     }
-  }, [open, event, form])
+  }, [open, event])
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {}
+
+    if (!formData.title.trim()) {
+      newErrors.title = 'Vui lòng nhập tên sự kiện'
+    }
+
+    if (!formData.location.trim()) {
+      newErrors.location = 'Vui lòng nhập địa điểm'
+    }
+
+    if (!formData.startDate) {
+      newErrors.startDate = 'Vui lòng chọn ngày bắt đầu'
+    } else {
+      // Cho phép chọn ngày trong quá khứ nếu đó là ngày bắt đầu hiện tại của event
+      if (event?.startDate) {
+        const eventStartDate = dayjs(event.startDate).startOf('day')
+        if (formData.startDate.isBefore(eventStartDate)) {
+          newErrors.startDate = 'Ngày bắt đầu không được sớm hơn ngày hiện tại của sự kiện'
+        }
+      } else if (formData.startDate.isBefore(dayjs().startOf('day'))) {
+        newErrors.startDate = 'Ngày bắt đầu không được là quá khứ'
+      }
+    }
+
+    if (!formData.endDate) {
+      newErrors.endDate = 'Vui lòng chọn ngày kết thúc'
+    } else {
+      if (formData.startDate && formData.endDate.isBefore(formData.startDate)) {
+        newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu'
+      } else if (
+        formData.startDate &&
+        formData.endDate.isSame(formData.startDate, 'day') &&
+        formData.endDate.isSameOrBefore(formData.startDate)
+      ) {
+        newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu'
+      } else if (event?.endDate) {
+        const eventEndDate = dayjs(event.endDate).startOf('day')
+        const eventStartDate = event.startDate ? dayjs(event.startDate).startOf('day') : null
+        if (
+          formData.endDate.isBefore(eventEndDate) &&
+          formData.startDate &&
+          eventStartDate &&
+          formData.startDate.isBefore(eventStartDate)
+        ) {
+          newErrors.endDate = 'Ngày kết thúc không được sớm hơn ngày hiện tại của sự kiện'
+        }
+      }
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async () => {
+    if (!event?._id) {
+      message.error('Không tìm thấy thông tin sự kiện')
+      return
+    }
+
+    if (!validateForm()) {
+      return
+    }
+
     try {
-      const values = await form.validateFields()
-
-      if (!event?._id) {
-        message.error('Không tìm thấy thông tin sự kiện')
-        return
-      }
-
       const eventData = {
         id: event._id,
-        title: values.title,
-        description: values.description || '',
-        startDate: values.startDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
-        endDate: values.endDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
-        location: values.location || '',
-        includedPromotions: values.includedPromotions || false,
+        title: formData.title.trim(),
+        description: formData.description.trim() || '',
+        startDate: formData.startDate!.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+        endDate: formData.endDate!.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+        location: formData.location.trim() || '',
+        includedPromotions: formData.includedPromotions || false,
       }
 
       await updateEvent(eventData).unwrap()
       message.success('Cập nhật sự kiện thành công')
-      form.resetFields()
       onClose()
     } catch (error: any) {
       message.error(error?.data?.message || 'Cập nhật sự kiện thất bại')
     }
   }
 
-  const disabledStartDate = (current: Dayjs) => {
-    // Cho phép chọn ngày trong quá khứ nếu đó là ngày bắt đầu hiện tại của event
+  const getMinStartDate = (): string => {
     if (event?.startDate) {
-      const eventStartDate = dayjs(event.startDate).startOf('day')
-      return current && current < eventStartDate
+      return dayjs(event.startDate).format('YYYY-MM-DD')
     }
-    return current && current < dayjs().startOf('day')
+    return dayjs().format('YYYY-MM-DD')
   }
 
-  const disabledEndDate = (current: Dayjs) => {
-    const startDate = form.getFieldValue('startDate')
-    if (!startDate) {
-      // Nếu chưa chọn startDate, cho phép chọn ngày >= ngày kết thúc hiện tại của event
-      if (event?.endDate) {
-        const eventEndDate = dayjs(event.endDate).startOf('day')
-        return current && current < eventEndDate
-      }
-      return current && current < dayjs().startOf('day')
+  const getMinEndDate = (): string => {
+    if (formData.startDate) {
+      return formData.startDate.format('YYYY-MM-DD')
     }
-    return current && current < startDate.startOf('day')
+    if (event?.endDate) {
+      return dayjs(event.endDate).format('YYYY-MM-DD')
+    }
+    return dayjs().format('YYYY-MM-DD')
   }
 
   return (
@@ -88,83 +164,197 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
       width={600}
       loading={isLoading}
       footer={
-        <>
-          <Button onClick={onClose} disabled={isLoading}>
+        <div className="create-promotion-modal-footer">
+          <button
+            type="button"
+            className="create-promotion-btn create-promotion-btn-cancel"
+            onClick={onClose}
+            disabled={isLoading}
+          >
             Hủy
-          </Button>
-          <Button type="primary" onClick={handleSubmit} loading={isLoading}>
-            Cập nhật
-          </Button>
-        </>
+          </button>
+          <button
+            type="button"
+            className="create-promotion-btn create-promotion-btn-submit"
+            onClick={handleSubmit}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Đang cập nhật...' : 'Cập nhật'}
+          </button>
+        </div>
       }
     >
-      <Form form={form} layout="vertical">
-        <Form.Item
-          name="title"
-          label="Tên sự kiện"
-          rules={[{ required: true, message: 'Vui lòng nhập tên sự kiện' }]}
-        >
-          <Input placeholder="Nhập tên sự kiện" />
-        </Form.Item>
-
-        <Form.Item name="description" label="Mô tả">
-          <Input.TextArea placeholder="Nhập mô tả sự kiện" rows={4} showCount maxLength={500} />
-        </Form.Item>
-
-        <Form.Item
-          name="location"
-          label="Địa điểm"
-          rules={[{ required: true, message: 'Vui lòng nhập địa điểm' }]}
-        >
-          <Input placeholder="Nhập địa điểm tổ chức sự kiện" />
-        </Form.Item>
-
-        <Form.Item
-          name="startDate"
-          label="Ngày bắt đầu"
-          rules={[{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }]}
-        >
-          <DatePicker
-            style={{ width: '100%' }}
-            showTime
-            format="DD/MM/YYYY HH:mm"
-            placeholder="Chọn ngày và giờ bắt đầu"
-            disabledDate={disabledStartDate}
+      <div className="create-promotion-form">
+        {/* Title */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Tên sự kiện <span className="create-promotion-required">*</span>
+          </label>
+          <input
+            type="text"
+            className={`create-promotion-input ${errors.title ? 'error' : ''}`}
+            placeholder="Nhập tên sự kiện"
+            value={formData.title}
+            onChange={(e) => {
+              setFormData({ ...formData, title: e.target.value })
+              if (errors.title) setErrors({ ...errors, title: undefined })
+            }}
           />
-        </Form.Item>
+          {errors.title && <span className="create-promotion-error">{errors.title}</span>}
+        </div>
 
-        <Form.Item
-          name="endDate"
-          label="Ngày kết thúc"
-          rules={[
-            { required: true, message: 'Vui lòng chọn ngày kết thúc' },
-            {
-              validator: (_, value) => {
-                const startDate = form.getFieldValue('startDate')
-                if (!value || !startDate) {
-                  return Promise.resolve()
-                }
-                if (value.isBefore(startDate) || value.isSame(startDate)) {
-                  return Promise.reject(new Error('Ngày kết thúc phải sau ngày bắt đầu'))
-                }
-                return Promise.resolve()
-              },
-            },
-          ]}
-        >
-          <DatePicker
-            style={{ width: '100%' }}
-            showTime
-            format="DD/MM/YYYY HH:mm"
-            placeholder="Chọn ngày và giờ kết thúc"
-            disabledDate={disabledEndDate}
+        {/* Description */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Mô tả
+            <span className="create-promotion-tooltip" title="Tối đa 500 ký tự">
+              ℹ️
+            </span>
+          </label>
+          <textarea
+            className="create-promotion-textarea"
+            rows={4}
+            placeholder="Nhập mô tả sự kiện"
+            maxLength={500}
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
-        </Form.Item>
+          <div className="create-promotion-char-count">
+            {formData.description.length} / 500 ký tự
+          </div>
+        </div>
 
-        <Form.Item name="includedPromotions" label="Bao gồm khuyến mãi" valuePropName="checked">
-          <Switch />
-        </Form.Item>
-      </Form>
+        {/* Location */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Địa điểm <span className="create-promotion-required">*</span>
+          </label>
+          <input
+            type="text"
+            className={`create-promotion-input ${errors.location ? 'error' : ''}`}
+            placeholder="Nhập địa điểm tổ chức sự kiện"
+            value={formData.location}
+            onChange={(e) => {
+              setFormData({ ...formData, location: e.target.value })
+              if (errors.location) setErrors({ ...errors, location: undefined })
+            }}
+          />
+          {errors.location && <span className="create-promotion-error">{errors.location}</span>}
+        </div>
+
+        {/* Start Date */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Ngày bắt đầu <span className="create-promotion-required">*</span>
+          </label>
+          <div className="create-promotion-datetime-wrapper">
+            <input
+              type="date"
+              className={`create-promotion-date-input ${errors.startDate ? 'error' : ''}`}
+              value={formData.startDate ? formData.startDate.format('YYYY-MM-DD') : ''}
+              min={getMinStartDate()}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const currentDate = formData.startDate || dayjs()
+                  const newDate = dayjs(e.target.value)
+                    .hour(currentDate.hour())
+                    .minute(currentDate.minute())
+                    .second(0)
+                    .millisecond(0)
+                  setFormData({ ...formData, startDate: newDate })
+                  if (errors.startDate) setErrors({ ...errors, startDate: undefined })
+                }
+              }}
+            />
+            <input
+              type="time"
+              className="create-promotion-time-input"
+              value={
+                formData.startDate
+                  ? formData.startDate.format('HH:mm')
+                  : dayjs().format('HH:mm')
+              }
+              onChange={(e) => {
+                const [hours, minutes] = e.target.value.split(':')
+                const baseDate = formData.startDate || dayjs().startOf('day')
+                const newDate = baseDate
+                  .hour(parseInt(hours, 10))
+                  .minute(parseInt(minutes, 10))
+                  .second(0)
+                  .millisecond(0)
+                setFormData({ ...formData, startDate: newDate })
+                if (errors.startDate) setErrors({ ...errors, startDate: undefined })
+              }}
+            />
+          </div>
+          {errors.startDate && <span className="create-promotion-error">{errors.startDate}</span>}
+        </div>
+
+        {/* End Date */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Ngày kết thúc <span className="create-promotion-required">*</span>
+          </label>
+          <div className="create-promotion-datetime-wrapper">
+            <input
+              type="date"
+              className={`create-promotion-date-input ${errors.endDate ? 'error' : ''}`}
+              value={formData.endDate ? formData.endDate.format('YYYY-MM-DD') : ''}
+              min={getMinEndDate()}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const currentDate = formData.endDate || dayjs()
+                  const newDate = dayjs(e.target.value)
+                    .hour(currentDate.hour())
+                    .minute(currentDate.minute())
+                    .second(0)
+                    .millisecond(0)
+                  setFormData({ ...formData, endDate: newDate })
+                  if (errors.endDate) setErrors({ ...errors, endDate: undefined })
+                }
+              }}
+            />
+            <input
+              type="time"
+              className="create-promotion-time-input"
+              value={
+                formData.endDate ? formData.endDate.format('HH:mm') : dayjs().format('HH:mm')
+              }
+              onChange={(e) => {
+                const [hours, minutes] = e.target.value.split(':')
+                const baseDate = formData.endDate || dayjs().startOf('day')
+                const newDate = baseDate
+                  .hour(parseInt(hours, 10))
+                  .minute(parseInt(minutes, 10))
+                  .second(0)
+                  .millisecond(0)
+                setFormData({ ...formData, endDate: newDate })
+                if (errors.endDate) setErrors({ ...errors, endDate: undefined })
+              }}
+            />
+          </div>
+          {errors.endDate && <span className="create-promotion-error">{errors.endDate}</span>}
+        </div>
+
+        {/* Included Promotions */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">Bao gồm khuyến mãi</label>
+          <div className="create-promotion-switch-wrapper">
+            <label className="create-promotion-switch">
+              <input
+                type="checkbox"
+                checked={formData.includedPromotions}
+                onChange={(e) => setFormData({ ...formData, includedPromotions: e.target.checked })}
+              />
+              <span className="create-promotion-switch-slider">
+                <span className="create-promotion-switch-label">
+                  {formData.includedPromotions ? 'Có' : 'Không'}
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
     </CustomModal>
   )
 }

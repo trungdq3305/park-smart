@@ -11,6 +11,7 @@ import {
   useGetParkingLotsOperatorQuery,
   useUpdateParkingLotRequestMutation,
 } from '../../../features/operator/parkingLotAPI'
+import { useGetParkingLotRequestOfOperatorQuery } from '../../../features/admin/parkinglotAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -27,6 +28,7 @@ import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 import type { Basis } from '../../../types/Basis'
 import { useGetBasisQuery } from '../../../features/operator/basisAPI'
 import { message, Modal } from 'antd'
+import OperatorRequestsModal from '../../../components/parking-lot/OperatorRequestsModal'
 import Cookies from 'js-cookie'
 
 interface ParkingLotsListResponse {
@@ -51,12 +53,14 @@ interface BasisListResponse {
 }
 
 const OperatorParkingLot: React.FC = () => {
+
   const [isDeleted, setIsDeleted] = useState(false)
   const [isSwitchLoading, setIsSwitchLoading] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedPolicyForEdit, setSelectedPolicyForEdit] = useState<PricingPolicyLink | null>(null)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false)
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
@@ -73,6 +77,12 @@ const OperatorParkingLot: React.FC = () => {
           }
         : skipToken
     )
+  const {
+    data: parkingLotRequestsData,
+    isLoading: isRequestLoading,
+  } = useGetParkingLotRequestOfOperatorQuery(
+    parkingLot?._id ? { parkingLotId: parkingLot._id } : skipToken
+  )
   const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
   const basis = basisData?.data ?? []
 
@@ -164,6 +174,7 @@ const OperatorParkingLot: React.FC = () => {
         totalLeased: 0,
         totalWalkIn: 0,
         occupancyRate: 0,
+        bookingSlotDurationHours: 0,
       }
     }
     const totalCapacity = parkingLot.totalCapacityEachLevel * parkingLot.totalLevel
@@ -173,6 +184,7 @@ const OperatorParkingLot: React.FC = () => {
     const totalWalkIn = parkingLot.walkInCapacity
     const occupancyRate =
       totalCapacity === 0 ? 0 : Math.round(((totalCapacity - availableSpots) / totalCapacity) * 100)
+    const bookingSlotDurationHours = parkingLot.bookingSlotDurationHours || 0
 
     return {
       totalCapacity,
@@ -181,6 +193,7 @@ const OperatorParkingLot: React.FC = () => {
       totalLeased,
       totalWalkIn,
       occupancyRate,
+      bookingSlotDurationHours,
     }
   }, [parkingLot])
 
@@ -189,6 +202,18 @@ const OperatorParkingLot: React.FC = () => {
       Cookies.set('parkingLotId', parkingLot._id)
     }
   }, [parkingLot])
+
+  const operatorRequests = useMemo(() => {
+    if (!parkingLotRequestsData) return []
+    if (Array.isArray(parkingLotRequestsData)) return parkingLotRequestsData
+    // support { data: [...] } or { data: { data: [...] } }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return (
+      (parkingLotRequestsData as any).data ||
+      (parkingLotRequestsData as any).data ||
+      []
+    )
+  }, [parkingLotRequestsData])
 
   if (isLoading) {
     return (
@@ -210,10 +235,18 @@ const OperatorParkingLot: React.FC = () => {
             <p>Theo dõi hiệu suất vận hành và tình trạng bãi đỗ của bạn</p>
           </div>
           {parkingLot && (
-            <button className="parking-lot-update-btn" onClick={() => setIsUpdateModalOpen(true)}>
-              <EditOutlined />
-              <span>Gửi yêu cầu cập nhật</span>
-            </button>
+            <div className="parking-lot-header-actions">
+              <button
+                className="parking-lot-secondary-btn"
+                onClick={() => setIsRequestsModalOpen(true)}
+              >
+                <span>Yêu cầu đã gửi</span>
+              </button>
+              <button className="parking-lot-update-btn" onClick={() => setIsUpdateModalOpen(true)}>
+                <EditOutlined />
+                <span>Gửi yêu cầu cập nhật</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -267,9 +300,9 @@ const OperatorParkingLot: React.FC = () => {
                   <UserOutlined />
                 </div>
                 <div className="parking-lot-stat-content">
-                  <h3>{parkingLot.totalLevel}</h3>
-                  <p>Số tầng</p>
-                  <div className="parking-lot-stat-sub">Tổng số tầng</div>
+                  <h3>{summary.bookingSlotDurationHours}h</h3>
+                  <p>TB thời gian</p>
+                  <div className="parking-lot-stat-sub">Thời gian đặt chỗ</div>
                 </div>
               </div>
               <div className="parking-lot-stat-card">
@@ -339,6 +372,12 @@ const OperatorParkingLot: React.FC = () => {
         onSubmit={handleUpdateParkingLot}
         parkingLot={parkingLot}
         loading={isUpdateParkingLotRequestLoading}
+      />
+      <OperatorRequestsModal
+        open={isRequestsModalOpen}
+        onClose={() => setIsRequestsModalOpen(false)}
+        requests={operatorRequests}
+        loading={isRequestLoading}
       />
     </div>
   )

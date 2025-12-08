@@ -299,7 +299,6 @@ const ParkingLotSessionHistory: React.FC = () => {
             ? sessionDetail.reservationId.reservationIdentifier
             : null
         requestData.identifier = identifier || 'null'
-        requestData.nfcUid = 'null'
       } else if (sessionDetail.subscriptionId) {
         // Nếu có subscriptionId, thêm identifier và set nfcUid = "null" (string)
         const identifier =
@@ -307,24 +306,6 @@ const ParkingLotSessionHistory: React.FC = () => {
             ? sessionDetail.subscriptionId.subscriptionIdentifier
             : null
         requestData.identifier = identifier || 'null'
-        requestData.nfcUid = 'null'
-      }
-
-      console.log('Request data:', requestData)
-      console.log('SessionDetail data:', {
-        guestCardId: sessionDetail.guestCardId,
-        reservationId: sessionDetail.reservationId,
-        subscriptionId: sessionDetail.subscriptionId,
-      })
-      if (sessionDetail.guestCardId) {
-        console.log('guestCardId details:', {
-          type: typeof sessionDetail.guestCardId,
-          isObject: typeof sessionDetail.guestCardId === 'object',
-          nfcUid:
-            typeof sessionDetail.guestCardId === 'object'
-              ? sessionDetail.guestCardId.nfcUid
-              : 'N/A',
-        })
       }
 
       const result = await calculateFee({
@@ -334,7 +315,6 @@ const ParkingLotSessionHistory: React.FC = () => {
 
       setCalculateFeeResult(result)
     } catch (error: any) {
-      console.error('Error calculating fee:', error)
       alert(
         error?.data?.message ||
           error?.message ||
