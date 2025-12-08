@@ -1,100 +1,177 @@
-import { useEffect } from 'react'
-import { Form, Input, InputNumber, DatePicker, Switch, Button, Select, message } from 'antd'
+import { useEffect, useState } from 'react'
+import { message } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
 import { useCreatePromotionMutation } from '../../features/operator/promotionAPI'
 import { useGetEventsByOperatorQuery } from '../../features/admin/eventAPI'
 import { CustomModal } from '../common'
 import type { Event } from '../../types/Event'
+import './CreatePromotionModal.css'
+
 interface CreatePromotionModalProps {
   open: boolean
   onClose: () => void
 }
 
+interface FormData {
+  eventId?: string
+  code: string
+  name: string
+  description: string
+  discountType: 'Percentage' | 'FixedAmount'
+  discountValue: number
+  maxDiscountAmount: number
+  startDate: Dayjs | null
+  endDate: Dayjs | null
+  totalUsageLimit: number
+  isActive: boolean
+}
+
+interface FormErrors {
+  eventId?: string
+  code?: string
+  name?: string
+  discountType?: string
+  discountValue?: string
+  startDate?: string
+  endDate?: string
+}
+
 const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClose }) => {
-  const [form] = Form.useForm()
   const [createPromotion, { isLoading }] = useCreatePromotionMutation()
   const { data: eventsData } = useGetEventsByOperatorQuery({})
   const events: Event[] = Array.isArray(eventsData)
     ? eventsData
     : (eventsData as { data?: Event[] })?.data || []
-  const discountType = Form.useWatch('discountType', form)
 
-  const parseCurrency = (value: string | undefined): number => {
-    if (!value) return 0
-    const parsed = parseFloat(value.replace(/\$\s?|(,*)/g, ''))
-    return isNaN(parsed) ? 0 : parsed
-  }
+  const [formData, setFormData] = useState<FormData>({
+    eventId: undefined,
+    code: '',
+    name: '',
+    description: '',
+    discountType: 'Percentage',
+    discountValue: 10,
+    maxDiscountAmount: 100000,
+    startDate: null,
+    endDate: null,
+    totalUsageLimit: 10,
+    isActive: true,
+  })
 
-  const parseNumber = (value: string | undefined): number => {
-    if (!value) return 0
-    const parsed = parseFloat(value.replace(/\$\s?|(,*)/g, ''))
-    return isNaN(parsed) ? 0 : parsed
-  }
-
-  const formatPercentage = (value: number | undefined): string => {
-    if (value === undefined || value === null) return ''
-    return `${value}%`
-  }
-
-  const parsePercentage = (value: string | undefined): number => {
-    if (!value) return 0
-    const cleaned = value.replace(/%/g, '').trim()
-    const parsed = parseFloat(cleaned)
-    return isNaN(parsed) ? 0 : parsed
-  }
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [showEventDropdown, setShowEventDropdown] = useState(false)
+  const [showDiscountTypeDropdown, setShowDiscountTypeDropdown] = useState(false)
+  const [eventSearch, setEventSearch] = useState('')
 
   useEffect(() => {
     if (open) {
-      form.resetFields()
-      form.setFieldsValue({
+      setFormData({
+        eventId: undefined,
+        code: '',
+        name: '',
+        description: '',
         discountType: 'Percentage',
-        isActive: true,
-        totalUsageLimit: 10,
-        maxDiscountAmount: 100000,
         discountValue: 10,
+        maxDiscountAmount: 100000,
+        startDate: null,
+        endDate: null,
+        totalUsageLimit: 10,
+        isActive: true,
       })
+      setErrors({})
+      setEventSearch('')
     }
-  }, [open, form])
+  }, [open])
+
+  const formatCurrency = (value: number): string => {
+    return new Intl.NumberFormat('vi-VN').format(value)
+  }
+
+  const parseCurrency = (value: string): number => {
+    const cleaned = value.replace(/[^\d]/g, '')
+    return cleaned ? parseInt(cleaned, 10) : 0
+  }
+
+  const formatPercentage = (value: number): string => {
+    return `${value}%`
+  }
+
+  const parsePercentage = (value: string): number => {
+    const cleaned = value.replace(/[^\d]/g, '')
+    return cleaned ? parseInt(cleaned, 10) : 0
+  }
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {}
+
+    if (!formData.eventId) {
+      newErrors.eventId = 'Vui lòng chọn sự kiện'
+    }
+
+    if (!formData.code.trim()) {
+      newErrors.code = 'Vui lòng nhập mã khuyến mãi'
+    }
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Vui lòng nhập tên khuyến mãi'
+    }
+
+    if (!formData.discountType) {
+      newErrors.discountType = 'Vui lòng chọn loại giảm giá'
+    }
+
+    if (!formData.discountValue || formData.discountValue <= 0) {
+      newErrors.discountValue = 'Vui lòng nhập giá trị giảm giá hợp lệ'
+    }
+
+    if (!formData.startDate) {
+      newErrors.startDate = 'Vui lòng chọn ngày bắt đầu'
+    } else if (formData.startDate.isBefore(dayjs().startOf('day'))) {
+      newErrors.startDate = 'Ngày bắt đầu không được là quá khứ'
+    }
+
+    if (!formData.endDate) {
+      newErrors.endDate = 'Vui lòng chọn ngày kết thúc'
+    } else if (formData.startDate && formData.endDate.isBefore(formData.startDate)) {
+      newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu'
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
 
   const handleSubmit = async () => {
-    try {
-      const values = await form.validateFields()
+    if (!validateForm()) {
+      return
+    }
 
-      const discountValue = values.discountValue
+    try {
       const promotionData = {
-        eventId: values.eventId || null,
-        code: values.code,
-        name: values.name,
-        description: values.description || '',
-        discountType: values.discountType,
-        discountValue: discountValue,
-        maxDiscountAmount: values.maxDiscountAmount || 0,
-        startDate: values.startDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
-        endDate: values.endDate.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
-        totalUsageLimit: values.totalUsageLimit || 10,
-        isActive: values.isActive !== undefined ? values.isActive : true,
+        eventId: formData.eventId!,
+        code: formData.code.trim(),
+        name: formData.name.trim(),
+        description: formData.description.trim() || '',
+        discountType: formData.discountType,
+        discountValue: formData.discountValue,
+        maxDiscountAmount: formData.maxDiscountAmount || 0,
+        startDate: formData.startDate!.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+        endDate: formData.endDate!.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
+        totalUsageLimit: formData.totalUsageLimit || 10,
+        isActive: formData.isActive,
       }
 
       await createPromotion(promotionData).unwrap()
       message.success('Tạo khuyến mãi thành công')
-      form.resetFields()
       onClose()
     } catch (error: any) {
       message.error(error?.data?.message || 'Tạo khuyến mãi thất bại')
     }
   }
 
-  const disabledStartDate = (current: Dayjs) => {
-    return current && current < dayjs().startOf('day')
-  }
+  const filteredEvents = events.filter((event) =>
+    event.title.toLowerCase().includes(eventSearch.toLowerCase())
+  )
 
-  const disabledEndDate = (current: Dayjs) => {
-    const startDate = form.getFieldValue('startDate')
-    if (!startDate) {
-      return current && current < dayjs().startOf('day')
-    }
-    return current && current < startDate.startOf('day')
-  }
+  const selectedEvent = events.find((e) => e._id === formData.eventId)
 
   return (
     <CustomModal
@@ -104,153 +181,396 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
       width={700}
       loading={isLoading}
       footer={
-        <>
-          <Button onClick={onClose} disabled={isLoading}>
+        <div className="create-promotion-modal-footer">
+          <button
+            type="button"
+            className="create-promotion-btn create-promotion-btn-cancel"
+            onClick={onClose}
+            disabled={isLoading}
+          >
             Hủy
-          </Button>
-          <Button type="primary" onClick={handleSubmit} loading={isLoading}>
-            Tạo mới
-          </Button>
-        </>
+          </button>
+          <button
+            type="button"
+            className="create-promotion-btn create-promotion-btn-submit"
+            onClick={handleSubmit}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Đang tạo...' : 'Tạo mới'}
+          </button>
+        </div>
       }
     >
-      <Form form={form} layout="vertical" className="create-promotion-form">
-        <Form.Item
-          name="eventId"
-          label="Sự kiện (tùy chọn)"
-          tooltip="Chọn sự kiện để gắn khuyến mãi này, hoặc để trống nếu không gắn với sự kiện"
-        >
-          <Select
-            placeholder="Chọn sự kiện (tùy chọn)"
-            allowClear
-            showSearch
-            optionFilterProp="children"
-            filterOption={(input, option) =>
-              (option?.label ?? '')
-                .toString()
-                .toLowerCase()
-                .includes(input.toString().toLowerCase())
-            }
-          >
-            {events.map((event: Event) => (
-              <Select.Option key={event._id} value={event._id} label={event.title}>
-                {event.title}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
+      <div className="create-promotion-form">
+        {/* Event Selection */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Sự kiện <span className="create-promotion-required">*</span>
+          </label>
+          <div className="create-promotion-select-wrapper">
+            <div
+              className={`create-promotion-select ${errors.eventId ? 'error' : ''}`}
+              onClick={() => setShowEventDropdown(!showEventDropdown)}
+            >
+              <span className={selectedEvent ? '' : 'create-promotion-placeholder'}>
+                {selectedEvent ? selectedEvent.title : 'Chọn sự kiện'}
+              </span>
+              <span className="create-promotion-select-arrow">▼</span>
+            </div>
+            {showEventDropdown && (
+              <>
+                <div
+                  className="create-promotion-dropdown-backdrop"
+                  onClick={() => setShowEventDropdown(false)}
+                />
+                <div className="create-promotion-dropdown">
+                  <div className="create-promotion-search-wrapper">
+                    <input
+                      type="text"
+                      className="create-promotion-search-input"
+                      placeholder="Tìm kiếm sự kiện..."
+                      value={eventSearch}
+                      onChange={(e) => setEventSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  <div className="create-promotion-options">
+                    {filteredEvents.map((event) => (
+                      <div
+                        key={event._id}
+                        className={`create-promotion-option ${
+                          formData.eventId === event._id ? 'selected' : ''
+                        }`}
+                        onClick={() => {
+                          setFormData({ ...formData, eventId: event._id })
+                          setShowEventDropdown(false)
+                          if (errors.eventId) setErrors({ ...errors, eventId: undefined })
+                        }}
+                      >
+                        {event.title}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          {errors.eventId && <span className="create-promotion-error">{errors.eventId}</span>}
+        </div>
 
-        <Form.Item
-          name="code"
-          label="Mã khuyến mãi"
-          rules={[{ required: true, message: 'Vui lòng nhập mã khuyến mãi' }]}
-        >
-          <Input placeholder="Nhập mã khuyến mãi" />
-        </Form.Item>
-
-        <Form.Item
-          name="name"
-          label="Tên khuyến mãi"
-          rules={[{ required: true, message: 'Vui lòng nhập tên khuyến mãi' }]}
-        >
-          <Input placeholder="Nhập tên khuyến mãi" />
-        </Form.Item>
-
-        <Form.Item name="description" label="Mô tả">
-          <Input.TextArea rows={3} placeholder="Nhập mô tả khuyến mãi" />
-        </Form.Item>
-
-        <Form.Item
-          name="discountType"
-          label="Loại giảm giá"
-          rules={[{ required: true, message: 'Vui lòng chọn loại giảm giá' }]}
-        >
-          <Select>
-            <Select.Option value="Percentage">Phần trăm (%)</Select.Option>
-            <Select.Option value="FixedAmount">Số tiền cố định (VND)</Select.Option>
-          </Select>
-        </Form.Item>
-
-        <Form.Item
-          name="discountValue"
-          label={discountType === 'Percentage' ? 'Phần trăm giảm giá' : 'Giá trị giảm giá (VND)'}
-          rules={[
-            { required: true, message: 'Vui lòng nhập giá trị giảm giá' },
-            { type: 'number', min: 0.01, message: 'Giá trị phải lớn hơn 0' },
-          ]}
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            placeholder={
-              discountType === 'Percentage' ? 'Nhập phần trăm (ví dụ: 10)' : 'Nhập số tiền giảm giá'
-            }
-            min={0.01}
-            step={discountType === 'Percentage' ? 1 : 0.01}
-            precision={discountType === 'Percentage' ? 0 : 2}
-            formatter={discountType === 'Percentage' ? formatPercentage : undefined}
-            parser={discountType === 'Percentage' ? parsePercentage : undefined}
-            addonAfter={discountType === 'Percentage' ? '%' : '₫'}
+        {/* Code */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Mã khuyến mãi <span className="create-promotion-required">*</span>
+          </label>
+          <input
+            type="text"
+            className={`create-promotion-input ${errors.code ? 'error' : ''}`}
+            placeholder="Nhập mã khuyến mãi"
+            value={formData.code}
+            onChange={(e) => {
+              setFormData({ ...formData, code: e.target.value })
+              if (errors.code) setErrors({ ...errors, code: undefined })
+            }}
           />
-        </Form.Item>
+          {errors.code && <span className="create-promotion-error">{errors.code}</span>}
+        </div>
 
-        <Form.Item
-          name="maxDiscountAmount"
-          label="Giảm tối đa (VND)"
-          tooltip="Số tiền tối đa được giảm (0 = không giới hạn)"
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            placeholder="Nhập số tiền giảm tối đa"
-            min={0}
-            step={1000}
-            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={parseCurrency}
+        {/* Name */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Tên khuyến mãi <span className="create-promotion-required">*</span>
+          </label>
+          <input
+            type="text"
+            className={`create-promotion-input ${errors.name ? 'error' : ''}`}
+            placeholder="Nhập tên khuyến mãi"
+            value={formData.name}
+            onChange={(e) => {
+              setFormData({ ...formData, name: e.target.value })
+              if (errors.name) setErrors({ ...errors, name: undefined })
+            }}
           />
-        </Form.Item>
+          {errors.name && <span className="create-promotion-error">{errors.name}</span>}
+        </div>
 
-        <Form.Item
-          name="startDate"
-          label="Ngày bắt đầu"
-          rules={[{ required: true, message: 'Vui lòng chọn ngày bắt đầu' }]}
-        >
-          <DatePicker
-            style={{ width: '100%' }}
-            showTime
-            format="DD/MM/YYYY HH:mm"
-            placeholder="Chọn ngày bắt đầu"
-            disabledDate={disabledStartDate}
+        {/* Description */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">Mô tả</label>
+          <textarea
+            className="create-promotion-textarea"
+            rows={3}
+            placeholder="Nhập mô tả khuyến mãi"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           />
-        </Form.Item>
+        </div>
 
-        <Form.Item
-          name="endDate"
-          label="Ngày kết thúc"
-          rules={[{ required: true, message: 'Vui lòng chọn ngày kết thúc' }]}
-        >
-          <DatePicker
-            style={{ width: '100%' }}
-            showTime
-            format="DD/MM/YYYY HH:mm"
-            placeholder="Chọn ngày kết thúc"
-            disabledDate={disabledEndDate}
-          />
-        </Form.Item>
+        {/* Discount Type */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Loại giảm giá <span className="create-promotion-required">*</span>
+          </label>
+          <div className="create-promotion-select-wrapper">
+            <div
+              className={`create-promotion-select ${errors.discountType ? 'error' : ''}`}
+              onClick={() => setShowDiscountTypeDropdown(!showDiscountTypeDropdown)}
+            >
+              <span>
+                {formData.discountType === 'Percentage'
+                  ? 'Phần trăm (%)'
+                  : 'Số tiền cố định (VND)'}
+              </span>
+              <span className="create-promotion-select-arrow">▼</span>
+            </div>
+            {showDiscountTypeDropdown && (
+              <>
+                <div
+                  className="create-promotion-dropdown-backdrop"
+                  onClick={() => setShowDiscountTypeDropdown(false)}
+                />
+                <div className="create-promotion-dropdown">
+                  <div className="create-promotion-options">
+                    <div
+                      className={`create-promotion-option ${
+                        formData.discountType === 'Percentage' ? 'selected' : ''
+                      }`}
+                      onClick={() => {
+                        setFormData({ ...formData, discountType: 'Percentage', discountValue: 10 })
+                        setShowDiscountTypeDropdown(false)
+                      }}
+                    >
+                      Phần trăm (%)
+                    </div>
+                    <div
+                      className={`create-promotion-option ${
+                        formData.discountType === 'FixedAmount' ? 'selected' : ''
+                      }`}
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          discountType: 'FixedAmount',
+                          discountValue: 10000,
+                        })
+                        setShowDiscountTypeDropdown(false)
+                      }}
+                    >
+                      Số tiền cố định (VND)
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          {errors.discountType && (
+            <span className="create-promotion-error">{errors.discountType}</span>
+          )}
+        </div>
 
-        <Form.Item name="totalUsageLimit" label="Giới hạn sử dụng" tooltip="Số lượt sử dụng tối đa">
-          <InputNumber
-            style={{ width: '100%' }}
+        {/* Discount Value */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            {formData.discountType === 'Percentage'
+              ? 'Phần trăm giảm giá'
+              : 'Giá trị giảm giá (VND)'}{' '}
+            <span className="create-promotion-required">*</span>
+          </label>
+          <div className="create-promotion-input-wrapper">
+            <input
+              type="text"
+              className={`create-promotion-input ${errors.discountValue ? 'error' : ''}`}
+              placeholder={
+                formData.discountType === 'Percentage'
+                  ? 'Nhập phần trăm (ví dụ: 10)'
+                  : 'Nhập số tiền giảm giá'
+              }
+              value={
+                formData.discountType === 'Percentage'
+                  ? formData.discountValue
+                    ? formatPercentage(formData.discountValue)
+                    : ''
+                  : formData.discountValue
+                    ? formatCurrency(formData.discountValue)
+                    : ''
+              }
+              onChange={(e) => {
+                const value =
+                  formData.discountType === 'Percentage'
+                    ? parsePercentage(e.target.value)
+                    : parseCurrency(e.target.value)
+                setFormData({ ...formData, discountValue: value })
+                if (errors.discountValue) setErrors({ ...errors, discountValue: undefined })
+              }}
+            />
+            <span className="create-promotion-input-suffix">
+              {formData.discountType === 'Percentage' ? '%' : '₫'}
+            </span>
+          </div>
+          {errors.discountValue && (
+            <span className="create-promotion-error">{errors.discountValue}</span>
+          )}
+        </div>
+
+        {/* Max Discount Amount */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Giảm tối đa (VND)
+            <span className="create-promotion-tooltip" title="Số tiền tối đa được giảm (0 = không giới hạn)">
+              ℹ️
+            </span>
+          </label>
+          <div className="create-promotion-input-wrapper">
+            <input
+              type="text"
+              className="create-promotion-input"
+              placeholder="Nhập số tiền giảm tối đa"
+              value={formData.maxDiscountAmount ? formatCurrency(formData.maxDiscountAmount) : ''}
+              onChange={(e) => {
+                const value = parseCurrency(e.target.value)
+                setFormData({ ...formData, maxDiscountAmount: value })
+              }}
+            />
+            <span className="create-promotion-input-suffix">₫</span>
+          </div>
+        </div>
+
+        {/* Start Date */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Ngày bắt đầu <span className="create-promotion-required">*</span>
+          </label>
+          <div className="create-promotion-datetime-wrapper">
+            <input
+              type="date"
+              className={`create-promotion-date-input ${errors.startDate ? 'error' : ''}`}
+              value={formData.startDate ? formData.startDate.format('YYYY-MM-DD') : ''}
+              min={dayjs().format('YYYY-MM-DD')}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const currentDate = formData.startDate || dayjs()
+                  const newDate = dayjs(e.target.value)
+                    .hour(currentDate.hour())
+                    .minute(currentDate.minute())
+                    .second(0)
+                    .millisecond(0)
+                  setFormData({ ...formData, startDate: newDate })
+                  if (errors.startDate) setErrors({ ...errors, startDate: undefined })
+                }
+              }}
+            />
+            <input
+              type="time"
+              className="create-promotion-time-input"
+              value={
+                formData.startDate
+                  ? formData.startDate.format('HH:mm')
+                  : dayjs().format('HH:mm')
+              }
+              onChange={(e) => {
+                const [hours, minutes] = e.target.value.split(':')
+                const baseDate = formData.startDate || dayjs().startOf('day')
+                const newDate = baseDate
+                  .hour(parseInt(hours, 10))
+                  .minute(parseInt(minutes, 10))
+                  .second(0)
+                  .millisecond(0)
+                setFormData({ ...formData, startDate: newDate })
+                if (errors.startDate) setErrors({ ...errors, startDate: undefined })
+              }}
+            />
+          </div>
+          {errors.startDate && <span className="create-promotion-error">{errors.startDate}</span>}
+        </div>
+
+        {/* End Date */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Ngày kết thúc <span className="create-promotion-required">*</span>
+          </label>
+          <div className="create-promotion-datetime-wrapper">
+            <input
+              type="date"
+              className={`create-promotion-date-input ${errors.endDate ? 'error' : ''}`}
+              value={formData.endDate ? formData.endDate.format('YYYY-MM-DD') : ''}
+              min={
+                formData.startDate
+                  ? formData.startDate.format('YYYY-MM-DD')
+                  : dayjs().format('YYYY-MM-DD')
+              }
+              onChange={(e) => {
+                if (e.target.value) {
+                  const currentDate = formData.endDate || dayjs()
+                  const newDate = dayjs(e.target.value)
+                    .hour(currentDate.hour())
+                    .minute(currentDate.minute())
+                    .second(0)
+                    .millisecond(0)
+                  setFormData({ ...formData, endDate: newDate })
+                  if (errors.endDate) setErrors({ ...errors, endDate: undefined })
+                }
+              }}
+            />
+            <input
+              type="time"
+              className="create-promotion-time-input"
+              value={
+                formData.endDate ? formData.endDate.format('HH:mm') : dayjs().format('HH:mm')
+              }
+              onChange={(e) => {
+                const [hours, minutes] = e.target.value.split(':')
+                const baseDate = formData.endDate || dayjs().startOf('day')
+                const newDate = baseDate
+                  .hour(parseInt(hours, 10))
+                  .minute(parseInt(minutes, 10))
+                  .second(0)
+                  .millisecond(0)
+                setFormData({ ...formData, endDate: newDate })
+                if (errors.endDate) setErrors({ ...errors, endDate: undefined })
+              }}
+            />
+          </div>
+          {errors.endDate && <span className="create-promotion-error">{errors.endDate}</span>}
+        </div>
+
+        {/* Total Usage Limit */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">
+            Giới hạn sử dụng
+            <span className="create-promotion-tooltip" title="Số lượt sử dụng tối đa">
+              ℹ️
+            </span>
+          </label>
+          <input
+            type="text"
+            className="create-promotion-input"
             placeholder="Nhập số lượt sử dụng tối đa"
-            min={1}
-            step={1}
-            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-            parser={parseNumber}
+            value={formData.totalUsageLimit ? formatCurrency(formData.totalUsageLimit) : ''}
+            onChange={(e) => {
+              const value = parseCurrency(e.target.value)
+              setFormData({ ...formData, totalUsageLimit: value || 1 })
+            }}
           />
-        </Form.Item>
+        </div>
 
-        <Form.Item name="isActive" label="Trạng thái" valuePropName="checked">
-          <Switch checkedChildren="Hoạt động" unCheckedChildren="Vô hiệu" />
-        </Form.Item>
-      </Form>
+        {/* Is Active */}
+        <div className="create-promotion-form-group">
+          <label className="create-promotion-label">Trạng thái</label>
+          <div className="create-promotion-switch-wrapper">
+            <label className="create-promotion-switch">
+              <input
+                type="checkbox"
+                checked={formData.isActive}
+                onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              />
+              <span className="create-promotion-switch-slider">
+                <span className="create-promotion-switch-label">
+                  {formData.isActive ? 'Hoạt động' : 'Vô hiệu'}
+                </span>
+              </span>
+            </label>
+          </div>
+        </div>
+      </div>
     </CustomModal>
   )
 }
