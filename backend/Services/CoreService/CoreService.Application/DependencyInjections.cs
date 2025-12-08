@@ -51,6 +51,7 @@ namespace CoreService.Application
             services.AddScoped<ISubscriptionPlanApplication, SubscriptionPlanApplication>();
             services.AddTransient<DataConsistencyApplication>();
             services.AddHostedService<DataCleanupService>();
+            services.AddHostedService<PromotionCleanupService>();
             return services;
         }
     }
