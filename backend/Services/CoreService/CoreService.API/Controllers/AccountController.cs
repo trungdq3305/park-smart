@@ -34,7 +34,7 @@ namespace CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
         [HttpGet("by-phone")]
-        [Authorize(Roles = "Admin")]
+        //[Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetByPhone( string phone)
         {
             var response = await _accountApplication.GetByPhoneAsync(phone);
