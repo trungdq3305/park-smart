@@ -3,6 +3,7 @@ import Cookies from 'js-cookie'
 export interface MinimalUserData {
   fullName?: string
   id?: string
+  role : string
 }
 
 const USER_DATA_COOKIE_KEY = 'userData'

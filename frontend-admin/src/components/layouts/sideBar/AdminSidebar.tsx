@@ -71,7 +71,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Điều khoản & Chính sách',
     },
     {
-      key: '/payments',
+      key: '/admin/payments',
       icon: <WalletOutlined />,
       label: 'Thanh toán',
     },
