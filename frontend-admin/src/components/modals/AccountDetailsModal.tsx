@@ -1,5 +1,5 @@
-import React from 'react'
-import { Modal, Button, Descriptions, Tag, message, Input } from 'antd'
+import React, { useMemo, useState } from 'react'
+import { message } from 'antd'
 import type { Account } from '../../types/Account'
 import { useAccountDetailsQuery, useConfirmOperatorMutation } from '../../features/admin/accountAPI'
 import {
@@ -9,6 +9,8 @@ import {
 import type { ParkingLotRequest } from '../../types/ParkingLotRequest'
 import type { Address } from '../../types/Address'
 import { useGetAddressByIdQuery } from '../../features/operator/addressAPI'
+import { CustomModal } from '../common'
+import './AccountDetailsModal.css'
 
 interface AccountDetailsModalProps {
   open: boolean
@@ -28,7 +30,7 @@ interface AddressResponse {
 }
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
   const [confirmOperator, { isLoading: isConfirmingOperator }] = useConfirmOperatorMutation()
-  const [rejectionReason, setRejectionReason] = React.useState('')
+  const [rejectionReason, setRejectionReason] = useState('')
   const { data: accountDetails } = useAccountDetailsQuery(account?._id || '')
   const operatorId = accountDetails?.data?.operatorDetail?._id || ''
 
@@ -48,6 +50,31 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
     useReviewParkingLotRequestMutation()
 
   const addressDetailsData = addressDetails?.data?.[0] || null
+
+  const roleBadgeClass = useMemo(() => {
+    switch (account?.roleName?.toLowerCase()) {
+      case 'admin':
+        return 'account-badge purple'
+      case 'operator':
+        return 'account-badge blue'
+      case 'driver':
+        return 'account-badge orange'
+      default:
+        return 'account-badge gray'
+    }
+  }, [account?.roleName])
+
+  const statusBadgeClass = account?.isActive ? 'account-status active' : 'account-status inactive'
+
+  const formatDateTime = (value?: string | null) => {
+    if (!value) return 'Chưa đăng nhập'
+    return new Date(value).toLocaleString('vi-VN')
+  }
+
+  const formatDate = (value?: string | null) => {
+    if (!value) return 'Chưa xác định'
+    return new Date(value).toLocaleDateString('vi-VN')
+  }
 
   const extractBackendMessage = (error: unknown) =>
     (error as { data?: { message?: string; error?: string } })?.data?.message ||
@@ -96,189 +123,233 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
       message.error(backendMessage || 'Từ chối bãi đỗ xe thất bại')
     }
   }
-  const getRoleBadgeColor = (roleName: string) => {
-    switch (roleName.toLowerCase()) {
-      case 'admin':
-        return 'purple'
-      case 'operator':
-        return 'blue'
-      case 'driver':
-        return 'orange'
-      default:
-        return 'default'
-    }
-  }
 
   return (
-    <Modal
-      title="Chi tiết tài khoản"
+    <CustomModal
       open={open}
-      onCancel={onClose}
-      width={800}
-      footer={[
-        <Button key="close" onClick={onClose}>
+      onClose={onClose}
+      title="Chi tiết tài khoản"
+      width={900}
+      footer={
+        <div className="account-details-footer">
+          <button className="account-btn account-btn-ghost" onClick={onClose}>
           Đóng
-        </Button>,
-      ]}
+          </button>
+        </div>
+      }
     >
       {account && (
-        <div className="account-details-content">
-          <Descriptions title="Thông tin cơ bản" bordered column={2}>
-            <Descriptions.Item label="Email">{account.email}</Descriptions.Item>
-            <Descriptions.Item label="Số điện thoại">{account.phoneNumber}</Descriptions.Item>
-            <Descriptions.Item label="Vai trò">
-              <Tag color={getRoleBadgeColor(account.roleName)}>{account.roleName}</Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Trạng thái">
-              <Tag color={account.isActive ? 'green' : 'red'}>
+        <div className="account-details-container">
+          <div className="account-section card">
+            <div className="account-header">
+              <div>
+                <div className="account-title">{account.email}</div>
+                <div className="account-subtitle">{account.phoneNumber || 'Chưa cập nhật SĐT'}</div>
+              </div>
+              <div className="account-badges">
+                <span className={roleBadgeClass}>{account.roleName}</span>
+                <span className={statusBadgeClass}>
+                  <span className="status-dot" />
                 {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="Lần đăng nhập cuối" span={2}>
-              {account.lastLoginAt
-                ? new Date(account.lastLoginAt).toLocaleString('vi-VN')
-                : 'Chưa đăng nhập'}
-            </Descriptions.Item>
-          </Descriptions>
+                </span>
+              </div>
+            </div>
+
+            <div className="account-grid">
+              <div className="account-field">
+                <div className="label">Lần đăng nhập cuối</div>
+                <div className="value">{formatDateTime(account.lastLoginAt)}</div>
+              </div>
+              <div className="account-field">
+                <div className="label">Tài khoản ID</div>
+                <div className="value value-mono">{account._id?.slice(-12)}</div>
+              </div>
+            </div>
+          </div>
 
           {/* Role-specific details */}
           {account.driverDetail && (
-            <Descriptions title="Thông tin Driver" bordered column={2} style={{ marginTop: 16 }}>
-              <Descriptions.Item label="Tên đầy đủ">
-                {account.driverDetail.fullName}
-              </Descriptions.Item>
-              <Descriptions.Item label="Giới tính">
-                {account.driverDetail.gender ? 'Nam' : 'Nữ'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Điểm tín dụng">
-                {account.driverDetail.creditPoint}
-              </Descriptions.Item>
-              <Descriptions.Item label="Điểm tích lũy">
+            <div className="account-section card">
+              <div className="section-title">Thông tin Driver</div>
+              <div className="account-grid">
+                <div className="account-field">
+                  <div className="label">Tên đầy đủ</div>
+                  <div className="value">{account.driverDetail.fullName}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Giới tính</div>
+                  <div className="value">{account.driverDetail.gender ? 'Nam' : 'Nữ'}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Điểm tín dụng</div>
+                  <div className="value value-strong">{account.driverDetail.creditPoint}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Điểm tích lũy</div>
+                  <div className="value value-strong">
                 {account.driverDetail.accumulatedPoints}
-              </Descriptions.Item>
-              <Descriptions.Item label="Xác thực">
-                <Tag color={account.driverDetail.isVerified ? 'green' : 'red'}>
-                  {account.driverDetail.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                </Tag>
-              </Descriptions.Item>
-            </Descriptions>
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
           {account.operatorDetail && (
-            <Descriptions title="Thông tin Operator" bordered column={2} style={{ marginTop: 16 }}>
-              <Descriptions.Item label="Tên đầy đủ">
-                {account.operatorDetail.fullName}
-              </Descriptions.Item>
-              <Descriptions.Item label="Tên doanh nghiệp">
-                {account.operatorDetail.bussinessName}
-              </Descriptions.Item>
-              <Descriptions.Item label="Mã số thuế">
+            <div className="account-section card">
+              <div className="section-title">Thông tin Operator</div>
+              <div className="account-grid">
+                <div className="account-field">
+                  <div className="label">Tên đầy đủ</div>
+                  <div className="value">{account.operatorDetail.fullName}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Tên doanh nghiệp</div>
+                  <div className="value">{account.operatorDetail.bussinessName}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Mã số thuế</div>
+                  <div className="value">
                 {account.operatorDetail.taxCode ? account.operatorDetail.taxCode : 'Không có'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Email thanh toán">
+                  </div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Email thanh toán</div>
+                  <div className="value">
                 {account.operatorDetail.paymentEmail
                   ? account.operatorDetail.paymentEmail
                   : 'Không có'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Xác thực">
-                <Tag color={account.operatorDetail.isVerified ? 'green' : 'red'}>
-                  {account.operatorDetail.isVerified ? 'Đã xác thực' : 'Chưa xác thực'}
-                </Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Duyệt tài khoản">
-                <Button
-                  type="primary"
+                  </div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Duyệt tài khoản</div>
+                  <button
+                    className="account-btn account-btn-primary"
                   onClick={handleConfirmOperator}
-                  loading={isConfirmingOperator}
-                  disabled={account.isActive}
+                    disabled={isConfirmingOperator || account.isActive}
                 >
                   {isConfirmingOperator ? 'Đang duyệt...' : 'Duyệt'}
-                </Button>
-              </Descriptions.Item>
-            </Descriptions>
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
 
           {account.operatorDetail && parkingLotDetailsData && (
-            <Descriptions title="Bãi xe đăng ký" bordered column={2} style={{ marginTop: 16 }}>
-              <Descriptions.Item label="Tên bãi xe">
-                {parkingLotDetailsData.payload?.name || 'Chưa cung cấp'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Loại yêu cầu">
-                {parkingLotDetailsData.requestType}
-              </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái yêu cầu">
-                <Tag color="blue">{parkingLotDetailsData.status}</Tag>
-              </Descriptions.Item>
-              <Descriptions.Item label="Địa chỉ" span={2}>
-                {addressDetailsData?.fullAddress || 'Chưa cung cấp'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Tổng tầng">
+            <div className="account-section card">
+              <div className="section-title">Bãi xe đăng ký</div>
+              <div className="account-grid">
+                <div className="account-field">
+                  <div className="label">Tên bãi xe</div>
+                  <div className="value">{parkingLotDetailsData.payload?.name || 'Chưa cung cấp'}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Loại yêu cầu</div>
+                  <div className="value">{parkingLotDetailsData.requestType}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Trạng thái yêu cầu</div>
+                  <span className="account-badge blue">{parkingLotDetailsData.status}</span>
+                </div>
+                <div className="account-field full">
+                  <div className="label">Địa chỉ</div>
+                  <div className="value">{addressDetailsData?.fullAddress || 'Chưa cung cấp'}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Tổng tầng</div>
+                  <div className="value value-strong">
                 {parkingLotDetailsData.payload?.totalLevel ?? 'Chưa cung cấp'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa mỗi tầng">
+                  </div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Sức chứa mỗi tầng</div>
+                  <div className="value value-strong">
                 {parkingLotDetailsData.payload?.totalCapacityEachLevel ?? 'Chưa cung cấp'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa đặt trước">
+                  </div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Sức chứa đặt trước</div>
+                  <div className="value value-strong">
                 {parkingLotDetailsData.payload?.bookableCapacity ?? 'Chưa cung cấp'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa thuê dài hạn">
+                  </div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Sức chứa thuê dài hạn</div>
+                  <div className="value value-strong">
                 {parkingLotDetailsData.payload?.leasedCapacity ?? 'Chưa cung cấp'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Sức chứa vãng lai">
+                  </div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Sức chứa vãng lai</div>
+                  <div className="value value-strong">
                 {parkingLotDetailsData.payload?.walkInCapacity ?? 'Chưa cung cấp'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Thời lượng slot (giờ)">
+                  </div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Thời lượng slot (giờ)</div>
+                  <div className="value value-strong">
                 {parkingLotDetailsData.payload?.bookingSlotDurationHours ?? 'Chưa cung cấp'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Ngày hiệu lực">
-                {parkingLotDetailsData.effectiveDate
-                  ? new Date(parkingLotDetailsData.effectiveDate).toLocaleDateString('vi-VN')
-                  : 'Chưa xác định'}
-              </Descriptions.Item>
-              <Descriptions.Item label="Lý do từ chối" span={2}>
-                <Input.TextArea
+                  </div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Ngày hiệu lực</div>
+                  <div className="value">
+                    {formatDate(parkingLotDetailsData.effectiveDate)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="account-action-card">
+                <div className="label">Lý do từ chối</div>
+                <textarea
+                  className="account-textarea"
                   rows={3}
                   placeholder="Nhập lý do từ chối (nếu có)"
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   disabled={isReviewingParkingLotRequest}
                 />
-              </Descriptions.Item>
-              <Descriptions.Item label="Hành động" span={2}>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                  <Button
-                    type="primary"
+                <div className="account-action-buttons">
+                  <button
+                    className="account-btn account-btn-primary"
                     onClick={handleApproveParkingLotRequest}
-                    loading={isReviewingParkingLotRequest}
+                    disabled={isReviewingParkingLotRequest}
                   >
-                    Duyệt
-                  </Button>
-                  <Button
-                    danger
+                    {isReviewingParkingLotRequest ? 'Đang duyệt...' : 'Duyệt'}
+                  </button>
+                  <button
+                    className="account-btn account-btn-danger"
                     onClick={handleRejectParkingLotRequest}
-                    loading={isReviewingParkingLotRequest}
+                    disabled={isReviewingParkingLotRequest}
                   >
-                    Từ chối
-                  </Button>
+                    {isReviewingParkingLotRequest ? 'Đang xử lý...' : 'Từ chối'}
+                  </button>
                 </div>
-              </Descriptions.Item>
-            </Descriptions>
+              </div>
+            </div>
           )}
 
           {account.adminDetail && (
-            <Descriptions title="Thông tin Admin" bordered column={2} style={{ marginTop: 16 }}>
-              <Descriptions.Item label="Tên đầy đủ">
-                {account.adminDetail.fullName}
-              </Descriptions.Item>
-              <Descriptions.Item label="Phòng ban">
-                {account.adminDetail.department}
-              </Descriptions.Item>
-              <Descriptions.Item label="Chức vụ">{account.adminDetail.position}</Descriptions.Item>
-            </Descriptions>
+            <div className="account-section card">
+              <div className="section-title">Thông tin Admin</div>
+              <div className="account-grid">
+                <div className="account-field">
+                  <div className="label">Tên đầy đủ</div>
+                  <div className="value">{account.adminDetail.fullName}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Phòng ban</div>
+                  <div className="value">{account.adminDetail.department}</div>
+                </div>
+                <div className="account-field">
+                  <div className="label">Chức vụ</div>
+                  <div className="value">{account.adminDetail.position}</div>
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
-    </Modal>
+    </CustomModal>
   )
 }
 

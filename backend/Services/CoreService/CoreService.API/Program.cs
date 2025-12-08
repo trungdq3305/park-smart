@@ -54,7 +54,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Ch? cho phép URL này
+        policy.WithOrigins(
+            "http://localhost:5173", // URL phát tri?n local
+            "https://park-smart-two.vercel.app" // URL production/test trên Vercel
+        )
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); // <-- R?T QUAN TR?NG KHI CÓ XÁC TH?C

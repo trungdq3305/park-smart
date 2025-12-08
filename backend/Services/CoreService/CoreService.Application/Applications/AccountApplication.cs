@@ -178,18 +178,12 @@ namespace CoreService.Application.Applications
         }
         public async Task<ApiResponse<AccountPhoneResponse>> GetByPhoneAsync(string phone)
         {
-           
-            //await _accountRepo.GetByPhoneAsync(phone);
-
+            // 1. Lấy thông tin tài khoản (Account)
             var account = await _accountRepo.GetByPhoneAsync(phone);
+
+            // 2. Kiểm tra nếu không tìm thấy
             if (account == null)
             {
-                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
-            }
-            // 2. Kiểm tra nếu không tìm thấy tài khoản
-            if (account == null)
-            {
-                // Trả về lỗi "Không tìm thấy" (404 Not Found)
                 return new ApiResponse<AccountPhoneResponse>(
                     null,
                     false,
@@ -198,11 +192,15 @@ namespace CoreService.Application.Applications
                 );
             }
 
-            // 3. Chuyển đổi sang DTO và trả về thành công
+            // 3. LOGIC MỚI: Tìm FullName từ các vai trò liên quan
+            string fullName = await GetFullNameForAccount(account.Id);
+
+            // 4. Chuyển đổi sang DTO và trả về thành công
             var dto = new AccountPhoneResponse
             {
                 Id = account.Id,
-                PhoneNumber = account.PhoneNumber
+                PhoneNumber = account.PhoneNumber,
+                FullName = fullName // Gán FullName đã tìm thấy
             };
 
             return new ApiResponse<AccountPhoneResponse>(
@@ -211,6 +209,36 @@ namespace CoreService.Application.Applications
                 $"Tìm thấy tài khoản với số điện thoại: {phone} thành công.",
                 StatusCodes.Status200OK
             );
+        }
+
+        // Phương thức hỗ trợ để tìm kiếm FullName
+        private async Task<string> GetFullNameForAccount(string accountId)
+        {
+            // Ưu tiên tìm kiếm (Bạn có thể điều chỉnh thứ tự ưu tiên này)
+
+            // 1. Tìm trong Driver
+            var driver = await _driverRepo.GetByAccountIdAsync(accountId);
+            if (driver != null)
+            {
+                return driver.FullName;
+            }
+
+            // 2. Tìm trong CityAdmin
+            var admin = await _adminRepo.GetByAccountIdAsync(accountId);
+            if (admin != null)
+            {
+                return admin.FullName;
+            }
+
+            // 3. Tìm trong ParkingLotOperator
+            var operatorEntity = await _operatorRepo.GetByAccountIdAsync(accountId);
+            if (operatorEntity != null)
+            {
+                return operatorEntity.FullName;
+            }
+
+            // Nếu không tìm thấy FullName trong bất kỳ vai trò nào
+            return "N/A (Người dùng cơ bản)";
         }
         public async Task<ApiResponse<AccountDetailDto>> GetByIdAsync(string id)
         {
