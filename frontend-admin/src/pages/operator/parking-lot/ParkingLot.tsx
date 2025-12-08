@@ -84,7 +84,7 @@ const OperatorParkingLot: React.FC = () => {
     data: parkingLotRequestsData,
     isLoading: isRequestLoading,
   } = useGetParkingLotRequestOfOperatorQuery(
-    parkingLot?._id ? { parkingLotId: parkingLot._id } : skipToken
+    operatorId? { parkingLotOperatorId: operatorId } : skipToken
   )
   const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
   const basis = basisData?.data ?? []
