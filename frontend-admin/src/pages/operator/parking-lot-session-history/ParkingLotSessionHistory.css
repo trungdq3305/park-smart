@@ -106,6 +106,79 @@
   border: 1px solid #d1d5db;
 }
 
+.session-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.session-search-icon {
+  position: absolute;
+  left: 1.2vh;
+  font-size: 16px;
+  color: #9ca3af;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.session-search-input {
+  width: 100%;
+  padding: 0.8vh 1.6vh;
+  padding-left: 3.6vh;
+  padding-right: 3.6vh;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.session-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.session-search-input:hover {
+  border-color: #9ca3af;
+  box-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.05);
+}
+
+.session-search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.3vh rgba(59, 130, 246, 0.1);
+}
+
+.session-search-clear {
+  position: absolute;
+  right: 0.8vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4vh;
+  height: 2.4vh;
+  padding: 0;
+  background: #e5e7eb;
+  color: #6b7280;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+  z-index: 1;
+}
+
+.session-search-clear:hover {
+  background: #d1d5db;
+  color: #374151;
+}
+
 .session-refresh-btn {
   display: inline-flex;
   align-items: center;
@@ -329,6 +402,16 @@
   box-shadow: 0 0 0.8vh rgba(59, 130, 246, 0.6);
 }
 
+.session-status-badge.status-active {
+  background: rgba(245, 158, 11, 0.9);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.session-status-badge.status-active .session-status-dot {
+  background: #f59e0b;
+  box-shadow: 0 0 0.8vh rgba(245, 158, 11, 0.6);
+}
+
 .session-status-badge.status-cancelled {
   background: rgba(107, 114, 128, 0.9);
   border-color: rgba(107, 114, 128, 0.3);
@@ -386,6 +469,28 @@
 
 .session-view-images-btn:hover {
   box-shadow: 0 0.4vh 1.2vh rgba(107, 114, 128, 0.4);
+}
+
+.session-view-details-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 0.6vh 1.2vh;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 0.2vh 0.6vh rgba(59, 130, 246, 0.3);
+}
+
+.session-view-details-btn:hover {
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.4);
 }
 
 .session-item-body {
@@ -509,6 +614,35 @@
 .session-subscription-icon {
   font-size: 18px;
   color: #78350f;
+}
+
+.session-reservation-info {
+  padding: 1.6vh;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-radius: 12px;
+  border: 1px solid #60a5fa;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.session-reservation-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 1vh 1.6vh;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #ffffff;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 0.2vh 0.6vh rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(96, 165, 250, 0.3);
+}
+
+.session-reservation-icon {
+  font-size: 18px;
+  color: #ffffff;
 }
 
 /* Pagination */
@@ -707,8 +841,229 @@
   font-weight: 500;
 }
 
+/* Calculate Fee Section */
+.session-calculate-fee-section {
+  margin-bottom: 2.4vh;
+  padding: 2vh;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.session-fee-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.6vh 0;
+}
+
+.session-pricing-policies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.6vh;
+  margin-bottom: 2vh;
+}
+
+.session-pricing-policy-card {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.6vh;
+  cursor: pointer;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.2s ease;
+  position: relative;
+}
+
+.session-pricing-policy-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.15);
+  transform: translateY(-0.2vh);
+}
+
+.session-pricing-policy-card.selected {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.25);
+}
+
+.session-policy-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2vh;
+  padding-bottom: 1vh;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.session-policy-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+  flex: 1;
+}
+
+.session-policy-selected-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4vh;
+  padding: 0.4vh 0.8vh;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.session-policy-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+.session-policy-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.session-policy-info-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.session-policy-info-value {
+  color: #111827;
+  font-weight: 600;
+}
+
+.session-pricing-policy-empty {
+  padding: 2.4vh;
+  text-align: center;
+  color: #6b7280;
+  background: white;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+  margin-bottom: 2vh;
+}
+
+.session-calculate-fee-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 1.2vh 2.4vh;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  box-shadow: 0 0.2vh 0.6vh rgba(16, 185, 129, 0.3);
+}
+
+.session-calculate-fee-btn:hover:not(:disabled) {
+  box-shadow: 0 0.4vh 1.2vh rgba(16, 185, 129, 0.4);
+}
+
+.session-calculate-fee-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.session-fee-result {
+  margin-top: 2vh;
+  padding: 1.6vh;
+  background: white;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 0.2vh 0.6vh rgba(15, 23, 42, 0.05);
+}
+
+.session-fee-result h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1.2vh 0;
+}
+
+.session-fee-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+}
+
+.session-fee-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1vh 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.session-fee-item:last-child {
+  border-bottom: none;
+}
+
+.session-fee-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.session-fee-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.session-fee-message {
+  margin-top: 1.2vh;
+  padding: 0.8vh 1.2vh;
+  background: #d1fae5;
+  border-radius: 8px;
+  border: 1px solid #a7f3d0;
+  font-size: 13px;
+  color: #065f46;
+  font-weight: 500;
+}
+
+.session-fee-breakdown {
+  margin-top: 1.6vh;
+  padding-top: 1.6vh;
+  border-top: 1px solid #e5e7eb;
+}
+
+.session-fee-breakdown h5 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 0.8vh 0;
+}
+
+.session-fee-breakdown pre {
+  background: #f9fafb;
+  padding: 1.2vh;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  font-size: 12px;
+  color: #374151;
+  overflow-x: auto;
+  margin: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
+  .session-pricing-policies-grid {
+    grid-template-columns: 1fr;
+  }
   .parking-session-history-page {
     padding: 1.6vh;
   }

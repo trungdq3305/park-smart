@@ -143,9 +143,7 @@ const RequestDetailModal: React.FC<RequestDetailModalProps> = ({
                 <div>
                   <span className="request-detail-meta-label">Ngày tạo</span>
                   <span className="request-detail-meta-value">
-                    {resolvedRequest.createdAt
-                      ? formatDateTime(resolvedRequest.createdAt)
-                      : '--'}
+                    {resolvedRequest.createdAt ? formatDateTime(resolvedRequest.createdAt) : '--'}
                   </span>
                 </div>
               </div>

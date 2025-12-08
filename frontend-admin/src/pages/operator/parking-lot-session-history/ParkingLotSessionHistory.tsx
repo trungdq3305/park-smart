@@ -1,31 +1,29 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { skipToken } from '@reduxjs/toolkit/query'
 import dayjs, { type Dayjs } from 'dayjs'
-import {
-  CarOutlined,
-  ClockCircleOutlined,
-  DollarCircleOutlined,
-  ReloadOutlined,
-  EyeOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  CrownOutlined,
-} from '@ant-design/icons'
 import { useGetParkingLotsOperatorQuery } from '../../../features/operator/parkingLotAPI'
 import {
   useGetParkingSessionHistoryDetailQuery,
   useGetParkingSessionHistoryQuery,
+  useCalculateCheckoutFeeMutation,
+  useGetActivePricingPoliciesQuery,
+  useConfirmCheckoutMutation,
 } from '../../../features/operator/parkingSessionAPI'
 import type { Pagination } from '../../../types/Pagination'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import type { ParkingLotSession } from '../../../types/ParkingLotSession'
 import type { SessionImage } from '../../../types/Session.images'
-import CustomModal from '../../../components/common/CustomModal'
-import { DatePicker } from 'antd'
+import {
+  SessionFilters,
+  SessionStats,
+  SessionList,
+  SessionEmptyState,
+  SessionPagination,
+  SessionDetailModal,
+  CheckoutModal,
+} from '../../../components/session-history'
 import './ParkingLotSessionHistory.css'
-
-const { RangePicker } = DatePicker
 
 interface ParkingLotSessionHistoryResponse {
   data: ParkingLotSession[]
@@ -38,48 +36,6 @@ interface ParkingLotSessionHistoryDetailResponse {
 
 interface ParkingLotsListResponse {
   data: ParkingLot[]
-}
-
-const dateFormatter = (value?: string | null) =>
-  value ? dayjs(value).format('HH:mm DD/MM/YYYY') : 'Chưa có'
-
-const formatCurrency = (value?: number) =>
-  new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value || 0)
-
-const getStatusLabel = (status: string): string => {
-  const statusMap: Record<string, string> = {
-    COMPLETED: 'Hoàn thành',
-    IN_PROGRESS: 'Đang diễn ra',
-    CANCELLED: 'Đã hủy',
-  }
-  return statusMap[status] || status
-}
-
-const getStatusClass = (status: string): string => {
-  const statusClassMap: Record<string, string> = {
-    COMPLETED: 'status-completed',
-    IN_PROGRESS: 'status-in-progress',
-    CANCELLED: 'status-cancelled',
-  }
-  return statusClassMap[status] || 'status-default'
-}
-
-const getPaymentStatusLabel = (status: string): string => {
-  const statusMap: Record<string, string> = {
-    PAID: 'Đã thanh toán',
-    UNPAID: 'Chưa thanh toán',
-    PENDING: 'Đang chờ',
-  }
-  return statusMap[status] || status
-}
-
-const getPaymentStatusClass = (status: string): string => {
-  const statusClassMap: Record<string, string> = {
-    PAID: 'payment-paid',
-    UNPAID: 'payment-unpaid',
-    PENDING: 'payment-pending',
-  }
-  return statusClassMap[status] || 'payment-default'
 }
 
 const ParkingLotSessionHistory: React.FC = () => {
@@ -95,6 +51,16 @@ const ParkingLotSessionHistory: React.FC = () => {
   const pageSize = 5
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [selectedSession, setSelectedSession] = useState<ParkingLotSession | null>(null)
+  const [plateNumberSearch, setPlateNumberSearch] = useState<string>('')
+  const [calculateFeeResult, setCalculateFeeResult] = useState<any>(null)
+  const [isCalculatingFee, setIsCalculatingFee] = useState(false)
+  const [selectedPricingPolicyId, setSelectedPricingPolicyId] = useState<string | null>(null)
+  const [debouncedPlateNumberSearch, setDebouncedPlateNumberSearch] = useState<string>('')
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
+  const [checkoutSession, setCheckoutSession] = useState<ParkingLotSession | null>(null)
+  const [isSubmittingCheckout, setIsSubmittingCheckout] = useState(false)
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(() => {
     const end = dayjs()
     const start = end.subtract(7, 'day')
@@ -131,6 +97,28 @@ const ParkingLotSessionHistory: React.FC = () => {
     }
   }, [page, searchParams, setSearchParams])
 
+  // Debounce plate number search
+  useEffect(() => {
+    // Clear previous timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+
+    // Set new timer
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedPlateNumberSearch(plateNumberSearch)
+      // Reset to page 1 when search changes
+      setPage(1)
+    }, 500) // 500ms delay
+
+    // Cleanup function
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [plateNumberSearch])
+
   const {
     data: parkingSessionHistoryResponse,
     isFetching: isFetchingSessions,
@@ -144,6 +132,9 @@ const ParkingLotSessionHistory: React.FC = () => {
             pageSize,
             startDate: dateRange[0].startOf('day').toISOString(),
             endDate: dateRange[1].endOf('day').toISOString(),
+            ...(debouncedPlateNumberSearch.trim() && {
+              plateNumber: debouncedPlateNumberSearch.trim(),
+            }),
           },
         }
       : skipToken
@@ -164,7 +155,30 @@ const ParkingLotSessionHistory: React.FC = () => {
     | ParkingLotSessionHistoryDetailResponse
     | undefined
   const sessionDetail = sessionDetailData?.data?.[0]
+
   const sessionImages = sessionDetail?.images ?? []
+
+  // Get pricing policies for the selected session's parking lot
+  const parkingLotIdForPricing =
+    selectedSession && typeof selectedSession.parkingLotId === 'object'
+      ? selectedSession.parkingLotId._id
+      : selectedSession?.parkingLotId || null
+
+  const { data: pricingPolicies } = useGetActivePricingPoliciesQuery(
+    parkingLotIdForPricing || skipToken
+  )
+  const [calculateFee] = useCalculateCheckoutFeeMutation()
+  const [confirmCheckout] = useConfirmCheckoutMutation()
+
+  // Get pricing policies for checkout session
+  const checkoutParkingLotId =
+    checkoutSession && typeof checkoutSession.parkingLotId === 'object'
+      ? checkoutSession.parkingLotId._id
+      : checkoutSession?.parkingLotId || null
+
+  const { data: checkoutPricingPolicies } = useGetActivePricingPoliciesQuery(
+    checkoutParkingLotId || skipToken
+  )
 
   const summary = useMemo(() => {
     if (!parkingSessions.length) {
@@ -210,6 +224,17 @@ const ParkingLotSessionHistory: React.FC = () => {
     setPage(1)
   }
 
+  const handlePlateNumberSearchChange = (value: string) => {
+    setPlateNumberSearch(value)
+    // Don't reset page here, let debounce handle it
+  }
+
+  const handleClearPlateNumberSearch = () => {
+    setPlateNumberSearch('')
+    setDebouncedPlateNumberSearch('')
+    setPage(1)
+  }
+
   const handlePageChange = (newPage: number) => {
     setPage(newPage)
     const nextParams = new URLSearchParams(searchParams)
@@ -217,18 +242,167 @@ const ParkingLotSessionHistory: React.FC = () => {
     setSearchParams(nextParams, { replace: true })
   }
 
-  const handleViewSessionImages = (sessionId: string) => {
+  const handleViewSessionImages = (sessionId: string, session?: ParkingLotSession) => {
     setSelectedSessionId(sessionId)
+    setSelectedSession(session || null)
     setIsImageModalOpen(true)
+    setCalculateFeeResult(null)
   }
 
   const handleCloseImageModal = () => {
     setIsImageModalOpen(false)
     setSelectedSessionId(null)
+    setSelectedSession(null)
+    setCalculateFeeResult(null)
+    setSelectedPricingPolicyId(null)
+  }
+
+  const handleCalculateFee = async () => {
+    if (!selectedSession || !sessionDetail) return
+
+    try {
+      setIsCalculatingFee(true)
+      setCalculateFeeResult(null)
+
+      // Lấy parkingLotId từ selectedLotId
+      const parkingLotId = selectedLotId
+
+      // Sử dụng pricingPolicyId đã chọn hoặc lấy đầu tiên
+      const pricingPolicyId =
+        selectedPricingPolicyId ||
+        (pricingPolicies && Array.isArray(pricingPolicies) && pricingPolicies.length > 0
+          ? pricingPolicies[0]._id
+          : null)
+
+      if (!pricingPolicyId) {
+        alert('Vui lòng chọn chính sách giá.')
+        setIsCalculatingFee(false)
+        return
+      }
+
+      // Tạo requestData với pricingPolicyId
+      const requestData: any = {
+        pricingPolicyId,
+      }
+
+      // Xác định và thêm nfcUid hoặc identifier theo logic (sử dụng sessionDetail)
+      if (sessionDetail.guestCardId) {
+        // Nếu có guestCardId, thêm nfcUid và set identifier = "null" (string)
+        const nfcUid =
+          typeof sessionDetail.guestCardId === 'object' ? sessionDetail.guestCardId.nfcUid : null
+        requestData.nfcUid = nfcUid || 'null'
+        requestData.identifier = 'null'
+      } else if (sessionDetail.reservationId) {
+        // Nếu có reservationId, thêm identifier và set nfcUid = "null" (string)
+        const identifier =
+          typeof sessionDetail.reservationId === 'object'
+            ? sessionDetail.reservationId.reservationIdentifier
+            : null
+        requestData.identifier = identifier || 'null'
+        requestData.nfcUid = 'null'
+      } else if (sessionDetail.subscriptionId) {
+        // Nếu có subscriptionId, thêm identifier và set nfcUid = "null" (string)
+        const identifier =
+          typeof sessionDetail.subscriptionId === 'object'
+            ? sessionDetail.subscriptionId.subscriptionIdentifier
+            : null
+        requestData.identifier = identifier || 'null'
+        requestData.nfcUid = 'null'
+      }
+
+      console.log('Request data:', requestData)
+      console.log('SessionDetail data:', {
+        guestCardId: sessionDetail.guestCardId,
+        reservationId: sessionDetail.reservationId,
+        subscriptionId: sessionDetail.subscriptionId,
+      })
+      if (sessionDetail.guestCardId) {
+        console.log('guestCardId details:', {
+          type: typeof sessionDetail.guestCardId,
+          isObject: typeof sessionDetail.guestCardId === 'object',
+          nfcUid:
+            typeof sessionDetail.guestCardId === 'object'
+              ? sessionDetail.guestCardId.nfcUid
+              : 'N/A',
+        })
+      }
+
+      const result = await calculateFee({
+        parkingLotId,
+        data: requestData,
+      }).unwrap()
+
+      setCalculateFeeResult(result)
+    } catch (error: any) {
+      console.error('Error calculating fee:', error)
+      alert(
+        error?.data?.message ||
+          error?.message ||
+          'Có lỗi xảy ra khi tính phí. Vui lòng thử lại sau.'
+      )
+    } finally {
+      setIsCalculatingFee(false)
+    }
   }
 
   const handleRefresh = () => {
     refetchSessions()
+  }
+
+  const handleCheckout = (_sessionId: string, session: ParkingLotSession) => {
+    setCheckoutSession(session)
+    setIsCheckoutModalOpen(true)
+  }
+
+  const handleCloseCheckoutModal = () => {
+    setIsCheckoutModalOpen(false)
+    setCheckoutSession(null)
+  }
+
+  const handleConfirmCheckout = async (data: {
+    pricingPolicyId: string
+    amountPayAfterCheckOut: number
+    file?: File | null
+    note?: string
+  }) => {
+    if (!checkoutSession) return
+
+    try {
+      setIsSubmittingCheckout(true)
+
+      // Create FormData
+      const formData = new FormData()
+
+      // Add fields to FormData
+      formData.append('pricingPolicyId', data.pricingPolicyId)
+      formData.append('amountPayAfterCheckOut', data.amountPayAfterCheckOut.toString())
+
+      if (data.file) {
+        formData.append('file', data.file)
+      }
+
+      if (data.note) {
+        formData.append('note', data.note)
+      }
+
+      await confirmCheckout({
+        sessionId: checkoutSession._id,
+        formData,
+      }).unwrap()
+
+      // Success - refresh sessions and close modal
+      refetchSessions()
+      handleCloseCheckoutModal()
+    } catch (error: any) {
+      console.error('Error confirming checkout:', error)
+      alert(
+        error?.data?.message ||
+          error?.message ||
+          'Có lỗi xảy ra khi checkout. Vui lòng thử lại sau.'
+      )
+    } finally {
+      setIsSubmittingCheckout(false)
+    }
   }
 
   if (isParkingLotsLoading) {
@@ -252,253 +426,71 @@ const ParkingLotSessionHistory: React.FC = () => {
       </div>
 
       <div className="session-page-content">
-        {/* Filters */}
-        <div className="session-controls-card">
-          <div className="session-filter-wrapper">
-            <div className="session-filter-item">
-              <label htmlFor="lot-select" className="session-filter-label">
-                Bãi đỗ xe:
-              </label>
-              <select
-                id="lot-select"
-                className="session-filter-select"
-                value={selectedLotId || ''}
-                onChange={(e) => handleLotChange(e.target.value)}
-              >
-                <option value="">-- Chọn bãi đỗ xe --</option>
-                {parkingLots.map((lot) => (
-                  <option key={lot._id} value={lot._id}>
-                    {lot.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="session-filter-item">
-              <label htmlFor="date-range" className="session-filter-label">
-                Khoảng thời gian:
-              </label>
-              <RangePicker
-                id="date-range"
-                value={dateRange}
-                onChange={handleDateChange}
-                allowClear={false}
-                format="DD/MM/YYYY"
-                className="session-date-picker"
-              />
-            </div>
-            <button className="session-refresh-btn" onClick={handleRefresh}>
-              <ReloadOutlined />
-              <span>Làm mới</span>
-            </button>
-          </div>
-        </div>
+        <SessionFilters
+          parkingLots={parkingLots}
+          selectedLotId={selectedLotId}
+          onLotChange={handleLotChange}
+          dateRange={dateRange}
+          onDateChange={handleDateChange}
+          plateNumberSearch={plateNumberSearch}
+          onPlateNumberSearchChange={handlePlateNumberSearchChange}
+          onClearPlateNumberSearch={handleClearPlateNumberSearch}
+          onRefresh={handleRefresh}
+        />
 
-        {/* Stats Section */}
-        <div className="session-stats-section">
-          <div className="session-stat-card">
-            <div className="session-stat-icon total">
-              <CarOutlined />
-            </div>
-            <div className="session-stat-content">
-              <h3>{summary.total}</h3>
-              <p>Tổng phiên</p>
-              <div className="session-stat-sub">Trang hiện tại</div>
-            </div>
-          </div>
-          <div className="session-stat-card">
-            <div className="session-stat-icon active">
-              <ClockCircleOutlined />
-            </div>
-            <div className="session-stat-content">
-              <h3>{summary.active}</h3>
-              <p>Đang đậu</p>
-              <div className="session-stat-sub">Chưa check-out</div>
-            </div>
-          </div>
-          <div className="session-stat-card">
-            <div className="session-stat-icon revenue">
-              <DollarCircleOutlined />
-            </div>
-            <div className="session-stat-content">
-              <h3>{formatCurrency(summary.revenue)}</h3>
-              <p>Doanh thu</p>
-              <div className="session-stat-sub">Trang hiện tại</div>
-            </div>
-          </div>
-          <div className="session-stat-card">
-            <div className="session-stat-icon duration">
-              <ClockCircleOutlined />
-            </div>
-            <div className="session-stat-content">
-              <h3>{summary.avgDuration}</h3>
-              <p>Thời gian đậu TB</p>
-              <div className="session-stat-sub">Trung bình</div>
-            </div>
-          </div>
-        </div>
+        <SessionStats
+          total={summary.total}
+          active={summary.active}
+          revenue={summary.revenue}
+          avgDuration={summary.avgDuration}
+        />
 
-        {/* Session List */}
         {isFetchingSessions ? (
           <div className="session-loading">
             <div className="session-loading-spinner" />
             <p>Đang tải lịch sử...</p>
           </div>
         ) : parkingSessions.length === 0 ? (
-          <div className="session-empty-state">
-            <div className="session-empty-icon">🚗</div>
-            <h3 className="session-empty-title">Chưa có dữ liệu</h3>
-            <p className="session-empty-text">
-              Chưa có dữ liệu trong khoảng thời gian này. Vui lòng thử chọn khoảng thời gian khác.
-            </p>
-          </div>
+          <SessionEmptyState />
         ) : (
           <>
-            <div className="session-list">
-              {parkingSessions.map((session) => {
-                const statusClass = getStatusClass(session.status)
-                const statusLabel = getStatusLabel(session.status)
-                const paymentStatusClass = getPaymentStatusClass(session.paymentStatus)
-                const paymentStatusLabel = getPaymentStatusLabel(session.paymentStatus)
-                const totalAmount = (session.amountPaid || 0) + (session.amountPayAfterCheckOut || 0)
-
-                return (
-                  <div key={session._id} className="session-item">
-                    <div className="session-item-header">
-                      <div className="session-item-title-section">
-                        <div className="session-plate-badge">{session.plateNumber}</div>
-                        <div className={`session-status-badge ${statusClass}`}>
-                          <span className="session-status-dot" />
-                          <span>{statusLabel}</span>
-                        </div>
-                        <div className={`session-payment-badge ${paymentStatusClass}`}>
-                          <span>{paymentStatusLabel}</span>
-                        </div>
-                      </div>
-                      <button
-                        className="session-view-images-btn"
-                        onClick={() => handleViewSessionImages(session._id)}
-                        title="Xem ảnh"
-                      >
-                        <EyeOutlined />
-                        <span>Xem ảnh</span>
-                      </button>
-                    </div>
-
-                    <div className="session-item-body">
-                      <div className="session-time-info">
-                        <div className="session-time-item">
-                          <CheckCircleOutlined className="session-time-icon check-in" />
-                          <div>
-                            <span className="session-time-label">Check-in</span>
-                            <span className="session-time-value">
-                              {dateFormatter(session.checkInTime)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="session-time-item">
-                          <CloseCircleOutlined className="session-time-icon check-out" />
-                          <div>
-                            <span className="session-time-label">Check-out</span>
-                            <span className="session-time-value">
-                              {dateFormatter(session.checkOutTime)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {session.subscriptionId ? (
-                        <div className="session-subscription-info">
-                          <div className="session-subscription-badge">
-                            <CrownOutlined className="session-subscription-icon" />
-                            <span>Khách dùng vé tháng</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="session-payment-info">
-                          <div className="session-payment-item">
-                            <span className="session-payment-label">Phí đã thu:</span>
-                            <span className="session-payment-value paid">
-                              {formatCurrency(session.amountPaid)}
-                            </span>
-                          </div>
-                          <div className="session-payment-item">
-                            <span className="session-payment-label">Phí đã trả sau check-out:</span>
-                            <span className="session-payment-value unpaid">
-                              {formatCurrency(session.amountPayAfterCheckOut)}
-                            </span>
-                          </div>
-                          <div className="session-payment-item">
-                            <span className="session-payment-label">Tổng phí:</span>
-                            <span className="session-payment-value total">
-                              {formatCurrency(totalAmount)}
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* Pagination */}
-            {paginationInfo && paginationInfo.totalItems > pageSize && (
-              <div className="session-pagination">
-                <button
-                  className="session-pagination-btn"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1}
-                >
-                  Trước
-                </button>
-                <span className="session-pagination-info">
-                  Trang {paginationInfo.currentPage || page} /{' '}
-                  {Math.ceil(paginationInfo.totalItems / pageSize)}
-                </span>
-                <button
-                  className="session-pagination-btn"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={(paginationInfo.currentPage || page) >= Math.ceil(paginationInfo.totalItems / pageSize)}
-                >
-                  Sau
-                </button>
-              </div>
-            )}
+            <SessionList
+              sessions={parkingSessions}
+              onViewDetails={handleViewSessionImages}
+              onCheckout={handleCheckout}
+            />
+            <SessionPagination
+              pagination={paginationInfo}
+              currentPage={page}
+              pageSize={pageSize}
+              onPageChange={handlePageChange}
+            />
           </>
         )}
       </div>
 
-      {/* Image Modal */}
-      <CustomModal
+      <CheckoutModal
+        open={isCheckoutModalOpen}
+        onClose={handleCloseCheckoutModal}
+        onConfirm={handleConfirmCheckout}
+        sessionId={checkoutSession?._id || ''}
+        pricingPolicies={checkoutPricingPolicies}
+        isSubmitting={isSubmittingCheckout}
+      />
+
+      <SessionDetailModal
         open={isImageModalOpen}
         onClose={handleCloseImageModal}
-        title="Ảnh check-in / check-out"
-        width="900px"
-        loading={isFetchingSessionDetail}
-      >
-        {isFetchingSessionDetail ? (
-          <div className="session-image-loading">
-            <div className="session-image-loading-spinner" />
-            <p>Đang tải ảnh...</p>
-          </div>
-        ) : sessionImages.length === 0 ? (
-          <div className="session-image-empty">
-            <div className="session-image-empty-icon">📷</div>
-            <p>Không có ảnh cho phiên này</p>
-          </div>
-        ) : (
-          <div className="session-images-grid">
-            {sessionImages.map((image) => (
-              <div key={image.id} className="session-image-card">
-                <img src={image.url} alt={image.description || 'Ảnh phiên gửi xe'} />
-                <span className="session-image-description">
-                  {image.description || 'Không có mô tả'}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </CustomModal>
+        selectedSession={selectedSession}
+        sessionImages={sessionImages}
+        isFetchingSessionDetail={isFetchingSessionDetail}
+        pricingPolicies={pricingPolicies}
+        selectedPricingPolicyId={selectedPricingPolicyId}
+        onSelectPolicy={setSelectedPricingPolicyId}
+        onCalculateFee={handleCalculateFee}
+        isCalculatingFee={isCalculatingFee}
+        calculateFeeResult={calculateFeeResult}
+      />
     </div>
   )
 }
