@@ -23,6 +23,12 @@
   flex-wrap: wrap;
 }
 
+.parking-lot-header-actions {
+  display: flex;
+  gap: 1.2vh;
+  flex-wrap: wrap;
+}
+
 .parking-lot-page-header h1 {
   font-size: 30px;
   font-weight: 700;
@@ -56,6 +62,28 @@
 
 .parking-lot-update-btn:hover {
   box-shadow: 0 0.8vh 2.4vh rgba(59, 130, 246, 0.4);
+}
+
+.parking-lot-secondary-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 1vh 1.8vh;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.parking-lot-secondary-btn:hover {
+  border-color: #9ca3af;
+  box-shadow: 0 0.8vh 2vh rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
 }
 
 .parking-lot-page-content {
@@ -237,6 +265,105 @@
   color: white;
 }
 
+/* Request Modal */
+.parking-lot-request-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+}
+
+.parking-lot-request-loading,
+.parking-lot-request-empty {
+  text-align: center;
+  color: #6b7280;
+  font-weight: 600;
+  padding: 1.6vh 0;
+}
+
+.parking-lot-request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+}
+
+.parking-lot-request-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.4vh 1.6vh;
+  background: #ffffff;
+  box-shadow: 0 1vh 2.4vh rgba(0, 0, 0, 0.08);
+}
+
+.parking-lot-request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1vh;
+  margin-bottom: 1vh;
+}
+
+.parking-lot-request-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.parking-lot-request-badge {
+  padding: 0.6vh 1.2vh;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.parking-lot-request-badge.status-approved {
+  background: #ecfdf3;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.parking-lot-request-badge.status-rejected {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecdd3;
+}
+
+.parking-lot-request-badge.status-pending {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.parking-lot-request-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1vh;
+}
+
+.parking-lot-request-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+  padding: 0.8vh;
+  border: 1px dashed #e5e7eb;
+  border-radius: 10px;
+  background: #f9fafb;
+}
+
+.parking-lot-request-field .label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.parking-lot-request-field .value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
 .parking-lot-details-info {
   padding: 2.4vh;
   display: flex;

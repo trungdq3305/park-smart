@@ -11,6 +11,7 @@ import {
   useGetParkingLotsOperatorQuery,
   useUpdateParkingLotRequestMutation,
 } from '../../../features/operator/parkingLotAPI'
+import { useGetParkingLotRequestOfOperatorQuery } from '../../../features/admin/parkinglotAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -27,6 +28,7 @@ import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
 import type { Basis } from '../../../types/Basis'
 import { useGetBasisQuery } from '../../../features/operator/basisAPI'
 import { message, Modal } from 'antd'
+import { CustomModal } from '../../../components/common'
 import Cookies from 'js-cookie'
 
 interface ParkingLotsListResponse {
@@ -51,12 +53,14 @@ interface BasisListResponse {
 }
 
 const OperatorParkingLot: React.FC = () => {
+
   const [isDeleted, setIsDeleted] = useState(false)
   const [isSwitchLoading, setIsSwitchLoading] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedPolicyForEdit, setSelectedPolicyForEdit] = useState<PricingPolicyLink | null>(null)
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false)
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
@@ -73,6 +77,12 @@ const OperatorParkingLot: React.FC = () => {
           }
         : skipToken
     )
+  const {
+    data: parkingLotRequestsData,
+    isLoading: isRequestLoading,
+  } = useGetParkingLotRequestOfOperatorQuery(
+    parkingLot?._id ? { parkingLotId: parkingLot._id } : skipToken
+  )
   const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
   const basis = basisData?.data ?? []
 
@@ -193,6 +203,28 @@ const OperatorParkingLot: React.FC = () => {
     }
   }, [parkingLot])
 
+  const operatorRequests = useMemo(() => {
+    if (!parkingLotRequestsData) return []
+    if (Array.isArray(parkingLotRequestsData)) return parkingLotRequestsData
+    // support { data: [...] } or { data: { data: [...] } }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return (
+      (parkingLotRequestsData as any).data ||
+      (parkingLotRequestsData as any).data ||
+      []
+    )
+  }, [parkingLotRequestsData])
+
+  const operatorRequestsSorted = useMemo(
+    () => [...operatorRequests].reverse(),
+    [operatorRequests]
+  )
+
+  const formatDate = (value?: string) => {
+    if (!value) return 'Chưa xác định'
+    return new Date(value).toLocaleDateString('vi-VN')
+  }
+
   if (isLoading) {
     return (
       <div className="parking-lot-page">
@@ -213,10 +245,18 @@ const OperatorParkingLot: React.FC = () => {
             <p>Theo dõi hiệu suất vận hành và tình trạng bãi đỗ của bạn</p>
           </div>
           {parkingLot && (
-            <button className="parking-lot-update-btn" onClick={() => setIsUpdateModalOpen(true)}>
-              <EditOutlined />
-              <span>Gửi yêu cầu cập nhật</span>
-            </button>
+            <div className="parking-lot-header-actions">
+              <button
+                className="parking-lot-secondary-btn"
+                onClick={() => setIsRequestsModalOpen(true)}
+              >
+                <span>Yêu cầu đã gửi</span>
+              </button>
+              <button className="parking-lot-update-btn" onClick={() => setIsUpdateModalOpen(true)}>
+                <EditOutlined />
+                <span>Gửi yêu cầu cập nhật</span>
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -343,6 +383,75 @@ const OperatorParkingLot: React.FC = () => {
         parkingLot={parkingLot}
         loading={isUpdateParkingLotRequestLoading}
       />
+      <CustomModal
+        open={isRequestsModalOpen}
+        onClose={() => setIsRequestsModalOpen(false)}
+        title="Các yêu cầu đã gửi"
+        width={800}
+      >
+        <div className="parking-lot-request-modal">
+          {isRequestLoading ? (
+            <div className="parking-lot-request-loading">Đang tải yêu cầu...</div>
+          ) : operatorRequestsSorted.length === 0 ? (
+            <div className="parking-lot-request-empty">Chưa có yêu cầu nào.</div>
+          ) : (
+            <div className="parking-lot-request-list">
+              {operatorRequestsSorted.map((req: any) => (
+                <div key={req._id} className="parking-lot-request-card">
+                  <div className="parking-lot-request-header">
+                    <div className="parking-lot-request-title">
+                      {req.payload?.name || 'Bãi đỗ'}
+                    </div>
+                    <span className={`parking-lot-request-badge status-${req.status?.toLowerCase?.() || 'pending'}`}>
+                      {req.status || 'PENDING'}
+                    </span>
+                  </div>
+                  <div className="parking-lot-request-grid">
+                    <div className="parking-lot-request-field">
+                      <div className="label">Loại yêu cầu</div>
+                      <div className="value">{req.requestType || 'N/A'}</div>
+                    </div>
+                    <div className="parking-lot-request-field">
+                      <div className="label">Tên bãi</div>
+                      <div className="value">{req.payload?.name || 'Chưa cung cấp'}</div>
+                    </div>
+                    <div className="parking-lot-request-field">
+                      <div className="label">Ngày tạo</div>
+                      <div className="value">{formatDate(req.createdAt)}</div>
+                    </div>
+                    <div className="parking-lot-request-field">
+                      <div className="label">Sức chứa/tầng</div>
+                      <div className="value">
+                        {req.payload?.totalCapacityEachLevel ?? '—'}
+                      </div>
+                    </div>
+                    <div className="parking-lot-request-field">
+                      <div className="label">Tổng tầng</div>
+                      <div className="value">{req.payload?.totalLevel ?? '—'}</div>
+                    </div>
+                    <div className="parking-lot-request-field">
+                      <div className="label">Slot (giờ)</div>
+                      <div className="value">{req.payload?.bookingSlotDurationHours ?? '—'}</div>
+                    </div>
+                    <div className="parking-lot-request-field">
+                      <div className="label">Đặt trước</div>
+                      <div className="value">{req.payload?.bookableCapacity ?? '—'}</div>
+                    </div>
+                    <div className="parking-lot-request-field">
+                      <div className="label">Thuê</div>
+                      <div className="value">{req.payload?.leasedCapacity ?? '—'}</div>
+                    </div>
+                    <div className="parking-lot-request-field">
+                      <div className="label">Vãng lai</div>
+                      <div className="value">{req.payload?.walkInCapacity ?? '—'}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CustomModal>
     </div>
   )
 }
