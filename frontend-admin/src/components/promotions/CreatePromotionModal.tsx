@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { message } from 'antd'
-import dayjs, { type Dayjs } from 'dayjs'
 import { useCreatePromotionMutation } from '../../features/operator/promotionAPI'
 import { useGetEventsByOperatorQuery } from '../../features/admin/eventAPI'
 import { CustomModal } from '../common'
@@ -20,8 +19,6 @@ interface FormData {
   discountType: 'Percentage' | 'FixedAmount'
   discountValue: number
   maxDiscountAmount: number
-  startDate: Dayjs | null
-  endDate: Dayjs | null
   totalUsageLimit: number
   isActive: boolean
 }
@@ -32,8 +29,6 @@ interface FormErrors {
   name?: string
   discountType?: string
   discountValue?: string
-  startDate?: string
-  endDate?: string
 }
 
 const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClose }) => {
@@ -51,8 +46,6 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
     discountType: 'Percentage',
     discountValue: 10,
     maxDiscountAmount: 100000,
-    startDate: null,
-    endDate: null,
     totalUsageLimit: 10,
     isActive: true,
   })
@@ -72,8 +65,6 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
         discountType: 'Percentage',
         discountValue: 10,
         maxDiscountAmount: 100000,
-        startDate: null,
-        endDate: null,
         totalUsageLimit: 10,
         isActive: true,
       })
@@ -123,18 +114,6 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
       newErrors.discountValue = 'Vui lòng nhập giá trị giảm giá hợp lệ'
     }
 
-    if (!formData.startDate) {
-      newErrors.startDate = 'Vui lòng chọn ngày bắt đầu'
-    } else if (formData.startDate.isBefore(dayjs().startOf('day'))) {
-      newErrors.startDate = 'Ngày bắt đầu không được là quá khứ'
-    }
-
-    if (!formData.endDate) {
-      newErrors.endDate = 'Vui lòng chọn ngày kết thúc'
-    } else if (formData.startDate && formData.endDate.isBefore(formData.startDate)) {
-      newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -153,8 +132,6 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
         discountType: formData.discountType,
         discountValue: formData.discountValue,
         maxDiscountAmount: formData.maxDiscountAmount || 0,
-        startDate: formData.startDate!.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
-        endDate: formData.endDate!.format('YYYY-MM-DDTHH:mm:ss.SSS[Z]'),
         totalUsageLimit: formData.totalUsageLimit || 10,
         isActive: formData.isActive,
       }
@@ -432,104 +409,6 @@ const CreatePromotionModal: React.FC<CreatePromotionModalProps> = ({ open, onClo
             />
             <span className="create-promotion-input-suffix">₫</span>
           </div>
-        </div>
-
-        {/* Start Date */}
-        <div className="create-promotion-form-group">
-          <label className="create-promotion-label">
-            Ngày bắt đầu <span className="create-promotion-required">*</span>
-          </label>
-          <div className="create-promotion-datetime-wrapper">
-            <input
-              type="date"
-              className={`create-promotion-date-input ${errors.startDate ? 'error' : ''}`}
-              value={formData.startDate ? formData.startDate.format('YYYY-MM-DD') : ''}
-              min={dayjs().format('YYYY-MM-DD')}
-              onChange={(e) => {
-                if (e.target.value) {
-                  const currentDate = formData.startDate || dayjs()
-                  const newDate = dayjs(e.target.value)
-                    .hour(currentDate.hour())
-                    .minute(currentDate.minute())
-                    .second(0)
-                    .millisecond(0)
-                  setFormData({ ...formData, startDate: newDate })
-                  if (errors.startDate) setErrors({ ...errors, startDate: undefined })
-                }
-              }}
-            />
-            <input
-              type="time"
-              className="create-promotion-time-input"
-              value={
-                formData.startDate
-                  ? formData.startDate.format('HH:mm')
-                  : dayjs().format('HH:mm')
-              }
-              onChange={(e) => {
-                const [hours, minutes] = e.target.value.split(':')
-                const baseDate = formData.startDate || dayjs().startOf('day')
-                const newDate = baseDate
-                  .hour(parseInt(hours, 10))
-                  .minute(parseInt(minutes, 10))
-                  .second(0)
-                  .millisecond(0)
-                setFormData({ ...formData, startDate: newDate })
-                if (errors.startDate) setErrors({ ...errors, startDate: undefined })
-              }}
-            />
-          </div>
-          {errors.startDate && <span className="create-promotion-error">{errors.startDate}</span>}
-        </div>
-
-        {/* End Date */}
-        <div className="create-promotion-form-group">
-          <label className="create-promotion-label">
-            Ngày kết thúc <span className="create-promotion-required">*</span>
-          </label>
-          <div className="create-promotion-datetime-wrapper">
-            <input
-              type="date"
-              className={`create-promotion-date-input ${errors.endDate ? 'error' : ''}`}
-              value={formData.endDate ? formData.endDate.format('YYYY-MM-DD') : ''}
-              min={
-                formData.startDate
-                  ? formData.startDate.format('YYYY-MM-DD')
-                  : dayjs().format('YYYY-MM-DD')
-              }
-              onChange={(e) => {
-                if (e.target.value) {
-                  const currentDate = formData.endDate || dayjs()
-                  const newDate = dayjs(e.target.value)
-                    .hour(currentDate.hour())
-                    .minute(currentDate.minute())
-                    .second(0)
-                    .millisecond(0)
-                  setFormData({ ...formData, endDate: newDate })
-                  if (errors.endDate) setErrors({ ...errors, endDate: undefined })
-                }
-              }}
-            />
-            <input
-              type="time"
-              className="create-promotion-time-input"
-              value={
-                formData.endDate ? formData.endDate.format('HH:mm') : dayjs().format('HH:mm')
-              }
-              onChange={(e) => {
-                const [hours, minutes] = e.target.value.split(':')
-                const baseDate = formData.endDate || dayjs().startOf('day')
-                const newDate = baseDate
-                  .hour(parseInt(hours, 10))
-                  .minute(parseInt(minutes, 10))
-                  .second(0)
-                  .millisecond(0)
-                setFormData({ ...formData, endDate: newDate })
-                if (errors.endDate) setErrors({ ...errors, endDate: undefined })
-              }}
-            />
-          </div>
-          {errors.endDate && <span className="create-promotion-error">{errors.endDate}</span>}
         </div>
 
         {/* Total Usage Limit */}
