@@ -94,6 +94,11 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       icon: <SafetyOutlined />,
       label: 'Thêm thẻ',
     },
+    {
+      key: '/operator/subscription-plan',
+      icon: <WalletOutlined />,
+      label: 'Dịch vụ bãi xe hàng tháng',
+    }
   ]
 
   const handleMenuClick = ({ key }: { key: string }) => {
