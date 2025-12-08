@@ -118,13 +118,22 @@ export const parkingLotSessionAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['ParkingSession'],
     }),
-    calculateFeeManual: builder.query({
+    calculateFeeManual: builder.mutation({
       query: ({ parkingLotId, data }) => ({
         url: `/parking/parking-sessions/check-out/calculate-fee/${parkingLotId}`,
         method: 'POST',
         body: data, // { identifier, uidCard, pricingPolicyId }
       }),
       transformResponse: (res) => res,
+    }),
+    checkOutManual: builder.mutation({
+      query: ({ sessionId, data }) => ({
+        url: `/parking/parking-sessions/check-out/confirm/${sessionId}`,
+        method: 'POST',
+        body: data, // { identifier, uidCard, pricingPolicyId }
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['ParkingSession'],
     }),
   }),
 })
@@ -141,5 +150,6 @@ export const {
   useGetActivePricingPoliciesQuery,
   useGetParkingSessionHistoryQuery,
   useGetParkingSessionHistoryDetailQuery,
-  useCalculateFeeManualQuery,
+  useCalculateFeeManualMutation,
+  useCheckOutManualMutation,
 } = parkingLotSessionAPI

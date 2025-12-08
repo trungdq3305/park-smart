@@ -8,6 +8,7 @@ import {
   useGetParkingSessionHistoryQuery,
   useCalculateCheckoutFeeMutation,
   useGetActivePricingPoliciesQuery,
+  useConfirmCheckoutMutation,
 } from '../../../features/operator/parkingSessionAPI'
 import type { Pagination } from '../../../types/Pagination'
 import type { ParkingLot } from '../../../types/ParkingLot'
@@ -20,6 +21,7 @@ import {
   SessionEmptyState,
   SessionPagination,
   SessionDetailModal,
+  CheckoutModal,
 } from '../../../components/session-history'
 import './ParkingLotSessionHistory.css'
 
@@ -56,6 +58,9 @@ const ParkingLotSessionHistory: React.FC = () => {
   const [selectedPricingPolicyId, setSelectedPricingPolicyId] = useState<string | null>(null)
   const [debouncedPlateNumberSearch, setDebouncedPlateNumberSearch] = useState<string>('')
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false)
+  const [checkoutSession, setCheckoutSession] = useState<ParkingLotSession | null>(null)
+  const [isSubmittingCheckout, setIsSubmittingCheckout] = useState(false)
   const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>(() => {
     const end = dayjs()
     const start = end.subtract(7, 'day')
@@ -163,6 +168,17 @@ const ParkingLotSessionHistory: React.FC = () => {
     parkingLotIdForPricing || skipToken
   )
   const [calculateFee] = useCalculateCheckoutFeeMutation()
+  const [confirmCheckout] = useConfirmCheckoutMutation()
+
+  // Get pricing policies for checkout session
+  const checkoutParkingLotId =
+    checkoutSession && typeof checkoutSession.parkingLotId === 'object'
+      ? checkoutSession.parkingLotId._id
+      : checkoutSession?.parkingLotId || null
+
+  const { data: checkoutPricingPolicies } = useGetActivePricingPoliciesQuery(
+    checkoutParkingLotId || skipToken
+  )
 
   const summary = useMemo(() => {
     if (!parkingSessions.length) {
@@ -333,6 +349,69 @@ const ParkingLotSessionHistory: React.FC = () => {
     refetchSessions()
   }
 
+  const handleCheckout = (_sessionId: string, session: ParkingLotSession) => {
+    setCheckoutSession(session)
+    setIsCheckoutModalOpen(true)
+  }
+
+  const handleCloseCheckoutModal = () => {
+    setIsCheckoutModalOpen(false)
+    setCheckoutSession(null)
+  }
+
+  const handleConfirmCheckout = async (data: {
+    paymentId: string | null
+    pricingPolicyId: string
+    amountPayAfterCheckOut: number
+    file?: File | null
+    note?: string
+  }) => {
+    if (!checkoutSession) return
+
+    try {
+      setIsSubmittingCheckout(true)
+
+      // Create FormData
+      const formData = new FormData()
+
+      // Add fields to FormData
+      if (data.paymentId) {
+        formData.append('paymentId', data.paymentId)
+      } else {
+        formData.append('paymentId', 'null')
+      }
+
+      formData.append('pricingPolicyId', data.pricingPolicyId)
+      formData.append('amountPayAfterCheckOut', data.amountPayAfterCheckOut.toString())
+
+      if (data.file) {
+        formData.append('file', data.file)
+      }
+
+      if (data.note) {
+        formData.append('note', data.note)
+      }
+
+      await confirmCheckout({
+        sessionId: checkoutSession._id,
+        formData,
+      }).unwrap()
+
+      // Success - refresh sessions and close modal
+      refetchSessions()
+      handleCloseCheckoutModal()
+    } catch (error: any) {
+      console.error('Error confirming checkout:', error)
+      alert(
+        error?.data?.message ||
+          error?.message ||
+          'Có lỗi xảy ra khi checkout. Vui lòng thử lại sau.'
+      )
+    } finally {
+      setIsSubmittingCheckout(false)
+    }
+  }
+
   if (isParkingLotsLoading) {
     return (
       <div className="parking-session-history-page">
@@ -382,7 +461,11 @@ const ParkingLotSessionHistory: React.FC = () => {
           <SessionEmptyState />
         ) : (
           <>
-            <SessionList sessions={parkingSessions} onViewDetails={handleViewSessionImages} />
+            <SessionList
+              sessions={parkingSessions}
+              onViewDetails={handleViewSessionImages}
+              onCheckout={handleCheckout}
+            />
             <SessionPagination
               pagination={paginationInfo}
               currentPage={page}
@@ -392,6 +475,15 @@ const ParkingLotSessionHistory: React.FC = () => {
           </>
         )}
       </div>
+
+      <CheckoutModal
+        open={isCheckoutModalOpen}
+        onClose={handleCloseCheckoutModal}
+        onConfirm={handleConfirmCheckout}
+        sessionId={checkoutSession?._id || ''}
+        pricingPolicies={checkoutPricingPolicies}
+        isSubmitting={isSubmittingCheckout}
+      />
 
       <SessionDetailModal
         open={isImageModalOpen}

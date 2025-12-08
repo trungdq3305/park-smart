@@ -28,6 +28,12 @@
   flex-wrap: wrap;
 }
 
+.session-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.2vh;
+}
+
 .session-item-title-section {
   display: flex;
   align-items: center;
@@ -188,6 +194,28 @@
 
 .session-view-details-btn:hover {
   box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.4);
+}
+
+.session-checkout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 0.6vh 1.2vh;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 0.2vh 0.6vh rgba(16, 185, 129, 0.3);
+}
+
+.session-checkout-btn:hover {
+  box-shadow: 0 0.4vh 1.2vh rgba(16, 185, 129, 0.4);
 }
 
 .session-item-body {

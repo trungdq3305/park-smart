@@ -6,6 +6,7 @@ import {
   CloseCircleOutlined,
   CrownOutlined,
   CalendarOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons'
 import type { ParkingLotSession } from '../../types/ParkingLotSession'
 import {
@@ -21,9 +22,10 @@ import './SessionItem.css'
 interface SessionItemProps {
   session: ParkingLotSession
   onViewDetails: (sessionId: string, session: ParkingLotSession) => void
+  onCheckout?: (sessionId: string, session: ParkingLotSession) => void
 }
 
-const SessionItem: React.FC<SessionItemProps> = ({ session, onViewDetails }) => {
+const SessionItem: React.FC<SessionItemProps> = ({ session, onViewDetails, onCheckout }) => {
   const statusClass = getStatusClass(session.status)
   const statusLabel = getStatusLabel(session.status)
   const paymentStatusClass = getPaymentStatusClass(session.paymentStatus)
@@ -43,25 +45,37 @@ const SessionItem: React.FC<SessionItemProps> = ({ session, onViewDetails }) => 
             <span>{paymentStatusLabel}</span>
           </div>
         </div>
-        {session.status === 'ACTIVE' ? (
-          <button
-            className="session-view-details-btn"
-            onClick={() => onViewDetails(session._id, session)}
-            title="Xem chi tiết"
-          >
-            <FileTextOutlined />
-            <span>Xem chi tiết</span>
-          </button>
-        ) : (
-          <button
-            className="session-view-images-btn"
-            onClick={() => onViewDetails(session._id, session)}
-            title="Xem ảnh"
-          >
-            <EyeOutlined />
-            <span>Xem ảnh</span>
-          </button>
-        )}
+        <div className="session-item-actions">
+          {session.status === 'ACTIVE' && onCheckout && (
+            <button
+              className="session-checkout-btn"
+              onClick={() => onCheckout(session._id, session)}
+              title="Checkout"
+            >
+              <LogoutOutlined />
+              <span>Checkout</span>
+            </button>
+          )}
+          {session.status === 'ACTIVE' ? (
+            <button
+              className="session-view-details-btn"
+              onClick={() => onViewDetails(session._id, session)}
+              title="Xem chi tiết"
+            >
+              <FileTextOutlined />
+              <span>Xem chi tiết</span>
+            </button>
+          ) : (
+            <button
+              className="session-view-images-btn"
+              onClick={() => onViewDetails(session._id, session)}
+              title="Xem ảnh"
+            >
+              <EyeOutlined />
+              <span>Xem ảnh</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="session-item-body">
