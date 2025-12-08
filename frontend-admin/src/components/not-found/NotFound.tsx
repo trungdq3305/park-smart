@@ -1,9 +1,16 @@
 import { Button, Result } from 'antd'
 import { useNavigate } from 'react-router-dom'
+import { getUserData } from '../../utils/userData'
 export default function NotFound() {
   const navigate = useNavigate()
   const handleBackHome = () => {
-    navigate('/')
+    const user = getUserData<{ role?: string }>()
+    const role = user?.role?.toLowerCase()
+    if (role === 'admin') {
+      navigate('/admin/manage-account')
+    } else {
+      navigate('/operator/parking-lot')
+    }
   }
 
   return (

@@ -1,11 +1,18 @@
 import { Result, Button } from 'antd'
 import { useNavigate } from 'react-router-dom'
+import { getUserData } from '../../utils/userData'
 
 const NoPermission = () => {
+  const user = getUserData<{ role?: string }>()
   const navigate = useNavigate()
 
   const handleBackHome = () => {
-    navigate('/')
+    const role = user?.role?.toLowerCase()
+    if (role === 'admin') {
+      navigate('/admin/manage-account')
+    } else {
+      navigate('/operator/parking-lot')
+    }
   }
 
   return (
