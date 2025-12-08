@@ -11,17 +11,20 @@ import {
   Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
-  ComposedChart,
-  Line,
+  PieChart,
+  Pie,
+  Cell,
+  RadialBarChart,
+  RadialBar,
 } from 'recharts'
 
 const DashboardAdmin: React.FC = () => {
   const { data, isLoading, error } = useGetDashboardAdminQuery({})
-  const [startDate, setStartDate] = useState<string>(dayjs().subtract(13, 'day').format('YYYY-MM-DD'))
+  const [startDate, setStartDate] = useState<string>(dayjs().subtract(29, 'day').format('YYYY-MM-DD'))
   const [endDate, setEndDate] = useState<string>(dayjs().format('YYYY-MM-DD'))
 
   const {
-    data: newRegData,
+    data: newRegRes,
     isLoading: isLoadingNewReg,
     error: newRegError,
   } = useGetDashboardNewRegistrationQuery({
@@ -30,71 +33,18 @@ const DashboardAdmin: React.FC = () => {
   })
 
   const stats = data?.data || {}
+  const newRegData = newRegRes?.data || {}
 
-  const chartData = useMemo(() => {
-    const registrations = stats.registrationsByDateLast7Days || {}
-    const entries = Object.entries(registrations).map(([date, value]) => ({
-      date,
-      registrations: value as number,
-    }))
-    // sort by date ascending
-    entries.sort((a, b) => a.date.localeCompare(b.date))
-    return entries
-  }, [stats])
-
-  const newRegChartData = useMemo(() => {
-    const payload = newRegData?.data ?? newRegData ?? []
-    let rows: any[] = []
-    if (Array.isArray(payload)) {
-      rows = payload
-    } else if (payload?.items && Array.isArray(payload.items)) {
-      rows = payload.items
-    } else if (payload?.registrationsByDate) {
-      rows = Object.entries(payload.registrationsByDate).map(([date, value]: any) => ({
-        date,
-        ...(value || {}),
-      }))
-    }
-
-    const normalized = rows
-      .map((item) => {
-        const drivers = item.drivers ?? item.driver ?? item.driversCount ?? 0
-        const operators = item.operators ?? item.operator ?? item.operatorsCount ?? 0
-        const admins = item.admins ?? item.admin ?? item.adminsCount ?? 0
-        const total =
-          item.total ??
-          item.count ??
-          item.value ??
-          item.registrations ??
-          item.registration ??
-          drivers +
-            operators +
-            admins +
-            (item.others ?? item.other ?? 0)
-
-        return {
-          date: item.date,
-          drivers,
-          operators,
-          admins,
-          total,
-        }
-      })
-      .filter((row) => row.date)
-
-    normalized.sort((a, b) => a.date.localeCompare(b.date))
-    return normalized
+  const newRegRoleChartData = useMemo(() => {
+    const counts = newRegData.countsByRole || {}
+    const entries = [
+      { role: 'Operator', value: counts.Operator ?? 0, color: '#0ea5e9' },
+      { role: 'Driver', value: counts.Driver ?? 0, color: '#22c55e' },
+      { role: 'Admin', value: counts.Admin ?? 0, color: '#a855f7' },
+      { role: 'Unknown', value: counts.Unknown ?? 0, color: '#94a3b8' },
+    ]
+    return entries.filter((e) => e.value > 0)
   }, [newRegData])
-
-  const totalNewRegistrations = useMemo(
-    () => newRegChartData.reduce((sum, row) => sum + (row.total || 0), 0),
-    [newRegChartData]
-  )
-
-  const peakDay = useMemo(() => {
-    if (!newRegChartData.length) return null
-    return newRegChartData.reduce((best, current) => (current.total > best.total ? current : best), newRegChartData[0])
-  }, [newRegChartData])
 
   const handleQuickRange = (days: number) => {
     const end = dayjs()
@@ -102,6 +52,29 @@ const DashboardAdmin: React.FC = () => {
     setStartDate(start.format('YYYY-MM-DD'))
     setEndDate(end.format('YYYY-MM-DD'))
   }
+
+  const roleDistribution = useMemo(() => {
+    const drivers = stats.totalDrivers ?? 0
+    const operators = stats.totalOperators ?? 0
+    const admins = stats.totalAdmins ?? 0
+    const known = drivers + operators + admins
+    const others = Math.max((stats.totalUsers ?? 0) - known, 0)
+    return [
+      { name: 'Drivers', value: drivers, color: '#22c55e' },
+      { name: 'Operators', value: operators, color: '#0ea5e9' },
+      { name: 'Admins', value: admins, color: '#a855f7' },
+      ...(others > 0 ? [{ name: 'Khác', value: others, color: '#94a3b8' }] : []),
+    ].filter((item) => item.value > 0)
+  }, [stats])
+
+  const activeRate = useMemo(() => {
+    const active = stats.totalActiveUsers ?? 0
+    const total = stats.totalUsers ?? 0
+    if (!total) return 0
+    return Math.min(Math.max((active / total) * 100, 0), 100)
+  }, [stats])
+
+  const totalNewRegistrations = stats.newRegistrationsLast7Days ?? 0
 
   const StatCard = ({
     title,
@@ -150,8 +123,7 @@ const DashboardAdmin: React.FC = () => {
     <div className="dashboard-admin-page">
       <div className="admin-header">
         <div>
-          <h1>Dashboard Admin</h1>
-          <p>Tổng quan người dùng & đăng ký trong 7 ngày</p>
+          <p>Tổng quan người dùng & đăng ký</p>
         </div>
       </div>
 
@@ -169,42 +141,10 @@ const DashboardAdmin: React.FC = () => {
       <div className="admin-chart-card">
         <div className="admin-chart-header">
           <div>
-            <h3>Đăng ký theo ngày (7 ngày)</h3>
-            <p>Biểu đồ số đăng ký người dùng</p>
-          </div>
-        </div>
-        <div className="admin-chart-body">
-          {chartData.length === 0 ? (
-            <div className="admin-empty-chart">Chưa có dữ liệu đăng ký</div>
-          ) : (
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={chartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
-                <RechartsTooltip
-                  contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb' }}
-                  labelStyle={{ color: '#111827', fontWeight: 700 }}
-                />
-                <Legend />
-                <Bar dataKey="registrations" fill="url(#regGradient)" radius={[8, 8, 0, 0]} />
-                <defs>
-                  <linearGradient id="regGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.9} />
-                    <stop offset="100%" stopColor="#a5b4fc" stopOpacity={0.8} />
-                  </linearGradient>
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </div>
-
-      <div className="admin-section">
-        <div className="admin-section-header">
-          <div>
-            <h3>Đăng ký mới theo khoảng thời gian</h3>
-            <p>Tùy chọn khoảng ngày để xem phân bố đăng ký mới</p>
+            <h3>Đăng ký mới theo vai trò</h3>
+            <p>
+              Khoảng: {startDate} - {endDate}
+            </p>
           </div>
           <div className="admin-range-actions">
             <button className="admin-chip" onClick={() => handleQuickRange(7)}>
@@ -239,49 +179,159 @@ const DashboardAdmin: React.FC = () => {
               onChange={(e) => setEndDate(e.target.value)}
             />
           </div>
-          <div className="admin-range-badges">
-            <div className="admin-pill success">
-              <span>Tổng đăng ký</span>
-              <strong>{totalNewRegistrations}</strong>
+          <div className="admin-pill success" style={{ minWidth: 0 }}>
+            <span>Tổng đăng ký mới</span>
+            <strong>{newRegData.totalNewAccounts ?? 0}</strong>
+          </div>
+        </div>
+
+        <div className="admin-chart-body">
+          {newRegError ? (
+            <div className="admin-empty-chart">Không tải được dữ liệu đăng ký mới</div>
+          ) : isLoadingNewReg ? (
+            <div className="admin-empty-chart">Đang tải dữ liệu...</div>
+          ) : newRegRoleChartData.length === 0 ? (
+            <div className="admin-empty-chart">Chưa có dữ liệu đăng ký mới</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                data={newRegRoleChartData}
+                layout="vertical"
+                margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis type="number" tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
+                <YAxis dataKey="role" type="category" tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 700 }} />
+                <RechartsTooltip
+                  formatter={(val: any) => [`${val}`, 'Số đăng ký']}
+                  contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb' }}
+                />
+                <Legend />
+                <Bar dataKey="value" radius={[6, 6, 6, 6]}>
+                  {newRegRoleChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </div>
+
+      <div className="admin-grid-2">
+        <div className="admin-chart-card">
+          <div className="admin-chart-header">
+            <div>
+              <h3>Phân bổ vai trò</h3>
+              <p>Tỷ trọng người dùng theo role</p>
             </div>
-            <div className="admin-pill info">
-              <span>Ngày cao nhất</span>
-              <strong>{peakDay ? `${peakDay.date} (${peakDay.total})` : '-'}</strong>
+          </div>
+          <div className="admin-chart-body pie-body">
+            {roleDistribution.length === 0 ? (
+              <div className="admin-empty-chart">Chưa có dữ liệu vai trò</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <PieChart>
+                  <Pie
+                    data={roleDistribution}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={4}
+                  >
+                    {roleDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(val: any, name: any) => [`${val}`, name]}
+                    contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb' }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+            <div className="admin-legend">
+              {roleDistribution.map((item) => (
+                <div className="admin-legend-item" key={item.name}>
+                  <span style={{ background: item.color }} />
+                  <span>{item.name}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        <div className="admin-chart-card compact">
+        <div className="admin-chart-card">
           <div className="admin-chart-header">
             <div>
-              <h4>Phân bố đăng ký mới</h4>
-              <p>Stacked chart Drivers / Operators / Admins</p>
+              <h3>Trạng thái tài khoản</h3>
+              <p>Active / Inactive / Banned</p>
             </div>
-            {isLoadingNewReg && <span className="admin-badge subtle">Đang tải...</span>}
-            {newRegError && <span className="admin-badge danger">Lỗi tải dữ liệu</span>}
           </div>
           <div className="admin-chart-body">
-            {newRegChartData.length === 0 && !isLoadingNewReg ? (
-              <div className="admin-empty-chart">Chưa có dữ liệu đăng ký cho khoảng này</div>
-            ) : (
-              <ResponsiveContainer width="100%" height={320}>
-                <ComposedChart data={newRegChartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#6b7280' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
+            <div className="admin-status-grid">
+              <div className="admin-pill success">
+                <span>Active</span>
+                <strong>{stats.totalActiveUsers ?? 0}</strong>
+              </div>
+              <div className="admin-pill info">
+                <span>Inactive</span>
+                <strong>{stats.totalInactiveUsers ?? 0}</strong>
+              </div>
+              <div className="admin-pill danger">
+                <span>Banned</span>
+                <strong>{stats.totalBannedUsers ?? 0}</strong>
+              </div>
+            </div>
+            <div className="admin-radial-wrapper">
+              <ResponsiveContainer width="100%" height={280}>
+                <RadialBarChart
+                  innerRadius="65%"
+                  outerRadius="110%"
+                  data={[
+                    { name: 'Active rate', value: activeRate, fill: '#22c55e' },
+                    { name: 'Inactive rate', value: 100 - activeRate, fill: '#e5e7eb' },
+                  ]}
+                  startAngle={90}
+                  endAngle={-270}
+                >
+                  <RadialBar dataKey="value" />
                   <RechartsTooltip
+                    formatter={(val: any, name: any) => [`${Math.round(val)}%`, name]}
                     contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb' }}
-                    labelStyle={{ color: '#111827', fontWeight: 700 }}
                   />
-                  <Legend />
-                  <Bar dataKey="drivers" stackId="reg" fill="#22c55e" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="operators" stackId="reg" fill="#0ea5e9" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="admins" stackId="reg" fill="#a855f7" radius={[6, 6, 0, 0]} />
-                  <Line type="monotone" dataKey="total" stroke="#111827" strokeWidth={2.2} dot={{ r: 3 }} />
-                </ComposedChart>
+                </RadialBarChart>
               </ResponsiveContainer>
-            )}
+              <div className="admin-radial-center">
+                <div className="admin-radial-value">{Math.round(activeRate)}%</div>
+                <div className="admin-radial-label">Tài khoản đang hoạt động</div>
+                <div className="admin-radial-sub">
+                  {stats.totalActiveUsers ?? 0}/{stats.totalUsers ?? 0} users
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div className="admin-highlight-cards">
+        <div className="admin-highlight">
+          <div className="admin-highlight-title">Đăng ký mới 7 ngày</div>
+          <div className="admin-highlight-value">{totalNewRegistrations}</div>
+          <div className="admin-highlight-desc">Tổng số đăng ký gần nhất</div>
+        </div>
+        <div className="admin-highlight">
+          <div className="admin-highlight-title">Tổng người dùng</div>
+          <div className="admin-highlight-value">{stats.totalUsers ?? 0}</div>
+          <div className="admin-highlight-desc">Bao gồm tất cả vai trò</div>
+        </div>
+        <div className="admin-highlight">
+          <div className="admin-highlight-title">Bị khóa</div>
+          <div className="admin-highlight-value danger-text">{stats.totalBannedUsers ?? 0}</div>
+          <div className="admin-highlight-desc">Tài khoản cần xem xét</div>
         </div>
       </div>
     </div>
