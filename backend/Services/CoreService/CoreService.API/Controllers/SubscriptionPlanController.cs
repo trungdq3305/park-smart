@@ -9,7 +9,7 @@ namespace CoreService.API.Controllers
 {
     [Route("api/subscriptionplans")]
     [ApiController]
-    [Authorize(Roles = "Admin")] // Chỉ Admin mới được quản lý gói phí
+     // Chỉ Admin mới được quản lý gói phí
     public class SubscriptionPlanController : ControllerBase
     {
         private readonly ISubscriptionPlanApplication _planApp;
@@ -19,22 +19,17 @@ namespace CoreService.API.Controllers
             _planApp = planApp;
         }
 
-        /// <summary>
-        /// Lấy gói phí mặc định hiện tại.
-        /// GET api/admin/subscription-plan
-        /// </summary>
+
         [HttpGet]
+        [Authorize(Roles = "Admin,Operator")]
         public async Task<ActionResult<SubscriptionPlan>> GetDefaultPlan()
         {
             var plan = await _planApp.GetCurrentDefaultPlanAsync();
             return Ok(plan);
         }
 
-        /// <summary>
-        /// Cập nhật gói phí mặc định hiện tại.
-        /// PUT api/admin/subscription-plan
-        /// </summary>
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UpdateDefaultPlan([FromBody] SubscriptionPlanUpdateDto dto)
         {
             if (!ModelState.IsValid)
