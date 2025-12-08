@@ -300,7 +300,7 @@ export class ParkingLotService implements IParkingLotService {
 
     try {
       const { effectiveDate, ...payloadData } = updateRequestDto
-      const payload = { ...payloadData, operatorId }
+      const payload = { ...payloadData, parkingLotOperatorId: operatorId }
 
       const requestData: Partial<ParkingLotRequest> = {
         payload: payload,
