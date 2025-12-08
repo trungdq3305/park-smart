@@ -1,15 +1,16 @@
 import React from 'react'
 import { formatCurrency } from './sessionHistoryUtils'
 import './CalculateFeeResult.css'
+import type { Result } from '../../types/Result'
 
 interface CalculateFeeResultProps {
-  result: any
+  result: Result
 }
 
 const CalculateFeeResult: React.FC<CalculateFeeResultProps> = ({ result }) => {
   if (!result) return null
 
-  const amount = result?.data?.[0]?.amount || result?.data?.amount || 0
+  const amount = result?.data?.[0]?.amount || 0
 
   return (
     <div className="session-fee-result">
@@ -19,9 +20,9 @@ const CalculateFeeResult: React.FC<CalculateFeeResultProps> = ({ result }) => {
           <span className="session-fee-label">Tổng phí:</span>
           <span className="session-fee-value">{formatCurrency(amount)}</span>
         </div>
-        {result?.message && (
+        {result?.data?.[0]?.message && (
           <div className="session-fee-message">
-            <span>{result.message}</span>
+            <span>{result.data?.[0]?.message}</span>
           </div>
         )}
       </div>
