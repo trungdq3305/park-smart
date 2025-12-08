@@ -85,6 +85,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       icon: <GiftOutlined />,
       label: 'Khuyến mãi',
     },
+    {
+      key: '/admin/subscription-plan',
+      icon: <WalletOutlined />,
+      label: 'Gói đăng ký',
+    }
   ]
 
   const handleMenuClick = ({ key }: { key: string }) => {
