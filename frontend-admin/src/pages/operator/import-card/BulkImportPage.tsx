@@ -24,7 +24,7 @@ import Success from '../../../assets/success.mp3'
 import Cookies from 'js-cookie'
 // ==================== CONSTANTS ====================
 const CONFIG = {
-  PYTHON_SOCKET_URL: localStorage.getItem('PARKING_PYTHON_GATEWAY_URL'),
+  PYTHON_SOCKET_URL: localStorage.getItem('PARKING_PYTHON_GATEWAY_URL') || 'http://localhost:1836',
   NEST_API: import.meta.env.VITE_API_ENDPOINT || 'http://localhost:5000/guest-cards',
   CURRENT_PARKING_ID: Cookies.get('parkingLotId') || '',
   AUTH_TOKEN: Cookies.get('userToken') || '',
