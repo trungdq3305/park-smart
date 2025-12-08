@@ -15,6 +15,15 @@ export class ParkingLotRequestRepository
     private parkingLotRequestModel: Model<ParkingLotRequest>,
   ) {}
 
+  findByParkingLotOperatorId(
+    parkingLotOperatorId: string,
+  ): Promise<ParkingLotRequest[]> {
+    const filter: FilterQuery<ParkingLotRequest> = {
+      'payload.parkingLotOperatorId': parkingLotOperatorId,
+    }
+    return this.parkingLotRequestModel.find(filter).lean().exec()
+  }
+
   findByOperatorId(
     operatorId: string,
     status: string,
