@@ -344,6 +344,22 @@
       }
     },
     {
+      "DownstreamPathTemplate": "/api/dashboards/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "coreservice",
+          "Port": 8080
+        }
+      ],
+      "UpstreamPathTemplate": "/core/dashboards/{everything}",
+      "UpstreamHttpMethod": [ "GET" ],
+      "AddHeadersToRequest": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "parksmarthcmc.io.vn"
+      }
+    },
+    {
       "DownstreamPathTemplate": "/api/reportcategories/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [

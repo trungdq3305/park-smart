@@ -31,6 +31,7 @@ const ManagePromotion = lazy(() => import('../pages/operator/manage-promotion/Ma
 const ManagePromotionsAdmin = lazy(
   () => import('../pages/admin/manage-promotions/ManagePromotionsAdmin')
 )
+const DashboardAdmin = lazy(() => import('../pages/admin/dashboard-admin/DashboardAdmin'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -82,6 +83,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/admin/promotions',
         component: ManagePromotionsAdmin,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/dashboard-admin',
+        component: DashboardAdmin,
         role: ['Admin'],
       },
     ],
