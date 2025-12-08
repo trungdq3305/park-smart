@@ -118,6 +118,12 @@
   gap: 16px;
 }
 
+.sub-plan-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .sub-plan-header-icon {
   font-size: 32px;
   width: 48px;
@@ -188,6 +194,31 @@
 .sub-plan-status-badge.inactive .sub-plan-status-dot {
   background: #dc3545;
   box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3);
+}
+
+.sub-plan-edit-btn {
+  padding: 8px 16px;
+  background: #1a1a1a;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sub-plan-edit-btn:hover {
+  background: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sub-plan-edit-btn:active {
+  transform: translateY(0);
 }
 
 /* Main Card */
@@ -384,5 +415,255 @@
 
   .sub-plan-info-item.span-2 {
     grid-column: span 1;
+  }
+
+  .sub-plan-header-right {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .sub-plan-edit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Edit Modal Styles */
+.sub-plan-edit-modal {
+  padding: 8px 0;
+}
+
+.sub-plan-form-group {
+  margin-bottom: 20px;
+}
+
+.sub-plan-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.sub-plan-required {
+  color: #dc3545;
+  margin-left: 2px;
+}
+
+.sub-plan-form-input,
+.sub-plan-form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: white;
+  color: #1a1a1a;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.sub-plan-form-input:focus,
+.sub-plan-form-textarea:focus {
+  outline: none;
+  border-color: #1a1a1a;
+  box-shadow: 0 0 0 3px rgba(26, 26, 26, 0.1);
+}
+
+.sub-plan-form-input.error,
+.sub-plan-form-textarea.error {
+  border-color: #dc3545;
+}
+
+.sub-plan-form-input.error:focus,
+.sub-plan-form-textarea.error:focus {
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.sub-plan-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.sub-plan-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.sub-plan-form-error {
+  display: block;
+  font-size: 12px;
+  color: #dc3545;
+  margin-top: 6px;
+}
+
+.sub-plan-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sub-plan-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.sub-plan-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.sub-plan-toggle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ced4da;
+  transition: 0.3s;
+  border-radius: 26px;
+}
+
+.sub-plan-toggle-slider:before {
+  position: absolute;
+  content: '';
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.sub-plan-toggle input:checked + .sub-plan-toggle-slider {
+  background-color: #1a1a1a;
+}
+
+.sub-plan-toggle input:checked + .sub-plan-toggle-slider:before {
+  transform: translateX(22px);
+}
+
+.sub-plan-toggle-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.sub-plan-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sub-plan-form-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+}
+
+.sub-plan-form-btn.cancel {
+  background: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.sub-plan-form-btn.cancel:hover {
+  background: #e9ecef;
+  border-color: #ced4da;
+}
+
+.sub-plan-form-btn.submit {
+  background: #1a1a1a;
+  color: white;
+}
+
+.sub-plan-form-btn.submit:hover {
+  background: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.sub-plan-form-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.sub-plan-form-btn.submit:disabled {
+  background: #6c757d;
+}
+
+/* Toast */
+.sub-plan-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  animation: slideIn 0.3s ease;
+  max-width: 400px;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.sub-plan-toast.success {
+  background: #1a1a1a;
+  color: white;
+}
+
+.sub-plan-toast.error {
+  background: #dc3545;
+  color: white;
+}
+
+@media (max-width: 768px) {
+  .sub-plan-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .sub-plan-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .sub-plan-form-btn {
+    width: 100%;
+  }
+
+  .sub-plan-toast {
+    right: 12px;
+    left: 12px;
+    max-width: none;
   }
 }
