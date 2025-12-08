@@ -253,6 +253,44 @@ export class ParkingLotController {
     }
   }
 
+  @Patch('update-booking-slot-duration/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
+  @ApiOperation({
+    summary: 'Cập nhật thời lượng đặt chỗ (booking slot) của một bãi đỗ xe',
+  })
+  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        bookingSlotDurationHours: {
+          type: 'number',
+          description: 'Thời lượng đặt chỗ mới (tính bằng giờ)',
+        },
+      },
+      example: {
+        bookingSlotDurationHours: 2,
+      },
+    },
+  })
+  async updateBookingSlotDuration(
+    @Param('id') id: string,
+    @Body('bookingSlotDurationHours') bookingSlotDurationHours: number,
+  ): Promise<ApiResponseDto<boolean>> {
+    const result = await this.parkingLotService.updateBookingSlotDurationHours(
+      id,
+      bookingSlotDurationHours,
+    )
+    return {
+      data: [result],
+      message: 'Cập nhật thời lượng đặt chỗ thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
   @Get('find-for-operator')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()

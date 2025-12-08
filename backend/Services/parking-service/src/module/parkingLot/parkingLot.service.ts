@@ -68,6 +68,17 @@ export class ParkingLotService implements IParkingLotService {
     private readonly sessionRepository: IParkingLotSessionRepository,
   ) {}
 
+  async updateBookingSlotDurationHours(
+    id: string,
+    bookingSlotDurationHours: number,
+  ): Promise<boolean> {
+    const data = await this.parkingLotRepository.updateBookingSlotDurationHours(
+      id,
+      bookingSlotDurationHours,
+    )
+    return data
+  }
+
   async findParkingLotRequestById(
     id: string,
   ): Promise<ParkingLotRequestResponseDto> {

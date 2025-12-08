@@ -132,6 +132,11 @@ export interface IParkingLotService {
   ): Promise<ParkingLotRequestResponseDto[]>
 
   findParkingLotRequestById(id: string): Promise<ParkingLotRequestResponseDto>
+
+  updateBookingSlotDurationHours(
+    id: string,
+    bookingSlotDurationHours: number,
+  ): Promise<boolean>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')
