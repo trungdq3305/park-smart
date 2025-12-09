@@ -28,11 +28,13 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   int _totalItems = 0;
   final Set<String> _renewingSubscriptionIds = <String>{};
   final Set<String> _cancellingSubscriptionIds = <String>{};
-  String? _selectedStatusFilter; // null = tất cả
+  String? _selectedStatusFilter;
 
   @override
   void initState() {
     super.initState();
+    // Mặc định chọn ACTIVE
+    _selectedStatusFilter = 'ACTIVE';
     _loadSubscriptions();
   }
 
@@ -148,13 +150,10 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   ];
 
   List<Map<String, dynamic>> _filterSubscriptionsList() {
+    if (_selectedStatusFilter == null) return _allSubscriptions;
     return _allSubscriptions.where((sub) {
       final status = (sub['status'] as String?)?.toUpperCase();
       if (status == null) return false;
-      if (_selectedStatusFilter == null) {
-        // Không chọn filter -> hiển thị tất cả status hợp lệ
-        return _allStatuses.contains(status);
-      }
       return status == _selectedStatusFilter;
     }).toList();
   }
@@ -506,9 +505,9 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
           child: _subscriptions.isEmpty
               ? SubscriptionEmptyState(
                   title: 'Không có gói phù hợp',
-                  description: _selectedStatusFilter == null
-                      ? 'Bạn chưa có gói thuê bao nào. Hãy đăng ký gói thuê bao để sử dụng dịch vụ.'
-                      : 'Không tìm thấy gói thuê bao với trạng thái "${_getStatusText(_selectedStatusFilter)}".',
+                  description: _selectedStatusFilter != null
+                      ? 'Không tìm thấy gói thuê bao với trạng thái "${_getStatusText(_selectedStatusFilter)}".'
+                      : 'Bạn chưa có gói thuê bao nào. Hãy đăng ký gói thuê bao để sử dụng dịch vụ.',
                 )
               : _buildSubscriptionList(),
         ),

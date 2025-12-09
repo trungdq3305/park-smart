@@ -90,7 +90,11 @@ class _ChatbotChatScreenState extends State<ChatbotChatScreen> {
       for (final doc in snapshot.docs) {
         final data = doc.data();
         final text = data['text']?.toString() ?? '';
-        final sender = data['sender']?.toString() ?? 'user';
+        String sender = data['sender']?.toString() ?? 'user';
+        // Convert 'bot' to 'model' for API (API requires 'user' or 'model')
+        if (sender == 'bot') {
+          sender = 'model';
+        }
         if (text.isNotEmpty) {
           history.add({'text': text, 'sender': sender});
         }
