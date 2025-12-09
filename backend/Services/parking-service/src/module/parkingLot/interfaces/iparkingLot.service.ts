@@ -83,7 +83,7 @@ export interface IParkingLotService {
    * Lấy danh sách CÁC YÊU CẦU (pending, approved, etc.) của một bãi xe.
    */
   getRequestsForParkingLot(
-    parkingLotId: ParkingLotIdDto,
+    parkingLotOperatorId: string,
   ): Promise<ParkingLotRequestResponseDto[]>
 
   /**

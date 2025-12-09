@@ -499,11 +499,12 @@ export class ParkingLotService implements IParkingLotService {
   }
 
   async getRequestsForParkingLot(
-    parkingLotId: ParkingLotIdDto,
+    parkingLotOperatorId: string,
   ): Promise<ParkingLotRequestResponseDto[]> {
-    const data = await this.parkingLotRequestRepository.findByParkingLotId(
-      parkingLotId.parkingLotId,
-    )
+    const data =
+      await this.parkingLotRequestRepository.findByParkingLotOperatorId(
+        parkingLotOperatorId,
+      )
     return data.map((item) => this.returnParkingLotRequestResponseDto(item))
   }
 

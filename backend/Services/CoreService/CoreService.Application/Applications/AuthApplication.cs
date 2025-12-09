@@ -244,14 +244,14 @@ namespace CoreService.Application.Applications
                 // 5. TẠO PAYMENT ACCOUNT VÀ XENDIT SUB-ACCOUNT (DB/Service)
                 var paymentAcc = new OperatorPaymentAccount { OperatorId = op.Id, XenditUserId = null };
                 await _operatorPaymentAccountRepo.AddAsync(paymentAcc, session);
-
+                await session.CommitTransactionAsync();
                 // Tạo Sub-Account Xendit và cập nhật XenditUserId vào DB
                 var xenditUserId = await _paymentService.CreateSubAccountAsync(op.Id, registerReq.PaymentEmail, registerReq.BussinessName, paymentAcc.Id);
 
                 paymentAcc.XenditUserId = xenditUserId;
                 await _operatorPaymentAccountRepo.UpdateAsync(paymentAcc, session);
 
-                await session.CommitTransactionAsync();
+                
                 // 6. HOÀN TẤT
                 return new ApiResponse<string>(
                     data: null,

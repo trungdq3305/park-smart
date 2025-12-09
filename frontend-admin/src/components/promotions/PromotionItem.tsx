@@ -60,22 +60,6 @@ const PromotionItem: React.FC<PromotionItemProps> = ({ promotion, onEdit, onDele
         </div>
 
         <div className="promotion-details-grid">
-          <div className="promotion-detail-item">
-            <div className="promotion-detail-icon">📅</div>
-            <div className="promotion-detail-content">
-              <span className="promotion-detail-label">Bắt đầu</span>
-              <span className="promotion-detail-value">{formatDate(promotion.startDate)}</span>
-            </div>
-          </div>
-
-          <div className="promotion-detail-item">
-            <div className="promotion-detail-icon">🏁</div>
-            <div className="promotion-detail-content">
-              <span className="promotion-detail-label">Kết thúc</span>
-              <span className="promotion-detail-value">{formatDate(promotion.endDate)}</span>
-            </div>
-          </div>
-
           {promotion.maxDiscountAmount && (
             <div className="promotion-detail-item">
               <div className="promotion-detail-icon">💵</div>

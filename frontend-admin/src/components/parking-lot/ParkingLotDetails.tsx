@@ -46,6 +46,12 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
 
           <div className="parking-lot-details-grid">
             <div className="parking-lot-details-field">
+              <span className="parking-lot-details-field-label">Lot ID</span>
+              <div className="parking-lot-details-field-value" style={{ fontFamily: 'monospace' }}>
+                {lot._id || '—'}
+              </div>
+            </div>
+            <div className="parking-lot-details-field">
               <span className="parking-lot-details-field-label">Địa chỉ</span>
               <div className="parking-lot-details-field-value">
                 <EnvironmentOutlined />

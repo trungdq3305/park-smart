@@ -59,15 +59,25 @@ namespace CoreService.Application.Applications
         {
             var entity = await _repo.GetByIdAsync(dto.Id) ?? throw new ApiException("Sự kiện không tồn tại", StatusCodes.Status404NotFound);
 
-            // Authorization check: Only creator or Admin can update
+            var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            if (now >= entity.StartDate)
+                throw new ApiException("Không thể chỉnh sửa sự kiện đã bắt đầu.", StatusCodes.Status400BadRequest);
+
+
             if (entity.CreatedBy != actorAccountId && !actorRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
                 throw new ApiException("Bạn không có quyền chỉnh sửa sự kiện này", StatusCodes.Status403Forbidden);
+            // Logic cập nhật ngày tháng cần kiểm tra tính hợp lệ mới
+            var newStartDate = dto.StartDate ?? entity.StartDate;
+            var newEndDate = dto.EndDate ?? entity.EndDate;
+
+            if (newStartDate >= newEndDate)
+                throw new ApiException("Ngày bắt đầu phải trước ngày kết thúc", StatusCodes.Status400BadRequest);
 
             entity.Title = dto.Title ?? entity.Title;
             entity.Description = dto.Description ?? entity.Description;
-            entity.StartDate = dto.StartDate ?? entity.StartDate;
-            entity.EndDate = dto.EndDate ?? entity.EndDate;
-            entity.Location = dto.Location ?? entity.Location;
+            entity.StartDate = newStartDate; // Dùng giá trị đã kiểm tra
+            entity.EndDate = newEndDate;     // Dùng giá trị đã kiểm tra
+            entity.Location = dto.Location ?? entity.Location;
             entity.IncludedPromotions = dto.IncludedPromotions ?? entity.IncludedPromotions;
             entity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             entity.UpdatedBy = actorAccountId;
@@ -79,7 +89,9 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<object>> DeleteAsync(string id, string actorAccountId, string actorRole)
         {
             var entity = await _repo.GetByIdAsync(id) ?? throw new ApiException("Sự kiện không tồn tại", StatusCodes.Status404NotFound);
-
+            var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            if (now >= entity.StartDate)
+                throw new ApiException("Không thể xóa sự kiện đã bắt đầu.", StatusCodes.Status400BadRequest);
             if (entity.CreatedBy != actorAccountId && !actorRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
                 throw new ApiException("Bạn không có quyền xóa sự kiện này", StatusCodes.Status403Forbidden);
 

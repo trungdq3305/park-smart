@@ -71,7 +71,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Điều khoản & Chính sách',
     },
     {
-      key: '/payments',
+      key: '/admin/payments',
       icon: <WalletOutlined />,
       label: 'Thanh toán',
     },
@@ -85,6 +85,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       icon: <GiftOutlined />,
       label: 'Khuyến mãi',
     },
+    {
+      key: '/admin/subscription-plan',
+      icon: <WalletOutlined />,
+      label: 'Gói đăng ký',
+    }
   ]
 
   const handleMenuClick = ({ key }: { key: string }) => {

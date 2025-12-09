@@ -22,7 +22,6 @@ export default function DoesnotLoginYet() {
             <Button type="primary" onClick={() => navigate('/')}>
               Đi đến trang Đăng nhập
             </Button>
-            <Button onClick={() => navigate('/')}>Quay về Trang chủ</Button>
           </Space>
         }
       />

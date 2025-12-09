@@ -275,7 +275,7 @@ const KioskPage: React.FC = () => {
       }
     } catch (error: any) {
       console.error(error)
-      api.error({ message: 'Lỗi hoặc không tìm thấy thông tin xe' })
+      api.error({ message: error.data?.message || 'Lỗi không xác định' })
       setMode('IDLE')
     } finally {
       setIsLoading(false)

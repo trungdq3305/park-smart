@@ -19,7 +19,16 @@ export const invoiceAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['invoice'],
     }),
+    confirmPayment: builder.query({
+      query: ({ paymentId }: { paymentId: string }) => ({
+        url: `/core/payments/confirm`,
+        method: 'GET',
+        params: { paymentId },
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['invoice'],
+    }),
   }),
 })
 
-export const { useCreateInvoiceMutation, useGetInvoicesQuery } = invoiceAPI
+export const { useCreateInvoiceMutation, useGetInvoicesQuery, useConfirmPaymentQuery } = invoiceAPI

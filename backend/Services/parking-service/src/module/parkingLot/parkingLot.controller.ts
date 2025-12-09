@@ -564,19 +564,21 @@ export class ParkingLotController {
     }
   }
 
-  @Get(':parkingLotId/requests')
+  @Get(':parkingLotOperatorId/requests')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR) // Cả Admin và Operator liên quan đều có thể xem
   @ApiOperation({
     summary: '[Admin/Operator] Lấy danh sách các YÊU CẦU của một bãi xe',
   })
-  @ApiParam({ name: 'parkingLotId', description: 'ID của bãi đỗ xe' })
+  @ApiParam({ name: 'parkingLotOperatorId', description: 'ID của bãi đỗ xe' })
   async getRequestsForParkingLot(
-    @Param() parkingLotId: ParkingLotIdDto,
+    @Param('parkingLotOperatorId') parkingLotOperatorId: string,
   ): Promise<ApiResponseDto<ParkingLotRequestResponseDto[]>> {
     const requests =
-      await this.parkingLotService.getRequestsForParkingLot(parkingLotId)
+      await this.parkingLotService.getRequestsForParkingLot(
+        parkingLotOperatorId,
+      )
     return {
       data: requests,
       message: 'Lấy danh sách yêu cầu thành công',
