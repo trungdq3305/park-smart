@@ -42,8 +42,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       key: '/admin/manage-account',
       icon: <TeamOutlined />,
       label: 'Tài khoản',
-      badge: '164',
-      active: true,
+    },
+    {
+      key: '/admin/dashboard-admin',
+      icon: <BarChartOutlined />,
+      label: 'Dashboard',
     },
     {
       key: '/admin/parking-lot-requests',
@@ -54,11 +57,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       key: '/admin/manage-parking-lots',
       icon: <EnvironmentOutlined />,
       label: 'Bãi đỗ xe',
-    },
-    {
-      key: '/admin/dashboard-admin',
-      icon: <BarChartOutlined />,
-      label: 'Dashboard',
     },
     {
       key: '/admin/reports',
@@ -76,6 +74,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Thanh toán',
     },
     {
+      key: '/admin/subscription-plan',
+      icon: <WalletOutlined />,
+      label: 'Dịch vụ đăng ký hàng tháng',
+    },
+    {
       key: '/admin/events',
       icon: <CalendarOutlined />,
       label: 'Sự kiện',
@@ -85,11 +88,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       icon: <GiftOutlined />,
       label: 'Khuyến mãi',
     },
-    {
-      key: '/admin/subscription-plan',
-      icon: <WalletOutlined />,
-      label: 'Gói đăng ký',
-    }
   ]
 
   const handleMenuClick = ({ key }: { key: string }) => {
@@ -143,11 +141,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               label: (
                 <div className="menu-item-content">
                   <span className="menu-label">{item.label}</span>
-                  {item.badge && (
-                    <span className={`menu-badge ${item.active ? 'active' : ''}`}>
-                      {item.badge}
-                    </span>
-                  )}
                 </div>
               ),
             }))}
