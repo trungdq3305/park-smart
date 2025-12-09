@@ -121,11 +121,17 @@ class BookingFlowHelper {
 
       print('💰 Calculated payment amount:');
       print('  Duration (hours): $durationInHours');
-      print('  Original amount: ${TieredPricingHelper.formatPrice(originalAmount)} đ');
+      print(
+        '  Original amount: ${TieredPricingHelper.formatPrice(originalAmount)} đ',
+      );
       if (discountAmount > 0) {
-        print('  Discount: -${TieredPricingHelper.formatPrice(discountAmount)} đ');
+        print(
+          '  Discount: -${TieredPricingHelper.formatPrice(discountAmount)} đ',
+        );
       }
-      print('  Final amount: ${TieredPricingHelper.formatPrice(finalAmount)} đ');
+      print(
+        '  Final amount: ${TieredPricingHelper.formatPrice(finalAmount)} đ',
+      );
 
       // Step 3: Create payment with final amount (after discount)
       final operatorId = parkingLot['parkingLotOperatorId'] as String?;
@@ -185,6 +191,49 @@ class BookingFlowHelper {
               if (success) {
                 final finalPaymentId = returnedPaymentId ?? paymentId;
                 if (reservationId != null && finalPaymentId != null) {
+                  // Show loading dialog to prevent user interaction
+                  if (!bookingContext.mounted) return;
+                  showDialog(
+                    context: bookingContext,
+                    barrierDismissible: false,
+                    builder: (dialogContext) => WillPopScope(
+                      onWillPop: () async => false,
+                      child: Dialog(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.green,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Đang xác nhận thanh toán...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Vui lòng đợi trong giây lát',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+
                   try {
                     // Step 0: Validate IDs
                     if (finalPaymentId.isEmpty || finalPaymentId.length < 20) {
@@ -227,8 +276,8 @@ class BookingFlowHelper {
                     // Step 3: Use promotion if selected
                     if (selectedPromotion != null) {
                       try {
-                        final promotionCode =
-                            selectedPromotion['code']?.toString();
+                        final promotionCode = selectedPromotion['code']
+                            ?.toString();
                         if (promotionCode != null && promotionCode.isNotEmpty) {
                           print('🎁 Step 3: Using promotion:');
                           print('  Promotion Code: $promotionCode');
@@ -254,6 +303,11 @@ class BookingFlowHelper {
                       }
                     }
 
+                    // Close loading dialog
+                    if (bookingContext.mounted) {
+                      Navigator.of(bookingContext, rootNavigator: true).pop();
+                    }
+
                     // Navigate to result screen
                     // After WebView closes, we're back at booking screen
                     // Use pushReplacement to replace booking screen with result screen
@@ -274,6 +328,11 @@ class BookingFlowHelper {
                     print('  Error: $confirmError');
                     print('  Reservation ID: $reservationId');
                     print('  Payment ID: $finalPaymentId');
+
+                    // Close loading dialog
+                    if (bookingContext.mounted) {
+                      Navigator.of(bookingContext, rootNavigator: true).pop();
+                    }
 
                     // Extract error message
                     String errorMessage = confirmError.toString();
@@ -389,11 +448,17 @@ class BookingFlowHelper {
       final discountAmount = originalAmount - finalAmount;
 
       print('💰 Calculated payment amount:');
-      print('  Original amount: ${PromotionPricingHelper.formatPrice(originalAmount)} đ');
+      print(
+        '  Original amount: ${PromotionPricingHelper.formatPrice(originalAmount)} đ',
+      );
       if (discountAmount > 0) {
-        print('  Discount: -${PromotionPricingHelper.formatPrice(discountAmount)} đ');
+        print(
+          '  Discount: -${PromotionPricingHelper.formatPrice(discountAmount)} đ',
+        );
       }
-      print('  Final amount: ${PromotionPricingHelper.formatPrice(finalAmount)} đ');
+      print(
+        '  Final amount: ${PromotionPricingHelper.formatPrice(finalAmount)} đ',
+      );
 
       // Step 1: Create payment with final amount (after discount)
       print('💳 Creating payment:');
@@ -495,6 +560,49 @@ class BookingFlowHelper {
               if (success && bookingContext.mounted) {
                 final finalPaymentId = returnedPaymentId ?? paymentId;
                 if (subscriptionId != null && finalPaymentId != null) {
+                  // Show loading dialog to prevent user interaction
+                  if (!bookingContext.mounted) return;
+                  showDialog(
+                    context: bookingContext,
+                    barrierDismissible: false,
+                    builder: (dialogContext) => WillPopScope(
+                      onWillPop: () async => false,
+                      child: Dialog(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.green,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Đang xác nhận thanh toán...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Vui lòng đợi trong giây lát',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+
                   try {
                     // Step 1: Check subscription status before confirming
                     print('🔍 Step 0: Checking subscription status:');
@@ -572,8 +680,8 @@ class BookingFlowHelper {
                     // Step 3: Use promotion if selected
                     if (selectedPromotion != null) {
                       try {
-                        final promotionCode =
-                            selectedPromotion['code']?.toString();
+                        final promotionCode = selectedPromotion['code']
+                            ?.toString();
                         if (promotionCode != null && promotionCode.isNotEmpty) {
                           print('🎁 Step 3: Using promotion:');
                           print('  Promotion Code: $promotionCode');
@@ -599,6 +707,11 @@ class BookingFlowHelper {
                       }
                     }
 
+                    // Close loading dialog
+                    if (bookingContext.mounted) {
+                      Navigator.of(bookingContext, rootNavigator: true).pop();
+                    }
+
                     if (!bookingContext.mounted) return;
                     Navigator.of(bookingContext).pushReplacement(
                       MaterialPageRoute(
@@ -616,6 +729,11 @@ class BookingFlowHelper {
                     print('  Error: $confirmError');
                     print('  Subscription ID: $subscriptionId');
                     print('  Payment ID: $finalPaymentId');
+
+                    // Close loading dialog
+                    if (bookingContext.mounted) {
+                      Navigator.of(bookingContext, rootNavigator: true).pop();
+                    }
 
                     // Extract error message
                     String errorMessage = confirmError.toString();

@@ -35,8 +35,6 @@ class ReservationFilterBar extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            _buildChip(label: 'Tất cả', statusCode: null),
-            const SizedBox(width: 8),
             for (final status in statuses) ...[
               _buildChip(label: getStatusText(status), statusCode: status),
               const SizedBox(width: 8),
