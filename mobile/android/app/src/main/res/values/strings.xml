@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Park Smart</string>
     <string name="google_sign_in_options">{"web_client_id":"595180731029-9j9tcg3hm0mbu1bip118hg9qgvir36o5.apps.googleusercontent.com"}</string>
 </resources>
