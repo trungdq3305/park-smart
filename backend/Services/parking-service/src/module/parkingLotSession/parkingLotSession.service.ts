@@ -431,24 +431,6 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
       await session.endSession()
     }
 
-    // =================================================================
-    // D. TÁC VỤ NỀN (POST-COMMIT)
-    // =================================================================
-
-    // 1. Cập nhật WebSocket
-    if (newSession.guestCardId) {
-      const wsData =
-        await this.parkingLotService.updateAvailableSpotsForWebsocket(
-          parkingLotId,
-          -1,
-        )
-      if (!wsData) {
-        this.logger.warn(
-          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingLotId} khi check-in session ${newSession._id}`,
-        )
-      }
-    }
-
     // 2. Upload ảnh
     const ownerType = 'ParkingSession'
     await this.uploadImageToImageService(
