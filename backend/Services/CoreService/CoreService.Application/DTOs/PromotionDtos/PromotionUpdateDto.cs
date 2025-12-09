@@ -17,8 +17,6 @@ namespace CoreService.Application.DTOs.PromotionDtos
         public DiscountType? DiscountType { get; set; }
         public decimal? DiscountValue { get; set; }
         public decimal? MaxDiscountAmount { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
         public int? TotalUsageLimit { get; set; }
         public bool? IsActive { get; set; }
     }

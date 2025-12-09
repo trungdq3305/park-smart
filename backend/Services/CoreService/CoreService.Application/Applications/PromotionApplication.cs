@@ -38,23 +38,14 @@ namespace CoreService.Application.Applications
             if (existingCode != null)
                 throw new ApiException("Mã khuyến mãi đã tồn tại", StatusCodes.Status409Conflict);
 
-            if (dto.StartDate >= dto.EndDate)
-                throw new ApiException("Ngày bắt đầu phải trước ngày kết thúc", StatusCodes.Status400BadRequest);
-            if (!string.IsNullOrEmpty(dto.EventId))
+            // 1. Lấy thông tin Event BẮT BUỘC
+            var eventEntity = await _eventRepository.GetByIdAsync(dto.EventId)
+                                ?? throw new ApiException("Sự kiện không tồn tại", StatusCodes.Status404NotFound);
+
+            // 2. Kiểm tra Event có cho phép khuyến mãi
+            if (!eventEntity.IncludedPromotions)
             {
-                // 1. Lấy thông tin Event
-                var eventEntity = await _eventRepository.GetByIdAsync(dto.EventId);
-
-                if (eventEntity == null)
-                {
-                    throw new ApiException("Sự kiện không tồn tại", StatusCodes.Status404NotFound);
-                }
-
-                // 2. Kiểm tra điều kiện IncludedPromotions
-                if (!eventEntity.IncludedPromotions)
-                {
-                    throw new ApiException("Sự kiện này không cho phép thêm khuyến mãi", StatusCodes.Status400BadRequest);
-                }
+                throw new ApiException("Sự kiện này không cho phép thêm khuyến mãi", StatusCodes.Status400BadRequest);
             }
             // --- LOGIC KIỂM TRA BỔ SUNG BẮT ĐẦU TẠI ĐÂY ---
             if (dto.DiscountType == DiscountType.Percentage)
@@ -91,8 +82,8 @@ namespace CoreService.Application.Applications
                 DiscountType = dto.DiscountType,
                 DiscountValue = dto.DiscountValue,
                 MaxDiscountAmount = dto.MaxDiscountAmount,
-                StartDate = dto.StartDate,
-                EndDate = dto.EndDate,
+                StartDate = eventEntity.StartDate, // LẤY TỪ EVENT
+                EndDate = eventEntity.EndDate,
                 TotalUsageLimit = dto.TotalUsageLimit,
                 IsActive = dto.IsActive,
                 CreatedBy = actorAccountId,
@@ -108,23 +99,24 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<PromotionResponseDto>> UpdateAsync(PromotionUpdateDto dto, string actorAccountId)
         {
             var entity = await _promoRepo.GetByIdAsync(dto.Id)
-                         ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
+                  ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
 
-            // 1. Xác định các giá trị sẽ được áp dụng (mới từ DTO hoặc cũ từ Entity)
-            var newStartDate = dto.StartDate ?? entity.StartDate;
-            var newEndDate = dto.EndDate ?? entity.EndDate;
-            var newDiscountType = dto.DiscountType ?? entity.DiscountType; // Lấy DiscountType mới hoặc giữ Type cũ
+            // 1. LẤY EVENT và KIỂM TRA NGÀY THÁNG CỦA EVENT
+            var eventEntity = await _eventRepository.GetByIdAsync(entity.EventId)
+                                ?? throw new ApiException("Sự kiện liên kết không tồn tại", StatusCodes.Status404NotFound);
+
+            var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            if (now >= eventEntity.StartDate)
+                throw new ApiException("Không thể chỉnh sửa khuyến mãi đã bắt đầu (theo ngày sự kiện).", StatusCodes.Status400BadRequest);
+
+            // 2. Xác định các giá trị sẽ được áp dụng
+            var newDiscountType = dto.DiscountType ?? entity.DiscountType;
             var newDiscountValue = dto.DiscountValue ?? entity.DiscountValue;
             var newMaxDiscountAmount = dto.MaxDiscountAmount ?? entity.MaxDiscountAmount;
 
-            // 2. KIỂM TRA NGÀY THÁNG
-            if (newStartDate >= newEndDate)
-                throw new ApiException("Ngày bắt đầu phải trước ngày kết thúc", StatusCodes.Status400BadRequest);
-
-            // 3. KIỂM TRA LOGIC DISCOUNT (Dựa trên DiscountType MỚI)
-            if (newDiscountType == DiscountType.Percentage)
+            // 3. KIỂM TRA LOGIC DISCOUNT (Giữ nguyên)
+            if (newDiscountType == DiscountType.Percentage)
             {
-                // Percentage: DiscountValue phải hợp lệ (0 < Value <= 100) VÀ MaxDiscountAmount phải > 0
                 if (newDiscountValue <= 0 || newDiscountValue > 100)
                     throw new ApiException("Giá trị giảm giá (DiscountValue) cho chiết khấu phần trăm phải lớn hơn 0 và nhỏ hơn hoặc bằng 100", StatusCodes.Status400BadRequest);
 
@@ -133,7 +125,6 @@ namespace CoreService.Application.Applications
             }
             else if (newDiscountType == DiscountType.FixedAmount)
             {
-                // FixedAmount: DiscountValue phải > 0 VÀ MaxDiscountAmount phải là null hoặc <= 0
                 if (newDiscountValue <= 0)
                     throw new ApiException("Giá trị giảm giá (DiscountValue) cho chiết khấu cố định phải lớn hơn 0", StatusCodes.Status400BadRequest);
 
@@ -141,16 +132,18 @@ namespace CoreService.Application.Applications
                     throw new ApiException("Khuyến mãi theo số tiền cố định không được có giới hạn giảm giá tối đa (MaxDiscountAmount)", StatusCodes.Status400BadRequest);
             }
 
-            // 4. GÁN CÁC GIÁ TRỊ ĐÃ KIỂM TRA HỢP LỆ VÀO ENTITY
-            entity.Name = dto.Name ?? entity.Name;
+            // 4. GÁN CÁC GIÁ TRỊ VÀO ENTITY
+            entity.Name = dto.Name ?? entity.Name;
             entity.Description = dto.Description ?? entity.Description;
 
-            // Gán các giá trị đã kiểm tra
-            entity.DiscountType = newDiscountType;
+            // Gán các giá trị đã kiểm tra
+            entity.DiscountType = newDiscountType;
             entity.DiscountValue = newDiscountValue;
             entity.MaxDiscountAmount = newMaxDiscountAmount;
-            entity.StartDate = newStartDate;
-            entity.EndDate = newEndDate;
+
+            // NGÀY THÁNG KHÔNG ĐƯỢC CẬP NHẬT TỪ DTO, LUÔN DỰA VÀO EVENT
+            // Tuy nhiên, nếu Event được cập nhật, Promotion sẽ không tự động cập nhật theo.
+            // Chúng ta sẽ KHÔNG thay đổi StartDate/EndDate ở đây, trừ khi bạn muốn update thủ công EventId.
 
             entity.TotalUsageLimit = dto.TotalUsageLimit ?? entity.TotalUsageLimit;
             entity.IsActive = dto.IsActive ?? entity.IsActive;
@@ -163,90 +156,21 @@ namespace CoreService.Application.Applications
         }
         public async Task<ApiResponse<object>> DeleteAsync(string id, string actorAccountId)
         {
-            _ = await _promoRepo.GetByIdAsync(id) ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
+            var entity = await _promoRepo.GetByIdAsync(id) ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
+
+            // LẤY EVENT và KIỂM TRA NGÀY THÁNG CỦA EVENT
+            var eventEntity = await _eventRepository.GetByIdAsync(entity.EventId)
+                                ?? throw new ApiException("Sự kiện liên kết không tồn tại", StatusCodes.Status404NotFound);
+
+            var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            if (now >= eventEntity.StartDate)
+                throw new ApiException("Không thể xóa khuyến mãi đã bắt đầu (theo ngày sự kiện).", StatusCodes.Status400BadRequest);
+
             await _promoRepo.SoftDeleteAsync(id, actorAccountId, TimeConverter.ToVietnamTime(DateTime.UtcNow));
             return new ApiResponse<object>(null, true, "Xóa khuyến mãi thành công", StatusCodes.Status200OK);
         }
 
-        public async Task<ApiResponse<PromotionResponseDto>> GetByIdAsync(string id)
-        {
-            var entity = await _promoRepo.GetByIdAsync(id) ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
-            var res = await MapToResponseDto(entity);
-            return new ApiResponse<PromotionResponseDto>(res, true, "OK", StatusCodes.Status200OK);
-        }
-
-        public async Task<ApiResponse<List<PromotionResponseDto>>> GetAllAsync()
-        {
-            var items = await _promoRepo.GetAllAsync();
-            if (items == null)
-            {
-                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
-            }
-            var tasks = items.Select(MapToResponseDto);
-            var list = (await Task.WhenAll(tasks)).ToList();
-            return new ApiResponse<List<PromotionResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
-        }
-
-        public async Task<ApiResponse<PromotionRuleResponseDto>> AddRuleAsync(PromotionRuleCreateDto dto, string actorAccountId)
-        {
-            _ = await _promoRepo.GetByIdAsync(dto.PromotionId) ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
-
-            var ruleEntity = new PromotionRule
-            {
-                PromotionId = dto.PromotionId,
-                RuleType = dto.RuleType,
-                RuleValue = dto.RuleValue
-            };
-            await _ruleRepo.AddAsync(ruleEntity);
-
-            var res = new PromotionRuleResponseDto
-            {
-                Id = ruleEntity.Id,
-                PromotionId = ruleEntity.PromotionId,
-                RuleType = ruleEntity.RuleType,
-                RuleValue = ruleEntity.RuleValue
-            };
-
-            return new ApiResponse<PromotionRuleResponseDto>(res, true, "Thêm điều kiện thành công", StatusCodes.Status201Created);
-        }
-
-        public async Task<ApiResponse<object>> RemoveRuleAsync(string ruleId, string actorAccountId)
-        {
-            _ = await _ruleRepo.GetByIdAsync(ruleId) ?? throw new ApiException("Điều kiện không tồn tại", StatusCodes.Status404NotFound);
-            await _ruleRepo.DeleteAsync(ruleId);
-            return new ApiResponse<object>(null, true, "Xóa điều kiện thành công", StatusCodes.Status200OK);
-        }
-
-        private async Task<PromotionResponseDto> MapToResponseDto(Promotion x)
-        {
-            var rules = await _ruleRepo.GetByPromotionIdAsync(x.Id);
-            return new PromotionResponseDto
-            {
-                Id = x.Id,
-                Code = x.Code,
-                Name = x.Name,
-                Description = x.Description,
-                DiscountType = x.DiscountType,
-                DiscountValue = x.DiscountValue,
-                MaxDiscountAmount = x.MaxDiscountAmount,
-                StartDate = x.StartDate,
-                EndDate = x.EndDate,
-                TotalUsageLimit = x.TotalUsageLimit,
-                CurrentUsageCount = x.CurrentUsageCount,
-                IsActive = x.IsActive,
-                CreatedAt = x.CreatedAt,
-                UpdatedAt = x.UpdatedAt,
-                CreatedBy = x.CreatedBy,
-                UpdatedBy = x.UpdatedBy,
-                Rules = rules.Select(r => new PromotionRuleResponseDto
-                {
-                    Id = r.Id,
-                    PromotionId = r.PromotionId,
-                    RuleType = r.RuleType,
-                    RuleValue = r.RuleValue
-                }).ToList()
-            };
-        }
+        // Cập nhật phương thức CalculateAsync để sử dụng ngày tháng của Event
         public async Task<ApiResponse<PromotionCalculateResponseDto>> CalculateAsync(PromotionCalculateRequestDto dto, string accId)
         {
             var promo = await _promoRepo.GetByCodeAsync(dto.PromotionCode)
@@ -255,11 +179,16 @@ namespace CoreService.Application.Applications
             if (!promo.IsActive)
                 throw new ApiException("Mã khuyến mãi đã bị khóa", StatusCodes.Status400BadRequest);
 
-            var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
-            if (now < promo.StartDate || now > promo.EndDate)
-                throw new ApiException("Mã khuyến mãi đã hết hạn hoặc chưa bắt đầu", 400);
+            // LẤY EVENT để kiểm tra ngày tháng
+            var eventEntity = await _eventRepository.GetByIdAsync(promo.EventId)
+                                ?? throw new ApiException("Sự kiện liên kết không tồn tại", StatusCodes.Status404NotFound);
 
-            // RULE: MinBookingValue
+            var now = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            // SỬ DỤNG NGÀY THÁNG CỦA EVENT
+            if (now < eventEntity.StartDate || now > eventEntity.EndDate)
+                throw new ApiException("Mã khuyến mãi đã hết hạn hoặc chưa bắt đầu (theo ngày sự kiện)", 400);
+
+            // ... (Phần kiểm tra Rule và tính toán giữ nguyên)
             var rules = await _ruleRepo.GetByPromotionIdAsync(promo.Id);
             foreach (var rule in rules)
             {
@@ -302,6 +231,111 @@ namespace CoreService.Application.Applications
                 200
             );
         }
+
+        public async Task<ApiResponse<PromotionResponseDto>> GetByIdAsync(string id)
+        {
+            var entity = await _promoRepo.GetByIdAsync(id) ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
+            var res = await MapToResponseDto(entity);
+            return new ApiResponse<PromotionResponseDto>(res, true, "OK", StatusCodes.Status200OK);
+        }
+
+        public async Task<ApiResponse<List<PromotionResponseDto>>> GetAllAsync()
+        {
+            var items = await _promoRepo.GetAllAsync();
+            if (items == null)
+            {
+                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
+            }
+            var tasks = items.Select(MapToResponseDto);
+            var list = (await Task.WhenAll(tasks)).ToList();
+            return new ApiResponse<List<PromotionResponseDto>>(list, true, "OK", StatusCodes.Status200OK);
+        }
+
+        public async Task<ApiResponse<PromotionRuleResponseDto>> AddRuleAsync(PromotionRuleCreateDto dto, string actorAccountId)
+        {
+            // 1. Kiểm tra sự tồn tại của khuyến mãi
+            _ = await _promoRepo.GetByIdAsync(dto.PromotionId) ?? throw new ApiException("Khuyến mãi không tồn tại", StatusCodes.Status404NotFound);
+
+            // 2. Kiểm tra xem đã có rule nào cho khuyến mãi này chưa
+            var existingRules = await _ruleRepo.GetByPromotionIdAsync(dto.PromotionId);
+
+            if (existingRules != null && existingRules.Any())
+            {
+                // Nếu đã có rule, ném lỗi với thông báo phù hợp
+                throw new ApiException("Mỗi khuyến mãi chỉ được phép có 1 điều kiện (Rule) duy nhất.", StatusCodes.Status400BadRequest);
+            }
+
+            // 3. Nếu chưa có rule, tiến hành thêm rule mới
+            var ruleEntity = new PromotionRule
+            {
+                PromotionId = dto.PromotionId,
+                RuleType = dto.RuleType,
+                RuleValue = dto.RuleValue
+            };
+            await _ruleRepo.AddAsync(ruleEntity);
+
+            // 4. Trả về phản hồi thành công
+            var res = new PromotionRuleResponseDto
+            {
+                Id = ruleEntity.Id,
+                PromotionId = ruleEntity.PromotionId,
+                RuleType = ruleEntity.RuleType,
+                RuleValue = ruleEntity.RuleValue
+            };
+
+            return new ApiResponse<PromotionRuleResponseDto>(res, true, "Thêm điều kiện thành công", StatusCodes.Status201Created);
+        }
+
+        public async Task<ApiResponse<object>> RemoveRuleAsync(string ruleId, string actorAccountId)
+        {
+            _ = await _ruleRepo.GetByIdAsync(ruleId) ?? throw new ApiException("Điều kiện không tồn tại", StatusCodes.Status404NotFound);
+            await _ruleRepo.DeleteAsync(ruleId);
+            return new ApiResponse<object>(null, true, "Xóa điều kiện thành công", StatusCodes.Status200OK);
+        }
+
+        private async Task<PromotionResponseDto> MapToResponseDto(Promotion x)
+        {
+            var rules = await _ruleRepo.GetByPromotionIdAsync(x.Id);
+            string eventTitle = null;
+
+            // Lấy EventTitle nếu có EventId
+            if (!string.IsNullOrEmpty(x.EventId))
+            {
+                var eventEntity = await _eventRepository.GetByIdAsync(x.EventId);
+                eventTitle = eventEntity?.Title;
+            }
+
+            // Ánh xạ
+            return new PromotionResponseDto
+            {
+                Id = x.Id,
+                Code = x.Code,
+                Name = x.Name,
+                Description = x.Description,
+                DiscountType = x.DiscountType,
+                DiscountValue = x.DiscountValue,
+                MaxDiscountAmount = x.MaxDiscountAmount,
+                StartDate = x.StartDate,
+                EndDate = x.EndDate,
+                TotalUsageLimit = x.TotalUsageLimit,
+                CurrentUsageCount = x.CurrentUsageCount,
+                IsActive = x.IsActive,
+                CreatedAt = x.CreatedAt,
+                UpdatedAt = x.UpdatedAt,
+                CreatedBy = x.CreatedBy,
+                UpdatedBy = x.UpdatedBy,
+                EventId = x.EventId,      // <<< Gán EventId
+                EventTitle = eventTitle,  // <<< Gán EventTitle
+                Rules = rules.Select(r => new PromotionRuleResponseDto
+                {
+                    Id = r.Id,
+                    PromotionId = r.PromotionId,
+                    RuleType = r.RuleType,
+                    RuleValue = r.RuleValue
+                }).ToList()
+            };
+        }
+        
         public async Task<ApiResponse<object>> UsePromotionAsync(PromotionCalculateRequestDto dto, string accId)
         {
             var promo = await _promoRepo.GetByCodeAsync(dto.PromotionCode)

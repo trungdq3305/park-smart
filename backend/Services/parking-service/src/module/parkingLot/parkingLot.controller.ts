@@ -253,6 +253,44 @@ export class ParkingLotController {
     }
   }
 
+  @Patch('update-booking-slot-duration/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR)
+  @ApiOperation({
+    summary: 'Cập nhật thời lượng đặt chỗ (booking slot) của một bãi đỗ xe',
+  })
+  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        bookingSlotDurationHours: {
+          type: 'number',
+          description: 'Thời lượng đặt chỗ mới (tính bằng giờ)',
+        },
+      },
+      example: {
+        bookingSlotDurationHours: 2,
+      },
+    },
+  })
+  async updateBookingSlotDuration(
+    @Param('id') id: string,
+    @Body('bookingSlotDurationHours') bookingSlotDurationHours: number,
+  ): Promise<ApiResponseDto<boolean>> {
+    const result = await this.parkingLotService.updateBookingSlotDurationHours(
+      id,
+      bookingSlotDurationHours,
+    )
+    return {
+      data: [result],
+      message: 'Cập nhật thời lượng đặt chỗ thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
   @Get('find-for-operator')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
@@ -526,19 +564,21 @@ export class ParkingLotController {
     }
   }
 
-  @Get(':parkingLotId/requests')
+  @Get(':parkingLotOperatorId/requests')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Roles(RoleEnum.ADMIN, RoleEnum.OPERATOR) // Cả Admin và Operator liên quan đều có thể xem
   @ApiOperation({
     summary: '[Admin/Operator] Lấy danh sách các YÊU CẦU của một bãi xe',
   })
-  @ApiParam({ name: 'parkingLotId', description: 'ID của bãi đỗ xe' })
+  @ApiParam({ name: 'parkingLotOperatorId', description: 'ID của bãi đỗ xe' })
   async getRequestsForParkingLot(
-    @Param() parkingLotId: ParkingLotIdDto,
+    @Param('parkingLotOperatorId') parkingLotOperatorId: string,
   ): Promise<ApiResponseDto<ParkingLotRequestResponseDto[]>> {
     const requests =
-      await this.parkingLotService.getRequestsForParkingLot(parkingLotId)
+      await this.parkingLotService.getRequestsForParkingLot(
+        parkingLotOperatorId,
+      )
     return {
       data: requests,
       message: 'Lấy danh sách yêu cầu thành công',

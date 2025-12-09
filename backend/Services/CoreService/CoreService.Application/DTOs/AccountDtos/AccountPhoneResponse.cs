@@ -12,5 +12,7 @@ namespace CoreService.Application.DTOs.AccountDtos
         [JsonPropertyName("_id")]
         public string Id { get; set; }
         public string PhoneNumber { get; set; }
+        public string FullName { get; set; }
+
     }
 }

@@ -1,29 +1,23 @@
 import { useMemo, useState } from 'react'
 import {
-  Card,
-  Tag,
-  Table,
-  Select,
-  Space,
-  Typography,
-  Tooltip,
-  Button,
-  Badge,
-  Empty,
-  Modal,
-  Input,
-  notification,
-} from 'antd'
-import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
-import { EyeOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons'
+  EyeOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  FileTextOutlined,
+  ClockCircleOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  EnvironmentOutlined,
+} from '@ant-design/icons'
 import {
   useParkingLotRequestsQuery,
   useReviewParkingLotRequestMutation,
 } from '../../../features/admin/parkinglotAPI'
 import type { ParkingLotRequest } from '../../../types/ParkingLotRequest'
-import './ManageRequest.css'
-import { useSearchParams } from 'react-router-dom'
 import { RequestDetailModal } from '../../../components/modals'
+import { Modal, Input, message } from 'antd'
+import { useSearchParams } from 'react-router-dom'
+import './ManageRequest.css'
 
 const RequestStatus = {
   PENDING: 'PENDING',
@@ -43,34 +37,56 @@ const RequestType = {
 type RequestStatusValue = (typeof RequestStatus)[keyof typeof RequestStatus]
 type RequestTypeValue = (typeof RequestType)[keyof typeof RequestType]
 
-const statusOptions: { label: string; value: RequestStatusValue }[] = [
-  { label: 'Đang chờ duyệt', value: RequestStatus.PENDING },
-  { label: 'Đã duyệt', value: RequestStatus.APPROVED },
-  { label: 'Đã từ chối', value: RequestStatus.REJECTED },
-  { label: 'Đã áp dụng', value: RequestStatus.APPLIED },
-  { label: 'Thất bại', value: RequestStatus.FAILED },
-  { label: 'Đã hủy', value: RequestStatus.CANCELLED },
-]
-
-const typeOptions: { label: string; value: RequestTypeValue }[] = [
-  { label: 'Yêu cầu tạo mới', value: RequestType.CREATE },
-  { label: 'Yêu cầu cập nhật', value: RequestType.UPDATE },
-  { label: 'Yêu cầu xóa', value: RequestType.DELETE },
-]
-
-const statusTagColor: Record<RequestStatusValue, string> = {
-  PENDING: 'gold',
-  APPROVED: 'green',
-  REJECTED: 'red',
-  APPLIED: 'blue',
-  FAILED: 'volcano',
-  CANCELLED: 'default',
+const getStatusLabel = (status: string): string => {
+  const statusMap: Record<string, string> = {
+    PENDING: 'Đang chờ duyệt',
+    APPROVED: 'Đã duyệt',
+    REJECTED: 'Đã từ chối',
+    APPLIED: 'Đã áp dụng',
+    FAILED: 'Thất bại',
+    CANCELLED: 'Đã hủy',
+  }
+  return statusMap[status] || status
 }
 
-const typeTagColor: Record<RequestTypeValue, string> = {
-  CREATE: 'geekblue',
-  UPDATE: 'cyan',
-  DELETE: 'magenta',
+const getStatusClass = (status: string): string => {
+  const statusClassMap: Record<string, string> = {
+    PENDING: 'status-pending',
+    APPROVED: 'status-approved',
+    REJECTED: 'status-rejected',
+    APPLIED: 'status-applied',
+    FAILED: 'status-failed',
+    CANCELLED: 'status-cancelled',
+  }
+  return statusClassMap[status] || 'status-default'
+}
+
+const getTypeLabel = (type: string): string => {
+  const typeMap: Record<string, string> = {
+    CREATE: 'Tạo mới',
+    UPDATE: 'Cập nhật',
+    DELETE: 'Xóa',
+  }
+  return typeMap[type] || type
+}
+
+const getTypeClass = (type: string): string => {
+  const typeClassMap: Record<string, string> = {
+    CREATE: 'type-create',
+    UPDATE: 'type-update',
+    DELETE: 'type-delete',
+  }
+  return typeClassMap[type] || 'type-default'
+}
+
+const formatDateTime = (dateString: string): string => {
+  return new Date(dateString).toLocaleDateString('vi-VN', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 const ManageRequest: React.FC = () => {
@@ -90,12 +106,9 @@ const ManageRequest: React.FC = () => {
   const [requestBeingReviewed, setRequestBeingReviewed] = useState<ParkingLotRequest | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const [searchParams, setSearchParams] = useSearchParams()
-  const [reviewParkingLotRequest, { isLoading: isReviewLoading }] =
-    useReviewParkingLotRequestMutation()
 
-  // Get values from URL parameters with defaults
   const currentPage = parseInt(searchParams.get('page') || '1', 10)
-  const pageSize = 5 // Fixed page size, not from URL
+  const pageSize = 10
 
   const { data, isLoading, error } = useParkingLotRequestsQuery({
     status,
@@ -104,16 +117,19 @@ const ManageRequest: React.FC = () => {
     pageSize,
   })
 
-  const parkingLotRequests: ParkingLotRequest[] = data?.data || []
-  const totalRequests = parkingLotRequests.length
+  const [reviewParkingLotRequest, { isLoading: isReviewLoading }] =
+    useReviewParkingLotRequestMutation()
 
   const apiError = error as any
-  const isNoDataError = apiError?.status === 404
+  const isNotFoundError =
+    apiError?.status === 404 || apiError?.data?.statusCode === 404 || apiError?.statusCode === 404
 
-  const pagedRequests = useMemo(() => {
-    const start = (currentPage - 1) * pageSize
-    return parkingLotRequests.slice(start, start + pageSize)
-  }, [parkingLotRequests, currentPage])
+  const parkingLotRequests: ParkingLotRequest[] = isNotFoundError
+    ? []
+    : (data as { data?: ParkingLotRequest[] })?.data || []
+
+  const pagination = (data as { pagination?: { total: number; page: number; pageSize: number } })
+    ?.pagination
 
   const updateSearchParams = (updates: Record<string, string | number | null>) => {
     const newSearchParams = new URLSearchParams(searchParams)
@@ -139,26 +155,21 @@ const ManageRequest: React.FC = () => {
     updateSearchParams({ type: value, page: 1 })
   }
 
-  const handleTableChange = (pagination: TablePaginationConfig) => {
-    if (pagination.current && pagination.current !== currentPage) {
-      updateSearchParams({ page: pagination.current })
-    }
+  const handlePageChange = (page: number) => {
+    updateSearchParams({ page })
   }
 
   const stats = useMemo(() => {
-    const total = parkingLotRequests.length
-    const pending = parkingLotRequests.filter(
-      (r: ParkingLotRequest) => r.status === RequestStatus.PENDING
-    ).length
-    const approved = parkingLotRequests.filter(
-      (r: ParkingLotRequest) => r.status === RequestStatus.APPROVED
-    ).length
-    const rejected = parkingLotRequests.filter(
-      (r: ParkingLotRequest) => r.status === RequestStatus.REJECTED
-    ).length
+    const total = pagination?.total || parkingLotRequests.length
+    const pending = parkingLotRequests.filter((r) => r.status === RequestStatus.PENDING).length
+    const approved = parkingLotRequests.filter((r) => r.status === RequestStatus.APPROVED).length
+    const rejected = parkingLotRequests.filter((r) => r.status === RequestStatus.REJECTED).length
+    const applied = parkingLotRequests.filter((r) => r.status === RequestStatus.APPLIED).length
+    const failed = parkingLotRequests.filter((r) => r.status === RequestStatus.FAILED).length
+    const cancelled = parkingLotRequests.filter((r) => r.status === RequestStatus.CANCELLED).length
 
-    return { total, pending, approved, rejected }
-  }, [parkingLotRequests])
+    return { total, pending, approved, rejected, applied, failed, cancelled }
+  }, [parkingLotRequests, pagination])
 
   const handleApproveRequest = async (record: ParkingLotRequest) => {
     try {
@@ -168,15 +179,9 @@ const ManageRequest: React.FC = () => {
         rejectionReason: undefined,
       }).unwrap()
 
-      notification.success({
-        message: 'Chấp thuận yêu cầu thành công',
-        description: `Yêu cầu bãi đỗ xe "${record.payload.name}" đã được chấp thuận.`,
-      })
+      message.success(`Yêu cầu bãi đỗ xe "${record.payload.name}" đã được chấp thuận thành công.`)
     } catch (err: any) {
-      notification.error({
-        message: 'Chấp thuận yêu cầu thất bại',
-        description: err?.data?.message || 'Đã có lỗi xảy ra, vui lòng thử lại.',
-      })
+      message.error(err?.data?.message || 'Chấp thuận yêu cầu thất bại')
     }
   }
 
@@ -202,198 +207,263 @@ const ManageRequest: React.FC = () => {
         rejectionReason: rejectReason.trim(),
       }).unwrap()
 
-      notification.success({
-        message: 'Từ chối yêu cầu thành công',
-        description: `Yêu cầu bãi đỗ xe "${requestBeingReviewed.payload.name}" đã bị từ chối.`,
-      })
-
+      message.success(`Yêu cầu bãi đỗ xe "${requestBeingReviewed.payload.name}" đã bị từ chối.`)
       handleCancelRejectModal()
     } catch (err: any) {
-      notification.error({
-        message: 'Từ chối yêu cầu thất bại',
-        description: err?.data?.message || 'Đã có lỗi xảy ra, vui lòng thử lại.',
-      })
+      message.error(err?.data?.message || 'Từ chối yêu cầu thất bại')
     }
   }
 
-  const columns: ColumnsType<ParkingLotRequest> = [
-    {
-      title: 'Bãi đỗ xe',
-      dataIndex: ['payload', 'name'],
-      key: 'name',
-      render: (_name, record) => (
-        <Space direction="vertical" size={0}>
-          <Typography.Text strong>{record.payload.name}</Typography.Text>
-          <Typography.Text type="secondary" ellipsis style={{ maxWidth: 260 }}>
-            {record.payload.addressId?.fullAddress}
-          </Typography.Text>
-        </Space>
-      ),
-    },
-    {
-      title: 'Loại yêu cầu',
-      dataIndex: 'requestType',
-      key: 'requestType',
-      render: (requestType: RequestTypeValue) => (
-        <Tag color={typeTagColor[requestType]}>
-          {typeOptions.find((t) => t.value === requestType)?.label}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (value: RequestStatusValue) => (
-        <Tag color={statusTagColor[value]}>
-          {statusOptions.find((s) => s.value === value)?.label}
-        </Tag>
-      ),
-    },
-    {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (value: string) => new Date(value).toLocaleString('vi-VN'),
-    },
-    {
-      title: 'Ngày hiệu lực',
-      dataIndex: 'effectiveDate',
-      key: 'effectiveDate',
-      render: (value: string) => new Date(value).toLocaleDateString('vi-VN'),
-    },
-    {
-      title: 'Hành động',
-      key: 'actions',
-      width: 260,
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="Xem chi tiết yêu cầu">
-            <Button
-              size="small"
-              icon={<EyeOutlined />}
-              onClick={() => {
-                setSelectedRequest(record)
-                setIsDetailModalOpen(true)
-              }}
-            />
-          </Tooltip>
-          <Tooltip title="Chấp thuận yêu cầu">
-            <Button
-              size="small"
-              type="primary"
-              icon={<CheckOutlined />}
-              aria-label="Chấp thuận yêu cầu"
-              disabled={record.status !== RequestStatus.PENDING || isReviewLoading}
-              onClick={() => handleApproveRequest(record)}
-            />
-          </Tooltip>
-          <Tooltip title="Từ chối yêu cầu">
-            <Button
-              size="small"
-              danger
-              icon={<CloseOutlined />}
-              aria-label="Từ chối yêu cầu"
-              disabled={record.status !== RequestStatus.PENDING}
-              onClick={() => openRejectModal(record)}
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ]
+  if (isLoading) {
+    return (
+      <div className="manage-request-page">
+        <div className="request-loading">
+          <div className="request-loading-spinner" />
+          <p>Đang tải danh sách yêu cầu...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !isNotFoundError) {
+    return (
+      <div className="manage-request-page">
+        <div className="request-error">
+          <span className="request-error-badge">Lỗi tải dữ liệu</span>
+          <p>Không thể tải danh sách yêu cầu. Vui lòng thử lại sau.</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="manage-request-page">
-      <div className="page-header">
+      <div className="request-page-header">
         <div>
-          <Typography.Title level={3} className="page-title">
-            Yêu cầu thay đổi bãi đỗ xe
-          </Typography.Title>
-          <Typography.Text type="secondary">
-            Theo dõi và phê duyệt các yêu cầu tạo mới / cập nhật / xóa bãi đỗ xe từ Operator
-          </Typography.Text>
+          <h1>Quản lý yêu cầu bãi đỗ xe</h1>
+          <p>Theo dõi và phê duyệt các yêu cầu tạo mới / cập nhật / xóa bãi đỗ xe từ Operator</p>
         </div>
-        <Space size="large">
-          <div className="header-stat">
-            <Badge status="processing" />
-            <span>Đang chờ duyệt: </span>
-            <strong>{stats.pending}</strong>
-          </div>
-          <div className="header-stat">
-            <Badge status="success" />
-            <span>Đã duyệt: </span>
-            <strong>{stats.approved}</strong>
-          </div>
-          <div className="header-stat">
-            <Badge status="error" />
-            <span>Đã từ chối: </span>
-            <strong>{stats.rejected}</strong>
-          </div>
-        </Space>
       </div>
 
-      <div className="filters-row">
-        <Space size="middle">
-          <div className="filter-item">
-            <span className="filter-label">Trạng thái</span>
-            <Select
-              value={status}
-              options={statusOptions}
-              onChange={handleStatusChange}
-              style={{ width: 220 }}
-            />
+      <div className="request-page-content">
+        {/* Stats Section */}
+        <div className="request-stats-section">
+          <div className="request-stat-card">
+            <div className="request-stat-icon total">
+              <FileTextOutlined />
+            </div>
+            <div className="request-stat-content">
+              <h3>{stats.total}</h3>
+              <p>Tổng yêu cầu</p>
+              <div className="request-stat-sub">Tất cả yêu cầu</div>
+            </div>
           </div>
-          <div className="filter-item">
-            <span className="filter-label">Loại yêu cầu</span>
-            <Select
-              value={type}
-              options={typeOptions}
-              onChange={handleTypeChange}
-              style={{ width: 220 }}
-            />
+          <div className="request-stat-card">
+            <div className="request-stat-icon pending">
+              <ClockCircleOutlined />
+            </div>
+            <div className="request-stat-content">
+              <h3>{stats.pending}</h3>
+              <p>Đang chờ</p>
+              <div className="request-stat-sub">Chờ duyệt</div>
+            </div>
           </div>
-        </Space>
-      </div>
+          <div className="request-stat-card">
+            <div className="request-stat-icon approved">
+              <CheckCircleOutlined />
+            </div>
+            <div className="request-stat-content">
+              <h3>{stats.approved}</h3>
+              <p>Đã duyệt</p>
+              <div className="request-stat-sub">Đã được duyệt</div>
+            </div>
+          </div>
+          <div className="request-stat-card">
+            <div className="request-stat-icon rejected">
+              <CloseCircleOutlined />
+            </div>
+            <div className="request-stat-content">
+              <h3>{stats.rejected}</h3>
+              <p>Đã từ chối</p>
+              <div className="request-stat-sub">Bị từ chối</div>
+            </div>
+          </div>
+          <div className="request-stat-card">
+            <div className="request-stat-icon applied">
+              <CheckCircleOutlined />
+            </div>
+            <div className="request-stat-content">
+              <h3>{stats.applied}</h3>
+              <p>Đã áp dụng</p>
+              <div className="request-stat-sub">Đã áp dụng</div>
+            </div>
+          </div>
+        </div>
 
-      <Card className="request-table-card">
-        {isNoDataError ? (
-          <Empty
-            description={
-              apiError?.data?.message ||
-              'Không tìm thấy yêu cầu bãi đỗ xe nào. Vui lòng điều chỉnh bộ lọc hoặc thử lại sau.'
-            }
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
+        {/* Filters */}
+        <div className="request-controls-card">
+          <div className="request-filter-wrapper">
+            <div className="request-filter-item">
+              <label htmlFor="status-filter" className="request-filter-label">
+                Trạng thái:
+              </label>
+              <select
+                id="status-filter"
+                className="request-filter-select"
+                value={status}
+                onChange={(e) => handleStatusChange(e.target.value as RequestStatusValue)}
+              >
+                <option value={RequestStatus.PENDING}>Đang chờ duyệt</option>
+                <option value={RequestStatus.APPROVED}>Đã duyệt</option>
+                <option value={RequestStatus.REJECTED}>Đã từ chối</option>
+                <option value={RequestStatus.APPLIED}>Đã áp dụng</option>
+                <option value={RequestStatus.FAILED}>Thất bại</option>
+                <option value={RequestStatus.CANCELLED}>Đã hủy</option>
+              </select>
+            </div>
+            <div className="request-filter-item">
+              <label htmlFor="type-filter" className="request-filter-label">
+                Loại yêu cầu:
+              </label>
+              <select
+                id="type-filter"
+                className="request-filter-select"
+                value={type}
+                onChange={(e) => handleTypeChange(e.target.value as RequestTypeValue)}
+              >
+                <option value={RequestType.CREATE}>Yêu cầu tạo mới</option>
+                <option value={RequestType.UPDATE}>Yêu cầu cập nhật</option>
+                <option value={RequestType.DELETE}>Yêu cầu xóa</option>
+              </select>
+            </div>
+          </div>
+          <div className="request-counter">
+            Đang hiển thị <strong>{parkingLotRequests.length}</strong> / {stats.total} yêu cầu
+          </div>
+        </div>
+
+        {/* Request List */}
+        {parkingLotRequests.length === 0 ? (
+          <div className="request-empty-state">
+            <div className="request-empty-icon">📋</div>
+            <h3 className="request-empty-title">Chưa có yêu cầu nào</h3>
+            <p className="request-empty-text">
+              {isNotFoundError
+                ? apiError?.data?.message || 'Không tìm thấy yêu cầu nào với bộ lọc hiện tại.'
+                : 'Không có yêu cầu nào phù hợp với bộ lọc hiện tại.'}
+            </p>
+          </div>
         ) : (
-          <Table
-            rowKey="_id"
-            columns={columns}
-            dataSource={pagedRequests}
-            loading={isLoading}
-            pagination={{
-              current: currentPage,
-              pageSize,
-              total: totalRequests,
-              showSizeChanger: false,
-              responsive: true,
-            }}
-            onChange={handleTableChange}
-            className="request-table"
-            locale={{
-              emptyText: isLoading ? (
-                'Đang tải dữ liệu...'
-              ) : (
-                <Empty
-                  description="Không có yêu cầu nào phù hợp với bộ lọc hiện tại"
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                />
-              ),
-            }}
-          />
-        )}
-      </Card>
+          <>
+            <div className="request-list">
+              {parkingLotRequests.map((request) => {
+                const statusClass = getStatusClass(request.status)
+                const statusLabel = getStatusLabel(request.status)
+                const typeClass = getTypeClass(request.requestType)
+                const typeLabel = getTypeLabel(request.requestType)
+                const canApprove = request.status === RequestStatus.PENDING
 
+                return (
+                  <div key={request._id} className="request-item">
+                    <div className="request-item-header">
+                      <div className="request-item-title-section">
+                        <h3 className="request-item-title">{request.payload.name || 'N/A'}</h3>
+                        <div className={`request-type-badge ${typeClass}`}>
+                          <span>{typeLabel}</span>
+                        </div>
+                        <div className={`request-status-badge ${statusClass}`}>
+                          <span className="request-status-dot" />
+                          <span>{statusLabel}</span>
+                        </div>
+                      </div>
+                      <div className="request-item-actions">
+                        <button
+                          className="request-view-btn"
+                          onClick={() => {
+                            setSelectedRequest(request)
+                            setIsDetailModalOpen(true)
+                          }}
+                          title="Xem chi tiết"
+                        >
+                          <EyeOutlined />
+                          <span>Xem chi tiết</span>
+                        </button>
+                        {canApprove && (
+                          <>
+                            <button
+                              className="request-approve-btn"
+                              onClick={() => handleApproveRequest(request)}
+                              disabled={isReviewLoading}
+                              title="Chấp thuận yêu cầu"
+                            >
+                              <CheckOutlined />
+                              <span>Chấp thuận</span>
+                            </button>
+                            <button
+                              className="request-reject-btn"
+                              onClick={() => openRejectModal(request)}
+                              title="Từ chối yêu cầu"
+                            >
+                              <CloseOutlined />
+                              <span>Từ chối</span>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="request-item-body">
+                      <div className="request-info-item">
+                        <EnvironmentOutlined />
+                        <span>{request.payload.addressId?.fullAddress || 'N/A'}</span>
+                      </div>
+                      <div className="request-info-grid">
+                        <div className="request-info-field">
+                          <span className="request-info-label">Ngày tạo:</span>
+                          <span className="request-info-value">
+                            {formatDateTime(request.createdAt)}
+                          </span>
+                        </div>
+                        <div className="request-info-field">
+                          <span className="request-info-label">Ngày hiệu lực:</span>
+                          <span className="request-info-value">
+                            {new Date(request.effectiveDate).toLocaleDateString('vi-VN')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Pagination */}
+            {pagination && pagination.total > pageSize && (
+              <div className="request-pagination">
+                <button
+                  className="request-pagination-btn"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Trước
+                </button>
+                <span className="request-pagination-info">
+                  Trang {currentPage} / {Math.ceil(pagination.total / pageSize)}
+                </span>
+                <button
+                  className="request-pagination-btn"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage >= Math.ceil(pagination.total / pageSize)}
+                >
+                  Sau
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* Reject Modal */}
       <Modal
         open={isRejectModalOpen}
         title="Lý do từ chối yêu cầu"
@@ -403,10 +473,10 @@ const ManageRequest: React.FC = () => {
         okButtonProps={{ danger: true, disabled: !rejectReason.trim(), loading: isReviewLoading }}
         cancelText="Hủy"
       >
-        <Typography.Paragraph>
+        <p style={{ marginBottom: '16px' }}>
           Vui lòng nhập lý do từ chối cho yêu cầu bãi đỗ xe
           {requestBeingReviewed ? ` "${requestBeingReviewed.payload.name}"` : ''}.
-        </Typography.Paragraph>
+        </p>
         <Input.TextArea
           rows={4}
           placeholder="Nhập lý do từ chối..."
@@ -415,14 +485,32 @@ const ManageRequest: React.FC = () => {
         />
       </Modal>
 
+      {/* Detail Modal */}
       <RequestDetailModal
         open={isDetailModalOpen}
         request={selectedRequest}
         onClose={() => setIsDetailModalOpen(false)}
-        statusOptions={statusOptions}
-        typeOptions={typeOptions}
-        statusTagColor={statusTagColor}
-        typeTagColor={typeTagColor}
+        statusOptions={Object.values(RequestStatus).map((s) => ({
+          label: getStatusLabel(s),
+          value: s,
+        }))}
+        typeOptions={Object.values(RequestType).map((t) => ({
+          label: getTypeLabel(t),
+          value: t,
+        }))}
+        statusTagColor={{
+          PENDING: 'gold',
+          APPROVED: 'green',
+          REJECTED: 'red',
+          APPLIED: 'blue',
+          FAILED: 'volcano',
+          CANCELLED: 'default',
+        }}
+        typeTagColor={{
+          CREATE: 'geekblue',
+          UPDATE: 'cyan',
+          DELETE: 'magenta',
+        }}
       />
     </div>
   )

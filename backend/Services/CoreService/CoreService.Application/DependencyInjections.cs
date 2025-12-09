@@ -49,6 +49,9 @@ namespace CoreService.Application
             services.AddScoped<IBillingService, BillingService>();
             services.AddHostedService<MonthlyBillingWorker>();
             services.AddScoped<ISubscriptionPlanApplication, SubscriptionPlanApplication>();
+            services.AddTransient<DataConsistencyApplication>();
+            services.AddHostedService<DataCleanupService>();
+            services.AddHostedService<PromotionCleanupService>();
             return services;
         }
     }

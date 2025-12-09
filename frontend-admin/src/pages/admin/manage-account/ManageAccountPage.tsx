@@ -5,17 +5,13 @@ import type { MenuProps } from 'antd'
 import {
   MoreOutlined,
   EyeOutlined,
-  KeyOutlined,
   DeleteOutlined,
-  PauseOutlined,
-  PlayCircleOutlined,
 } from '@ant-design/icons'
 import { AccountDetailsModal, DeleteConfirmModal } from '../../../components/modals'
 import { PaginationLoading } from '../../../components/common'
 import {
   useGetAccountQuery,
   useDeleteAccountMutation,
-  useToggleAccountStatusMutation,
   useGetInactiveAccountQuery,
   useBannedAccountListQuery,
 } from '../../../features/admin/accountAPI'
@@ -111,7 +107,6 @@ const ManageAccountPage: React.FC = () => {
   }) as { data: ListBannedAccountResponse | undefined; isLoading: boolean }
 
   const [deleteAccount] = useDeleteAccountMutation()
-  const [toggleAccountStatus] = useToggleAccountStatusMutation()
 
   const activeAccounts = data?.data?.pagedAccounts?.data || []
   const inActiveAccounts = inactiveAccountData?.data?.data || []
@@ -191,19 +186,6 @@ const ManageAccountPage: React.FC = () => {
     }
   }
 
-  const handleToggleStatus = async (account: Account) => {
-    try {
-      await toggleAccountStatus({
-        id: account._id,
-        isActive: !account.isActive,
-      }).unwrap()
-      message.success(`Trạng thái tài khoản ${account.email} đã được cập nhật!`)
-    } catch (error) {
-      console.error('Error toggling account status:', error)
-      message.error('Có lỗi xảy ra khi cập nhật trạng thái tài khoản!')
-    }
-  }
-
   const getStatusBadge = (isActive: boolean) => {
     return isActive ? 'badge-active' : 'badge-inactive'
   }
@@ -227,23 +209,6 @@ const ManageAccountPage: React.FC = () => {
       label: 'Xem hồ sơ',
       icon: <EyeOutlined />,
       onClick: () => handleViewDetails(account),
-    },
-    {
-      key: 'permission',
-      label: 'Điều chỉnh quyền hạn',
-      icon: <KeyOutlined />,
-      onClick: () => {
-        message.info('Tính năng điều chỉnh quyền đang được phát triển')
-      },
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'toggle',
-      label: account.isActive ? 'Vô hiệu hóa' : 'Kích hoạt',
-      icon: account.isActive ? <PauseOutlined /> : <PlayCircleOutlined />,
-      onClick: () => handleToggleStatus(account),
     },
     {
       key: 'delete',

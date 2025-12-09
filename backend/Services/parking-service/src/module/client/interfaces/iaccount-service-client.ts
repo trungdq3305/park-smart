@@ -58,10 +58,7 @@ export interface IAccountServiceClient {
     operatorId: string,
   ): Promise<void>
 
-  updateUserCreditPoints(
-    userId: string,
-    points: number,
-  ): Promise<void>
+  updateUserCreditPoints(userId: string, points: number): Promise<void>
 }
 
 export const IAccountServiceClient = Symbol('IAccountServiceClient')

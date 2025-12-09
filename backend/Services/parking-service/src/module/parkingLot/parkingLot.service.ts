@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/restrict-template-expressions */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -67,6 +68,17 @@ export class ParkingLotService implements IParkingLotService {
     private readonly sessionRepository: IParkingLotSessionRepository,
   ) {}
 
+  async updateBookingSlotDurationHours(
+    id: string,
+    bookingSlotDurationHours: number,
+  ): Promise<boolean> {
+    const data = await this.parkingLotRepository.updateBookingSlotDurationHours(
+      id,
+      bookingSlotDurationHours,
+    )
+    return data
+  }
+
   async findParkingLotRequestById(
     id: string,
   ): Promise<ParkingLotRequestResponseDto> {
@@ -126,6 +138,57 @@ export class ParkingLotService implements IParkingLotService {
     if (spacesToCreate.length > 0) {
       await this.parkingSpaceRepository.createMany(spacesToCreate, session)
     }
+  }
+
+  private async _executeRequestAction(
+    request: ParkingLotRequest,
+    session: ClientSession,
+  ): Promise<void> {
+    let parkingLotId_for_log = ''
+
+    // 1. XỬ LÝ THEO LOẠI YÊU CẦU
+    if (request.requestType === RequestType.CREATE) {
+      // --- TẠO MỚI ---
+      if (!request.payload) throw new Error('Dữ liệu tạo bãi đỗ xe bị thiếu.')
+
+      const generatedKey = randomBytes(32).toString('hex')
+      const payload = request.payload as Record<string, unknown>
+      const totalCapacityEachLevel = payload.totalCapacityEachLevel as number
+      const totalLevel = payload.totalLevel as number
+      const newParkingLotData: Partial<ParkingLot> = {
+        ...payload,
+        parkingLotOperatorId: payload.parkingLotOperatorId as string,
+        availableSpots: totalCapacityEachLevel * totalLevel,
+        parkingLotStatus: RequestStatus.APPROVED, // Bãi xe hoạt động ngay
+        totalCapacity: totalCapacityEachLevel * totalLevel,
+        secretKey: generatedKey,
+      }
+
+      const newParkingLot = await this.parkingLotRepository.createParkingLot(
+        newParkingLotData,
+        session,
+      )
+      if (!newParkingLot) throw new Error('Không thể tạo Parking Lot.')
+
+      parkingLotId_for_log = newParkingLot._id
+      await this._createParkingSpaces(newParkingLot, session)
+    } else if (request.requestType === RequestType.UPDATE) {
+      // UPDATE cho CRON JOB
+      return
+    } else {
+      // DELETE cho CRON JOB
+      return
+    }
+
+    // 2. GHI LOG HISTORY
+    const logData: Partial<ParkingLotHistoryLog> = {
+      parkingLotId: parkingLotId_for_log,
+      requestId: request._id,
+      eventType: request.requestType,
+      effectiveDate: new Date(), // Ghi nhận thời điểm thực thi thực tế
+      ...(request.payload as Record<string, unknown>),
+    }
+    await this.parkingLotHistoryLogRepository.create(logData, session)
   }
 
   async findRequestsByOperatorId(
@@ -237,7 +300,7 @@ export class ParkingLotService implements IParkingLotService {
 
     try {
       const { effectiveDate, ...payloadData } = updateRequestDto
-      const payload = { ...payloadData, operatorId }
+      const payload = { ...payloadData, parkingLotOperatorId: operatorId }
 
       const requestData: Partial<ParkingLotRequest> = {
         payload: payload,
@@ -334,28 +397,114 @@ export class ParkingLotService implements IParkingLotService {
     userId: string,
   ): Promise<{ data: boolean; message: string; responseCode: number }> {
     const { status, rejectionReason } = reviewDto
-    const data = await this.parkingLotRequestRepository.updateStatus(
-      requestId.id,
-      status,
-      userId,
-      rejectionReason,
-    )
-    if (!data) {
-      throw new NotFoundException('Không tìm thấy yêu cầu hoặc đã được duyệt.')
-    }
-    return {
-      data: true,
-      message: 'Cập nhật trạng thái thành công',
-      responseCode: 200,
+
+    const session = await this.connection.startSession()
+    session.startTransaction()
+
+    try {
+      // 1. Lấy thông tin Request
+      const request = await this.parkingLotRequestRepository.findById(
+        requestId.id,
+      )
+
+      if (!request) {
+        throw new NotFoundException('Không tìm thấy yêu cầu.')
+      }
+      if ((request.status as RequestStatus) !== RequestStatus.PENDING) {
+        throw new BadRequestException('Yêu cầu này đã được xử lý trước đó.')
+      }
+
+      // =================================================================
+      // TRƯỜNG HỢP 1: TỪ CHỐI (REJECT)
+      // =================================================================
+      if (status === RequestStatus.REJECTED) {
+        await this.parkingLotRequestRepository.updateStatus(
+          requestId.id,
+          RequestStatus.REJECTED,
+          userId,
+          rejectionReason,
+          session,
+        )
+
+        await session.commitTransaction()
+        return {
+          data: true,
+          message: 'Đã từ chối yêu cầu.',
+          responseCode: 200,
+        }
+      }
+
+      // =================================================================
+      // TRƯỜNG HỢP 2: CHẤP THUẬN (APPROVE)
+      // =================================================================
+
+      // ⭐️ LOGIC MỚI: PHÂN LUỒNG DỰA TRÊN LOẠI YÊU CẦU
+
+      if (request.requestType === RequestType.CREATE) {
+        // --- A. NẾU LÀ TẠO MỚI (CREATE) -> THỰC THI NGAY LẬP TỨC ---
+
+        // 1. Gọi hàm thực thi (Tạo bãi xe)
+        await this._executeRequestAction(request, session)
+
+        // 2. Cập nhật trạng thái cuối cùng là APPLIED (Đã xong)
+        await this.parkingLotRequestRepository.updateStatus(
+          requestId.id,
+          RequestStatus.APPLIED, // Nhảy cóc qua Approved, lên thẳng Applied
+          userId,
+          undefined,
+          session,
+        )
+
+        await session.commitTransaction()
+        return {
+          data: true,
+          message: 'Đã duyệt và tạo bãi đỗ xe thành công.',
+          responseCode: 200,
+        }
+      } else {
+        // --- B. NẾU LÀ UPDATE / DELETE -> CHỈ ĐỔI TRẠNG THÁI (TREO) ---
+        // (Chờ CronJob xử lý khi đến ngày effectiveDate)
+
+        await this.parkingLotRequestRepository.updateStatus(
+          requestId.id,
+          RequestStatus.APPROVED, // Chỉ dừng ở Approved
+          userId,
+          undefined,
+          session,
+        )
+
+        await session.commitTransaction()
+        return {
+          data: true,
+          message:
+            'Đã duyệt yêu cầu. Thay đổi sẽ được áp dụng vào ngày hiệu lực.',
+          responseCode: 200,
+        }
+      }
+
+      // Fallback (không nên xảy ra)
+      await session.abortTransaction()
+      return {
+        data: false,
+        message: 'Trạng thái không hợp lệ',
+        responseCode: 400,
+      }
+    } catch (error) {
+      await session.abortTransaction()
+      this.logger.error(`Lỗi khi review request ${requestId.id}:`, error)
+      throw error
+    } finally {
+      await session.endSession()
     }
   }
 
   async getRequestsForParkingLot(
-    parkingLotId: ParkingLotIdDto,
+    parkingLotOperatorId: string,
   ): Promise<ParkingLotRequestResponseDto[]> {
-    const data = await this.parkingLotRequestRepository.findByParkingLotId(
-      parkingLotId.parkingLotId,
-    )
+    const data =
+      await this.parkingLotRequestRepository.findByParkingLotOperatorId(
+        parkingLotOperatorId,
+      )
     return data.map((item) => this.returnParkingLotRequestResponseDto(item))
   }
 
@@ -397,45 +546,11 @@ export class ParkingLotService implements IParkingLotService {
       const session = await this.connection.startSession()
       session.startTransaction()
       try {
-        let parkingLotId_for_log: string
+        let parkingLotId_for_log = ''
         // =================================================================
         // == BẮT ĐẦU LOGIC XỬ LÝ THEO LOẠI YÊU CẦU
         // =================================================================
-        if (request.requestType === RequestType.CREATE) {
-          // --- XỬ LÝ CHO YÊU CẦU TẠO MỚI ---
-          if (!request.payload) {
-            throw new Error('Dữ liệu để tạo bãi đỗ xe không tồn tại')
-          }
-          const generatedKey = randomBytes(32).toString('hex')
-          const newParkingLotData: Partial<ParkingLot> = {
-            ...request.payload,
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            parkingLotOperatorId: request.payload.parkingLotOperatorId, // Lấy operatorId từ request
-            // Giả sử trạng thái ban đầu là 'Đã duyệt'
-            availableSpots:
-              request.payload.totalCapacityEachLevel *
-              request.payload.totalLevel,
-            parkingLotStatus: RequestStatus.APPROVED,
-            totalCapacity:
-              request.payload.totalCapacityEachLevel *
-              request.payload.totalLevel,
-            secretKey: generatedKey,
-          }
-
-          const newParkingLot =
-            await this.parkingLotRepository.createParkingLot(
-              newParkingLotData,
-              session, // Truyền session
-            )
-
-          if (!newParkingLot) {
-            throw new Error('Failed to create ParkingLot document.')
-          }
-
-          // Lấy ID của bãi xe vừa tạo để ghi log
-          parkingLotId_for_log = newParkingLot._id
-          await this._createParkingSpaces(newParkingLot, session)
-        } else if (request.requestType === RequestType[RequestType.UPDATE]) {
+        if (request.requestType === RequestType[RequestType.UPDATE]) {
           // --- XỬ LÝ CHO YÊU CẦU CẬP NHẬT ---
           if (!request.parkingLotId) {
             throw new Error('Yêu cầu không liên kết với bãi đỗ xe nào')
@@ -458,7 +573,7 @@ export class ParkingLotService implements IParkingLotService {
           }
 
           await this._createParkingSpaces(updatedParkingLot, session)
-        } else {
+        } else if (request.requestType === RequestType.DELETE) {
           if (!request.parkingLotId) {
             throw new Error('Yêu cầu không liên kết với bãi đỗ xe nào')
           }

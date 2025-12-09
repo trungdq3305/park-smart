@@ -32,6 +32,10 @@ export interface IParkingLotRequestRepository {
 
   findByParkingLotId(parkingLotId: string): Promise<ParkingLotRequest[]>
 
+  findByParkingLotOperatorId(
+    parkingLotOperatorId: string,
+  ): Promise<ParkingLotRequest[]>
+
   findAllRequests(
     status: string,
     type: string,

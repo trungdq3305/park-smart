@@ -1,5 +1,6 @@
 ﻿using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.DashboardDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
@@ -177,18 +178,12 @@ namespace CoreService.Application.Applications
         }
         public async Task<ApiResponse<AccountPhoneResponse>> GetByPhoneAsync(string phone)
         {
-           
-            //await _accountRepo.GetByPhoneAsync(phone);
-
+            // 1. Lấy thông tin tài khoản (Account)
             var account = await _accountRepo.GetByPhoneAsync(phone);
+
+            // 2. Kiểm tra nếu không tìm thấy
             if (account == null)
             {
-                throw new ApiException("Danh sách hiện không có dữ liệu, vui lòng vập nhật thêm", StatusCodes.Status401Unauthorized);
-            }
-            // 2. Kiểm tra nếu không tìm thấy tài khoản
-            if (account == null)
-            {
-                // Trả về lỗi "Không tìm thấy" (404 Not Found)
                 return new ApiResponse<AccountPhoneResponse>(
                     null,
                     false,
@@ -197,11 +192,15 @@ namespace CoreService.Application.Applications
                 );
             }
 
-            // 3. Chuyển đổi sang DTO và trả về thành công
+            // 3. LOGIC MỚI: Tìm FullName từ các vai trò liên quan
+            string fullName = await GetFullNameForAccount(account.Id);
+
+            // 4. Chuyển đổi sang DTO và trả về thành công
             var dto = new AccountPhoneResponse
             {
                 Id = account.Id,
-                PhoneNumber = account.PhoneNumber
+                PhoneNumber = account.PhoneNumber,
+                FullName = fullName // Gán FullName đã tìm thấy
             };
 
             return new ApiResponse<AccountPhoneResponse>(
@@ -210,6 +209,36 @@ namespace CoreService.Application.Applications
                 $"Tìm thấy tài khoản với số điện thoại: {phone} thành công.",
                 StatusCodes.Status200OK
             );
+        }
+
+        // Phương thức hỗ trợ để tìm kiếm FullName
+        private async Task<string> GetFullNameForAccount(string accountId)
+        {
+            // Ưu tiên tìm kiếm (Bạn có thể điều chỉnh thứ tự ưu tiên này)
+
+            // 1. Tìm trong Driver
+            var driver = await _driverRepo.GetByAccountIdAsync(accountId);
+            if (driver != null)
+            {
+                return driver.FullName;
+            }
+
+            // 2. Tìm trong CityAdmin
+            var admin = await _adminRepo.GetByAccountIdAsync(accountId);
+            if (admin != null)
+            {
+                return admin.FullName;
+            }
+
+            // 3. Tìm trong ParkingLotOperator
+            var operatorEntity = await _operatorRepo.GetByAccountIdAsync(accountId);
+            if (operatorEntity != null)
+            {
+                return operatorEntity.FullName;
+            }
+
+            // Nếu không tìm thấy FullName trong bất kỳ vai trò nào
+            return "N/A (Người dùng cơ bản)";
         }
         public async Task<ApiResponse<AccountDetailDto>> GetByIdAsync(string id)
         {
@@ -507,6 +536,149 @@ namespace CoreService.Application.Applications
                 pagedResult,
                 true,
                 "Lấy danh sách tài khoản bị cấm thành công",
+                StatusCodes.Status200OK
+            );
+        }
+        // Trong CoreService.Application.Applications/AccountApplication.cs
+
+        // ... (Trong class AccountApplication) ...
+
+        public async Task<ApiResponse<NewRegistrationByRoleDto>> GetNewRegistrationsByRoleAsync(DateTime startDate, DateTime endDate)
+        {
+            // 1. Lấy dữ liệu cần thiết một cách đồng thời (các tài khoản mới và tất cả thông tin Role)
+            var newAccountsTask = _accountRepo.GetAccountsCreatedInRangeAsync(startDate, endDate);
+            var driversTask = _driverRepo.GetAllAsync();
+            var operatorsTask = _operatorRepo.GetAllAsync();
+            var adminsTask = _adminRepo.GetAllAsync();
+
+            await Task.WhenAll(newAccountsTask, driversTask, operatorsTask, adminsTask);
+
+            var newAccounts = await newAccountsTask;
+
+            if (newAccounts == null || !newAccounts.Any())
+            {
+                // Trả về kết quả rỗng
+                var emptyCounts = new Dictionary<string, int> {
+             { "Driver", 0 }, { "Operator", 0 }, { "Admin", 0 }, { "Unknown", 0 }
+         };
+                return new ApiResponse<NewRegistrationByRoleDto>(
+                    new NewRegistrationByRoleDto { StartDate = startDate, EndDate = endDate, TotalNewAccounts = 0, CountsByRole = emptyCounts },
+                    true,
+                    "Không có tài khoản mới nào trong khoảng thời gian này.",
+                    StatusCodes.Status200OK
+                );
+            }
+
+            // 2. Tạo Dictionary để tra cứu role nhanh
+            var driversByAccountId = (await driversTask).ToDictionary(d => d.AccountId);
+            var operatorsByAccountId = (await operatorsTask).ToDictionary(o => o.AccountId);
+            var adminsByAccountId = (await adminsTask).ToDictionary(a => a.AccountId);
+
+            var roleCounts = new Dictionary<string, int>
+    {
+        { "Driver", 0 },
+        { "Operator", 0 },
+        { "Admin", 0 },
+        { "Unknown", 0 }
+    };
+
+            // 3. Xác định Role và đếm
+            foreach (var account in newAccounts)
+            {
+                string roleName = "Unknown";
+
+                if (driversByAccountId.ContainsKey(account.Id))
+                {
+                    roleName = "Driver";
+                }
+                else if (operatorsByAccountId.ContainsKey(account.Id))
+                {
+                    roleName = "Operator";
+                }
+                else if (adminsByAccountId.ContainsKey(account.Id))
+                {
+                    roleName = "Admin";
+                }
+
+                // Tăng số lượng của Role tương ứng
+                roleCounts[roleName] = roleCounts.GetValueOrDefault(roleName, 0) + 1;
+            }
+
+            // 4. Tạo DTO phản hồi
+            var responseData = new NewRegistrationByRoleDto
+            {
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalNewAccounts = newAccounts.Count(),
+                CountsByRole = roleCounts
+            };
+
+            return new ApiResponse<NewRegistrationByRoleDto>(
+                responseData,
+                true,
+                "Lấy số lượng đăng ký mới theo role thành công",
+                StatusCodes.Status200OK
+            );
+        }
+        // Trong CoreService.Application.Applications/AccountApplication.cs
+
+        // ... (Trong class AccountApplication) ...
+
+        // THÊM phương thức GetDashboardStatsAsync
+        public async Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync()
+        {
+            // Tính toán mốc 7 ngày trước (cho việc đếm đăng ký mới)
+            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+            // Lấy tất cả dữ liệu cần thiết một cách đồng thời (Tối ưu performance)
+            var accountsTask = _accountRepo.GetAllAsync();
+            var driversTask = _driverRepo.GetAllAsync();
+            var operatorsTask = _operatorRepo.GetAllAsync();
+            var adminsTask = _adminRepo.GetAllAsync();
+            var bannedAccountsTask = _accountRepo.GetAllBannedAccountsAsync();
+            var activeAccountsTask = _accountRepo.CountActiveAccountsAsync();
+            var newRegistrationsTask = _accountRepo.CountNewAccountsSinceAsync(sevenDaysAgo);
+            var registrationsByDateTask = _accountRepo.GetRegistrationsByDateRangeAsync(sevenDaysAgo, DateTime.UtcNow);
+
+            await Task.WhenAll(
+                accountsTask,
+                driversTask,
+                operatorsTask,
+                adminsTask,
+                bannedAccountsTask,
+                activeAccountsTask,
+                newRegistrationsTask,
+                registrationsByDateTask
+            );
+
+            var allAccounts = await accountsTask;
+            var allDrivers = await driversTask;
+            var allOperators = await operatorsTask;
+            var allAdmins = await adminsTask;
+            var bannedAccounts = await bannedAccountsTask;
+            var totalActiveUsers = await activeAccountsTask;
+            var newRegistrations = await newRegistrationsTask;
+            var registrationsByDate = await registrationsByDateTask;
+
+            var responseData = new DashboardStatsDto
+            {
+                TotalUsers = allAccounts.Count(),
+                TotalDrivers = allDrivers.Count(),
+                TotalOperators = allOperators.Count(),
+                TotalAdmins = allAdmins.Count(),
+
+                TotalBannedUsers = bannedAccounts.Count(),
+                TotalActiveUsers = (int)totalActiveUsers,
+                TotalInactiveUsers = allAccounts.Count() - (int)totalActiveUsers, // Tính Inactive dựa trên Total - Active
+
+                NewRegistrationsLast7Days = (int)newRegistrations,
+                RegistrationsByDateLast7Days = registrationsByDate
+            };
+
+            return new ApiResponse<DashboardStatsDto>(
+                responseData,
+                true,
+                "Lấy số liệu dashboard thành công",
                 StatusCodes.Status200OK
             );
         }

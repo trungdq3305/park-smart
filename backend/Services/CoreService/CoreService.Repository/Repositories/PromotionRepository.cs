@@ -47,5 +47,19 @@ namespace CoreService.Repository.Repositories
         await _collection.Find(x => x.OperatorId == operatorId && x.DeletedAt == null)
             .SortByDescending(x => x.CreatedAt)
             .ToListAsync();
+        public async Task<IEnumerable<Promotion>> GetByEventIdAsync(string eventId) =>
+    await _collection.Find(x => x.EventId == eventId && x.DeletedAt == null)
+        .SortByDescending(x => x.CreatedAt)
+        .ToListAsync();
+        public async Task<IEnumerable<Promotion>> GetExpiredActivePromotionsAsync(DateTime now)
+        {
+            // Logic: Lấy các khuyến mãi chưa bị xóa (DeletedAt == null), đang Active (IsActive == true) 
+            // và đã hết hạn (EndDate < now).
+            return await _collection.Find(x =>
+        x.DeletedAt == null &&
+        x.IsActive == true &&
+                x.EndDate < now
+      ).ToListAsync();
+        }
     }
 }

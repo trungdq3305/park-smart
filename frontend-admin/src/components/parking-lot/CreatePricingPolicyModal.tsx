@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react'
-import {
-  Modal,
-  Form,
-  Input,
-  InputNumber,
-  Select,
-  DatePicker,
-  TimePicker,
-  Button,
-  Space,
-} from 'antd'
+import { Form, Input, InputNumber, Select, DatePicker, TimePicker, Button, Space } from 'antd'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons'
-import type { Basis } from '../../../../types/Basis'
-import type { PricingPolicyLink } from '../../../../types/PricingPolicyLink'
+import type { Basis } from '../../types/Basis'
+import type { PricingPolicyLink } from '../../types/PricingPolicyLink'
 import dayjs from 'dayjs'
+import { CustomModal } from '../common'
 
 // Định nghĩa các hằng số cho trạng thái và loại yêu cầu để dễ quản lý
 const Unit = {
@@ -165,19 +156,22 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
   const basisName = selectedBasis?.basisName
 
   return (
-    <Modal
-      title={isEditMode ? 'Chỉnh sửa chính sách giá' : 'Tạo mới chính sách giá'}
+    <CustomModal
       open={open}
-      onCancel={onCancel}
+      onClose={onCancel}
+      title={isEditMode ? 'Chỉnh sửa chính sách giá' : 'Tạo mới chính sách giá'}
       width={800}
-      footer={[
-        <Button key="cancel" onClick={onCancel}>
-          Hủy
-        </Button>,
-        <Button key="submit" type="primary" onClick={handleSubmit} loading={loading}>
-          {isEditMode ? 'Cập nhật' : 'Tạo mới'}
-        </Button>,
-      ]}
+      loading={loading}
+      footer={
+        <>
+          <Button onClick={onCancel} disabled={loading}>
+            Hủy
+          </Button>
+          <Button type="primary" onClick={handleSubmit} loading={loading}>
+            {isEditMode ? 'Cập nhật' : 'Tạo mới'}
+          </Button>
+        </>
+      }
     >
       <Form form={form} layout="vertical">
         <Form.Item
@@ -418,7 +412,7 @@ const CreatePricingPolicyModal: React.FC<CreatePricingPolicyModalProps> = ({
           </Form.Item>
         )}
       </Form>
-    </Modal>
+    </CustomModal>
   )
 }
 

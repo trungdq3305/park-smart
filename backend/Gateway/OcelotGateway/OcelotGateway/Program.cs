@@ -9,7 +9,10 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Ho?c các domain khác c?a frontend
+        policy.WithOrigins(
+            "http://localhost:5173", // URL phát tri?n local
+            "https://park-smart-two.vercel.app" // URL production/test trên Vercel
+        ) // Ho?c các domain khác c?a frontend
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();

@@ -19,10 +19,9 @@ export default function DoesnotLoginYet() {
         subTitle="Xin lỗi, bạn cần phải đăng nhập để có thể truy cập trang này."
         extra={
           <Space>
-            <Button type="primary" onClick={() => navigate('/login')}>
+            <Button type="primary" onClick={() => navigate('/')}>
               Đi đến trang Đăng nhập
             </Button>
-            <Button onClick={() => navigate('/')}>Quay về Trang chủ</Button>
           </Space>
         }
       />

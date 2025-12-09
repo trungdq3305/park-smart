@@ -27,6 +27,8 @@ namespace CoreService.Application.DTOs.PromotionDtos
         public DateTime? UpdatedAt { get; set; }
         public string CreatedBy { get; set; }
         public string UpdatedBy { get; set; }
+        public string EventId { get; set; } // Thuộc tính này đã có trong Promotion Model, nên thêm vào DTO
+        public string EventTitle { get; set; }
         public List<PromotionRuleResponseDto> Rules { get; set; }
     }
 }

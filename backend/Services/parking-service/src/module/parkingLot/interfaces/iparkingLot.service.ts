@@ -83,7 +83,7 @@ export interface IParkingLotService {
    * Lấy danh sách CÁC YÊU CẦU (pending, approved, etc.) của một bãi xe.
    */
   getRequestsForParkingLot(
-    parkingLotId: ParkingLotIdDto,
+    parkingLotOperatorId: string,
   ): Promise<ParkingLotRequestResponseDto[]>
 
   /**
@@ -131,9 +131,12 @@ export interface IParkingLotService {
     type: string,
   ): Promise<ParkingLotRequestResponseDto[]>
 
-  findParkingLotRequestById(
+  findParkingLotRequestById(id: string): Promise<ParkingLotRequestResponseDto>
+
+  updateBookingSlotDurationHours(
     id: string,
-  ): Promise<ParkingLotRequestResponseDto>
+    bookingSlotDurationHours: number,
+  ): Promise<boolean>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

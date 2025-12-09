@@ -46,6 +46,23 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['parkingLotRequest'],
     }),
+    getParkingLotRequestOfOperator: builder.query({
+      query: ({ parkingLotOperatorId }) => ({
+        url: `/parking/parking-lots/${parkingLotOperatorId}/requests`,
+        method: 'GET',
+      }),
+      transformResponse: (res) => res,
+      providesTags: ['parkingLotRequest'],
+    }),
+    createParkingLotRequest: builder.mutation({
+      query: ({ payload }) => ({
+        url: `/parking/parking-lots/create-parking-lot-request`,
+        method: 'POST',
+        body: payload,
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['parkingLotRequest'],
+    }),
   }),
 })
 
@@ -55,4 +72,6 @@ export const {
   useReviewParkingLotRequestMutation,
   useParkingLotRequestsQuery,
   useParkingLotRequestDetailQuery,
+  useGetParkingLotRequestOfOperatorQuery,
+  useCreateParkingLotRequestMutation,
 } = parkingLotAPI

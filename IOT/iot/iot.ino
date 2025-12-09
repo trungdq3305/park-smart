@@ -4,21 +4,22 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <HTTPClient.h>
+// Bỏ thư viện UDP vì không dùng nữa
+// #include <WiFiUdp.h> 
 
-// --- CẤU HÌNH ---
-const char* ssid = "#02 Tan My";
-const char* password = "0982621234";
-const char* pythonServerUrl = "http://10.20.30.200:1836/nfc-scan";
+// --- CẤU HÌNH WIFI ---
+const char* ssid = "Le Ngoc";
+const char* password = "66666666";
+
+// --- CẤU HÌNH TỰ ĐỘNG TÌM SERVER ---
+const int API_PORT = 1836; // Cổng API Flask
+IPAddress pythonServerIp = IPAddress(0,0,0,0); // Sẽ được tìm thấy khi quét
 
 // --- CẤU HÌNH CHÂN ---
 const int SERVO_PIN = 13;
 const int SENSOR_PIN = 14;
-
-// 💡 SỬ DỤNG ĐÈN LED CÓ SẴN TRÊN BOARD WEACT S3
-// Thông thường là GPIO 48. Nếu không sáng, thử đổi thành số 2 hoặc 38.
 const int BUILTIN_LED_PIN = 48; 
 
-// NFC PINS
 const int NFC_SDA_PIN = 4;
 const int NFC_SCK_PIN = 5;
 const int NFC_MOSI_PIN = 6;
@@ -34,69 +35,146 @@ const int CLOSE_ANGLE = 0;
 enum GateState { CLOSED, OPEN, WAITING };
 GateState currentState = CLOSED;
 
-// --- HÀM NHÁY ĐÈN BÁO HIỆU ---
 void blinkFeedback() {
-  digitalWrite(BUILTIN_LED_PIN, HIGH); // Bật đèn
-  delay(100); 
-  digitalWrite(BUILTIN_LED_PIN, LOW);  // Tắt đèn
+  digitalWrite(BUILTIN_LED_PIN, HIGH); delay(100); digitalWrite(BUILTIN_LED_PIN, LOW);
 }
 
-void sendNfcToPython(String uidString) {
+// --- HÀM MỚI: QUÉT DẢI IP (IP SCANNER) ---
+void findPythonServer() {
+  Serial.println("🔍 Bắt đầu quét mạng LAN để tìm Server (Port 1836)...");
+  
+  IPAddress local = WiFi.localIP();
+  IPAddress scanIp = local; // Copy IP hiện tại để giữ 3 số đầu (ví dụ 10.20.30.x)
+  
+  WiFiClient client;
+  
+  // Quét từ 1 đến 254
+  for(int i = 1; i < 255; i++) {
+    scanIp[3] = i; // Thay đổi số cuối cùng
+    
+    // Bỏ qua chính mình
+    if (scanIp == local) continue;
+
+    // Thử kết nối tới Port 1836 với timeout cực ngắn (20-50ms)
+    // Trong mạng LAN, kết nối thành công thường <10ms
+    // Nếu timeout nghĩa là IP đó không phải server hoặc không online
+    if (client.connect(scanIp, API_PORT, 120)) {
+       pythonServerIp = scanIp;
+       client.stop(); // Ngắt kết nối ngay
+       
+       Serial.println("");
+       Serial.print("✅ ĐÃ TÌM THẤY! Server tại IP: ");
+       Serial.println(pythonServerIp);
+       blinkFeedback(); blinkFeedback();
+       return; // Thoát ngay khi tìm thấy
+    }
+    
+    // In dấu chấm mỗi 10 IP để biết đang chạy
+    if (i % 10 == 0) Serial.print(".");
+  }
+  
+  Serial.println("\n❌ Đã quét hết mạng mà không thấy Server.");
+  Serial.println("👉 Hãy đảm bảo file Python 'server.py' đang chạy và tắt Firewall.");
+  
+  // Fallback: Nếu không thấy thì gán cứng IP máy bạn (Cứu cánh cuối cùng)
+  pythonServerIp = IPAddress(10, 20, 30, 200);
+}
+
+// --- HÀM ĐĂNG KÝ IP ---
+void registerToPython() {
+  if (pythonServerIp.toString() == "0.0.0.0") {
+     findPythonServer();
+  }
+
   if(WiFi.status() == WL_CONNECTED){
     HTTPClient http;
-    http.begin(pythonServerUrl);
-    http.setConnectTimeout(1000); // Timeout cực ngắn để quét nhanh
+    String url = "http://" + pythonServerIp.toString() + ":" + String(API_PORT) + "/register-barrier";
+    http.begin(url);
+    http.setConnectTimeout(2000);
     http.addHeader("Content-Type", "application/json");
-    
-    String payload = "{\"nfc_id\": \"" + uidString + "\"}";
-    int code = http.POST(payload);
-    http.end();
-    
-    // Nếu gửi thành công -> Nháy đèn
-    if (code > 0) {
+    int code = http.POST("{}"); 
+    if(code > 0) {
+      Serial.println("✅ Đăng ký IP thành công!");
       blinkFeedback();
+    } else {
+      Serial.print("⚠️ Đăng ký thất bại. Lỗi HTTP: "); Serial.println(code);
     }
+    http.end();
+  }
+}
+
+// --- HÀM GỬI NFC ---
+void sendNfcToPython(String uidString) {
+  if (pythonServerIp.toString() == "0.0.0.0") findPythonServer();
+
+  if(WiFi.status() == WL_CONNECTED){
+    HTTPClient http;
+    String url = "http://" + pythonServerIp.toString() + ":" + String(API_PORT) + "/nfc-scan";
+    http.begin(url);
+    http.setConnectTimeout(1000); 
+    http.addHeader("Content-Type", "application/json");
+    String payload = "{\"nfc_id\": \"" + uidString + "\"}";
+    
+    int code = http.POST(payload);
+    if(code > 0) {
+        blinkFeedback();
+        Serial.println("✅ Gửi NFC OK");
+    } else {
+        Serial.print("❌ Lỗi gửi: "); Serial.println(http.errorToString(code).c_str());
+        // Nếu lỗi kết nối, có thể server đổi IP, kích hoạt tìm lại
+        if (code == HTTPC_ERROR_CONNECTION_REFUSED) {
+            pythonServerIp = IPAddress(0,0,0,0); 
+        }
+    }
+    http.end();
   }
 }
 
 void handleOpen() {
+  Serial.println("--> 📥 NHẬN YÊU CẦU MỞ CỔNG");
+
+  // 1. Kiểm tra trạng thái cửa
+  if (currentState == OPEN || currentState == WAITING) {
+      Serial.println("⚠️ TỪ CHỐI: Cửa đang mở hoặc đang chờ đóng.");
+      // Trả về mã lỗi 409 (Conflict)
+      server.send(409, "application/json", "{\"status\":\"error\", \"message\":\"BARRIER_IS_ALREADY_OPEN\"}");
+      return;
+  }
+
+  // 2. Nếu cửa đang đóng thì mới mở
+  Serial.println("✅ CHẤP NHẬN: Mở cổng ngay.");
   barrierServo.write(OPEN_ANGLE);
   currentState = OPEN;
-  server.send(200, "text/plain", "OPEN");
+  
+  server.send(200, "application/json", "{\"status\":\"success\", \"message\":\"OPENED\"}");
+  blinkFeedback();
 }
 
 void setup() {
   Serial.begin(115200);
-  
-  // Setup LED tích hợp
-  pinMode(BUILTIN_LED_PIN, OUTPUT);
-  digitalWrite(BUILTIN_LED_PIN, LOW); // Tắt mặc định
-
-  // Setup Servo & Sensor
+  pinMode(BUILTIN_LED_PIN, OUTPUT); digitalWrite(BUILTIN_LED_PIN, LOW);
   pinMode(SENSOR_PIN, INPUT_PULLUP);
-  barrierServo.attach(SERVO_PIN);
-  barrierServo.write(CLOSE_ANGLE);
+  barrierServo.attach(SERVO_PIN); barrierServo.write(CLOSE_ANGLE);
 
-  // Setup NFC
   SPI.begin(NFC_SCK_PIN, NFC_MISO_PIN, NFC_MOSI_PIN, NFC_SDA_PIN);
   mfrc522.PCD_Init();
 
-  // Setup Wifi
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) delay(200);
-  WiFi.setSleep(false); // Max performance
+  while (WiFi.status() != WL_CONNECTED) { delay(500); }
+  Serial.println("\n✅ WiFi Connected");
+  Serial.print("👉 ESP32 IP: "); Serial.println(WiFi.localIP());
 
   server.on("/open", HTTP_GET, handleOpen);
   server.begin();
   
-  // Nháy đèn 3 lần báo hiệu khởi động xong
-  blinkFeedback(); delay(100); blinkFeedback(); delay(100); blinkFeedback();
+  // Tìm server ngay khi khởi động
+  findPythonServer();
+  registerToPython();
 }
 
 void loop() {
   server.handleClient();
 
-  // LOGIC QUÉT NHANH (FAST SCAN)
   if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
     String uid = "";
     for (byte i = 0; i < mfrc522.uid.size; i++) {
@@ -104,23 +182,14 @@ void loop() {
       uid += String(mfrc522.uid.uidByte[i], HEX);
     }
     uid.toUpperCase();
-    
     Serial.println("SCAN: " + uid);
     sendNfcToPython(uid);
-
-    // Dừng thẻ
-    mfrc522.PICC_HaltA();
-    mfrc522.PCD_StopCrypto1();
-    
-    // Nghỉ 0.5s giữa các lần quẹt để tránh trùng
+    mfrc522.PICC_HaltA(); mfrc522.PCD_StopCrypto1();
     delay(500); 
   }
 
-  // Logic đóng cổng tự động
   if (currentState == OPEN && digitalRead(SENSOR_PIN) == LOW) currentState = WAITING;
   if (currentState == WAITING && digitalRead(SENSOR_PIN) == HIGH) {
-    delay(1500);
-    barrierServo.write(CLOSE_ANGLE);
-    currentState = CLOSED;
+    delay(1500); barrierServo.write(CLOSE_ANGLE); currentState = CLOSED;
   }
 }

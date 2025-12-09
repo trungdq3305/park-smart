@@ -88,6 +88,7 @@ export interface IParkingLotSessionService {
     paginationQuery: PaginationQueryDto,
     startDate: string,
     endDate: string,
+    plateNumber?: string,
   ): Promise<{
     data: ParkingLotSessionResponseDto[]
     pagination: PaginationDto

@@ -13,6 +13,18 @@ export class ParkingLotSessionRepository
     private parkingLotSessionModel: Model<ParkingLotSession>,
   ) {}
 
+  findActiveSessionByGuestCardId(
+    guestCardId: string,
+  ): Promise<ParkingLotSession | null> {
+    return this.parkingLotSessionModel
+      .findOne({
+        guestCardId: guestCardId,
+        status: ParkingSessionStatusEnum.ACTIVE,
+      })
+      .lean()
+      .exec()
+  }
+
   findActiveSessionByReservationId(
     reservationId: string,
     parkingLotId?: string,
@@ -47,10 +59,24 @@ export class ParkingLotSessionRepository
   ): Promise<ParkingLotSession | null> {
     return this.parkingLotSessionModel
       .findById(sessionId)
-      .populate({
-        path: 'parkingLotId',
-        select: '_id name',
-      })
+      .populate([
+        {
+          path: 'parkingLotId',
+          select: '_id name',
+        },
+        {
+          path: 'guestCardId',
+          select: '_id nfcUid code',
+        },
+        {
+          path: 'reservationId',
+          select: '_id reservationIdentifier',
+        },
+        {
+          path: 'subscriptionId',
+          select: '_id subscriptionIdentifier',
+        },
+      ])
       .session(session ?? null)
       .lean()
       .exec()
@@ -62,6 +88,7 @@ export class ParkingLotSessionRepository
     pageSize: number,
     startTime: Date,
     endTime: Date,
+    plateNumber?: string,
     session?: ClientSession,
   ): Promise<{ data: ParkingLotSession[]; total: number }> {
     const filter = {
@@ -70,6 +97,9 @@ export class ParkingLotSessionRepository
         $gte: startTime, // Lớn hơn hoặc bằng Start
         $lte: endTime, // Nhỏ hơn hoặc bằng End
       },
+      ...(plateNumber
+        ? { plateNumber: { $regex: plateNumber, $options: 'i' } }
+        : {}),
     }
 
     const [data, total] = await Promise.all([

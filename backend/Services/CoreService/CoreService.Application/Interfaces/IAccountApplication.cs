@@ -1,5 +1,6 @@
 ﻿using CoreService.Application.DTOs.AccountDtos;
 using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.DashboardDtos;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Models;
 using System;
@@ -25,5 +26,9 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<AccountDetailDto>> GetByAdminIdAsync(string adminId);
         Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetInactiveOperatorsAsync(int? page, int? pageSize);
         Task<ApiResponse<PaginationDto<AccountDetailDto>>> GetAllBannedAccountsAsync(int? page, int? pageSize); // Thêm dòng này
+        Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync();
+
+        // API thống kê người dùng mới theo Role và thời gian
+        Task<ApiResponse<NewRegistrationByRoleDto>> GetNewRegistrationsByRoleAsync(DateTime startDate, DateTime endDate);
     }
 }

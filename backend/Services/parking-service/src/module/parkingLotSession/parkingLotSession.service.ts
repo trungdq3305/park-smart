@@ -831,6 +831,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
     paginationQuery: PaginationQueryDto,
     startDate: string,
     endDate: string,
+    plateNumber?: string,
   ): Promise<{
     data: ParkingLotSessionResponseDto[]
     pagination: PaginationDto
@@ -845,6 +846,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         pageSize,
         startDateObj,
         endDateObj,
+        plateNumber,
       )
 
     return {
@@ -902,6 +904,9 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           identifier,
         )
       if (subscription) {
+        if (subscription.parkingLotId !== parkingLotId) {
+          throw new ConflictException('QR Vé tháng này không thuộc bãi xe này.')
+        }
         const subscriptionStatus =
           await this.subscriptionRepository.findActiveAndInUsedSubscriptionByIdentifier(
             identifier,
@@ -932,10 +937,23 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         }
       } else if (reservation) {
         const reservation =
-          await this.reservationRepository.findReservationById(identifier)
+          await this.reservationRepository.findValidReservationForCheckIn(
+            identifier,
+          )
         if (!reservation) {
           return { session: null, images: [], type: 'RESERVATION' }
         }
+
+        if (reservation.parkingLotId !== parkingLotId) {
+          throw new ConflictException('QR Đặt trước không dùng cho bãi xe này.')
+        }
+
+        if (reservation.userExpectedTime > new Date()) {
+          throw new BadRequestException(
+            'Phiên đặt trước chưa đến thời gian sử dụng.',
+          )
+        }
+
         const sessions =
           await this.parkingLotSessionRepository.findActiveSessionByReservationId(
             reservation._id.toString(),

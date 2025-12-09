@@ -2,17 +2,16 @@ import React from 'react'
 import { Layout, Menu, Button } from 'antd'
 import {
   DashboardOutlined,
-  BarChartOutlined,
   FileTextOutlined,
   AppstoreOutlined,
-  BankOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   CarOutlined,
   EnvironmentOutlined,
   WalletOutlined,
-  HistoryOutlined,
   SafetyOutlined,
+  CalendarOutlined,
+  GiftOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -40,14 +39,14 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
   // Menu items aligned to Admin sidebar
   const menuItems = [
     {
-      key: '/operator',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard',
-    },
-    {
       key: '/operator/parking-lot',
       icon: <CarOutlined />,
       label: 'Bãi đỗ xe',
+    },
+    {
+      key: '/operator',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard',
     },
     {
       key: '/operator/control-panel',
@@ -60,29 +59,19 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Lịch sử phiên đỗ xe',
     },
     {
-      key: '/operator/dashboard',
-      icon: <BarChartOutlined />,
-      label: 'Phân tích nâng cao',
-    },
-    {
       key: '/operator/create-report',
       icon: <FileTextOutlined />,
       label: 'Tạo báo cáo',
     },
     {
-      key: '/integrations',
+      key: '/operator/manage-guest-card',
       icon: <AppstoreOutlined />,
-      label: 'Tích hợp',
+      label: 'Quản lý thẻ khách',
     },
     {
-      key: '/companies',
-      icon: <BankOutlined />,
-      label: 'Doanh nghiệp',
-    },
-    {
-      key: '/vehicles',
-      icon: <CarOutlined />,
-      label: 'Phương tiện',
+      key: '/operator/subscription-plan',
+      icon: <WalletOutlined />,
+      label: 'Dịch vụ bãi xe hàng tháng',
     },
     {
       key: '/operator/payment',
@@ -90,9 +79,14 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Thanh toán',
     },
     {
-      key: '/history',
-      icon: <HistoryOutlined />,
-      label: 'Lịch sử',
+      key: '/operator/events',
+      icon: <CalendarOutlined />,
+      label: 'Sự kiện',
+    },
+    {
+      key: '/operator/promotions',
+      icon: <GiftOutlined />,
+      label: 'Khuyến mãi',
     },
     {
       key: '/operator/import-card',

@@ -10,8 +10,8 @@ import {
   CarOutlined,
   EnvironmentOutlined,
   WalletOutlined,
-  SafetyOutlined,
   CalendarOutlined,
+  GiftOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -42,8 +42,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       key: '/admin/manage-account',
       icon: <TeamOutlined />,
       label: 'Tài khoản',
-      badge: '164',
-      active: true,
+    },
+    {
+      key: '/admin/dashboard-admin',
+      icon: <BarChartOutlined />,
+      label: 'Dashboard',
     },
     {
       key: '/admin/parking-lot-requests',
@@ -56,11 +59,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Bãi đỗ xe',
     },
     {
-      key: '/analytics',
-      icon: <BarChartOutlined />,
-      label: 'Phân tích',
-    },
-    {
       key: '/admin/reports',
       icon: <FileTextOutlined />,
       label: 'Báo cáo',
@@ -71,9 +69,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Điều khoản & Chính sách',
     },
     {
-      key: '/payments',
+      key: '/admin/payments',
       icon: <WalletOutlined />,
       label: 'Thanh toán',
+    },
+    {
+      key: '/admin/subscription-plan',
+      icon: <WalletOutlined />,
+      label: 'Dịch vụ đăng ký hàng tháng',
     },
     {
       key: '/admin/events',
@@ -81,9 +84,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Sự kiện',
     },
     {
-      key: '/security',
-      icon: <SafetyOutlined />,
-      label: 'Bảo mật',
+      key: '/admin/promotions',
+      icon: <GiftOutlined />,
+      label: 'Khuyến mãi',
     },
   ]
 
@@ -138,11 +141,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
               label: (
                 <div className="menu-item-content">
                   <span className="menu-label">{item.label}</span>
-                  {item.badge && (
-                    <span className={`menu-badge ${item.active ? 'active' : ''}`}>
-                      {item.badge}
-                    </span>
-                  )}
                 </div>
               ),
             }))}

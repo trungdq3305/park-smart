@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 import { MongooseModule } from '@nestjs/mongoose'
 
+import { ParkingLotSessionModule } from '../parkingLotSession/parkingLotSession.module'
 import { GuestCardController } from './guestCard.controller'
 import { GuestCardRepository } from './guestCard.repository'
 import { GuestCardService } from './guestCard.service'
@@ -13,6 +14,7 @@ import { GuestCard, GuestCardSchema } from './schemas/guestCard.schema'
     MongooseModule.forFeature([
       { name: GuestCard.name, schema: GuestCardSchema },
     ]),
+    forwardRef(() => ParkingLotSessionModule),
   ],
   controllers: [GuestCardController],
   providers: [

@@ -23,14 +23,31 @@ const ParkingLotSessionHistory = lazy(
 const PaymentOperator = lazy(() => import('../pages/operator/payment/PaymentOperator'))
 const DashboardOperator = lazy(() => import('../pages/operator/dashboard/dashboardOperator'))
 const ManageEventsAdmin = lazy(() => import('../pages/admin/manage-events/ManageEventsAdmin'))
+const ManageEventsOperator = lazy(
+  () => import('../pages/operator/manage-events/ManageEventsOperator')
+)
+const ManageGuestCard = lazy(() => import('../pages/operator/manage-guest-card/ManageGuestCard'))
+const ManagePromotion = lazy(() => import('../pages/operator/manage-promotion/ManagePromotion'))
+const ManagePromotionsAdmin = lazy(
+  () => import('../pages/admin/manage-promotions/ManagePromotionsAdmin')
+)
+const DashboardAdmin = lazy(() => import('../pages/admin/dashboard-admin/DashboardAdmin'))
+const ManagePayment = lazy(() => import('../pages/admin/manage-payment/ManagePayment'))
+const PaymentConfirm = lazy(() => import('../pages/operator/payment-confirm/PaymentConfirm'))
+const SubscriptionPlanPage = lazy(() => import('../pages/admin/subscription-plan/SubscriptionPlan'))
+const SubscriptionPlanOperator = lazy(() => import('../pages/operator/subscription-plan-operator/OperatorSubscription'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
     data: [
       {
-        path: '/login',
+        path: '/',
         component: LoginPage,
       },
+      {
+        path:'/pay-result',
+        component: PaymentConfirm,
+      }
     ],
   },
   {
@@ -69,6 +86,26 @@ const routes: LayoutRoute[] = [
       {
         path: '/admin/events',
         component: ManageEventsAdmin,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/promotions',
+        component: ManagePromotionsAdmin,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/dashboard-admin',
+        component: DashboardAdmin,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/payments',
+        component: ManagePayment,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/subscription-plan',
+        component: SubscriptionPlanPage,
         role: ['Admin'],
       },
     ],
@@ -119,6 +156,26 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/dashboard',
         component: DashboardOperator,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/events',
+        component: ManageEventsOperator,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/promotions',
+        component: ManagePromotion,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/manage-guest-card',
+        component: ManageGuestCard,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/subscription-plan',
+        component: SubscriptionPlanOperator,
         role: ['Operator'],
       },
     ],

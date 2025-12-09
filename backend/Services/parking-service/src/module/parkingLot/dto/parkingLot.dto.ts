@@ -158,9 +158,23 @@ export class CreateParkingLotDto {
  * (SỬA ĐỔI) DTO để tạo một YÊU CẦU CẬP NHẬT.
  * Kế thừa từ CreateParkingLotDto nhưng tất cả các trường đều là optional.
  */
-export class CreateParkingLotUpdateRequestDto extends PartialType(
-  CreateParkingLotDto,
-) {
+export class CreateParkingLotUpdateRequestDto {
+  @ApiProperty({ example: 'Bãi đỗ xe quận 1' })
+  @IsNotEmpty({ message: 'Tên bãi đỗ xe không được để trống' })
+  name: string
+
+  @ApiProperty({ example: 50 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Sức chứa mỗi tầng phải là số' })
+  @IsPositive({ message: 'Sức chứa mỗi tầng phải là số dương' })
+  totalCapacityEachLevel: number
+
+  @ApiProperty({ example: 5 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Tổng số tầng phải là số' })
+  @IsPositive({ message: 'Tổng số tầng phải là số dương' })
+  totalLevel: number
+
   @ApiProperty({
     example: '2024-12-30', // << SỬA LẠI VÍ DỤ THEO ĐỊNH DẠNG CHUẨN
     description: 'Ngày có hiệu lực (bắt buộc theo định dạng YYYY-MM-DD)',
@@ -170,6 +184,36 @@ export class CreateParkingLotUpdateRequestDto extends PartialType(
   @MinDate(new Date(), { message: 'Ngày có hiệu lực phải sau ngày hiện tại' }) // 3. (THAY THẾ) Kiểm tra phải là ngày trong tương lai
   @IsNotEmpty({ message: 'Ngày có hiệu lực không được để trống' })
   effectiveDate: Date // << SỬA LẠI KIỂU DỮ LIỆU TỪ string SANG Date
+
+  @ApiProperty({ example: 20 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Số chỗ có thể đặt trước phải là một số' })
+  @IsPositive({ message: 'Số chỗ có thể đặt trước phải là số dương' })
+  bookableCapacity: number
+
+  @ApiProperty({ example: 20 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Số chỗ thuê dài hạn phải là một số' })
+  @IsPositive({ message: 'Số chỗ thuê dài hạn phải là số dương' })
+  leasedCapacity: number
+
+  @ApiProperty({ example: 50 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Số chỗ vãng lai phải là một số' })
+  @IsPositive({ message: 'Số chỗ vãng lai phải là số dương' })
+  walkInCapacity: number
+
+  @ApiProperty({ example: 20 })
+  @Type(() => Number)
+  @IsNumber({}, { message: 'Thời gian đặt trước phải là số' })
+  @IsPositive({ message: 'Thời gian đặt trước phải là số dương' })
+  @Max(24, { message: 'Thời gian đặt trước không được vượt quá 24 giờ' })
+  bookingSlotDurationHours: number
+
+  @ApiProperty({ example: '650f1f4e8c3a3c1a1c8b4567' })
+  @IsMongoId({ message: 'Mã nhà điều hành bãi đỗ xe không hợp lệ' })
+  @IsNotEmpty({ message: 'Mã nhà điều hành bãi đỗ xe không được để trống' })
+  parkingLotOperatorId: string
 }
 
 /**
@@ -262,7 +306,7 @@ export class ParkingLotResponseDto {
   availableSpots: number
 
   @Expose()
-  @Transform(({ obj }) => obj.parkingLotOperatorId.toString())
+  @Transform(({ obj }) => obj.parkingLotOperatorId?.toString())
   parkingLotOperatorId: string
 
   @Expose()

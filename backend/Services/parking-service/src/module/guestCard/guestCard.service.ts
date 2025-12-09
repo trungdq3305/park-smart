@@ -9,6 +9,7 @@ import { plainToInstance } from 'class-transformer'
 import { Connection } from 'mongoose'
 import { PaginatedResponseDto } from 'src/common/dto/paginatedResponse.dto'
 
+import { IParkingLotSessionRepository } from '../parkingLotSession/interfaces/iparkingLotSession.repository'
 import {
   BulkCreateGuestCardsDto,
   BulkImportResultDto,
@@ -27,6 +28,8 @@ export class GuestCardService implements IGuestCardService {
     @Inject(IGuestCardRepository)
     private readonly guestCardRepository: IGuestCardRepository,
     @InjectConnection() private readonly connection: Connection,
+    @Inject(IParkingLotSessionRepository)
+    private readonly parkingLotSessionRepository: IParkingLotSessionRepository,
   ) {}
 
   async updateGuestCardStatus(
@@ -34,6 +37,20 @@ export class GuestCardService implements IGuestCardService {
     status: string,
     userId: string,
   ): Promise<GuestCardResponseDto> {
+    if (status !== 'ACTIVE') {
+      // Kiểm tra xem thẻ này có đang nằm trong một phiên gửi xe nào chưa kết thúc không
+      const activeSession =
+        await this.parkingLotSessionRepository.findActiveSessionByGuestCardId(
+          id,
+        )
+
+      if (activeSession) {
+        throw new ConflictException(
+          `Thẻ này đang được sử dụng bởi xe ${activeSession.plateNumber}. Vui lòng cho xe check-out trước khi vô hiệu hóa.`,
+        )
+      }
+    }
+
     const data = await this.guestCardRepository.updateStatusById(
       id,
       status,

@@ -15,8 +15,8 @@ export const EventsGrid: React.FC<EventsGridProps> = ({ events }) => {
         <div className="events-empty-icon">📭</div>
         <h3 className="events-empty-title">Chưa có sự kiện phù hợp bộ lọc</h3>
         <p className="events-empty-text">
-          Thử thay đổi bộ lọc hoặc tạo mới một sự kiện để thu hút người dùng tham gia và sử dụng dịch vụ
-          Park Smart.
+          Thử thay đổi bộ lọc hoặc tạo mới một sự kiện để thu hút người dùng tham gia và sử dụng
+          dịch vụ Park Smart.
         </p>
       </div>
     )
@@ -45,12 +45,7 @@ export const EventsGrid: React.FC<EventsGridProps> = ({ events }) => {
         return (
           <article key={event._id} className="event-card">
             <div className="event-card-image-wrapper">
-              <img
-                src={imageUrl}
-                alt={event.title}
-                className="event-card-image"
-                loading="lazy"
-              />
+              <img src={imageUrl} alt={event.title} className="event-card-image" loading="lazy" />
               <div className="event-card-image-overlay" />
 
               <div className={`event-status-pill ${statusClass}`}>
@@ -58,9 +53,7 @@ export const EventsGrid: React.FC<EventsGridProps> = ({ events }) => {
                 <span>{statusLabel}</span>
               </div>
 
-              {event.includedPromotions && (
-                <div className="event-promo-pill">Ưu đãi kèm theo</div>
-              )}
+              {event.includedPromotions && <div className="event-promo-pill">Ưu đãi kèm theo</div>}
             </div>
 
             <div className="event-card-content">
@@ -90,9 +83,7 @@ export const EventsGrid: React.FC<EventsGridProps> = ({ events }) => {
                   year: 'numeric',
                 })}
               </span>
-              <span className="event-badge">
-                #{event.parkingLotId?.slice(0, 6) || 'PARK'}
-              </span>
+              <span className="event-badge">#{event.parkingLotId?.slice(0, 6) || 'PARK'}</span>
             </div>
           </article>
         )
@@ -102,5 +93,3 @@ export const EventsGrid: React.FC<EventsGridProps> = ({ events }) => {
 }
 
 export default EventsGrid
-
-

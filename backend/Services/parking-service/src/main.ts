@@ -12,11 +12,11 @@ class SocketIoAdapter extends IoAdapter {
     const corsOptions = {
       // Cho phép tất cả các nguồn truy cập vào Socket.IO
       // (BẠN CÓ THỂ THAY '*' bằng 'http://localhost:3000' để bảo mật hơn)
-      origin: '*', 
+      origin: '*',
       methods: ['GET', 'POST'],
       credentials: true,
     }
-    
+
     // Tạo server Socket.IO với các tùy chọn CORS
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const server = super.createIOServer(port, { ...options, cors: corsOptions })
