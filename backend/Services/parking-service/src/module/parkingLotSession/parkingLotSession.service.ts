@@ -904,7 +904,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           identifier,
         )
       if (subscription) {
-        if (subscription.parkingLotId !== parkingLotId) {
+        if (subscription.parkingLotId.toString() !== parkingLotId) {
           throw new ConflictException('QR Vé tháng này không thuộc bãi xe này.')
         }
         const subscriptionStatus =
@@ -944,7 +944,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           return { session: null, images: [], type: 'RESERVATION' }
         }
 
-        if (reservation.parkingLotId !== parkingLotId) {
+        if (reservation.parkingLotId.toString() !== parkingLotId) {
           throw new ConflictException('QR Đặt trước không dùng cho bãi xe này.')
         }
 
