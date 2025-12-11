@@ -15,6 +15,7 @@ import {
 import { InjectConnection } from '@nestjs/mongoose'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
+import * as dayjs from 'dayjs'
 import { Connection } from 'mongoose'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
@@ -73,19 +74,37 @@ export class ReservationService implements IReservationService {
     amount: number
     minutesRemaining: number
   } {
-    const now = new Date()
-    const startTime = new Date(reservation.userExpectedTime)
+    // 1. Dùng dayjs để xử lý thời gian an toàn hơn
+    const now = dayjs()
+    const startTime = dayjs(reservation.userExpectedTime)
 
-    const diffMs = startTime.getTime() - now.getTime()
-    const minutesRemaining = Math.floor(diffMs / (1000 * 60))
+    // 2. Tính số phút còn lại
+    const minutesRemaining = startTime.diff(now, 'minute')
 
-    // Logic hoàn tiền: Hủy trước > 60 phút hoàn 100%, ngược lại 0%
     const CUTOFF_MINUTES = 60
 
+    // 3. Logic hoàn tiền đã sửa
+
+    // TRƯỜNG HỢP 1: Đã quá giờ hẹn (minutesRemaining <= 0)
+    // -> Không hoàn tiền
+    if (minutesRemaining <= 0) {
+      return { amount: 0, minutesRemaining }
+    }
+
+    // TRƯỜNG HỢP 2: Hủy sớm (Còn > 60 phút)
     if (minutesRemaining > CUTOFF_MINUTES) {
-      return { amount: reservation.prepaidAmount, minutesRemaining }
-    } else {
-      return { amount: reservation.prepaidAmount * 0.5, minutesRemaining }
+      return {
+        amount: reservation.prepaidAmount * 0.5, // Sửa thành 0.5 theo comment
+        minutesRemaining,
+      }
+    }
+
+    // TRƯỜNG HỢP 3: Hủy muộn (Còn 0 - 60 phút)
+    else {
+      return {
+        amount: 0, // Sửa thành 0 theo comment
+        minutesRemaining,
+      }
     }
   }
 
@@ -122,14 +141,31 @@ export class ReservationService implements IReservationService {
 
     const policy = this.calculateRefundPolicy(reservation)
 
+    // 4. Tạo thông báo động (Dynamic Message)
+    let message = ''
+
+    if (policy.amount > 0) {
+      // Tính % thực tế để hiển thị
+      const percent = Math.round(
+        (policy.amount / reservation.prepaidAmount) * 100,
+      )
+      message =
+        `Bạn hủy trước giờ đặt ${Math.max(0, policy.minutesRemaining)} phút. ` +
+        `Theo chính sách, bạn được hoàn lại ${percent}% số tiền (${policy.amount.toLocaleString('vi-VN')}đ).`
+    } else {
+      // Trường hợp 0 đồng (do sát giờ hoặc quá giờ)
+      if (policy.minutesRemaining < 0) {
+        message = `Đã quá giờ đặt chỗ. Vé sẽ bị hủy và KHÔNG ĐƯỢC HOÀN TIỀN.`
+      } else {
+        message = `⚠️ CẢNH BÁO: Bạn đang hủy quá sát giờ (< 60 phút). Vé sẽ bị hủy nhưng KHÔNG ĐƯỢC HOÀN TIỀN.`
+      }
+    }
+
     return {
       canCancel: true,
       refundAmount: policy.amount,
       minutesUntilStart: policy.minutesRemaining,
-      warningMessage:
-        policy.amount > 0
-          ? `Bạn hủy trước giờ đặt ${policy.minutesRemaining} phút. Bạn sẽ được hoàn lại 50% tiền (${policy.amount.toLocaleString()}đ).`
-          : `⚠️ CẢNH BÁO: Bạn đang hủy quá sát giờ (< 60 phút). Vé sẽ bị hủy nhưng KHÔNG ĐƯỢC HOÀN TIỀN.`,
+      warningMessage: message,
     }
   }
 
@@ -634,10 +670,9 @@ export class ReservationService implements IReservationService {
 
       // --- BƯỚC 3: TÍNH TOÁN HOÀN TIỀN (Logic mới) ---
       // Quy tắc: Hủy trước > 60 phút hoàn 100%, ngược lại 0%
-      const now = new Date()
-      const startTime = new Date(reservation.userExpectedTime)
-      const diffMs = startTime.getTime() - now.getTime()
-      const minutesRemaining = Math.floor(diffMs / (1000 * 60))
+      const now = dayjs()
+      const startTime = dayjs(reservation.userExpectedTime)
+      const minutesRemaining = startTime.diff(now, 'minute')
 
       const CUTOFF_MINUTES = 60
       let refundAmount = 0
