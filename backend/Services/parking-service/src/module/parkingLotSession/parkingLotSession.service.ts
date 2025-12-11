@@ -346,6 +346,8 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
               },
               session,
             )
+          } else {
+            throw new NotFoundException('Mã QR không hợp lệ hoặc đã hết hạn.')
           }
         }
       }
@@ -367,6 +369,8 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           if (guestCard) {
             // ==> ĐÂY LÀ THẺ NFC VÃNG LAI HỢP LỆ
             guestCardId = guestCard._id
+          } else {
+            throw new NotFoundException('Thẻ NFC không thuộc bãi xe này.')
           }
         }
 
