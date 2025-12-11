@@ -85,7 +85,7 @@ export class ReservationService implements IReservationService {
     if (minutesRemaining > CUTOFF_MINUTES) {
       return { amount: reservation.prepaidAmount, minutesRemaining }
     } else {
-      return { amount: 0, minutesRemaining }
+      return { amount: reservation.prepaidAmount * 0.5, minutesRemaining }
     }
   }
 
@@ -128,7 +128,7 @@ export class ReservationService implements IReservationService {
       minutesUntilStart: policy.minutesRemaining,
       warningMessage:
         policy.amount > 0
-          ? `Bạn hủy trước giờ đặt ${policy.minutesRemaining} phút. Bạn sẽ được hoàn lại 100% tiền (${policy.amount.toLocaleString()}đ).`
+          ? `Bạn hủy trước giờ đặt ${policy.minutesRemaining} phút. Bạn sẽ được hoàn lại 50% tiền (${policy.amount.toLocaleString()}đ).`
           : `⚠️ CẢNH BÁO: Bạn đang hủy quá sát giờ (< 60 phút). Vé sẽ bị hủy nhưng KHÔNG ĐƯỢC HOÀN TIỀN.`,
     }
   }
@@ -645,7 +645,7 @@ export class ReservationService implements IReservationService {
       // Chỉ tính hoàn tiền nếu vé đã CONFIRMED (đã trả tiền)
       if (reservation.status === ReservationStatusEnum.CONFIRMED) {
         if (minutesRemaining > CUTOFF_MINUTES) {
-          refundAmount = reservation.prepaidAmount // Hoàn 100%
+          refundAmount = reservation.prepaidAmount * 0.5 // Hủy trước > 60 phút -> Hoàn 50%
         } else {
           refundAmount = 0 // Sát giờ (<= 60p) -> Mất trắng
         }
