@@ -30,26 +30,15 @@ export const getDiscountText = (promotion: Promotion): string => {
 }
 
 export const getPromotionStatus = (promotion: Promotion): PromotionStatus => {
-  const now = new Date()
-  const startDate = new Date(promotion.startDate)
-  const endDate = new Date(promotion.endDate)
-
   if (!promotion.isActive) {
     return { label: 'Đã vô hiệu', class: 'promotion-status-inactive' }
   }
 
-  if (now < startDate) {
-    return { label: 'Sắp diễn ra', class: 'promotion-status-upcoming' }
+  if (promotion.totalUsageLimit > 0 && promotion.currentUsageCount >= promotion.totalUsageLimit) {
+    return { label: 'Đã hết lượt', class: 'promotion-status-exhausted' }
   }
 
-  if (now >= startDate && now <= endDate) {
-    if (promotion.currentUsageCount >= promotion.totalUsageLimit) {
-      return { label: 'Đã hết lượt', class: 'promotion-status-exhausted' }
-    }
-    return { label: 'Đang hoạt động', class: 'promotion-status-active' }
-  }
-
-  return { label: 'Đã kết thúc', class: 'promotion-status-ended' }
+  return { label: 'Đang hoạt động', class: 'promotion-status-active' }
 }
 
 export const getStatusLabel = (filter: PromotionFilter): string => {

@@ -431,24 +431,6 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
       await session.endSession()
     }
 
-    // =================================================================
-    // D. TÁC VỤ NỀN (POST-COMMIT)
-    // =================================================================
-
-    // 1. Cập nhật WebSocket
-    if (newSession.guestCardId) {
-      const wsData =
-        await this.parkingLotService.updateAvailableSpotsForWebsocket(
-          parkingLotId,
-          -1,
-        )
-      if (!wsData) {
-        this.logger.warn(
-          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingLotId} khi check-in session ${newSession._id}`,
-        )
-      }
-    }
-
     // 2. Upload ảnh
     const ownerType = 'ParkingSession'
     await this.uploadImageToImageService(
@@ -904,6 +886,9 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           identifier,
         )
       if (subscription) {
+        if (subscription.parkingLotId.toString() !== parkingLotId) {
+          throw new ConflictException('QR Vé tháng này không thuộc bãi xe này.')
+        }
         const subscriptionStatus =
           await this.subscriptionRepository.findActiveAndInUsedSubscriptionByIdentifier(
             identifier,
@@ -934,10 +919,23 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
         }
       } else if (reservation) {
         const reservation =
-          await this.reservationRepository.findReservationById(identifier)
+          await this.reservationRepository.findValidReservationForCheckIn(
+            identifier,
+          )
         if (!reservation) {
           return { session: null, images: [], type: 'RESERVATION' }
         }
+
+        if (reservation.parkingLotId.toString() !== parkingLotId) {
+          throw new ConflictException('QR Đặt trước không dùng cho bãi xe này.')
+        }
+
+        if (reservation.userExpectedTime > new Date()) {
+          throw new BadRequestException(
+            'Phiên đặt trước chưa đến thời gian sử dụng.',
+          )
+        }
+
         const sessions =
           await this.parkingLotSessionRepository.findActiveSessionByReservationId(
             reservation._id.toString(),

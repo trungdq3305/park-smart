@@ -1,0 +1,400 @@
+.pay-page {
+  padding: 24px;
+  background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.06), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.08), transparent 30%),
+    #f8fafc;
+  min-height: 100vh;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: #0f172a;
+}
+
+.pay-hero {
+  background: linear-gradient(135deg, #ffffff 60%, #eef2ff);
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.pay-kicker {
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.pay-hero h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.pay-subtitle {
+  margin: 6px 0 0 0;
+  color: #64748b;
+  font-size: 15px;
+}
+
+.pay-hero-badges {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pay-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pay-btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pay-btn.primary {
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #fff;
+  border: none;
+  box-shadow: 0 10px 24px rgba(99, 102, 241, 0.35);
+}
+
+.pay-btn.ghost {
+  background: #f8fafc;
+}
+
+.pay-btn.subtle {
+  background: #ffffff;
+}
+
+.pay-btn.danger {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecdd3;
+}
+
+.pay-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pay-badge {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-weight: 700;
+  color: #374151;
+  font-size: 13px;
+}
+
+.pay-badge.ghost {
+  background: #eef2ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+.pay-panel {
+  margin-top: 18px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.pay-panel-header {
+  padding: 16px 18px 10px;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.pay-panel-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.pay-panel-header p {
+  margin: 4px 0 0 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.pay-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pay-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 12px 18px 18px;
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.85), #ffffff 40%);
+  border-top: 1px solid #e5e7eb;
+}
+
+.pay-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pay-input-group label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.pay-input-group input,
+.pay-input-group select {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pay-input-group input:focus,
+.pay-input-group select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.12);
+}
+
+.pay-input-group.small {
+  max-width: 140px;
+}
+
+.pay-status-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pay-chip {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #475569;
+}
+
+.pay-chip.info {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+  color: #4338ca;
+}
+
+.pay-chip.danger {
+  border-color: #fecdd3;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.pay-loading,
+.pay-empty {
+  padding: 32px 18px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.spinner {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 4px solid #e5e7eb;
+  border-top-color: #6366f1;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pay-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  padding: 16px 18px 20px;
+}
+
+.pay-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 14px 16px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.pay-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(99, 102, 241, 0.05), rgba(14, 165, 233, 0.04), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+
+.pay-card:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+.pay-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pay-amount {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pay-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pay-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.pay-label {
+  color: #6b7280;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pay-value {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.pay-value.mono {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.pay-card-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.pay-badge.status {
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+  border: 1px solid #e5e7eb;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pay-badge.status.pending {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+.pay-badge.status.paid {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.pay-badge.status.expired,
+.pay-badge.status.failed {
+  background: #fef2f2;
+  border-color: #fecdd3;
+  color: #b91c1c;
+}
+
+.pay-badge.status.refunded {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+.tp-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #0f172a;
+  font-weight: 700;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  z-index: 9999;
+}
+
+.tp-toast.success {
+  border-color: #bbf7d0;
+  background: linear-gradient(135deg, #ecfdf3, #f0fdf4);
+  color: #166534;
+}
+
+.tp-toast.error {
+  border-color: #fecdd3;
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #b91c1c;
+}
+
+@media (max-width: 768px) {
+  .pay-page {
+    padding: 16px;
+  }
+  .pay-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .pay-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

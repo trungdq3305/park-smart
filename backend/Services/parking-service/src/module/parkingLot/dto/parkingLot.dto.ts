@@ -306,7 +306,7 @@ export class ParkingLotResponseDto {
   availableSpots: number
 
   @Expose()
-  @Transform(({ obj }) => obj._id.toString())
+  @Transform(({ obj }) => obj.parkingLotOperatorId?.toString())
   parkingLotOperatorId: string
 
   @Expose()

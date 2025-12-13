@@ -17,8 +17,13 @@ const Login: React.FC = () => {
   //check if user is logged in
   useEffect(() => {
     const userData = getUserData()
+    const role = userData?.role?.toLowerCase()
     if (userData) {
-      navigate('/')
+      if (role === 'admin') {
+        navigate('/admin/manage-account')
+      } else {
+        navigate('/operator/parking-lot')
+      }
     }
   }, [navigate])
   return (

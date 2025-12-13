@@ -100,9 +100,7 @@ class ErrorMessage extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.red.shade600,
           foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
@@ -113,6 +111,7 @@ class ErrorMessage extends StatelessWidget {
   }
 
   bool _shouldShowSettingsButton() {
-    return errorMessage.contains('vĩnh viễn') || errorMessage.contains('Cài đặt');
+    return errorMessage.contains('vĩnh viễn') ||
+        errorMessage.contains('Cài đặt');
   }
 }

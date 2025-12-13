@@ -285,6 +285,7 @@ export class ReservationRepository implements IReservationRepository {
     return this.reservationModel
       .findOne({
         reservationIdentifier,
+        status: ReservationStatusEnum.CONFIRMED,
       })
       .exec()
   }
