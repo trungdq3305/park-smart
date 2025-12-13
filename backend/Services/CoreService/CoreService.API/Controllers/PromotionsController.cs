@@ -45,7 +45,7 @@ namespace CoreService.API.Controllers
 
         // Admin/Operator endpoints
         [HttpPost]
-        [Authorize(Roles = "Operator")]
+        [Authorize(Roles = "Admin,Operator")]
         public async Task<IActionResult> Create([FromBody] PromotionCreateDto dto)
         {
             var accountId = User.FindFirst("id")?.Value;
