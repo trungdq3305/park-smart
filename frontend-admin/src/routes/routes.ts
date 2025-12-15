@@ -35,6 +35,7 @@ const DashboardAdmin = lazy(() => import('../pages/admin/dashboard-admin/Dashboa
 const ManagePayment = lazy(() => import('../pages/admin/manage-payment/ManagePayment'))
 const PaymentConfirm = lazy(() => import('../pages/operator/payment-confirm/PaymentConfirm'))
 const SubscriptionPlanPage = lazy(() => import('../pages/admin/subscription-plan/SubscriptionPlan'))
+const SubscriptionPlanOperator = lazy(() => import('../pages/operator/subscription-plan-operator/OperatorSubscription'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -170,6 +171,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/manage-guest-card',
         component: ManageGuestCard,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/subscription-plan',
+        component: SubscriptionPlanOperator,
         role: ['Operator'],
       },
     ],

@@ -76,20 +76,6 @@ namespace CoreService.API.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        //[HttpPost]
-        //public async Task<IActionResult> Create([FromBody] Account account)
-        //{
-        //    var response = await _accountApplication.CreateAsync(account);
-        //    return StatusCode(response.StatusCode, response);
-        //}
-
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> Update(string id, [FromBody] Account account)
-        //{
-        //    var response = await _accountApplication.UpdateAsync(id, account);
-        //    return StatusCode(response.StatusCode, response);
-        //}
-
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
@@ -104,9 +90,6 @@ namespace CoreService.API.Controllers
             var response = await _accountApplication.GetInactiveOperatorsAsync(page, pageSize);
             return StatusCode(response.StatusCode, response);
         }
-        // Trong CoreService.API.Controllers/AccountController.cs
-
-        // ... (các phương thức khác) ...
 
         [HttpGet("banned")] // Endpoint mới: api/accounts/banned
         //[Authorize(Roles = "Admin")] // Yêu cầu quyền Admin để xem danh sách này

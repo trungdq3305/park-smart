@@ -2,7 +2,6 @@ import React from 'react'
 import { Layout, Menu, Button } from 'antd'
 import {
   DashboardOutlined,
-  BarChartOutlined,
   FileTextOutlined,
   AppstoreOutlined,
   MenuFoldOutlined,
@@ -40,14 +39,14 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
   // Menu items aligned to Admin sidebar
   const menuItems = [
     {
-      key: '/operator',
-      icon: <DashboardOutlined />,
-      label: 'Dashboard',
-    },
-    {
       key: '/operator/parking-lot',
       icon: <CarOutlined />,
       label: 'Bãi đỗ xe',
+    },
+    {
+      key: '/operator',
+      icon: <DashboardOutlined />,
+      label: 'Dashboard',
     },
     {
       key: '/operator/control-panel',
@@ -60,11 +59,6 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Lịch sử phiên đỗ xe',
     },
     {
-      key: '/operator/dashboard',
-      icon: <BarChartOutlined />,
-      label: 'Phân tích nâng cao',
-    },
-    {
       key: '/operator/create-report',
       icon: <FileTextOutlined />,
       label: 'Tạo báo cáo',
@@ -73,6 +67,11 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       key: '/operator/manage-guest-card',
       icon: <AppstoreOutlined />,
       label: 'Quản lý thẻ khách',
+    },
+    {
+      key: '/operator/subscription-plan',
+      icon: <WalletOutlined />,
+      label: 'Dịch vụ bãi xe hàng tháng',
     },
     {
       key: '/operator/payment',

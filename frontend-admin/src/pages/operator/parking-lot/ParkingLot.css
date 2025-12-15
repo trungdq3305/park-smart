@@ -1024,6 +1024,37 @@
   margin: 0;
 }
 
+.parking-lot-create-request-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.8vh;
+  padding: 1.2vh 2.4vh;
+  margin-top: 2vh;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.3);
+}
+
+.parking-lot-create-request-btn:hover {
+  box-shadow: 0 0.8vh 2.4vh rgba(59, 130, 246, 0.4);
+  transform: translateY(-2px);
+}
+
+.parking-lot-create-request-btn:active {
+  transform: translateY(0);
+}
+
+.parking-lot-create-request-btn span:first-child {
+  font-size: 18px;
+  line-height: 1;
+}
+
 /* Loading States */
 .parking-lot-loading,
 .pricing-policy-loading {
