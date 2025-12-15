@@ -89,7 +89,7 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
       } else if (
         formData.startDate &&
         formData.endDate.isSame(formData.startDate, 'day') &&
-        formData.endDate.isSameOrBefore(formData.startDate)
+        formData.endDate.isBefore(formData.startDate)
       ) {
         newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu'
       } else if (event?.endDate) {
