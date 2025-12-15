@@ -72,6 +72,8 @@ export interface IParkingLotRepository {
     id: string,
     session?: ClientSession,
   ): Promise<string | null>
+
+
 }
 
 export const IParkingLotRepository = Symbol('IParkingLotRepository')
