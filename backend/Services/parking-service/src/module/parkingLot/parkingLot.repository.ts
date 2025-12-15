@@ -421,4 +421,5 @@ export class ParkingLotRepository implements IParkingLotRepository {
 
     return parkingLots
   }
+  
 }

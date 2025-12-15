@@ -309,6 +309,27 @@ export class ParkingLotController {
     }
   }
 
+@Get('find-by-operatorId')
+@ApiOperation({ summary: 'Lấy bãi đỗ xe của Operator theo ID' })
+@ApiQuery({
+  name: 'operatorId',
+  type: String,
+  required: true,
+  description: 'ID của nhà điều hành bãi đỗ xe',
+})
+async findByOperatorId(
+  @Query('operatorId') operatorId: string, // <--- SỬA: Lấy Operator ID từ query
+): Promise<ApiResponseDto<ParkingLotResponseDto[]>> {
+  const parkingLots =
+    await this.parkingLotService.findAllForOperator(operatorId)
+  return {
+    data: parkingLots,
+    message: 'Lấy bãi đỗ xe thành công',
+    statusCode: HttpStatus.OK,
+    success: true,
+  }
+}
+
   @Get('all-requests')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
