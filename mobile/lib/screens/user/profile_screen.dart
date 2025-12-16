@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/screens/user/profile/favourities/favourities_screen.dart';
 import 'package:mobile/screens/user/profile/payment_history/payment_history_screen.dart';
 import 'package:mobile/screens/user/profile/reservation/my_reservations_screen.dart';
 import 'package:mobile/screens/user/profile/termpolicy/term_and_policy_screen.dart';
@@ -332,6 +333,17 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                           context,
                           MaterialPageRoute(
                             builder: (context) => const MyReservationsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildTile(
+                      icon: Icons.favorite_outline,
+                      title: 'Bãi xe yêu thích',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const FavouritiesScreen(),
                           ),
                         );
                       },

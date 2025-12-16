@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../services/payment_service.dart';
 import '../../../../services/subcription_service.dart';
-import '../../../user/booking_reservation/payment_checkout_screen.dart';
+import '../../booking/payment_checkout_screen.dart';
 
 class SubscriptionRenewalFlow {
   static Future<bool> start({

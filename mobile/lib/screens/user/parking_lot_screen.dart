@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../services/parking_lot_service.dart';
 import '../../services/socket_service.dart';
 import '../../widgets/app_scaffold.dart';
-import 'booking_reservation/booking_screen.dart';
+import 'booking/booking_screen.dart';
 import 'package:mobile/widgets/parking_lot_map/parking_lot_bottom_sheet.dart';
 import 'package:mobile/widgets/parking_lot_map/location_search_bar.dart';
 import 'package:mobile/widgets/parking_lot_map/error_message.dart';

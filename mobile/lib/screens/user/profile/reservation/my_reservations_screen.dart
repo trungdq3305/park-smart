@@ -7,7 +7,7 @@ import '../../../../services/reservation_service.dart';
 import '../../../../services/parking_lot_service.dart';
 import '../../../../services/payment_service.dart';
 import '../../../../widgets/app_scaffold.dart';
-import '../../../user/booking_reservation/payment_checkout_screen.dart';
+import '../../booking/payment_checkout_screen.dart';
 import 'my_reservations_screen_filter_bar.dart';
 import '../../../../widgets/reservation/my_reservation_card.dart';
 
