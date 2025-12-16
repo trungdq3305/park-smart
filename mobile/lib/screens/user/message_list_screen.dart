@@ -19,6 +19,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
   String _searchQuery = '';
   Map<String, dynamic>? _searchResult;
   bool _isSearching = false;
+  List<Map<String, dynamic>> _suggestions = [];
 
   @override
   void initState() {
@@ -35,25 +36,30 @@ class _MessageListScreenState extends State<MessageListScreen> {
       if (query.isEmpty) {
         _searchResult = null;
         _isSearching = false;
+        _suggestions = [];
       }
     });
 
-    // Check if query looks like a phone number (contains only digits)
-    if (query.isNotEmpty && RegExp(r'^[0-9]+$').hasMatch(query)) {
+    // Tự động tìm nếu là số điện thoại đủ dài
+    if (query.isNotEmpty &&
+        RegExp(r'^[0-9]+$').hasMatch(query) &&
+        query.length >= 8) {
       _searchByPhone(query);
     } else if (query.isNotEmpty) {
-      // If query is not empty but not a phone number, clear search result
+      // Nếu không phải số thì không gọi API, chỉ reset kết quả
       setState(() {
         _searchResult = null;
         _isSearching = false;
+        _suggestions = [];
       });
     }
   }
 
   Future<void> _searchByPhone(String phone) async {
-    if (phone.length < 10) {
+    if (phone.length < 8) {
       setState(() {
         _searchResult = null;
+        _suggestions = [];
       });
       return;
     }
@@ -68,6 +74,7 @@ class _MessageListScreenState extends State<MessageListScreen> {
         setState(() {
           _searchResult = result;
           _isSearching = false;
+          _suggestions = _extractSuggestions(result);
         });
       }
     } catch (e) {
@@ -76,9 +83,43 @@ class _MessageListScreenState extends State<MessageListScreen> {
         setState(() {
           _searchResult = null;
           _isSearching = false;
+          _suggestions = [];
         });
       }
     }
+  }
+
+  void _startChatFromSearch(Map<String, dynamic> accountData) {
+    final accountId = accountData['_id']?.toString() ?? '';
+    final fullName =
+        accountData['driverDetail']?['fullName'] ??
+        accountData['adminDetail']?['fullName'] ??
+        accountData['operatorDetail']?['fullName'] ??
+        accountData['fullName'] ??
+        'Người dùng';
+    if (accountId.isEmpty) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            MessageChatScreen(peerUserId: accountId, peerDisplayName: fullName),
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> _extractSuggestions(Map<String, dynamic> result) {
+    final data = result['data'];
+    if (data is List && data.isNotEmpty) {
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
+    }
+    if (data is Map<String, dynamic>) {
+      return [data];
+    }
+    return [];
   }
 
   @override
@@ -212,145 +253,298 @@ class _MessageListScreenState extends State<MessageListScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        body: Column(
+        body: Stack(
           children: [
-            // Search bar
-            Container(
-              padding: const EdgeInsets.all(8.0),
-              color: Colors.green,
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Tìm kiếm cuộc trò chuyện...',
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.white),
-                          onPressed: () {
-                            _searchController.clear();
-                          },
-                        )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.white.withOpacity(0.2),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+            Column(
+              children: [
+                // Search bar
+                Container(
+                  padding: const EdgeInsets.all(8.0),
+                  color: Colors.green,
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Tìm kiếm cuộc trò chuyện...',
+                      hintStyle: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                      ),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white),
+                      suffixIcon: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_isSearching)
+                            const Padding(
+                              padding: EdgeInsets.only(right: 8.0),
+                              child: SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          if (_searchQuery.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.search,
+                                color: Colors.white,
+                              ),
+                              onPressed: () =>
+                                  _searchByPhone(_searchController.text.trim()),
+                            ),
+                          if (_searchQuery.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(
+                                Icons.clear,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                _searchController.clear();
+                              },
+                            ),
+                        ],
+                      ),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.2),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            // Chat list
-            Expanded(
-              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('chatRooms')
-                    .doc(_currentUserId!)
-                    .collection('rooms')
-                    .orderBy('updatedAt', descending: true)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Lỗi: ${snapshot.error}'));
-                  }
-
-                  var chats = snapshot.data?.docs ?? [];
-
-                  // Filter out AI chatbot room (already shown as fixed item at top)
-                  chats = chats.where((doc) {
-                    final data = doc.data();
-                    final peerId = data['peerId']?.toString() ?? '';
-                    return peerId != 'ai_chatbot';
-                  }).toList();
-
-                  // Filter by search query (only if not searching by phone)
-                  if (_searchQuery.isNotEmpty && _searchResult == null) {
-                    chats = chats.where((doc) {
-                      final data = doc.data();
-                      final peerName = (data['peerName'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      final lastMessage = (data['lastMessage'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      return peerName.contains(_searchQuery) ||
-                          lastMessage.contains(_searchQuery);
-                    }).toList();
-                  }
-
-                  // Build list items
-                  final List<Widget> items = [];
-
-                  // Add AI chat item at the top (always visible)
-                  items.add(
-                    ListTile(
-                      leading: const Icon(
-                        Icons.smart_toy,
-                        color: Colors.green,
-                        size: 40,
-                      ),
-                      title: const Text(
-                        'Trợ lý Hướng dẫn',
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
-                      subtitle: const Text(
-                        'Hỏi tôi bất cứ điều gì về ứng dụng',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ChatbotChatScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-
-                  // Add search result if found
-                  if (_isSearching) {
-                    items.add(
-                      const ListTile(
-                        leading: CircularProgressIndicator(),
-                        title: Text('Đang tìm kiếm...'),
-                      ),
-                    );
-                  } else if (_searchResult != null) {
-                    try {
-                      final data = _searchResult!['data'];
-                      dynamic accountData = data;
-                      if (data is List && data.isNotEmpty) {
-                        accountData = data[0];
+                // Chat list
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance
+                        .collection('chatRooms')
+                        .doc(_currentUserId!)
+                        .collection('rooms')
+                        .orderBy('updatedAt', descending: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
                       }
 
-                      final accountId = accountData?['_id']?.toString() ?? '';
-                      final fullName =
-                          accountData?['driverDetail']?['fullName'] ??
-                          accountData?['adminDetail']?['fullName'] ??
-                          accountData?['operatorDetail']?['fullName'] ??
-                          accountData?['fullName'] ??
-                          'Người dùng';
-                      final phone = accountData?['phone']?.toString() ?? '';
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Lỗi: ${snapshot.error}'));
+                      }
 
+                      var chats = snapshot.data?.docs ?? [];
+
+                      // Filter out AI chatbot room (already shown as fixed item at top)
+                      chats = chats.where((doc) {
+                        final data = doc.data();
+                        final peerId = data['peerId']?.toString() ?? '';
+                        return peerId != 'ai_chatbot';
+                      }).toList();
+
+                      // Filter by search query (only if not searching by phone)
+                      if (_searchQuery.isNotEmpty && _searchResult == null) {
+                        chats = chats.where((doc) {
+                          final data = doc.data();
+                          final peerName = (data['peerName'] ?? '')
+                              .toString()
+                              .toLowerCase();
+                          final lastMessage = (data['lastMessage'] ?? '')
+                              .toString()
+                              .toLowerCase();
+                          return peerName.contains(_searchQuery) ||
+                              lastMessage.contains(_searchQuery);
+                        }).toList();
+                      }
+
+                      // Build list items
+                      final List<Widget> items = [];
+
+                      // Add AI chat item at the top (always visible)
                       items.add(
                         ListTile(
                           leading: const Icon(
-                            Icons.person,
-                            color: Colors.blue,
+                            Icons.smart_toy,
+                            color: Colors.green,
                             size: 40,
                           ),
+                          title: const Text(
+                            'Trợ lý Hướng dẫn',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: const Text(
+                            'Hỏi tôi bất cứ điều gì về ứng dụng',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ChatbotChatScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+
+                      // Add chat list items
+                      for (final chatDoc in chats) {
+                        final chatData = chatDoc.data();
+
+                        final peerId = chatData['peerId'] as String? ?? '';
+                        final peerName =
+                            chatData['peerName'] as String? ?? 'Người dùng';
+                        final lastMessage =
+                            chatData['lastMessage'] as String? ?? '';
+                        final updatedAt = chatData['updatedAt'] as Timestamp?;
+                        final unreadCount =
+                            chatData['unreadCount'] as int? ?? 0;
+
+                        items.add(
+                          ListTile(
+                            leading: const Icon(
+                              Icons.person,
+                              color: Colors.green,
+                              size: 40,
+                            ),
+                            title: Text(
+                              peerName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            subtitle: Text(
+                              lastMessage,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (updatedAt != null)
+                                  Text(
+                                    _formatTime(updatedAt.toDate()),
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                if (unreadCount > 0)
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      unreadCount.toString(),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MessageChatScreen(
+                                    peerUserId: peerId,
+                                    peerDisplayName: peerName,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        );
+                      }
+
+                      // Add empty state message if needed
+                      if (chats.isEmpty &&
+                          _searchQuery.isNotEmpty &&
+                          _searchResult == null &&
+                          !_isSearching) {
+                        items.add(
+                          const ListTile(
+                            title: Text('Không tìm thấy cuộc trò chuyện nào'),
+                            enabled: false,
+                          ),
+                        );
+                      } else if (chats.isEmpty &&
+                          _searchQuery.isEmpty &&
+                          _searchResult == null &&
+                          !_isSearching) {
+                        items.add(
+                          ListTile(
+                            title: const Text('Chưa có cuộc trò chuyện nào'),
+                            enabled: false,
+                          ),
+                        );
+                        items.add(
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: ElevatedButton.icon(
+                              onPressed: _createTestChat,
+                              icon: const Icon(Icons.add),
+                              label: const Text('Tạo test chat'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return ListView(children: items);
+                    },
+                  ),
+                ),
+              ],
+            ),
+            if (_suggestions.isNotEmpty)
+              Positioned(
+                top: 64,
+                left: 12,
+                right: 12,
+                child: Material(
+                  elevation: 6,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green),
+                    ),
+                    child: ListView.separated(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: _suggestions.length,
+                      separatorBuilder: (_, __) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        final accountData = _suggestions[index];
+                        final fullName =
+                            accountData['driverDetail']?['fullName'] ??
+                            accountData['adminDetail']?['fullName'] ??
+                            accountData['operatorDetail']?['fullName'] ??
+                            accountData['fullName'] ??
+                            'Người dùng';
+                        final phone = accountData['phone']?.toString() ?? '';
+                        return ListTile(
+                          leading: const Icon(Icons.person, color: Colors.blue),
                           title: Text(
                             fullName,
                             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -358,148 +552,18 @@ class _MessageListScreenState extends State<MessageListScreen> {
                           subtitle: Text(
                             phone.isNotEmpty ? phone : 'Không có số điện thoại',
                           ),
-                          trailing: const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                          ),
                           onTap: () {
-                            if (accountId.isNotEmpty) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => MessageChatScreen(
-                                    peerUserId: accountId,
-                                    peerDisplayName: fullName,
-                                  ),
-                                ),
-                              );
-                            }
+                            _startChatFromSearch(accountData);
+                            setState(() {
+                              _suggestions = [];
+                            });
                           },
-                        ),
-                      );
-                    } catch (e) {
-                      print('Error parsing search result: $e');
-                    }
-                  }
-
-                  // Add chat list items
-                  for (final chatDoc in chats) {
-                    final chatData = chatDoc.data();
-
-                    final peerId = chatData['peerId'] as String? ?? '';
-                    final peerName =
-                        chatData['peerName'] as String? ?? 'Người dùng';
-                    final lastMessage =
-                        chatData['lastMessage'] as String? ?? '';
-                    final updatedAt = chatData['updatedAt'] as Timestamp?;
-                    final unreadCount = chatData['unreadCount'] as int? ?? 0;
-
-                    items.add(
-                      ListTile(
-                        leading: const Icon(
-                          Icons.person,
-                          color: Colors.green,
-                          size: 40,
-                        ),
-                        title: Text(
-                          peerName,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        subtitle: Text(
-                          lastMessage,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            if (updatedAt != null)
-                              Text(
-                                _formatTime(updatedAt.toDate()),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            if (unreadCount > 0)
-                              Container(
-                                margin: const EdgeInsets.only(top: 4),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  unreadCount.toString(),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MessageChatScreen(
-                                peerUserId: peerId,
-                                peerDisplayName: peerName,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  }
-
-                  // Add empty state message if needed
-                  if (chats.isEmpty &&
-                      _searchQuery.isNotEmpty &&
-                      _searchResult == null &&
-                      !_isSearching) {
-                    items.add(
-                      const ListTile(
-                        title: Text('Không tìm thấy cuộc trò chuyện nào'),
-                        enabled: false,
-                      ),
-                    );
-                  } else if (chats.isEmpty &&
-                      _searchQuery.isEmpty &&
-                      _searchResult == null &&
-                      !_isSearching) {
-                    items.add(
-                      ListTile(
-                        title: const Text('Chưa có cuộc trò chuyện nào'),
-                        enabled: false,
-                      ),
-                    );
-                    items.add(
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ElevatedButton.icon(
-                          onPressed: _createTestChat,
-                          icon: const Icon(Icons.add),
-                          label: const Text('Tạo test chat'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return ListView(children: items);
-                },
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ),
-            ),
           ],
         ),
       ),

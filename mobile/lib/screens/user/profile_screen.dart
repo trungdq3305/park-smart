@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:mobile/screens/user/profile/events/events_screen.dart';
 import 'package:mobile/screens/user/profile/favourities/favourities_screen.dart';
 import 'package:mobile/screens/user/profile/payment_history/payment_history_screen.dart';
 import 'package:mobile/screens/user/profile/reservation/my_reservations_screen.dart';
 import 'package:mobile/screens/user/profile/termpolicy/term_and_policy_screen.dart';
+import 'package:mobile/services/event_service.dart';
 import 'package:mobile/widgets/app_scaffold.dart';
 import 'package:mobile/services/user_service.dart';
 import 'profile/infor/personal_info_screen.dart';
@@ -356,6 +358,18 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                         Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const BookingHistoryScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    _buildTile(
+                      icon: Icons.event_outlined,
+                      title: 'Sự kiện',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const EventsScreen(),
                           ),
                         );
                       },

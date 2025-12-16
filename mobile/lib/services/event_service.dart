@@ -35,15 +35,15 @@ class EventService {
     'Accept': 'application/json',
   };
 
-  /// GET /api/events
+  /// GET /core/events
   static Future<Map<String, dynamic>> getEvents() async {
     final token = await _getToken();
     if (token == null) throw Exception('No authentication token found');
 
-    final uri = Uri.parse('$baseUrl/api/events');
+    final uri = Uri.parse('$baseUrl/core/events');
     final res = await http.get(uri, headers: _headers(token));
 
-    print('📡 GET /api/events status: ${res.statusCode}');
+    print('📡 GET /core/events status: ${res.statusCode}');
     print('📡 Body: ${res.body}');
 
     if (res.statusCode == 200) {
@@ -52,15 +52,15 @@ class EventService {
     throw Exception('Failed to fetch events: ${res.statusCode} - ${res.body}');
   }
 
-  /// GET /api/events/upcoming
+  /// GET /core/events/upcoming
   static Future<Map<String, dynamic>> getUpcomingEvents() async {
     final token = await _getToken();
     if (token == null) throw Exception('No authentication token found');
 
-    final uri = Uri.parse('$baseUrl/api/events/upcoming');
+    final uri = Uri.parse('$baseUrl/core/events/upcoming');
     final res = await http.get(uri, headers: _headers(token));
 
-    print('📡 GET /api/events/upcoming status: ${res.statusCode}');
+    print('📡 GET /core/events/upcoming status: ${res.statusCode}');
     print('📡 Body: ${res.body}');
 
     if (res.statusCode == 200) {
@@ -71,15 +71,15 @@ class EventService {
     );
   }
 
-  /// GET /api/events/{id}
+  /// GET /core/events/{id}
   static Future<Map<String, dynamic>> getEventById(String id) async {
     final token = await _getToken();
     if (token == null) throw Exception('No authentication token found');
 
-    final uri = Uri.parse('$baseUrl/api/events/$id');
+    final uri = Uri.parse('$baseUrl/core/events/$id');
     final res = await http.get(uri, headers: _headers(token));
 
-    print('📡 GET /api/events/$id status: ${res.statusCode}');
+    print('📡 GET /core/events/$id status: ${res.statusCode}');
     print('📡 Body: ${res.body}');
 
     if (res.statusCode == 200) {
