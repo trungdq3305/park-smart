@@ -1,5 +1,6 @@
 ﻿using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
+using CoreService.Application.DTOs.ParkingLotDtos;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,5 +16,6 @@ namespace CoreService.Application.Interfaces
         Task<ApiResponse<ParkingLotRequestCreationResponse>> CreateParkingLotAsync(
         FullOperatorCreationRequest.ParkingLotCreationRequest request);
         Task DeleteParkingLotRequestAsync(string requestId);
+        Task<ApiResponse<List<ParkingLotResponse>>> FindParkingLotsByOperatorIdAsync(string operatorId);
     }
 }
