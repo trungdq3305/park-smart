@@ -4,8 +4,8 @@ import dayjs, { type Dayjs } from 'dayjs'
 import { useCreateEventMutation } from '../../features/admin/eventAPI'
 import { CustomModal } from '../common'
 import { getParkingLotId } from '../../utils/parkingLotId'
-import { getUserData } from '../../utils/userData'
 import '../promotions/CreatePromotionModal.css'
+import { useOperatorId } from '../../hooks/useOperatorId'
 
 interface CreateEventModalProps {
   open: boolean
@@ -29,8 +29,7 @@ interface FormErrors {
 }
 
 const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose }) => {
-  const operator = getUserData()
-  const operatorId = operator?.id
+  const operatorId = useOperatorId()
   const [createEvent, { isLoading }] = useCreateEventMutation()
 
   const [formData, setFormData] = useState<FormData>({
@@ -82,7 +81,7 @@ const CreateEventModal: React.FC<CreateEventModalProps> = ({ open, onClose }) =>
     } else if (
       formData.startDate &&
       formData.endDate.isSame(formData.startDate, 'day') &&
-      formData.endDate.isSameOrBefore(formData.startDate)
+      formData.endDate.isBefore(formData.startDate)
     ) {
       newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu'
     }
