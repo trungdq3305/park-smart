@@ -33,7 +33,7 @@ YOLO_MODEL_PATH = 'lp_detect_v4.pt'
 OCR_MODEL_PATH = 'best_ocr_model.pth'
 
 QR_CAM_INDEX = 0 
-PLATE_CAM_URL = "http://172.23.252.111:8080/video" 
+PLATE_CAM_URL = "http://10.53.165.245:8080/video" 
 
 IMG_HEIGHT = 64
 MAX_IMG_WIDTH = 256
