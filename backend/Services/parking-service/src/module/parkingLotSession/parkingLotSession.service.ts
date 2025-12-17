@@ -369,8 +369,6 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           if (guestCard) {
             // ==> ĐÂY LÀ THẺ NFC VÃNG LAI HỢP LỆ
             guestCardId = guestCard._id
-          } else {
-            throw new NotFoundException('Thẻ NFC không thuộc bãi xe này.')
           }
         }
 
@@ -689,6 +687,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
                   `Đã cập nhật điểm uy tín cho user ${res.createdBy}: ${pointChange.change}`,
                 )
               })
+              // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
               .catch((err) => {
                 this.logger.error(
                   `Lỗi cập nhật điểm uy tín (Background task): ${err.message}`,
