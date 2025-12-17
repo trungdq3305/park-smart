@@ -26,7 +26,7 @@ namespace CoreService.Repository.Repositories
             await _collection.Find(e => e.Id == id && e.DeletedAt == null).FirstOrDefaultAsync();
 
         public async Task<IEnumerable<CityAdmin>> GetAllAsync() =>
-            await _collection.Find(e => e.DeletedAt == null).ToListAsync();
+            await _collection.Find(e => e.DeletedAt == null).SortByDescending(u => u.CreatedAt).ToListAsync();
 
         public async Task AddAsync(CityAdmin entity, IClientSessionHandle session = null)
         {
