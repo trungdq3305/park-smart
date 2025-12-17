@@ -68,6 +68,26 @@ export class ParkingLotService implements IParkingLotService {
     private readonly sessionRepository: IParkingLotSessionRepository,
   ) {}
 
+  async adminDeleteParkingLot(
+    id: string,
+    userId: string,
+  ): Promise<ParkingLotResponseDto | null> {
+    const parkingLot = await this.parkingLotRepository.findParkingLotById(id)
+    if (!parkingLot) {
+      throw new NotFoundException('ID bãi đỗ xe không tồn tại.')
+    }
+    const data = await this.parkingLotRepository.adminDeleteParkingLot(
+      id,
+      userId,
+    )
+    if (!data) {
+      throw new InternalServerErrorException(
+        'Xóa bãi đỗ xe thất bại. vui lòng thử lại sau.',
+      )
+    }
+    return this.returnParkingLotResponseDto(data)
+  }
+
   async updateBookingSlotDurationHours(
     id: string,
     bookingSlotDurationHours: number,

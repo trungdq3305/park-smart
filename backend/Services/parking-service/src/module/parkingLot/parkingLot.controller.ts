@@ -662,4 +662,26 @@ async findByOperatorId(
       success: true,
     }
   }
+
+  @Delete('admin-delete/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
+  @ApiOperation({ summary: '[Admin] Xóa vĩnh viễn một bãi đỗ xe' })
+  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  async adminDeleteParkingLot(
+    @Param('id') id: string,
+    @GetCurrentUserId() userId: string,
+  ): Promise<ApiResponseDto<ParkingLotResponseDto | null>> {
+    const result = await this.parkingLotService.adminDeleteParkingLot(
+      id,
+      userId,
+    )
+    return {
+      data: [result],
+      message: 'Xóa vĩnh viễn bãi đỗ xe thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
 }
