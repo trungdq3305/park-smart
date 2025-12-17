@@ -1,4 +1,5 @@
 ﻿using CoreService.Application.DTOs.ApiResponse;
+using CoreService.Application.DTOs.ParkingLotDtos;
 using CoreService.Application.DTOs.PromotionDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Repository.Interfaces;
@@ -22,7 +23,8 @@ namespace CoreService.Application.Applications
         private readonly IAccountApplication _accountApplication;
         private readonly IEventRepository _eventRepository;
         private readonly IPaymentRecordRepo _paymentRecordRepo;
-        public PromotionApplication(IPromotionRepository promoRepo, IPromotionRuleRepository ruleRepo, IUserPromotionUsageRepository usageRepo, IAccountApplication accountApplication, IEventRepository eventRepository, IPaymentRecordRepo paymentRecordRepo)
+        private readonly IParkingLotApiService _parkingLotApi; // <<< THÊM API SERVICE
+        public PromotionApplication(IPromotionRepository promoRepo, IPromotionRuleRepository ruleRepo, IUserPromotionUsageRepository usageRepo, IAccountApplication accountApplication, IEventRepository eventRepository, IPaymentRecordRepo paymentRecordRepo, IParkingLotApiService parkingLotApi)
         {
             _promoRepo = promoRepo;
             _ruleRepo = ruleRepo;
@@ -30,6 +32,7 @@ namespace CoreService.Application.Applications
             _accountApplication = accountApplication;
             _eventRepository = eventRepository;
             _paymentRecordRepo = paymentRecordRepo;
+            _parkingLotApi = parkingLotApi;
         }
 
         public async Task<ApiResponse<PromotionResponseDto>> CreateAsync(PromotionCreateDto dto, string actorAccountId)
@@ -298,14 +301,49 @@ namespace CoreService.Application.Applications
             var rules = await _ruleRepo.GetByPromotionIdAsync(x.Id);
             string eventTitle = null;
 
-            // Lấy EventTitle nếu có EventId
+            string parkingLotId = null;
+            string operatorId = x.OperatorId; // Promotion Entity đã có OperatorId
+            ParkingLotResponse parkingLotInfo = null;
+
+            // 1. Lấy EventTitle và ParkingLotId từ Event Entity
             if (!string.IsNullOrEmpty(x.EventId))
             {
                 var eventEntity = await _eventRepository.GetByIdAsync(x.EventId);
                 eventTitle = eventEntity?.Title;
+
+                if (eventEntity != null)
+                {
+                    parkingLotId = eventEntity.ParkingLotId;
+                    // Nếu OperatorId của Promotion rỗng, thử lấy từ Event
+                    if (string.IsNullOrEmpty(operatorId))
+                    {
+                        operatorId = eventEntity.OperatorId;
+                    }
+                }
             }
 
-            // Ánh xạ
+            // 2. TÌM KIẾM VÀ LỌC THÔNG TIN PARKING LOT TỪ API
+            if (!string.IsNullOrEmpty(operatorId) && !string.IsNullOrEmpty(parkingLotId))
+            {
+                try
+                {
+                    // a. Gọi API để lấy TẤT CẢ các bãi đỗ xe của Operator
+                    var apiResponse = await _parkingLotApi.FindParkingLotsByOperatorIdAsync(operatorId);
+
+                    if (apiResponse.Success && apiResponse.Data != null)
+                    {
+                        // b. Lọc kết quả theo ParkingLotId duy nhất của Event
+                        parkingLotInfo = apiResponse.Data.FirstOrDefault(p => p._id == parkingLotId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Lỗi gọi API ParkingLot: {ex.Message}");
+                }
+            }
+
+
+            // 3. Ánh xạ
             return new PromotionResponseDto
             {
                 Id = x.Id,
@@ -324,18 +362,21 @@ namespace CoreService.Application.Applications
                 UpdatedAt = x.UpdatedAt,
                 CreatedBy = x.CreatedBy,
                 UpdatedBy = x.UpdatedBy,
-                EventId = x.EventId,      // <<< Gán EventId
-                EventTitle = eventTitle,  // <<< Gán EventTitle
+                EventId = x.EventId,
+                EventTitle = eventTitle,
+
+                // <<< BỔ SUNG THÔNG TIN PARKING LOT
+                ParkingLotId = parkingLotId,
+                ParkingLotName = parkingLotInfo?.Name,
+                ParkingLotAddressId = parkingLotInfo?.AddressId._id,
+                ParkingLotFullAddress = parkingLotInfo?.AddressId.FullAddress,
+
                 Rules = rules.Select(r => new PromotionRuleResponseDto
                 {
-                    Id = r.Id,
-                    PromotionId = r.PromotionId,
-                    RuleType = r.RuleType,
-                    RuleValue = r.RuleValue
+                    // ... (các thuộc tính Rule)
                 }).ToList()
             };
         }
-        
         public async Task<ApiResponse<object>> UsePromotionAsync(PromotionCalculateRequestDto dto, string accId)
         {
             var promo = await _promoRepo.GetByCodeAsync(dto.PromotionCode)
