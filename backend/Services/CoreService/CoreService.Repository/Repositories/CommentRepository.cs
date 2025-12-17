@@ -27,7 +27,7 @@ namespace CoreService.Repository.Repositories
 
         public async Task<IEnumerable<Comment>> GetByTargetAsync(CommentTargetType type, string targetId) =>
             await _col.Find(x => x.TargetType == type && x.TargetId == targetId && x.DeletedAt == null)
-                      .SortBy(x => x.CreatedAt)
+                      .SortByDescending(u => u.CreatedAt)
                       .ToListAsync();
 
         public async Task AddAsync(Comment entity) => await _col.InsertOneAsync(entity);

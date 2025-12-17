@@ -98,6 +98,22 @@ namespace CoreService.API.Controllers
             var response = await _accountApplication.GetAllBannedAccountsAsync(page, pageSize);
             return StatusCode(response.StatusCode, response);
         }
+        
+        [HttpPost("avatar")]
+        [Authorize]
+        public async Task<IActionResult> UpdateAvatar(IFormFile file)
+        {
+            var result = await _accountApplication.UpdateAvatarAsync(file);
+            return Ok(result);
+        }
+
+        [HttpGet("avatar")]
+        [Authorize]
+        public async Task<IActionResult> GetAvatar()
+        {
+            var result = await _accountApplication.GetAvatarAsync();
+            return Ok(result);
+        }
     }
 }
 

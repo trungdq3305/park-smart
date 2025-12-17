@@ -51,7 +51,7 @@ namespace CoreService.Repository.Repositories
 
         public Task<List<Image>> GetByOwnerAsync(OwnerType ownerType, string ownerId, int skip = 0, int limit = 50) =>
         _collection.Find(x => x.Owner.Type == ownerType && x.Owner.Id == ownerId && x.DeletedAt == null)
-                    .Skip(skip).Limit(limit).ToListAsync();
+                    .Skip(skip).Limit(limit).SortByDescending(u => u.CreatedAt).ToListAsync();
 
         public async Task<bool> HardDeleteAsync(string id)
         {
