@@ -60,6 +60,12 @@ export interface IParkingLotRepository {
     session?: ClientSession,
   ): Promise<ParkingLot | null>
 
+  adminDeleteParkingLot(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null>
+
   updateBookingSlotDurationHours(
     id: string,
     durationHours: number,

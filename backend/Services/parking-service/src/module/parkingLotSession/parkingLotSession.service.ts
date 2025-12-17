@@ -346,6 +346,8 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
               },
               session,
             )
+          } else {
+            throw new NotFoundException('Mã QR không hợp lệ hoặc đã hết hạn.')
           }
         }
       }
@@ -685,6 +687,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
                   `Đã cập nhật điểm uy tín cho user ${res.createdBy}: ${pointChange.change}`,
                 )
               })
+              // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
               .catch((err) => {
                 this.logger.error(
                   `Lỗi cập nhật điểm uy tín (Background task): ${err.message}`,
