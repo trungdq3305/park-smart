@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/screens/user/profile/events/events_screen.dart';
 import 'package:mobile/screens/user/profile/favourities/favourities_screen.dart';
 import 'package:mobile/screens/user/profile/payment_history/payment_history_screen.dart';
+import 'package:mobile/screens/user/profile/report/my_report_screen.dart';
 import 'package:mobile/screens/user/profile/reservation/my_reservations_screen.dart';
 import 'package:mobile/screens/user/profile/termpolicy/term_and_policy_screen.dart';
 import 'package:mobile/services/event_service.dart';
@@ -415,7 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => const TermAndPolicyScreen(),
+                            builder: (_) => const MyReportScreen(),
                           ),
                         );
                       },
