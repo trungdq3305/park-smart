@@ -3,6 +3,7 @@ using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.DashboardDtos;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Models;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,5 +31,7 @@ namespace CoreService.Application.Interfaces
 
         // API thống kê người dùng mới theo Role và thời gian
         Task<ApiResponse<NewRegistrationByRoleDto>> GetNewRegistrationsByRoleAsync(DateTime startDate, DateTime endDate);
+        Task<ApiResponse<Image>> UpdateAvatarAsync(IFormFile file);
+        Task<ApiResponse<Image?>> GetAvatarAsync();
     }
 }

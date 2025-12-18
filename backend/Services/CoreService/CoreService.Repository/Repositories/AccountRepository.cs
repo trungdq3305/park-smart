@@ -86,7 +86,7 @@ namespace CoreService.Repository.Repositories
         public async Task<Account?> GetByPhoneNumberAsync(string phoneNumber) =>
     await _users.Find(a => a.PhoneNumber == phoneNumber).FirstOrDefaultAsync();
         public async Task<IEnumerable<Account>> GetInactiveAccountsAsync() =>
-            await _users.Find(u => u.IsActive == false && u.DeletedAt == null).ToListAsync();
+            await _users.Find(u => u.IsActive == false && u.DeletedAt == null).SortByDescending(u => u.CreatedAt).ToListAsync();
         public async Task<bool> BanAccountAsync(string accountId)
         {
             var filter = Builders<Account>.Filter.Eq(a => a.Id, accountId) &
@@ -103,7 +103,7 @@ namespace CoreService.Repository.Repositories
         }
         // Trong CoreService.Repository.Repositories/AccountRepository.cs
         public async Task<IEnumerable<Account>> GetAllBannedAccountsAsync() =>
-            await _users.Find(u => u.IsBanned == true && u.DeletedAt == null).ToListAsync(); // Thêm phương thức này
+            await _users.Find(u => u.IsBanned == true && u.DeletedAt == null).SortByDescending(u => u.CreatedAt).ToListAsync(); // Thêm phương thức này
 
         public async Task<long> CountActiveAccountsAsync()
         {
@@ -116,7 +116,7 @@ namespace CoreService.Repository.Repositories
                 u.CreatedAt >= startDate &&
                 u.CreatedAt <= endDate &&
                 u.DeletedAt == null
-            ).ToListAsync();
+            ).SortByDescending(u => u.CreatedAt).ToListAsync();
         }
         public async Task<Dictionary<string, int>> GetRegistrationsByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
@@ -125,7 +125,7 @@ namespace CoreService.Repository.Repositories
                 u.CreatedAt >= startDate &&
                 u.CreatedAt <= endDate &&
                 u.DeletedAt == null
-            ).ToListAsync();
+            ).SortByDescending(u => u.CreatedAt).ToListAsync();
 
             // Nhóm theo ngày (chỉ phần ngày/tháng/năm) và đếm
             var registrationsByDate = accounts

@@ -108,7 +108,8 @@ namespace CoreService.API.Controllers
                 [FromQuery] OperatorDashboardRequest request)
         {
             // Lọc cứng PaymentType chỉ là OperatorCharge (OPR)
-            var paymentTypes = new[] { PaymentType.OperatorCharge };
+            var paymentTypes = new[] { PaymentType.OperatorCharge,
+            PaymentType.PenaltyCharge };
 
             var records = await _paymentApp.GetOperatorPaymentsFilteredAsync(
                 request.OperatorId, // Admin có thể lọc theo OperatorId cụ thể
@@ -129,7 +130,8 @@ namespace CoreService.API.Controllers
             [FromQuery] OperatorDashboardRequest request)
         {
             // Chỉ tính các giao dịch thu phí từ Operator (OPR)
-            var adminTypes = new[] { PaymentType.OperatorCharge };
+            var adminTypes = new[] { PaymentType.OperatorCharge,
+            PaymentType.PenaltyCharge  };
 
             var totals = await _paymentApp.GetPaymentTotalsAsync(
                 request.OperatorId, // Admin có thể lọc theo OperatorId cụ thể
@@ -149,7 +151,8 @@ namespace CoreService.API.Controllers
             [FromQuery] OperatorDashboardRequest request)
         {
             // Chỉ tính các giao dịch thu phí từ Operator (OPR)
-            var adminTypes = new[] { PaymentType.OperatorCharge };
+            var adminTypes = new[] { PaymentType.OperatorCharge,
+            PaymentType.PenaltyCharge  };
 
             var counts = await _paymentApp.GetPaymentCountByStatusAsync(
                 request.OperatorId, // Admin có thể lọc theo OperatorId cụ thể

@@ -14,6 +14,9 @@ namespace CoreService.Application.DTOs.EventDtos
         public string Id { get; set; }
         public string OperatorId { get; set; }
         public string ParkingLotId { get; set; }
+        public string ParkingLotName { get; set; }
+        public string ParkingLotAddressId { get; set; }
+        public string ParkingLotFullAddress { get; set; }
         public string CityAdminId { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }

@@ -60,6 +60,12 @@ export interface IParkingLotRepository {
     session?: ClientSession,
   ): Promise<ParkingLot | null>
 
+  adminDeleteParkingLot(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null>
+
   updateBookingSlotDurationHours(
     id: string,
     durationHours: number,
@@ -72,6 +78,8 @@ export interface IParkingLotRepository {
     id: string,
     session?: ClientSession,
   ): Promise<string | null>
+
+
 }
 
 export const IParkingLotRepository = Symbol('IParkingLotRepository')

@@ -29,6 +29,10 @@ namespace CoreService.Application.DTOs.PromotionDtos
         public string UpdatedBy { get; set; }
         public string EventId { get; set; } // Thuộc tính này đã có trong Promotion Model, nên thêm vào DTO
         public string EventTitle { get; set; }
+        public string ParkingLotId { get; set; }
+        public string ParkingLotName { get; set; }
+        public string ParkingLotAddressId { get; set; }
+        public string ParkingLotFullAddress { get; set; }
         public List<PromotionRuleResponseDto> Rules { get; set; }
     }
 }

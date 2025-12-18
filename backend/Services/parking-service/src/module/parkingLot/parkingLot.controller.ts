@@ -309,6 +309,27 @@ export class ParkingLotController {
     }
   }
 
+@Get('find-by-operatorId')
+@ApiOperation({ summary: 'Lấy bãi đỗ xe của Operator theo ID' })
+@ApiQuery({
+  name: 'operatorId',
+  type: String,
+  required: true,
+  description: 'ID của nhà điều hành bãi đỗ xe',
+})
+async findByOperatorId(
+  @Query('operatorId') operatorId: string, // <--- SỬA: Lấy Operator ID từ query
+): Promise<ApiResponseDto<ParkingLotResponseDto[]>> {
+  const parkingLots =
+    await this.parkingLotService.findAllForOperator(operatorId)
+  return {
+    data: parkingLots,
+    message: 'Lấy bãi đỗ xe thành công',
+    statusCode: HttpStatus.OK,
+    success: true,
+  }
+}
+
   @Get('all-requests')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
@@ -637,6 +658,28 @@ export class ParkingLotController {
     return {
       data: [result],
       message: 'Xóa vĩnh viễn yêu cầu bãi đỗ xe thành công',
+      statusCode: HttpStatus.OK,
+      success: true,
+    }
+  }
+
+  @Delete('admin-delete/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @ApiBearerAuth()
+  @Roles(RoleEnum.ADMIN)
+  @ApiOperation({ summary: '[Admin] Xóa vĩnh viễn một bãi đỗ xe' })
+  @ApiParam({ name: 'id', description: 'ID của bãi đỗ xe' })
+  async adminDeleteParkingLot(
+    @Param('id') id: string,
+    @GetCurrentUserId() userId: string,
+  ): Promise<ApiResponseDto<ParkingLotResponseDto | null>> {
+    const result = await this.parkingLotService.adminDeleteParkingLot(
+      id,
+      userId,
+    )
+    return {
+      data: [result],
+      message: 'Xóa vĩnh viễn bãi đỗ xe thành công',
       statusCode: HttpStatus.OK,
       success: true,
     }

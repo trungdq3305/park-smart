@@ -137,6 +137,11 @@ export interface IParkingLotService {
     id: string,
     bookingSlotDurationHours: number,
   ): Promise<boolean>
+
+  adminDeleteParkingLot(
+    id: string,
+    userId: string,
+  ): Promise<ParkingLotResponseDto | null>
 }
 
 export const IParkingLotService = Symbol('IParkingLotService')

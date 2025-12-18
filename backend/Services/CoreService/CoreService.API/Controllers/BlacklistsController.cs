@@ -26,7 +26,7 @@ namespace CoreService.API.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize(Roles = "Admin,Operator")]
+        [Authorize(Roles = "Operator")]
         public async Task<IActionResult> GetById(string id)
         {
             var res = await _app.GetByIdAsync(id);
@@ -34,7 +34,7 @@ namespace CoreService.API.Controllers
         }
 
         [HttpGet("by-operator/{operatorId}")]
-        [Authorize(Roles = "Admin,Operator")]
+        [Authorize(Roles = "Operator")]
         public async Task<IActionResult> GetByOperatorId(string operatorId)
         {
             var res = await _app.GetByOperatorIdAsync(operatorId);

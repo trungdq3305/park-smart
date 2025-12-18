@@ -346,6 +346,8 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
               },
               session,
             )
+          } else {
+            throw new NotFoundException('Mã QR không hợp lệ hoặc đã hết hạn.')
           }
         }
       }
@@ -429,24 +431,6 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
       throw error
     } finally {
       await session.endSession()
-    }
-
-    // =================================================================
-    // D. TÁC VỤ NỀN (POST-COMMIT)
-    // =================================================================
-
-    // 1. Cập nhật WebSocket
-    if (newSession.guestCardId) {
-      const wsData =
-        await this.parkingLotService.updateAvailableSpotsForWebsocket(
-          parkingLotId,
-          -1,
-        )
-      if (!wsData) {
-        this.logger.warn(
-          `Cập nhật chỗ trống qua WebSocket thất bại cho bãi xe ${parkingLotId} khi check-in session ${newSession._id}`,
-        )
-      }
     }
 
     // 2. Upload ảnh
@@ -703,6 +687,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
                   `Đã cập nhật điểm uy tín cho user ${res.createdBy}: ${pointChange.change}`,
                 )
               })
+              // eslint-disable-next-line @typescript-eslint/use-unknown-in-catch-callback-variable
               .catch((err) => {
                 this.logger.error(
                   `Lỗi cập nhật điểm uy tín (Background task): ${err.message}`,
@@ -904,7 +889,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           identifier,
         )
       if (subscription) {
-        if (subscription.parkingLotId !== parkingLotId) {
+        if (subscription.parkingLotId.toString() !== parkingLotId) {
           throw new ConflictException('QR Vé tháng này không thuộc bãi xe này.')
         }
         const subscriptionStatus =
@@ -944,7 +929,7 @@ export class ParkingLotSessionService implements IParkingLotSessionService {
           return { session: null, images: [], type: 'RESERVATION' }
         }
 
-        if (reservation.parkingLotId !== parkingLotId) {
+        if (reservation.parkingLotId.toString() !== parkingLotId) {
           throw new ConflictException('QR Đặt trước không dùng cho bãi xe này.')
         }
 

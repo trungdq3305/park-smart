@@ -1,5 +1,6 @@
 ﻿using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.DTOs.AuthDtos;
+using CoreService.Application.DTOs.ParkingLotDtos;
 using CoreService.Application.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -81,6 +82,68 @@ namespace CoreService.Application.Applications
                 var errorContent = await response.Content.ReadAsStringAsync();
                 // Ném exception để logic Rollback bên ngoài có thể ghi log
                 throw new Exception($"Không thể Rollback xóa Parking Lot Request {requestId}. Lỗi: {errorContent}");
+            }
+        }
+        public async Task<ApiResponse<List<ParkingLotResponse>>> FindParkingLotsByOperatorIdAsync(string operatorId)
+        {
+            // Xây dựng URL theo định dạng đã cho
+            var url = $"{_baseUri}/parking-lots/find-by-operatorId?operatorId={operatorId}";
+
+            try
+            {
+                // 1. Gửi yêu cầu HTTP
+                var response = await _httpClient.GetAsync(url);
+
+                // Đọc nội dung phản hồi
+                var content = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // 2. Phân tích cú pháp phản hồi thành đối tượng ApiResponse
+                    // Phản hồi trả về một đối tượng ApiResponse, với trường 'data' là MẢNG
+                    // của các đối tượng bãi đỗ xe (ParkingLotResponse).
+                    var apiResponse = System.Text.Json.JsonSerializer.Deserialize<ApiResponse<List<ParkingLotResponse>>>(content, _jsonOptions);
+
+                    if (apiResponse == null)
+                    {
+                        // Xử lý trường hợp deserialize thành công nhưng đối tượng là null
+                        throw new ApiException("Phản hồi API không hợp lệ hoặc rỗng sau khi deserialize.", (int)response.StatusCode);
+                    }
+
+                    // Trả về kết quả thành công
+                    return apiResponse;
+                }
+                else
+                {
+                    // 3. Xử lý lỗi API (Status Code không thành công: 4xx, 5xx)
+                    // Ném ngoại lệ để kích hoạt Rollback/Xử lý lỗi bên ngoài
+                    // Dùng nội dung phản hồi (content) để cung cấp thông tin chi tiết về lỗi
+                    throw new ApiException($"Lỗi API tìm bãi đỗ xe (Code: {(int)response.StatusCode}): {content}", (int)response.StatusCode);
+                }
+            }
+            catch (ApiException ex)
+            {
+                // Bắt lại ngoại lệ ApiException đã được ném ra ở trên
+                // Bạn có thể ghi log lỗi ở đây nếu cần, sau đó ném lại (re-throw) để xử lý ở tầng cao hơn
+                throw;
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                // Bắt lỗi khi deserialize JSON
+                // Ghi log chi tiết về lỗi deserialize và JSON không hợp lệ
+                throw new Exception($"Lỗi phân tích cú pháp JSON khi tìm bãi đỗ xe. Chi tiết: {ex.Message}", ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                // Bắt lỗi cấp độ mạng/HTTP (ví dụ: không thể kết nối, timeout)
+                // Ghi log chi tiết về lỗi HTTP
+                throw new Exception($"Lỗi kết nối HTTP khi tìm bãi đỗ xe. URL: {url}. Chi tiết: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                // Bắt các ngoại lệ tổng quát khác
+                // Ghi log lỗi chung
+                throw new Exception($"Lỗi không xác định khi tìm bãi đỗ xe. Chi tiết: {ex.Message}", ex);
             }
         }
     }

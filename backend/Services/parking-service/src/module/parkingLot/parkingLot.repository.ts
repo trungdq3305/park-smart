@@ -12,6 +12,26 @@ export class ParkingLotRepository implements IParkingLotRepository {
     private parkingLotModel: Model<ParkingLot>,
   ) {}
 
+  adminDeleteParkingLot(
+    id: string,
+    userId: string,
+    session?: ClientSession,
+  ): Promise<ParkingLot | null> {
+    return this.parkingLotModel
+      .findByIdAndUpdate(
+        id,
+        {
+          $set: {
+            deletedAt: new Date(),
+            updatedBy: userId,
+            updatedAt: new Date(),
+          },
+        },
+        { new: true, session },
+      )
+      .exec()
+  }
+
   async getParkingLotOperatorId(
     id: string,
     session?: ClientSession,
@@ -241,6 +261,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
             },
           },
           parkingLotStatus: parkingLotStatus,
+          deletedAt: { $exists: false },
         },
       },
       {
@@ -421,4 +442,5 @@ export class ParkingLotRepository implements IParkingLotRepository {
 
     return parkingLots
   }
+  
 }
