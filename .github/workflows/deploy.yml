@@ -30,7 +30,7 @@ jobs:
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
           source: ./backend,./docker-compose.yml,./backend/Gateway/OcelotGateway/OcelotGateway/ocelot.json
-          target: "~/park-smart"
+          target: "/var/www/park-smart"
           overwrite: true
 
       - name: Deploy on VPS
