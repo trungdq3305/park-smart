@@ -52,17 +52,15 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
         _currentUserName = userName;
       });
       await _initializeRoom();
-      // Đánh dấu đã xem khi vào chat
-      _markAsRead();
+      _markAsRead(); // Reset thông báo khi vào chat
     }
   }
 
-  // Tạo ID phòng chat cố định cho 2 người (A_B hoặc B_A)
   String _chatId(String a, String b) {
     return (a.compareTo(b) <= 0) ? '${a}_$b' : '${b}_$a';
   }
 
-  // Collection chứa tin nhắn chung - NƠI DUY NHẤT ĐỂ ĐỌC/GHI TIN NHẮN
+  // Collection chung duy nhất để cả 2 người cùng đọc/ghi
   CollectionReference<Map<String, dynamic>> _messagesRef() {
     final roomId = _chatId(_currentUserId!, widget.peerUserId);
     return FirebaseFirestore.instance
@@ -73,13 +71,12 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
 
   Future<void> _initializeRoom() async {
     if (_currentUserId == null) return;
-
-    // Khởi tạo document room cho chính mình để hiện ở MessageList
+    final roomId = _chatId(_currentUserId!, widget.peerUserId);
     final myRoomRef = FirebaseFirestore.instance
         .collection('chatRooms')
         .doc(_currentUserId!)
         .collection('rooms')
-        .doc(_chatId(_currentUserId!, widget.peerUserId));
+        .doc(roomId);
 
     final roomDoc = await myRoomRef.get();
     if (!roomDoc.exists) {
@@ -121,10 +118,10 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
         'seen': false,
       };
 
-      // 1. Ghi vào collection tin nhắn chung
+      // 1. Ghi tin nhắn vào kho chung
       await _messagesRef().add(payload);
 
-      // 2. Cập nhật room của mình (để hiện tin nhắn cuối)
+      // 2. Cập nhật trạng thái phòng chat của mình
       await FirebaseFirestore.instance
           .collection('chatRooms')
           .doc(_currentUserId!)
@@ -136,7 +133,7 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
             'unreadCount': 0,
           }, SetOptions(merge: true));
 
-      // 3. Cập nhật room của đối phương (tăng unreadCount)
+      // 3. Cập nhật trạng thái phòng chat của đối phương (tăng unreadCount)
       await FirebaseFirestore.instance
           .collection('chatRooms')
           .doc(widget.peerUserId)
@@ -151,13 +148,13 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
           }, SetOptions(merge: true));
 
       _textController.clear();
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    } catch (e) {
-      debugPrint("Send error: $e");
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSending = false);
     }
@@ -171,6 +168,7 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
         appBar: AppBar(
           title: Text(widget.peerDisplayName),
           backgroundColor: Colors.green,
+          foregroundColor: Colors.white,
         ),
         body: _currentUserId == null
             ? const Center(child: CircularProgressIndicator())
@@ -178,17 +176,16 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
                 children: [
                   Expanded(
                     child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                      // Đọc từ collection chung duy nhất
                       stream: _messagesRef()
                           .orderBy('timestamp', descending: true)
                           .limit(100)
                           .snapshots(),
                       builder: (context, snapshot) {
-                        if (!snapshot.hasData)
+                        if (!snapshot.hasData) {
                           return const Center(
                             child: CircularProgressIndicator(),
                           );
-
+                        }
                         final docs = snapshot.data!.docs;
                         if (docs.isEmpty) {
                           return const Center(
@@ -209,7 +206,7 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
   Widget _buildInputArea() {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         child: Row(
           children: [
             Expanded(
@@ -220,12 +217,22 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                 ),
+                onSubmitted: (_) => _sendMessage(),
               ),
             ),
+            const SizedBox(width: 8),
             IconButton(
-              icon: const Icon(Icons.send, color: Colors.green),
               onPressed: _isSending ? null : _sendMessage,
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.send),
             ),
           ],
         ),
@@ -239,27 +246,50 @@ class _MessageChatScreenState extends State<MessageChatScreen> {
     return ListView.builder(
       controller: _scrollController,
       reverse: true,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       itemCount: docs.length,
       itemBuilder: (context, index) {
         final data = docs[index].data();
         final isMe = data['senderId'] == _currentUserId;
-        return _buildChatBubble(data['text'] ?? '', isMe, data['timestamp']);
-      },
-    );
-  }
+        final text = data['text'] ?? '';
+        final ts = data['timestamp'] as Timestamp?;
 
-  Widget _buildChatBubble(String text, bool isMe, dynamic ts) {
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-        decoration: BoxDecoration(
-          color: isMe ? Colors.green[100] : Colors.grey[300],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(text),
-      ),
+        // Định dạng thời gian gửi
+        String timeStr = '';
+        if (ts != null) {
+          final date = ts.toDate();
+          timeStr =
+              "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+        }
+
+        return Align(
+          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ),
+            decoration: BoxDecoration(
+              color: isMe ? Colors.green.shade100 : Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              children: [
+                Text(text, style: const TextStyle(fontSize: 15)),
+                const SizedBox(height: 4),
+                Text(
+                  timeStr,
+                  style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
