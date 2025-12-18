@@ -41,7 +41,7 @@ class ReportService {
     };
   }
 
-  /// POST /api/reports
+  /// POST /core/reports
   ///
   /// Tạo báo cáo cho một bãi đỗ xe
   static Future<Map<String, dynamic>> createReport({
@@ -55,7 +55,7 @@ class ReportService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/reports');
+      final uri = Uri.parse('$baseUrl/core/reports');
       final body = jsonEncode({
         'parkingLotId': parkingLotId,
         'categoryId': categoryId,
@@ -70,7 +70,7 @@ class ReportService {
         body: body,
       );
 
-      print('📡 POST /api/reports status: ${response.statusCode}');
+      print('📡 POST /core/reports status: ${response.statusCode}');
       print('📡 Body: ${response.body}');
 
       if (response.statusCode == 200 ||
@@ -90,7 +90,7 @@ class ReportService {
     }
   }
 
-  /// GET /api/reports/my-reports
+  /// GET /core/reports/my-reports
   ///
   /// Lấy danh sách báo cáo của tài xế hiện tại
   static Future<Map<String, dynamic>> getMyReports() async {
@@ -100,13 +100,13 @@ class ReportService {
         throw Exception('No authentication token found');
       }
 
-      final uri = Uri.parse('$baseUrl/api/reports/my-reports');
+      final uri = Uri.parse('$baseUrl/core/reports/my-reports');
 
       print('📄 Fetching my reports: $uri');
 
       final response = await http.get(uri, headers: _buildHeaders(token));
 
-      print('📡 GET /api/reports/my-reports status: ${response.statusCode}');
+      print('📡 GET /core/reports/my-reports status: ${response.statusCode}');
       print('📡 Body: ${response.body}');
 
       if (response.statusCode == 200) {
@@ -118,6 +118,39 @@ class ReportService {
       );
     } catch (e) {
       print('❌ Exception in getMyReports: $e');
+      rethrow;
+    }
+  }
+
+  /// GET /core/reportcategories
+  ///
+  /// Lấy danh sách các loại báo cáo (categories) để hiển thị cho user chọn
+  static Future<Map<String, dynamic>> getReportCategories() async {
+    try {
+      final token = await _getToken();
+      if (token == null) {
+        throw Exception('No authentication token found');
+      }
+
+      final uri = Uri.parse('$baseUrl/core/reportcategories');
+
+      print('📄 Fetching report categories: $uri');
+
+      final response = await http.get(uri, headers: _buildHeaders(token));
+
+      print('📡 GET /core/reportcategories status: ${response.statusCode}');
+      print('📡 Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+
+      throw Exception(
+        'Failed to fetch report categories: '
+        '${response.statusCode} - ${response.body}',
+      );
+    } catch (e) {
+      print('❌ Exception in getReportCategories: $e');
       rethrow;
     }
   }

@@ -10,6 +10,7 @@ import '../../../../widgets/app_scaffold.dart';
 import '../../booking/payment_checkout_screen.dart';
 import 'my_reservations_screen_filter_bar.dart';
 import '../../../../widgets/reservation/my_reservation_card.dart';
+import '../../../../widgets/reservation/report_dialog.dart';
 import '../../../../widgets/reservation/reservation_empty_state.dart';
 import '../../../../widgets/reservation/reservation_error_state.dart';
 
@@ -1068,9 +1069,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final isCheckedIn = statusUpper == 'CHECKED_IN';
     final isConfirmed = statusUpper == 'CONFIRMED';
     final isCheckedOut = statusUpper == 'CHECKED_OUT';
+    final isExpired = statusUpper == 'EXPIRED';
 
     // Chỉ cho phép xem QR code với các status: CONFIRMED, CHECKED_IN, CHECKED_OUT
     final canViewQr = isConfirmed || isCheckedIn || isCheckedOut;
+
+    // Cho phép báo cáo ở các status: CHECKED_IN, CHECKED_OUT, EXPIRED
+    final canReportStatus = isCheckedIn || isCheckedOut || isExpired;
 
     final reservationId =
         reservation['_id']?.toString() ?? reservation['id']?.toString();
@@ -1113,6 +1118,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
 
+    final parkingLotIdStr =
+        parkingLot?['_id']?.toString() ?? parkingLot?['id']?.toString() ?? '';
+
     final userExpectedTimeText = _formatDateTime(userExpectedTime);
     final prepaidAmountText = prepaidAmount != null
         ? '${_formatPrice(prepaidAmount)} đ'
@@ -1128,6 +1136,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       addressText: addressText,
       userExpectedTimeText: userExpectedTimeText,
       prepaidAmountText: prepaidAmountText,
+      parkingLotId: parkingLotIdStr,
       onTapQr: canViewQr ? () => _showQRCodeDialog(reservation) : null,
       onExtend: isCheckedIn && reservationId != null
           ? () => _handleExtendReservation(reservation)
@@ -1136,6 +1145,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
           ? () => _handleCancelReservation(reservation)
           : null,
       isProcessingCancel: isCancelling,
+      onReport: canReportStatus && parkingLotIdStr.isNotEmpty
+          ? () => showParkingLotReportFlow(
+              context,
+              parkingLotId: parkingLotIdStr,
+              parkingLotName: parkingLotName,
+            )
+          : null,
     );
   }
 

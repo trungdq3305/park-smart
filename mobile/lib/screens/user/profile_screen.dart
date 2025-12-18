@@ -409,6 +409,17 @@ class _ProfileScreenState extends State<ProfileScreen> with RouteAware {
                         );
                       },
                     ),
+                    _buildTile(
+                      icon: Icons.report_gmailerrorred,
+                      title: 'Danh sách báo cáo',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const TermAndPolicyScreen(),
+                          ),
+                        );
+                      },
+                    ),
 
                     // Debug menu item
                     const SizedBox(height: 20),
