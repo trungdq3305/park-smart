@@ -10,6 +10,7 @@ import '../../../../widgets/subcription/subscription_error_state.dart';
 import '../../../../widgets/subcription/subscription_empty_state.dart';
 import '../../../../widgets/subcription/subscription_pagination_controls.dart';
 import '../../../../widgets/subcription/subscription_qr_dialog.dart';
+import '../../../../widgets/reservation/report_dialog.dart';
 
 class MySubscriptionsScreen extends StatefulWidget {
   const MySubscriptionsScreen({super.key});
@@ -568,6 +569,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final isRenewalStatus = statusUpper == 'RENEWAL';
     final isActiveStatus = statusUpper == 'ACTIVE';
     final isScheduledStatus = statusUpper == 'SCHEDULED';
+    final isExpiredStatus = statusUpper == 'EXPIRED';
     final isProcessingRenewal =
         subscriptionId != null &&
         _renewingSubscriptionIds.contains(subscriptionId);
@@ -581,6 +583,8 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
 
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
     final parkingLotName = parkingLot?['name'] ?? 'Không xác định';
+    final parkingLotIdStr =
+        parkingLot?['_id']?.toString() ?? parkingLot?['id']?.toString() ?? '';
     final startDate = subscription['startDate'];
     final endDate = subscription['endDate'];
 
@@ -625,6 +629,14 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       renewalNoticeMessage:
           'Gói thuê bao đã đến hạn. Vui lòng gia hạn để tiếp tục sử dụng.',
       renewalNoticeButtonLabel: 'Gia hạn ngay',
+      parkingLotId: parkingLotIdStr,
+      onReport: (isActiveStatus || isExpiredStatus) && parkingLotIdStr.isNotEmpty
+          ? () => showParkingLotReportFlow(
+                context,
+                parkingLotId: parkingLotIdStr,
+                parkingLotName: parkingLotName,
+              )
+          : null,
     );
   }
 

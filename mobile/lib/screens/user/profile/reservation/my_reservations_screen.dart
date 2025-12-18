@@ -7,9 +7,12 @@ import '../../../../services/reservation_service.dart';
 import '../../../../services/parking_lot_service.dart';
 import '../../../../services/payment_service.dart';
 import '../../../../widgets/app_scaffold.dart';
-import '../../../user/booking_reservation/payment_checkout_screen.dart';
+import '../../booking/payment_checkout_screen.dart';
 import 'my_reservations_screen_filter_bar.dart';
 import '../../../../widgets/reservation/my_reservation_card.dart';
+import '../../../../widgets/reservation/report_dialog.dart';
+import '../../../../widgets/reservation/reservation_empty_state.dart';
+import '../../../../widgets/reservation/reservation_error_state.dart';
 
 class MyReservationsScreen extends StatefulWidget {
   const MyReservationsScreen({super.key});
@@ -998,7 +1001,10 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     }
 
     if (_errorMessage != null && _reservations.isEmpty) {
-      return _buildErrorState();
+      return ReservationErrorState(
+        errorMessage: _errorMessage!,
+        onRetry: _loadReservations,
+      );
     }
 
     return Column(
@@ -1012,119 +1018,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         ),
         Expanded(
           child: _reservations.isEmpty
-              ? _buildEmptyState()
+              ? ReservationEmptyState(
+                  selectedStatusFilter: _selectedStatusFilter,
+                  getStatusText: _getStatusText,
+                )
               : _buildReservationList(),
         ),
       ],
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red.shade400,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Không thể tải danh sách',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _errorMessage!,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton.icon(
-              onPressed: () => _loadReservations(),
-              icon: const Icon(Icons.refresh, size: 20),
-              label: const Text(
-                'Thử lại',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade600,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 0,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.green.shade50,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.event_available_outlined,
-                size: 64,
-                color: Colors.green.shade400,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              _selectedStatusFilter == null
-                  ? 'Chưa có đặt chỗ'
-                  : 'Không có đặt chỗ phù hợp',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.grey.shade800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _selectedStatusFilter == null
-                  ? 'Bạn chưa có đặt chỗ nào. Hãy đặt chỗ để sử dụng dịch vụ.'
-                  : 'Không tìm thấy đặt chỗ với trạng thái "${_getStatusText(_selectedStatusFilter)}".',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1169,9 +1069,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final isCheckedIn = statusUpper == 'CHECKED_IN';
     final isConfirmed = statusUpper == 'CONFIRMED';
     final isCheckedOut = statusUpper == 'CHECKED_OUT';
+    final isExpired = statusUpper == 'EXPIRED';
 
     // Chỉ cho phép xem QR code với các status: CONFIRMED, CHECKED_IN, CHECKED_OUT
     final canViewQr = isConfirmed || isCheckedIn || isCheckedOut;
+
+    // Cho phép báo cáo ở các status: CHECKED_IN, CHECKED_OUT, EXPIRED
+    final canReportStatus = isCheckedIn || isCheckedOut || isExpired;
 
     final reservationId =
         reservation['_id']?.toString() ?? reservation['id']?.toString();
@@ -1214,6 +1118,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
 
     final policyName = pricingPolicy?['name'] ?? 'Không có tên';
 
+    final parkingLotIdStr =
+        parkingLot?['_id']?.toString() ?? parkingLot?['id']?.toString() ?? '';
+
     final userExpectedTimeText = _formatDateTime(userExpectedTime);
     final prepaidAmountText = prepaidAmount != null
         ? '${_formatPrice(prepaidAmount)} đ'
@@ -1229,6 +1136,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       addressText: addressText,
       userExpectedTimeText: userExpectedTimeText,
       prepaidAmountText: prepaidAmountText,
+      parkingLotId: parkingLotIdStr,
       onTapQr: canViewQr ? () => _showQRCodeDialog(reservation) : null,
       onExtend: isCheckedIn && reservationId != null
           ? () => _handleExtendReservation(reservation)
@@ -1237,6 +1145,13 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
           ? () => _handleCancelReservation(reservation)
           : null,
       isProcessingCancel: isCancelling,
+      onReport: canReportStatus && parkingLotIdStr.isNotEmpty
+          ? () => showParkingLotReportFlow(
+              context,
+              parkingLotId: parkingLotIdStr,
+              parkingLotName: parkingLotName,
+            )
+          : null,
     );
   }
 

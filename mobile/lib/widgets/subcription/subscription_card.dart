@@ -21,6 +21,8 @@ class SubscriptionCard extends StatelessWidget {
     this.renewalNoticeMessage =
         'Gói thuê bao đã đến hạn. Vui lòng gia hạn để tiếp tục sử dụng.',
     this.renewalNoticeButtonLabel = 'Gia hạn ngay',
+    this.parkingLotId,
+    this.onReport,
   });
 
   final String policyName;
@@ -43,6 +45,9 @@ class SubscriptionCard extends StatelessWidget {
   final bool showRenewalNotice;
   final String renewalNoticeMessage;
   final String renewalNoticeButtonLabel;
+
+  final String? parkingLotId;
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -158,10 +163,7 @@ class SubscriptionCard extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: statusColor,
               borderRadius: BorderRadius.circular(20),
@@ -218,23 +220,42 @@ class SubscriptionCard extends StatelessWidget {
           ],
           const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                Icons.touch_app,
-                size: 16,
-                color: Colors.grey.shade400,
+              Row(
+                children: [
+                  Icon(Icons.touch_app, size: 16, color: Colors.grey.shade400),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Chạm để xem mã QR',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Chạm để xem mã QR',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade500,
-                  fontWeight: FontWeight.w500,
-                  fontStyle: FontStyle.italic,
+              if (onReport != null)
+                TextButton.icon(
+                  onPressed: onReport,
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.red.shade600,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  icon: const Icon(Icons.flag_outlined, size: 18),
+                  label: const Text(
+                    'Báo cáo',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
-              ),
             ],
           ),
         ],
@@ -371,10 +392,7 @@ class SubscriptionCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.info_outline,
-                  color: Colors.orange.shade600,
-                ),
+                Icon(Icons.info_outline, color: Colors.orange.shade600),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -424,5 +442,3 @@ class SubscriptionCard extends StatelessWidget {
     );
   }
 }
-
-

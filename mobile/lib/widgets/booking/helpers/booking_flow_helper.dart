@@ -3,8 +3,8 @@ import '../../../../services/reservation_service.dart';
 import '../../../../services/subcription_service.dart';
 import '../../../../services/payment_service.dart';
 import '../../../../services/promotion_service.dart';
-import '../../../../screens/user/booking_reservation/payment_checkout_screen.dart';
-import '../../../../screens/user/booking_reservation/payment_result_screen.dart';
+import '../../../screens/user/booking/payment_checkout_screen.dart';
+import '../../../screens/user/booking/payment_result_screen.dart';
 import 'tiered_pricing_helper.dart';
 import 'promotion_pricing_helper.dart';
 

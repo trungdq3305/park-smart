@@ -12,10 +12,12 @@ class MyReservationCard extends StatelessWidget {
     required this.addressText,
     required this.userExpectedTimeText,
     required this.prepaidAmountText,
+    this.parkingLotId,
     this.onTapQr,
     this.onExtend,
     this.onCancel,
     this.isProcessingCancel = false,
+    this.onReport,
   });
 
   final String statusText;
@@ -28,11 +30,13 @@ class MyReservationCard extends StatelessWidget {
   final String? addressText;
   final String userExpectedTimeText;
   final String? prepaidAmountText;
+  final String? parkingLotId;
 
   final VoidCallback? onTapQr;
   final VoidCallback? onExtend;
   final VoidCallback? onCancel;
   final bool isProcessingCancel;
+  final VoidCallback? onReport;
 
   @override
   Widget build(BuildContext context) {
@@ -219,6 +223,10 @@ class MyReservationCard extends StatelessWidget {
             const SizedBox(height: 12),
             _buildCancelButton(),
           ],
+          if (onReport != null) ...[
+            const SizedBox(height: 12),
+            _buildReportButton(context),
+          ],
           if (onTapQr != null) ...[const SizedBox(height: 16), _buildTapHint()],
         ],
       ),
@@ -273,6 +281,29 @@ class MyReservationCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildReportButton(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton.icon(
+        onPressed: onReport,
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.red.shade600,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+        ),
+        icon: const Icon(Icons.flag_outlined, size: 18),
+        label: const Text(
+          'Báo cáo',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

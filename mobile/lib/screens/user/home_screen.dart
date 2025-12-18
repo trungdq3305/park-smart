@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _buildHeader(size),
                 _buildDestinationInput(size),
-                _buildVehicleSelection(size),
+                // _buildVehicleSelection(size),
                 _buildParkingInfoSection(),
                 _buildQuickActionsSection(),
                 const SizedBox(height: 40),
@@ -197,19 +197,19 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildVehicleSelection(Size size) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildVehicleCard('Xe 4 chỗ', Icons.directions_car, 4, Colors.green),
-          _buildVehicleCard('Xe 6 chỗ', Icons.directions_car, 6, Colors.green),
-          _buildVehicleCard('BIKE', Icons.motorcycle, 1, Colors.green),
-        ],
-      ),
-    );
-  }
+  // Widget _buildVehicleSelection(Size size) {
+  //   return Container(
+  //     margin: const EdgeInsets.symmetric(horizontal: 20),
+  //     child: Row(
+  //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //       children: [
+  //         _buildVehicleCard('Xe 4 chỗ', Icons.directions_car, 4, Colors.green),
+  //         _buildVehicleCard('Xe 6 chỗ', Icons.directions_car, 6, Colors.green),
+  //         _buildVehicleCard('BIKE', Icons.motorcycle, 1, Colors.green),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildVehicleCard(
     String title,
