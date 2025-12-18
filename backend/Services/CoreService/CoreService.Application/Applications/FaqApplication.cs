@@ -97,6 +97,7 @@ namespace CoreService.Application.Applications
                 dtos[i].CreatorName = name;
                 dtos[i].CreatorRole = role;
             }
+             
 
             var paged = PaginationDto<FaqResponseDto>.Create(dtos, page, pageSize);
             return new ApiResponse<PaginationDto<FaqResponseDto>>(paged, true, "OK", StatusCodes.Status200OK);

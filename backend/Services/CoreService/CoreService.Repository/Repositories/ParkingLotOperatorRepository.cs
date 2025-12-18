@@ -26,7 +26,7 @@ namespace CoreService.Repository.Repositories
             await _collection.Find(e => e.Id == id && e.DeletedAt == null).FirstOrDefaultAsync();
 
         public async Task<IEnumerable<ParkingLotOperator>> GetAllAsync() =>
-            await _collection.Find(e => e.DeletedAt == null).ToListAsync();
+            await _collection.Find(e => e.DeletedAt == null).SortByDescending(u => u.CreatedAt).ToListAsync();
 
         public async Task AddAsync(ParkingLotOperator entity, IClientSessionHandle session = null)
         {

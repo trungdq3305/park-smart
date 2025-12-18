@@ -21,6 +21,7 @@ namespace CoreService.Application.Applications
         private readonly IParkingLotOperatorRepository _operatorRepo;
         private readonly ICityAdminRepository _adminRepo;
         private readonly AutoMapper.IMapper _mapper;
+        private readonly IImageApplication _imageApp;
 
         public AccountApplication(
             IAccountRepository accountRepo,
@@ -28,7 +29,8 @@ namespace CoreService.Application.Applications
             IDriverRepository driverRepo,
             IParkingLotOperatorRepository operatorRepo,
             ICityAdminRepository adminRepo,
-            AutoMapper.IMapper mapper)
+            AutoMapper.IMapper mapper,
+            IImageApplication imageApp)
         {
             _accountRepo = accountRepo;
             _httpContextAccessor = httpContextAccessor;
@@ -36,6 +38,7 @@ namespace CoreService.Application.Applications
             _operatorRepo = operatorRepo;
             _adminRepo = adminRepo;
             _mapper = mapper;
+            _imageApp = imageApp;
         }
 
         public async Task<ApiResponse<AccountListResponseDto>> GetAllAsync(int? page, int? pageSize)
@@ -681,6 +684,42 @@ namespace CoreService.Application.Applications
                 "Lấy số liệu dashboard thành công",
                 StatusCodes.Status200OK
             );
+        }
+        public async Task<ApiResponse<Image>> UpdateAvatarAsync(IFormFile file)
+        {
+            // 1. Lấy ID của người dùng hiện tại từ Token
+            var accountId = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
+            if (string.IsNullOrEmpty(accountId))
+                throw new ApiException("Không xác định được người dùng", StatusCodes.Status401Unauthorized);
+
+            // 2. Xóa avatar cũ (nếu muốn mỗi account chỉ có 1 avatar duy nhất)
+            var oldImages = await _imageApp.GetByOwnerAsync(OwnerType.Account, accountId);
+            foreach (var oldImg in oldImages)
+            {
+                await _imageApp.DeleteAsync(oldImg.Id);
+            }
+
+            // 3. Upload ảnh mới
+            var image = await _imageApp.UploadAsync(file, OwnerType.Account, accountId, "Avatar người dùng");
+
+            return new ApiResponse<Image>(image, true, "Cập nhật ảnh đại diện thành công", StatusCodes.Status200OK);
+        }
+
+        public async Task<ApiResponse<Image?>> GetAvatarAsync()
+        {
+            var accountId = _httpContextAccessor.HttpContext?.User?.FindFirst("id")?.Value;
+            // Lấy danh sách ảnh thuộc về Account này
+            var images = await _imageApp.GetByOwnerAsync(OwnerType.Account, accountId);
+
+            // Lấy cái mới nhất (vì GetByOwnerAsync đã có SortByDescending)
+            var avatar = images.FirstOrDefault();
+
+            if (avatar == null)
+            {
+                return new ApiResponse<Image?>(null, false, "Người dùng chưa có ảnh đại diện", StatusCodes.Status404NotFound);
+            }
+
+            return new ApiResponse<Image?>(avatar, true, "Lấy ảnh đại diện thành công", StatusCodes.Status200OK);
         }
     }
 }
