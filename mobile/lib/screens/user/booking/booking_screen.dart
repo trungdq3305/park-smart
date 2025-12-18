@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../widgets/app_scaffold.dart';
 import '../../../services/parking_lot_service.dart';
 import '../../../services/promotion_service.dart';
+import '../../../services/favourities_service.dart';
 import '../../../widgets/booking/card/parking_lot_info_card.dart';
 import '../../../widgets/booking/card/pricing_table_card.dart';
 import '../../../widgets/booking/card/promotion_card.dart';
@@ -30,6 +31,8 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isCreating = false;
   bool _isLoadingAvailability = false;
   bool _isLoadingPromotions = false;
+  bool _isAddingFavourite = false;
+  bool _isFavourite = false;
   List<Map<String, dynamic>> _pricingLinks = [];
   List<Map<String, dynamic>> _promotions = [];
   Map<String, dynamic>? _selectedPromotion;
@@ -48,6 +51,7 @@ class _BookingScreenState extends State<BookingScreen> {
     super.initState();
     _loadPricingLinks();
     _loadPromotions();
+    _loadFavouriteStatus();
   }
 
   /// Load promotions for the parking lot operator
@@ -94,6 +98,101 @@ class _BookingScreenState extends State<BookingScreen> {
 
       // Don't show error snackbar for promotions, just log it
       // Promotions are not critical for booking flow
+    }
+  }
+
+  /// Toggle favourite status for current parking lot
+  Future<void> _handleToggleFavourite() async {
+    final parkingLotId =
+        widget.parkingLot['_id']?.toString() ??
+        widget.parkingLot['id']?.toString();
+
+    if (parkingLotId == null || parkingLotId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không tìm thấy ID bãi đỗ xe'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isAddingFavourite = true;
+    });
+
+    try {
+      if (_isFavourite) {
+        await FavouritiesService.removeFromFavourites(
+          parkingLotId: parkingLotId,
+        );
+        if (!mounted) return;
+        setState(() {
+          _isFavourite = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã xóa khỏi danh sách yêu thích'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        await FavouritiesService.addToFavourites(parkingLotId: parkingLotId);
+        if (!mounted) return;
+        setState(() {
+          _isFavourite = true;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Đã thêm bãi đỗ vào danh sách yêu thích'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      if (e.toString().contains('409') || e.toString().contains('đã có')) {
+        setState(() {
+          _isFavourite = true;
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Không thể thêm vào yêu thích: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isAddingFavourite = false;
+      });
+    }
+  }
+
+  /// Check if current parking lot is already in favourites
+  Future<void> _loadFavouriteStatus() async {
+    final parkingLotId =
+        widget.parkingLot['_id']?.toString() ??
+        widget.parkingLot['id']?.toString();
+
+    if (parkingLotId == null || parkingLotId.isEmpty) return;
+
+    try {
+      final res = await FavouritiesService.getMyFavourites();
+      final data = res['data'];
+      if (data is List) {
+        final exists = data.any(
+          (item) => (item?['parkingLotId'] ?? '').toString() == parkingLotId,
+        );
+        if (mounted) {
+          setState(() {
+            _isFavourite = exists;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Không thể tải trạng thái yêu thích: $e');
     }
   }
 
@@ -150,6 +249,27 @@ class _BookingScreenState extends State<BookingScreen> {
           backgroundColor: Colors.green,
           foregroundColor: Colors.white,
           elevation: 0,
+          actions: [
+            IconButton(
+              tooltip: _isFavourite
+                  ? 'Xóa khỏi yêu thích'
+                  : 'Thêm vào yêu thích',
+              onPressed: _isAddingFavourite ? null : _handleToggleFavourite,
+              icon: _isAddingFavourite
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(
+                      _isFavourite ? Icons.favorite : Icons.favorite_border,
+                      color: Colors.white,
+                    ),
+            ),
+          ],
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
