@@ -1,19 +1,8 @@
 import { Result, Button } from 'antd'
-import { useNavigate } from 'react-router-dom'
-import { getUserData } from '../../utils/userData'
+import { useNavigateHome } from '../../hooks/useNavigateHome'
 
 const NoPermission = () => {
-  const user = getUserData<{ role?: string }>()
-  const navigate = useNavigate()
-
-  const handleBackHome = () => {
-    const role = user?.role?.toLowerCase()
-    if (role === 'admin') {
-      navigate('/admin/manage-account')
-    } else {
-      navigate('/operator/parking-lot')
-    }
-  }
+  const { navigateToHome } = useNavigateHome()
 
   return (
     <Result
@@ -21,7 +10,7 @@ const NoPermission = () => {
       title="403"
       subTitle="Xin lỗi, bạn không có quyền truy cập trang này."
       extra={
-        <Button type="primary" onClick={handleBackHome}>
+        <Button type="primary" onClick={navigateToHome}>
           Trở về trang chủ
         </Button>
       }
