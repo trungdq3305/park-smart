@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from 'react'
-import { useGetParkingLotsAdminQuery } from '../../../features/admin/parkinglotAPI'
+import { Modal, message } from 'antd'
+import {
+  useGetParkingLotsAdminQuery,
+  useAdminDeleteParkingLotMutation,
+} from '../../../features/admin/parkinglotAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import ParkingLotDetails from '../../../components/parking-lot/ParkingLotDetails'
 import {
@@ -8,6 +12,7 @@ import {
   ThunderboltOutlined,
   UserOutlined,
   EnvironmentOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import './ManageParkingLots.css'
 
@@ -45,6 +50,7 @@ const ManageParkingLots: React.FC = () => {
     page: 1,
     pageSize: 10,
   })
+  const [adminDeleteParkingLot, { isLoading: isDeleting }] = useAdminDeleteParkingLotMutation()
 
   // Kiểm tra xem error có phải là 404 không
   const isNotFoundError =
@@ -85,6 +91,32 @@ const ManageParkingLots: React.FC = () => {
 
   const toggleExpand = (lotId: string) => {
     setExpandedLotId(expandedLotId === lotId ? null : lotId)
+  }
+
+  const handleDeleteParkingLot = (lot: ParkingLot) => {
+    Modal.confirm({
+      title: 'Xác nhận xóa bãi đỗ xe',
+      content: (
+        <div>
+          <p>Bạn có chắc chắn muốn xóa bãi đỗ xe <strong>{lot.name || 'N/A'}</strong>?</p>
+          <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '13px' }}>
+            Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến bãi đỗ xe này sẽ bị xóa vĩnh viễn.
+          </p>
+        </div>
+      ),
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      icon: <DeleteOutlined style={{ color: '#ef4444' }} />,
+      onOk: async () => {
+        try {
+          await adminDeleteParkingLot({ id: lot._id }).unwrap()
+          message.success('Xóa bãi đỗ xe thành công')
+        } catch (error: any) {
+          message.error(error?.data?.message || 'Xóa bãi đỗ xe thất bại')
+        }
+      },
+    })
   }
 
   if (isLoading) {
@@ -277,12 +309,23 @@ const ManageParkingLots: React.FC = () => {
                       </div>
                     </div>
 
-                    <button
-                      className="parking-lot-expand-btn"
-                      onClick={() => toggleExpand(lot._id)}
-                    >
-                      {isExpanded ? 'Thu gọn' : 'Xem chi tiết'}
-                    </button>
+                    <div className="parking-lot-item-actions">
+                      <button
+                        className="parking-lot-expand-btn"
+                        onClick={() => toggleExpand(lot._id)}
+                      >
+                        {isExpanded ? 'Thu gọn' : 'Xem chi tiết'}
+                      </button>
+                      <button
+                        className="parking-lot-delete-btn"
+                        onClick={() => handleDeleteParkingLot(lot)}
+                        disabled={isDeleting}
+                        title="Xóa bãi đỗ xe"
+                      >
+                        <DeleteOutlined />
+                        <span>Xóa</span>
+                      </button>
+                    </div>
                   </div>
 
                   {isExpanded && (

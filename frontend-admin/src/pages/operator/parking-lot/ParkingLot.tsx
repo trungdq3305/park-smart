@@ -16,6 +16,7 @@ import {
   useGetParkingLotRequestOfOperatorQuery,
   useDeleteParkingLotRequestMutation,
 } from '../../../features/admin/parkinglotAPI'
+import { useGetCommentByParkingLotQuery } from '../../../features/operator/commentAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -26,6 +27,7 @@ import {
 } from '../../../features/operator/pricingPolicyAPI'
 import ParkingLotDetails from '../../../components/parking-lot/ParkingLotDetails'
 import PricingPolicyList from '../../../components/parking-lot/PricingPolicyList'
+import CommentList from '../../../components/parking-lot/CommentList'
 import CreatePricingPolicyModal from '../../../components/parking-lot/CreatePricingPolicyModal'
 import UpdateParkingLotModal from '../../../components/parking-lot/UpdateParkingLotModal'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
@@ -94,6 +96,20 @@ const OperatorParkingLot: React.FC = () => {
     )
   const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
   const basis = basisData?.data ?? []
+
+  const { data: commentsData, isLoading: isCommentsLoading } = useGetCommentByParkingLotQuery(
+    parkingLot?._id
+      ? {
+          parkingLotId: parkingLot._id,
+          page: 1,
+          pageSize: 10,
+        }
+      : skipToken
+  )
+
+  const comments = Array.isArray(commentsData)
+    ? commentsData
+    : (commentsData as any)?.data?.data || []
 
   const [createPricingPolicyLink, { isLoading: isCreatePricingLoading }] =
     useCreatePricingPolicyLinkMutation()
@@ -376,6 +392,9 @@ const OperatorParkingLot: React.FC = () => {
               onOpenEditModal={handleOpenEditModal}
               onDelete={handleDeletePricingPolicy}
             />
+
+            {/* Comments */}
+            <CommentList comments={comments} loading={isCommentsLoading} />
           </>
         )}
       </div>
