@@ -38,6 +38,7 @@ export const apiSlice = createApi({
     'promotion',
     'dashboardAdmin',
     'subscription',
+    'faqs',
   ],
 
   endpoints: () => ({}),
