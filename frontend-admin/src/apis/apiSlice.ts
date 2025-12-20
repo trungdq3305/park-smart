@@ -41,7 +41,7 @@ export const apiSlice = createApi({
     'faqs',
     'profile',
     'comment',
-    'announcements'
+    'announcements',
   ],
 
   endpoints: () => ({}),

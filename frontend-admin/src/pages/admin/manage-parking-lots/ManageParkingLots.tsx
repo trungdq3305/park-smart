@@ -98,9 +98,12 @@ const ManageParkingLots: React.FC = () => {
       title: 'Xác nhận xóa bãi đỗ xe',
       content: (
         <div>
-          <p>Bạn có chắc chắn muốn xóa bãi đỗ xe <strong>{lot.name || 'N/A'}</strong>?</p>
+          <p>
+            Bạn có chắc chắn muốn xóa bãi đỗ xe <strong>{lot.name || 'N/A'}</strong>?
+          </p>
           <p style={{ color: '#ef4444', marginTop: '8px', fontSize: '13px' }}>
-            Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến bãi đỗ xe này sẽ bị xóa vĩnh viễn.
+            Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan đến bãi đỗ xe này sẽ bị xóa
+            vĩnh viễn.
           </p>
         </div>
       ),

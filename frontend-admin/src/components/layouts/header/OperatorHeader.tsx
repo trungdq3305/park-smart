@@ -19,8 +19,8 @@ const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isM
   const navigate = useNavigate()
   const userMenuItems = [
     {
-      key:'1',
-      label:'Thông tin cá nhân',
+      key: '1',
+      label: 'Thông tin cá nhân',
       icon: <UserOutlined />,
       onClick: () => {
         navigate('/profile')

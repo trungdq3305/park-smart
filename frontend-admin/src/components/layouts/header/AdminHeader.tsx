@@ -20,8 +20,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile 
 
   const userMenuItems = [
     {
-      key:'1',
-      label:'Thông tin cá nhân',
+      key: '1',
+      label: 'Thông tin cá nhân',
       icon: <UserOutlined />,
       onClick: () => {
         navigate('/profile')

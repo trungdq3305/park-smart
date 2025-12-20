@@ -127,13 +127,7 @@ const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = ({
   ]
 
   return (
-    <CustomModal
-      open={open}
-      onClose={onClose}
-      title="Tạo thông báo mới"
-      width={700}
-      footer={null}
-    >
+    <CustomModal open={open} onClose={onClose} title="Tạo thông báo mới" width={700} footer={null}>
       <div className="create-promotion-modal-content">
         <div className="create-promotion-form">
           <div className="create-promotion-form-group">
@@ -150,9 +144,7 @@ const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = ({
                 if (errors.title) setErrors({ ...errors, title: undefined })
               }}
             />
-            {errors.title && (
-              <span className="create-promotion-error">{errors.title}</span>
-            )}
+            {errors.title && <span className="create-promotion-error">{errors.title}</span>}
           </div>
 
           <div className="create-promotion-form-group">
@@ -169,9 +161,7 @@ const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = ({
                 if (errors.content) setErrors({ ...errors, content: undefined })
               }}
             />
-            {errors.content && (
-              <span className="create-promotion-error">{errors.content}</span>
-            )}
+            {errors.content && <span className="create-promotion-error">{errors.content}</span>}
           </div>
 
           <div className="create-promotion-form-group">
@@ -265,11 +255,7 @@ const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = ({
               onClick={handleSubmit}
               disabled={loading}
             >
-              {loading
-                ? 'Đang xử lý...'
-                : formData.sendType === 'now'
-                  ? 'Gửi ngay'
-                  : 'Lên lịch'}
+              {loading ? 'Đang xử lý...' : formData.sendType === 'now' ? 'Gửi ngay' : 'Lên lịch'}
             </button>
           </div>
         </div>
@@ -279,4 +265,3 @@ const CreateAnnouncementModal: React.FC<CreateAnnouncementModalProps> = ({
 }
 
 export default CreateAnnouncementModal
-

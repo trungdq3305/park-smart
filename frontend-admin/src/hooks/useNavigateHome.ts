@@ -1,4 +1,3 @@
-
 import { useNavigate } from 'react-router-dom'
 import { getUserData } from '../utils/userData'
 
@@ -16,9 +15,7 @@ export const useNavigateHome = () => {
   const navigate = useNavigate()
 
   const getHomePath = (): string => {
-    const role = getUserData<{ role?: string }>()
-      ?.role
-      ?.toLowerCase() as UserRole | undefined
+    const role = getUserData<{ role?: string }>()?.role?.toLowerCase() as UserRole | undefined
 
     return HOME_PATH_BY_ROLE[role ?? 'operator']
   }

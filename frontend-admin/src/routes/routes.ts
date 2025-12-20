@@ -57,7 +57,7 @@ const routes: LayoutRoute[] = [
       {
         path: '/profile',
         component: ManageProfile,
-      }
+      },
     ],
   },
   {

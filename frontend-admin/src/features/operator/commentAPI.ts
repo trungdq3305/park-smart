@@ -12,8 +12,8 @@ export const commentAPI = apiSlice.injectEndpoints({
       invalidatesTags: ['comment'],
     }),
     getCommentByParkingLot: builder.query({
-      query: ({ parkingLotId ,page,pageSize }) => ({
-        url: `/core/comments/by-parkinglot/${parkingLotId }`,
+      query: ({ parkingLotId, page, pageSize }) => ({
+        url: `/core/comments/by-parkinglot/${parkingLotId}`,
         method: 'GET',
         params: { page, pageSize },
       }),
@@ -32,8 +32,5 @@ export const commentAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const {
-  useCreateCommentMutation,
-  useGetCommentByParkingLotQuery,
-  useReplyCommentMutation,
-} = commentAPI
+export const { useCreateCommentMutation, useGetCommentByParkingLotQuery, useReplyCommentMutation } =
+  commentAPI

@@ -30,20 +30,25 @@ interface FormErrors {
 }
 
 const ManageProfile: React.FC = () => {
-  const userData = useMemo(() => getUserData<{
-    role?: string
-    fullName?: string
-    phoneNumber?: string
-    department?: string
-    position?: string
-    fullAddress?: string
-    email?: string
-  }>(), []) // getUserData() đã có cache, chỉ gọi 1 lần
-console.log(userData)
+  const userData = useMemo(
+    () =>
+      getUserData<{
+        role?: string
+        fullName?: string
+        phoneNumber?: string
+        department?: string
+        position?: string
+        fullAddress?: string
+        email?: string
+      }>(),
+    []
+  ) // getUserData() đã có cache, chỉ gọi 1 lần
+  console.log(userData)
   const isAdmin = useMemo(() => userData?.role === 'Admin', [userData?.role])
   const { navigateToHome } = useNavigateHome()
   const [updateAdminProfile, { isLoading: isUpdatingAdmin }] = useUpdateAdminProfileMutation()
-  const [updateOperatorProfile, { isLoading: isUpdatingOperator }] = useUpdateOperatorProfileMutation()
+  const [updateOperatorProfile, { isLoading: isUpdatingOperator }] =
+    useUpdateOperatorProfileMutation()
 
   const [adminFormData, setAdminFormData] = useState<AdminFormData>({
     phoneNumber: '',
@@ -194,12 +199,8 @@ console.log(userData)
             </div>
             <div className="profile-header-info">
               <h2>{userData.fullName || 'Người dùng'}</h2>
-              <div className="profile-role-badge">
-                {isAdmin ? '🛠️ Admin' : '🏢 Operator'}
-              </div>
-              {userData.email && (
-                <div className="profile-email">{userData.email}</div>
-              )}
+              <div className="profile-role-badge">{isAdmin ? '🛠️ Admin' : '🏢 Operator'}</div>
+              {userData.email && <div className="profile-email">{userData.email}</div>}
             </div>
           </div>
 
@@ -239,9 +240,7 @@ console.log(userData)
                       if (errors.fullName) setErrors({ ...errors, fullName: undefined })
                     }}
                   />
-                  {errors.fullName && (
-                    <span className="profile-form-error">{errors.fullName}</span>
-                  )}
+                  {errors.fullName && <span className="profile-form-error">{errors.fullName}</span>}
                 </div>
 
                 <div className="profile-form-group">
@@ -277,9 +276,7 @@ console.log(userData)
                       if (errors.position) setErrors({ ...errors, position: undefined })
                     }}
                   />
-                  {errors.position && (
-                    <span className="profile-form-error">{errors.position}</span>
-                  )}
+                  {errors.position && <span className="profile-form-error">{errors.position}</span>}
                 </div>
               </>
             ) : (
@@ -317,9 +314,7 @@ console.log(userData)
                       if (errors.fullName) setErrors({ ...errors, fullName: undefined })
                     }}
                   />
-                  {errors.fullName && (
-                    <span className="profile-form-error">{errors.fullName}</span>
-                  )}
+                  {errors.fullName && <span className="profile-form-error">{errors.fullName}</span>}
                 </div>
 
                 <div className="profile-form-group">

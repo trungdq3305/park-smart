@@ -43,16 +43,14 @@ const ManageAnnoucement: React.FC = () => {
     isLoading: boolean
     error?: unknown
   }
-  const [createAnnouncement, { isLoading: isCreatingSchedule }] =
-    useCreateAnnouncementMutation()
-  const [createAnnouncementNow, { isLoading: isCreatingNow }] =
-    useCreateAnnouncementNowMutation()
+  const [createAnnouncement, { isLoading: isCreatingSchedule }] = useCreateAnnouncementMutation()
+  const [createAnnouncementNow, { isLoading: isCreatingNow }] = useCreateAnnouncementNowMutation()
 
   const isCreating = isCreatingSchedule || isCreatingNow
 
   const announcements: Announcement[] = Array.isArray(data)
     ? data
-      : (data as { data?: Announcement[] })?.data || []
+    : (data as { data?: Announcement[] })?.data || []
 
   const stats = useMemo(() => {
     const total = announcements.length
@@ -70,9 +68,10 @@ const ManageAnnoucement: React.FC = () => {
   }, [announcements])
 
   const filteredAnnouncements = useMemo(() => {
-    let filtered = filter === 'all' 
-      ? announcements 
-      : announcements.filter((announcement) => announcement.recipientRoles.includes(filter))
+    let filtered =
+      filter === 'all'
+        ? announcements
+        : announcements.filter((announcement) => announcement.recipientRoles.includes(filter))
     // Reverse để hiển thị mới nhất trước
     return [...filtered].reverse()
   }, [announcements, filter])
@@ -130,10 +129,7 @@ const ManageAnnoucement: React.FC = () => {
             <h1>Quản lý thông báo</h1>
             <p>Xem và quản lý tất cả thông báo trong hệ thống Park Smart</p>
           </div>
-          <button
-            className="announcement-create-btn"
-            onClick={() => setIsCreateModalOpen(true)}
-          >
+          <button className="announcement-create-btn" onClick={() => setIsCreateModalOpen(true)}>
             <PlusOutlined />
             <span>Tạo thông báo mới</span>
           </button>

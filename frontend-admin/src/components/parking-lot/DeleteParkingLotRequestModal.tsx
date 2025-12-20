@@ -116,4 +116,3 @@ const DeleteParkingLotRequestModal: React.FC<DeleteParkingLotRequestModalProps> 
 }
 
 export default DeleteParkingLotRequestModal
-

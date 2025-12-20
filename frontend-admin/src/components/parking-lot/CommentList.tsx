@@ -34,7 +34,12 @@ const renderStars = (rating: number): React.ReactElement => {
   return <div className="comment-stars">{stars}</div>
 }
 
-const CommentList: React.FC<CommentListProps> = ({ comments, loading, onReply, isReplying = false }) => {
+const CommentList: React.FC<CommentListProps> = ({
+  comments,
+  loading,
+  onReply,
+  isReplying = false,
+}) => {
   const [replyingToId, setReplyingToId] = useState<string | null>(null)
   const [replyContent, setReplyContent] = useState<{ [key: string]: string }>({})
 
@@ -114,19 +119,19 @@ const CommentList: React.FC<CommentListProps> = ({ comments, loading, onReply, i
                 <div className="comment-avatar">
                   <UserOutlined />
                 </div>
-            <div className="comment-user-details">
-              <div className="comment-user-name">
-                {comment.creatorName || 'Người dùng ẩn danh'}
+                <div className="comment-user-details">
+                  <div className="comment-user-name">
+                    {comment.creatorName || 'Người dùng ẩn danh'}
+                  </div>
+                  <div className="comment-date">{formatDate(comment.createdAt)}</div>
+                </div>
               </div>
-              <div className="comment-date">{formatDate(comment.createdAt)}</div>
-            </div>
-          </div>
-          {comment.star && (
-            <div className="comment-rating">
-              {renderStars(comment.star)}
-              <span className="comment-rating-value">{comment.star}/5</span>
-            </div>
-          )}
+              {comment.star && (
+                <div className="comment-rating">
+                  {renderStars(comment.star)}
+                  <span className="comment-rating-value">{comment.star}/5</span>
+                </div>
+              )}
             </div>
             {comment.content && (
               <div className="comment-content">
@@ -215,4 +220,3 @@ const CommentList: React.FC<CommentListProps> = ({ comments, loading, onReply, i
 }
 
 export default CommentList
-

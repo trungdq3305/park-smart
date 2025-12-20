@@ -12,18 +12,15 @@ export const profileAPI = apiSlice.injectEndpoints({
       invalidatesTags: ['profile'],
     }),
     updateOperatorProfile: builder.mutation({
-        query: (operatorProfileData) => ({
-          url: '/core/operators',
-          method: 'PUT',
-          body: operatorProfileData,
-        }),
-        transformResponse: (res) => res,
-        invalidatesTags: ['profile'],
+      query: (operatorProfileData) => ({
+        url: '/core/operators',
+        method: 'PUT',
+        body: operatorProfileData,
       }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['profile'],
+    }),
   }),
 })
 
-export const {
-  useUpdateAdminProfileMutation,
-  useUpdateOperatorProfileMutation,
-} = profileAPI
+export const { useUpdateAdminProfileMutation, useUpdateOperatorProfileMutation } = profileAPI
