@@ -215,6 +215,13 @@ namespace CoreService.API.Controllers
 
             return Ok("Xác nhận thanh toán thành công");
         }
+
+        [HttpGet("test-deploy")] // Endpoint mới
+        public async Task<IActionResult> GetRefundsByCr()
+        {
+
+            return Ok("ok");
+        }
     }
 
 }
