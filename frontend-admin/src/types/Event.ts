@@ -15,4 +15,6 @@ export interface Event {
   parkingLotId: string
   operatorId: string
   promotions: Promotion[]
+  parkingLotName: string
+  parkingLotFullAddress: string
 }

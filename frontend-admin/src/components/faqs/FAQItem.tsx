@@ -75,11 +75,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({ faq, onEdit, onDelete, isDelet
         {(onEdit || onDelete) && (
           <div className="faq-item-actions">
             {onEdit && (
-              <button
-                className="faq-edit-btn"
-                onClick={() => onEdit(faq)}
-                title="Chỉnh sửa FAQ"
-              >
+              <button className="faq-edit-btn" onClick={() => onEdit(faq)} title="Chỉnh sửa FAQ">
                 <EditOutlined />
                 <span>Chỉnh sửa</span>
               </button>

@@ -33,7 +33,7 @@ const FAQsAdmin: React.FC = () => {
 
   const { data, isLoading, error, refetch } = useGetFAQsQuery({ page: currentPage, pageSize })
   const [deleteFAQ, { isLoading: isDeleting }] = useDeleteFAQMutation()
-  
+
   // Accumulate data when new page is loaded - exactly like ManageGuestCard
   useEffect(() => {
     // Extract data from response - handle both possible structures
@@ -158,11 +158,7 @@ const FAQsAdmin: React.FC = () => {
       </div>
 
       <CreateFAQModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
-      <UpdateFAQModal
-        open={isUpdateModalOpen}
-        onClose={handleCloseUpdateModal}
-        faq={selectedFAQ}
-      />
+      <UpdateFAQModal open={isUpdateModalOpen} onClose={handleCloseUpdateModal} faq={selectedFAQ} />
     </div>
   )
 }

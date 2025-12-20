@@ -151,4 +151,3 @@ const UpdateFAQModal: React.FC<UpdateFAQModalProps> = ({ open, onClose, faq }) =
 }
 
 export default UpdateFAQModal
-

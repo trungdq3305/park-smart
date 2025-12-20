@@ -3,11 +3,7 @@ import { PlusOutlined } from '@ant-design/icons'
 import { Modal, message } from 'antd'
 import { useGetMyFAQsQuery, useDeleteFAQMutation } from '../../../features/admin/FAQsAPI'
 import type { FAQ } from '../../../types/FAQs'
-import {
-  FAQList,
-  CreateFAQModal,
-  UpdateFAQModal,
-} from '../../../components/faqs'
+import { FAQList, CreateFAQModal, UpdateFAQModal } from '../../../components/faqs'
 import '../../admin/manage-faqs/ManageFAQsAdmin.css'
 
 const ManageFAQsOperator: React.FC = () => {
@@ -21,7 +17,7 @@ const ManageFAQsOperator: React.FC = () => {
 
   const { data, isLoading, error, refetch } = useGetMyFAQsQuery({ page: currentPage, pageSize })
   const [deleteFAQ, { isLoading: isDeleting }] = useDeleteFAQMutation()
-  
+
   // Accumulate data when new page is loaded - exactly like ManageGuestCard
   useEffect(() => {
     // Extract data from response - handle both possible structures
@@ -155,11 +151,7 @@ const ManageFAQsOperator: React.FC = () => {
       </div>
 
       <CreateFAQModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
-      <UpdateFAQModal
-        open={isUpdateModalOpen}
-        onClose={handleCloseUpdateModal}
-        faq={selectedFAQ}
-      />
+      <UpdateFAQModal open={isUpdateModalOpen} onClose={handleCloseUpdateModal} faq={selectedFAQ} />
     </div>
   )
 }
