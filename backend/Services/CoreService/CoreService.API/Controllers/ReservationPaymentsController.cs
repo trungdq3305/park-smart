@@ -131,7 +131,7 @@ namespace CoreService.API.Controllers
             }
         }
         [HttpGet("refunds/createdBy/me")] // Endpoint mới
-        [Authorize(Roles = "Driver")]
+        [Authorize(Roles = "Driver,Operator,Admin")]
         public async Task<IActionResult> GetRefundsByCreatedByMe()
         {
             // Lấy accountId của người dùng hiện tại từ token
