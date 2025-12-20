@@ -18,6 +18,8 @@ export interface Promotion {
   eventId: string | null
   eventTitle: string | null
   rules: Rule[] | null
+  parkingLotName :string
+  parkingLotFullAddress :string
 }
 
 export interface Rule {
