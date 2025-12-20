@@ -42,7 +42,16 @@ jobs:
           script: |
             cd /var/www/park-smart
 
-            echo ">>> Creating .env file for parkingservice..."
+            echo ">>> Preparing environment files..."
+            # Tạo thư mục nếu chưa có
+            mkdir -p ./backend/Services/CoreService
+            mkdir -p ./backend/Services/parking-service
+
+            # Tạo file .env cho CoreService (Phải có để docker-compose không lỗi)
+            # Nếu CoreService không cần secret từ GitHub, chỉ cần touch để tạo file trống
+            touch ./backend/Services/CoreService/.env
+
+            # Tạo file .env cho ParkingService
             cat <<EOF > ./backend/Services/parking-service/.env
             PORT=${{ secrets.PORT }}
             MONGO_URI=${{ secrets.MONGO_URI }}
@@ -55,21 +64,24 @@ jobs:
             CORE_SERVICE_URL=${{ secrets.CORE_SERVICE_URL }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
             EOF
-            echo ">>> .env file created successfully."
 
-            echo ">>> Starting deployment..."
-            # 2. Tắt các container đang chạy
-            docker compose down
+            echo ">>> Cleaning up system..."
+            # Thêm flag --remove-orphans để dọn dẹp các container rác
+            docker compose down --remove-orphans || true
+            
+            # Ép xóa container nếu lệnh down phía trên bị kẹt (phòng hờ)
+            docker rm -f coreservice parkingservice ocelotgateway || true
 
-            # 3. Xóa các image cũ của project để buộc build lại từ đầu không dùng cache lỗi
-            # Lệnh này xóa các image có tên tương ứng
+            # Xóa image cũ để đảm bảo không dùng cache sai
             docker rmi coreservice parkingservice ocelotgateway || true
 
-            # 4. Build và khởi động lại
-            # Thêm flag --force-recreate
+            echo ">>> Building and Starting services..."
+            # Không cần --no-cache nếu đã rmi phía trên, nhưng giữ --build và --force-recreate là đúng
             docker compose up -d --build --force-recreate
 
-            # 5. Dọn dẹp các image "rác" (nếu có) để giải phóng dung lượng
+            echo ">>> Cleaning up dangling images to save disk space..."
             docker image prune -f
             
+            echo ">>> Current Status:"
+            docker ps
             echo ">>> Deployment finished."
