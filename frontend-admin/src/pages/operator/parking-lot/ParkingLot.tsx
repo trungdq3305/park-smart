@@ -6,12 +6,16 @@ import {
   ThunderboltOutlined,
   UserOutlined,
   EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import {
   useGetParkingLotsOperatorQuery,
   useUpdateParkingLotRequestMutation,
 } from '../../../features/operator/parkingLotAPI'
-import { useGetParkingLotRequestOfOperatorQuery } from '../../../features/admin/parkinglotAPI'
+import {
+  useGetParkingLotRequestOfOperatorQuery,
+  useDeleteParkingLotRequestMutation,
+} from '../../../features/admin/parkinglotAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -30,6 +34,7 @@ import { useGetBasisQuery } from '../../../features/operator/basisAPI'
 import { message, Modal } from 'antd'
 import OperatorRequestsModal from '../../../components/parking-lot/OperatorRequestsModal'
 import CreateParkingLotRequestModal from '../../../components/parking-lot/CreateParkingLotRequestModal'
+import DeleteParkingLotRequestModal from '../../../components/parking-lot/DeleteParkingLotRequestModal'
 import Cookies from 'js-cookie'
 import { useOperatorId } from '../../../hooks/useOperatorId'
 
@@ -64,9 +69,12 @@ const OperatorParkingLot: React.FC = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false)
   const [isCreateRequestModalOpen, setIsCreateRequestModalOpen] = useState(false)
+  const [isDeleteRequestModalOpen, setIsDeleteRequestModalOpen] = useState(false)
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
+  const [deleteParkingLotRequest, { isLoading: isDeleteParkingLotRequestLoading }] =
+    useDeleteParkingLotRequestMutation()
   const parkingLot = data?.data?.[0] ?? null
 
   const { data: pricingPoliciesData, isLoading: isPricingLoading } =
@@ -166,6 +174,22 @@ const OperatorParkingLot: React.FC = () => {
     }
   }
 
+  const handleDeleteParkingLot = async (effectiveDate: string) => {
+    if (!parkingLot?._id) return
+
+    try {
+      await deleteParkingLotRequest({
+        parkingLotId: parkingLot._id,
+        payload: { effectiveDate },
+      }).unwrap()
+      message.success('Gửi yêu cầu xóa bãi đỗ xe thành công!')
+      setIsDeleteRequestModalOpen(false)
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Gửi yêu cầu xóa bãi đỗ xe thất bại')
+      throw error
+    }
+  }
+
   const summary = useMemo(() => {
     if (!parkingLot) {
       return {
@@ -242,6 +266,13 @@ const OperatorParkingLot: React.FC = () => {
               <button className="parking-lot-update-btn" onClick={() => setIsUpdateModalOpen(true)}>
                 <EditOutlined />
                 <span>Gửi yêu cầu cập nhật</span>
+              </button>
+              <button
+                className="parking-lot-delete-btn"
+                onClick={() => setIsDeleteRequestModalOpen(true)}
+              >
+                <DeleteOutlined />
+                <span>Yêu cầu xóa bãi đỗ xe</span>
               </button>
             </div>
           )}
@@ -391,6 +422,12 @@ const OperatorParkingLot: React.FC = () => {
           operatorId={operatorId}
         />
       )}
+      <DeleteParkingLotRequestModal
+        open={isDeleteRequestModalOpen}
+        onClose={() => setIsDeleteRequestModalOpen(false)}
+        onSubmit={handleDeleteParkingLot}
+        loading={isDeleteParkingLotRequestLoading}
+      />
     </div>
   )
 }

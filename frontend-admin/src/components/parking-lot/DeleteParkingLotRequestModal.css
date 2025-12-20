@@ -1,0 +1,113 @@
+/* Delete Parking Lot Request Modal - Form Actions */
+.delete-parking-lot-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.2vh;
+  margin-top: 2.4vh;
+  padding-top: 2vh;
+  border-top: 2px solid #e5e7eb;
+}
+
+.delete-parking-lot-cancel-btn,
+.delete-parking-lot-submit-btn {
+  padding: 1.2vh 2.4vh;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s ease,
+    color 0.3s ease,
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+.delete-parking-lot-cancel-btn:disabled,
+.delete-parking-lot-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Cancel Button */
+.delete-parking-lot-cancel-btn {
+  background: #ffffff;
+  color: #6b7280;
+  border: 1.5px solid #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.delete-parking-lot-cancel-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #374151;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.delete-parking-lot-cancel-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Submit Button */
+.delete-parking-lot-submit-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  position: relative;
+}
+
+.delete-parking-lot-submit-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.delete-parking-lot-submit-btn:hover:not(:disabled)::before {
+  width: 300px;
+  height: 300px;
+}
+
+.delete-parking-lot-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+.delete-parking-lot-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .delete-parking-lot-form-actions {
+    flex-direction: column-reverse;
+    gap: 1vh;
+  }
+
+  .delete-parking-lot-cancel-btn,
+  .delete-parking-lot-submit-btn {
+    width: 100%;
+    min-width: unset;
+  }
+}
+

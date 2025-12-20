@@ -63,6 +63,15 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       invalidatesTags: ['parkingLotRequest'],
     }),
+    deleteParkingLotRequest: builder.mutation({
+      query: ({ parkingLotId, payload }) => ({
+        url: `/parking/parking-lots/send-delete-requests/${parkingLotId}`,
+        method: 'POST',
+        body: payload,
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['parkingLotRequest'],
+    }),
   }),
 })
 
@@ -74,4 +83,5 @@ export const {
   useParkingLotRequestDetailQuery,
   useGetParkingLotRequestOfOperatorQuery,
   useCreateParkingLotRequestMutation,
+  useDeleteParkingLotRequestMutation,
 } = parkingLotAPI
