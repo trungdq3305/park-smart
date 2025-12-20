@@ -40,7 +40,7 @@ jobs:
           username: root
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            cd ~/park-smart
+            cd /var/www/park-smart
 
             echo ">>> Creating .env file for parkingservice..."
             cat <<EOF > ./backend/Services/parking-service/.env
