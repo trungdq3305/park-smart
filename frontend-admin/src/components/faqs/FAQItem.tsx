@@ -1,5 +1,5 @@
 import React from 'react'
-import { EditOutlined } from '@ant-design/icons'
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { FAQ } from '../../types/FAQs'
 import { formatDateTime, getStatusLabel, getStatusClass } from './faqUtils'
 import FAQAnswerDropdown from './FAQAnswerDropdown'
@@ -7,9 +7,11 @@ import FAQAnswerDropdown from './FAQAnswerDropdown'
 interface FAQItemProps {
   faq: FAQ
   onEdit?: (faq: FAQ) => void
+  onDelete?: (faqId: string, faqQuestion: string) => void
+  isDeleting?: boolean
 }
 
-export const FAQItem: React.FC<FAQItemProps> = ({ faq, onEdit }) => {
+export const FAQItem: React.FC<FAQItemProps> = ({ faq, onEdit, onDelete, isDeleting }) => {
   const statusClass = getStatusClass(faq.creatorRole)
   const statusLabel = getStatusLabel(faq.creatorRole)
 
@@ -70,16 +72,29 @@ export const FAQItem: React.FC<FAQItemProps> = ({ faq, onEdit }) => {
             </div>
           )}
         </div>
-        {onEdit && (
+        {(onEdit || onDelete) && (
           <div className="faq-item-actions">
-            <button
-              className="faq-edit-btn"
-              onClick={() => onEdit(faq)}
-              title="Chỉnh sửa FAQ"
-            >
-              <EditOutlined />
-              <span>Chỉnh sửa</span>
-            </button>
+            {onEdit && (
+              <button
+                className="faq-edit-btn"
+                onClick={() => onEdit(faq)}
+                title="Chỉnh sửa FAQ"
+              >
+                <EditOutlined />
+                <span>Chỉnh sửa</span>
+              </button>
+            )}
+            {onDelete && (
+              <button
+                className="faq-delete-btn"
+                onClick={() => onDelete(faq._id, faq.question)}
+                disabled={isDeleting}
+                title="Xóa FAQ"
+              >
+                <DeleteOutlined />
+                <span>Xóa</span>
+              </button>
+            )}
           </div>
         )}
       </div>

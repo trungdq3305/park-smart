@@ -542,21 +542,21 @@
   max-height: 60vh;
   overflow-y: auto;
   padding-right: 0.4vh;
-}
+  }
 
 .report-list::-webkit-scrollbar {
   width: 0.6vh;
-}
+  }
 
 .report-list::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 999px;
-}
+  }
 
 .report-list::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 999px;
-}
+  }
 
 .report-list::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;

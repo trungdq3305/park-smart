@@ -466,6 +466,33 @@
   box-shadow: 0 0.4vh 1.2vh rgba(59, 130, 246, 0.4);
 }
 
+.faq-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6vh;
+  padding: 0.6vh 1.2vh;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    box-shadow 0.2s;
+  box-shadow: 0 0.2vh 0.6vh rgba(239, 68, 68, 0.3);
+}
+
+.faq-delete-btn:hover:not(:disabled) {
+  box-shadow: 0 0.4vh 1.2vh rgba(239, 68, 68, 0.4);
+}
+
+.faq-delete-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Empty State */
 .faq-empty-state {
   margin-top: 2.4vh;
@@ -574,6 +601,44 @@
   }
 }
 
+/* Lazy Loading */
+.faq-load-more-trigger {
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.4vh 0;
+}
+
+.faq-load-more-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2vh;
+  padding: 2.4vh;
+}
+
+.faq-load-more-loading p {
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.faq-end-message {
+  text-align: center;
+  padding: 2.4vh;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 500;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 1.6vh;
+}
+
+.faq-end-message p {
+  margin: 0;
+}
+
 @media (max-width: 480px) {
   .faq-page-header h1 {
     font-size: 24px;
@@ -581,5 +646,16 @@
 
   .faq-item-title {
     font-size: 18px;
+  }
+
+  .faq-pagination {
+    flex-wrap: wrap;
+  }
+
+  .faq-pagination-numbers {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    margin-top: 1.2vh;
   }
 }
