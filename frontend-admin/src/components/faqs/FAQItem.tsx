@@ -37,7 +37,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({ faq, onEdit, onDelete, isDelet
             <div className="faq-detail-icon">👤</div>
             <div className="faq-detail-content">
               <span className="faq-detail-label">Người tạo</span>
-              <span className="faq-detail-value">{faq.creatorName || 'Không rõ'}</span>
+              <span className="faq-detail-value">{faq.creatorName || 'Bạn'}</span>
             </div>
           </div>
 
@@ -45,7 +45,7 @@ export const FAQItem: React.FC<FAQItemProps> = ({ faq, onEdit, onDelete, isDelet
             <div className="faq-detail-icon">🔑</div>
             <div className="faq-detail-content">
               <span className="faq-detail-label">Vai trò</span>
-              <span className="faq-detail-value">{faq.creatorRole || 'Không rõ'}</span>
+              <span className="faq-detail-value">{faq.creatorRole || 'Operator'}</span>
             </div>
           </div>
 

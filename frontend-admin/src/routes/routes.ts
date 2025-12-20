@@ -39,6 +39,7 @@ const SubscriptionPlanOperator = lazy(
   () => import('../pages/operator/subscription-plan-operator/OperatorSubscription')
 )
 const FAQsAdmin = lazy(() => import('../pages/admin/manage-faqs/FAQsAdmin'))
+const ManageFAQsOperator = lazy(() => import('../pages/operator/manage-faqs/ManageFAQsOperator'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -174,6 +175,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/promotions',
         component: ManagePromotion,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/manage-faqs',
+        component: ManageFAQsOperator,
         role: ['Operator'],
       },
       {
