@@ -58,6 +58,18 @@ jobs:
             echo ">>> .env file created successfully."
 
             echo ">>> Starting deployment..."
+            # 2. Tắt các container đang chạy
             docker compose down
-            docker compose up -d --build
+
+            # 3. Xóa các image cũ của project để buộc build lại từ đầu không dùng cache lỗi
+            # Lệnh này xóa các image có tên tương ứng
+            docker rmi coreservice parkingservice ocelotgateway || true
+
+            # 4. Build và khởi động lại
+            # Thêm flag --force-recreate
+            docker compose up -d --build --force-recreate
+
+            # 5. Dọn dẹp các image "rác" (nếu có) để giải phóng dung lượng
+            docker image prune -f
+            
             echo ">>> Deployment finished."
