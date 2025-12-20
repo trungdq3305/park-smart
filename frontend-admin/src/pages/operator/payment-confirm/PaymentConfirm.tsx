@@ -1,6 +1,12 @@
 import React, { useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { CheckCircleTwoTone, CloseCircleTwoTone, LoadingOutlined, LinkOutlined, ArrowLeftOutlined } from '@ant-design/icons'
+import {
+  CheckCircleTwoTone,
+  CloseCircleTwoTone,
+  LoadingOutlined,
+  LinkOutlined,
+  ArrowLeftOutlined,
+} from '@ant-design/icons'
 import { useConfirmPaymentQuery } from '../../../features/operator/invoiceAPI'
 import './PaymentConfirm.css'
 
@@ -17,10 +23,7 @@ const PaymentConfirm: React.FC = () => {
   const isSuccess = result === 'success'
   const shouldCallApi = !!paymentId
 
-  const { data, isLoading, error } = useConfirmPaymentQuery(
-    { paymentId },
-    { skip: !shouldCallApi }
-  )
+  const { data, isLoading, error } = useConfirmPaymentQuery({ paymentId }, { skip: !shouldCallApi })
 
   const apiStatus = useMemo(() => {
     if (!shouldCallApi) return 'missing'
@@ -49,7 +52,8 @@ const PaymentConfirm: React.FC = () => {
         <h1>{isSuccess ? 'Thanh toán thành công' : 'Thanh toán thất bại'}</h1>
         <p className="pay-confirm-sub">
           {isSuccess
-            ? (typeof data === 'string' ? data : (data as any)?.message) || 'Cảm ơn bạn, thanh toán đã được xác nhận.'
+            ? (typeof data === 'string' ? data : (data as any)?.message) ||
+              'Cảm ơn bạn, thanh toán đã được xác nhận.'
             : 'Không thể xác nhận thanh toán. Vui lòng thử lại hoặc liên hệ hỗ trợ.'}
         </p>
 
@@ -83,7 +87,9 @@ const PaymentConfirm: React.FC = () => {
             </span>
           </div>
           {!isSuccess && (
-            <div className="pay-confirm-error">Không thể xác nhận thanh toán. Vui lòng thử lại sau.</div>
+            <div className="pay-confirm-error">
+              Không thể xác nhận thanh toán. Vui lòng thử lại sau.
+            </div>
           )}
         </div>
 

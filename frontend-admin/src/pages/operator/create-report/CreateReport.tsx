@@ -287,9 +287,7 @@ const CreateReport: React.FC = () => {
                   maxLength={2000}
                 />
                 <div className="report-textarea-footer">
-                  <span className="report-char-count">
-                    {formData.reason.length} / 2000 ký tự
-                  </span>
+                  <span className="report-char-count">{formData.reason.length} / 2000 ký tự</span>
                 </div>
               </div>
               {errors.reason && (
@@ -412,9 +410,7 @@ const CreateReport: React.FC = () => {
                         )}
                       </div>
                     </div>
-                    <div className="report-item-date">
-                      {formatDate(report.createdAt)}
-                    </div>
+                    <div className="report-item-date">{formatDate(report.createdAt)}</div>
                   </div>
 
                   <div className="report-item-body">

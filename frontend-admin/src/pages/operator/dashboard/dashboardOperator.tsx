@@ -175,7 +175,9 @@ const DashboardOperator: React.FC = () => {
                   {data.parkingLotInfo.addressId.fullAddress}
                 </span>
                 {data.parkingLotInfo.addressId.wardId?.wardName && (
-                  <span className="dashboard-ward">{data.parkingLotInfo.addressId.wardId.wardName}</span>
+                  <span className="dashboard-ward">
+                    {data.parkingLotInfo.addressId.wardId.wardName}
+                  </span>
                 )}
               </div>
             )}
@@ -471,7 +473,14 @@ const DashboardOperator: React.FC = () => {
                   <PieChart>
                     <defs>
                       {revenuePieData.map((entry, index) => (
-                        <linearGradient key={entry.name} id={`revenueGradient${index}`} x1="0" y1="0" x2="1" y2="1">
+                        <linearGradient
+                          key={entry.name}
+                          id={`revenueGradient${index}`}
+                          x1="0"
+                          y1="0"
+                          x2="1"
+                          y2="1"
+                        >
                           <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
                           <stop offset="100%" stopColor={entry.color} stopOpacity={0.7} />
                         </linearGradient>
@@ -547,7 +556,14 @@ const DashboardOperator: React.FC = () => {
                   <PieChart>
                     <defs>
                       {refundPieData.map((entry, index) => (
-                        <linearGradient key={entry.name} id={`refundGradient${index}`} x1="0" y1="0" x2="1" y2="1">
+                        <linearGradient
+                          key={entry.name}
+                          id={`refundGradient${index}`}
+                          x1="0"
+                          y1="0"
+                          x2="1"
+                          y2="1"
+                        >
                           <stop offset="0%" stopColor={entry.color} stopOpacity={1} />
                           <stop offset="100%" stopColor={entry.color} stopOpacity={0.7} />
                         </linearGradient>
@@ -647,7 +663,9 @@ const DashboardOperator: React.FC = () => {
                       >
                         {item.label}
                       </span>
-                      <span className="dashboard-breakdown-value">{formatCurrency(item.value)}</span>
+                      <span className="dashboard-breakdown-value">
+                        {formatCurrency(item.value)}
+                      </span>
                     </div>
                     <div className="dashboard-breakdown-progress">
                       <div
@@ -698,7 +716,9 @@ const DashboardOperator: React.FC = () => {
                       >
                         {item.label}
                       </span>
-                      <span className="dashboard-breakdown-value">{formatCurrency(item.value)}</span>
+                      <span className="dashboard-breakdown-value">
+                        {formatCurrency(item.value)}
+                      </span>
                     </div>
                     <div className="dashboard-breakdown-progress">
                       <div

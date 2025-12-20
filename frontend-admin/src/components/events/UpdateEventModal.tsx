@@ -270,9 +270,7 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
               type="time"
               className="create-promotion-time-input"
               value={
-                formData.startDate
-                  ? formData.startDate.format('HH:mm')
-                  : dayjs().format('HH:mm')
+                formData.startDate ? formData.startDate.format('HH:mm') : dayjs().format('HH:mm')
               }
               onChange={(e) => {
                 const [hours, minutes] = e.target.value.split(':')
@@ -317,9 +315,7 @@ const UpdateEventModal: React.FC<UpdateEventModalProps> = ({ open, onClose, even
             <input
               type="time"
               className="create-promotion-time-input"
-              value={
-                formData.endDate ? formData.endDate.format('HH:mm') : dayjs().format('HH:mm')
-              }
+              value={formData.endDate ? formData.endDate.format('HH:mm') : dayjs().format('HH:mm')}
               onChange={(e) => {
                 const [hours, minutes] = e.target.value.split(':')
                 const baseDate = formData.endDate || dayjs().startOf('day')

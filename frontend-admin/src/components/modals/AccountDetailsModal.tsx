@@ -133,7 +133,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
       footer={
         <div className="account-details-footer">
           <button className="account-btn account-btn-ghost" onClick={onClose}>
-          Đóng
+            Đóng
           </button>
         </div>
       }
@@ -150,7 +150,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                 <span className={roleBadgeClass}>{account.roleName}</span>
                 <span className={statusBadgeClass}>
                   <span className="status-dot" />
-                {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                  {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
                 </span>
               </div>
             </div>
@@ -186,9 +186,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                 </div>
                 <div className="account-field">
                   <div className="label">Điểm tích lũy</div>
-                  <div className="value value-strong">
-                {account.driverDetail.accumulatedPoints}
-                  </div>
+                  <div className="value value-strong">{account.driverDetail.accumulatedPoints}</div>
                 </div>
               </div>
             </div>
@@ -209,25 +207,25 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                 <div className="account-field">
                   <div className="label">Mã số thuế</div>
                   <div className="value">
-                {account.operatorDetail.taxCode ? account.operatorDetail.taxCode : 'Không có'}
+                    {account.operatorDetail.taxCode ? account.operatorDetail.taxCode : 'Không có'}
                   </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Email thanh toán</div>
                   <div className="value">
-                {account.operatorDetail.paymentEmail
-                  ? account.operatorDetail.paymentEmail
-                  : 'Không có'}
+                    {account.operatorDetail.paymentEmail
+                      ? account.operatorDetail.paymentEmail
+                      : 'Không có'}
                   </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Duyệt tài khoản</div>
                   <button
                     className="account-btn account-btn-primary"
-                  onClick={handleConfirmOperator}
+                    onClick={handleConfirmOperator}
                     disabled={isConfirmingOperator || account.isActive}
-                >
-                  {isConfirmingOperator ? 'Đang duyệt...' : 'Duyệt'}
+                  >
+                    {isConfirmingOperator ? 'Đang duyệt...' : 'Duyệt'}
                   </button>
                 </div>
               </div>
@@ -240,7 +238,9 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
               <div className="account-grid">
                 <div className="account-field">
                   <div className="label">Tên bãi xe</div>
-                  <div className="value">{parkingLotDetailsData.payload?.name || 'Chưa cung cấp'}</div>
+                  <div className="value">
+                    {parkingLotDetailsData.payload?.name || 'Chưa cung cấp'}
+                  </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Loại yêu cầu</div>
@@ -257,44 +257,42 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                 <div className="account-field">
                   <div className="label">Tổng tầng</div>
                   <div className="value value-strong">
-                {parkingLotDetailsData.payload?.totalLevel ?? 'Chưa cung cấp'}
+                    {parkingLotDetailsData.payload?.totalLevel ?? 'Chưa cung cấp'}
                   </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Sức chứa mỗi tầng</div>
                   <div className="value value-strong">
-                {parkingLotDetailsData.payload?.totalCapacityEachLevel ?? 'Chưa cung cấp'}
+                    {parkingLotDetailsData.payload?.totalCapacityEachLevel ?? 'Chưa cung cấp'}
                   </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Sức chứa đặt trước</div>
                   <div className="value value-strong">
-                {parkingLotDetailsData.payload?.bookableCapacity ?? 'Chưa cung cấp'}
+                    {parkingLotDetailsData.payload?.bookableCapacity ?? 'Chưa cung cấp'}
                   </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Sức chứa thuê dài hạn</div>
                   <div className="value value-strong">
-                {parkingLotDetailsData.payload?.leasedCapacity ?? 'Chưa cung cấp'}
+                    {parkingLotDetailsData.payload?.leasedCapacity ?? 'Chưa cung cấp'}
                   </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Sức chứa vãng lai</div>
                   <div className="value value-strong">
-                {parkingLotDetailsData.payload?.walkInCapacity ?? 'Chưa cung cấp'}
+                    {parkingLotDetailsData.payload?.walkInCapacity ?? 'Chưa cung cấp'}
                   </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Thời lượng slot (giờ)</div>
                   <div className="value value-strong">
-                {parkingLotDetailsData.payload?.bookingSlotDurationHours ?? 'Chưa cung cấp'}
+                    {parkingLotDetailsData.payload?.bookingSlotDurationHours ?? 'Chưa cung cấp'}
                   </div>
                 </div>
                 <div className="account-field">
                   <div className="label">Ngày hiệu lực</div>
-                  <div className="value">
-                    {formatDate(parkingLotDetailsData.effectiveDate)}
-                  </div>
+                  <div className="value">{formatDate(parkingLotDetailsData.effectiveDate)}</div>
                 </div>
               </div>
 

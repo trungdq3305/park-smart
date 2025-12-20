@@ -35,7 +35,13 @@ const DashboardAdmin = lazy(() => import('../pages/admin/dashboard-admin/Dashboa
 const ManagePayment = lazy(() => import('../pages/admin/manage-payment/ManagePayment'))
 const PaymentConfirm = lazy(() => import('../pages/operator/payment-confirm/PaymentConfirm'))
 const SubscriptionPlanPage = lazy(() => import('../pages/admin/subscription-plan/SubscriptionPlan'))
-const SubscriptionPlanOperator = lazy(() => import('../pages/operator/subscription-plan-operator/OperatorSubscription'))
+const SubscriptionPlanOperator = lazy(
+  () => import('../pages/operator/subscription-plan-operator/OperatorSubscription')
+)
+const FAQsAdmin = lazy(() => import('../pages/admin/manage-faqs/FAQsAdmin'))
+const ManageFAQsOperator = lazy(() => import('../pages/operator/manage-faqs/ManageFAQsOperator'))
+const ManageProfile = lazy(() => import('../pages/profile/ManageProfile'))
+const ManageAnnouncement = lazy(() => import('../pages/admin/manage-annoucement/ManageAnnoucement'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -45,9 +51,13 @@ const routes: LayoutRoute[] = [
         component: LoginPage,
       },
       {
-        path:'/pay-result',
+        path: '/pay-result',
         component: PaymentConfirm,
-      }
+      },
+      {
+        path: '/profile',
+        component: ManageProfile,
+      },
     ],
   },
   {
@@ -108,6 +118,16 @@ const routes: LayoutRoute[] = [
         component: SubscriptionPlanPage,
         role: ['Admin'],
       },
+      {
+        path: '/admin/faqs',
+        component: FAQsAdmin,
+        role: ['Admin'],
+      },
+      {
+        path: '/admin/announcements',
+        component: ManageAnnouncement,
+        role: ['Admin'],
+      },
     ],
   },
   {
@@ -166,6 +186,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/promotions',
         component: ManagePromotion,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/manage-faqs',
+        component: ManageFAQsOperator,
         role: ['Operator'],
       },
       {

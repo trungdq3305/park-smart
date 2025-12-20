@@ -59,7 +59,7 @@ const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({
       ) {
         discountType = 'FixedAmount'
       }
-      
+
       setFormData({
         name: promotion.name,
         description: promotion.description || '',
@@ -140,7 +140,6 @@ const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({
     }
   }
 
-
   return (
     <CustomModal
       open={open}
@@ -211,9 +210,7 @@ const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({
               onClick={() => setShowDiscountTypeDropdown(!showDiscountTypeDropdown)}
             >
               <span>
-                {formData.discountType === 'Percentage'
-                  ? 'Phần trăm (%)'
-                  : 'Số tiền cố định (VND)'}
+                {formData.discountType === 'Percentage' ? 'Phần trăm (%)' : 'Số tiền cố định (VND)'}
               </span>
               <span className="create-promotion-select-arrow">▼</span>
             </div>
@@ -305,7 +302,10 @@ const UpdatePromotionModal: React.FC<UpdatePromotionModalProps> = ({
         <div className="create-promotion-form-group">
           <label className="create-promotion-label">
             Giảm tối đa (VND)
-            <span className="create-promotion-tooltip" title="Số tiền tối đa được giảm (0 = không giới hạn)">
+            <span
+              className="create-promotion-tooltip"
+              title="Số tiền tối đa được giảm (0 = không giới hạn)"
+            >
               ℹ️
             </span>
           </label>
