@@ -20,7 +20,20 @@ export const commentAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['comment'],
     }),
+    replyComment: builder.mutation({
+      query: (commentData) => ({
+        url: '/core/comments/',
+        method: 'POST',
+        body: commentData,
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['comment'],
+    }),
   }),
 })
 
-export const { useCreateCommentMutation, useGetCommentByParkingLotQuery } = commentAPI
+export const {
+  useCreateCommentMutation,
+  useGetCommentByParkingLotQuery,
+  useReplyCommentMutation,
+} = commentAPI

@@ -16,7 +16,10 @@ import {
   useGetParkingLotRequestOfOperatorQuery,
   useDeleteParkingLotRequestMutation,
 } from '../../../features/admin/parkinglotAPI'
-import { useGetCommentByParkingLotQuery } from '../../../features/operator/commentAPI'
+import {
+  useGetCommentByParkingLotQuery,
+  useReplyCommentMutation,
+} from '../../../features/operator/commentAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -28,6 +31,7 @@ import {
 import ParkingLotDetails from '../../../components/parking-lot/ParkingLotDetails'
 import PricingPolicyList from '../../../components/parking-lot/PricingPolicyList'
 import CommentList from '../../../components/parking-lot/CommentList'
+import type { Comment } from '../../../types/Comment'
 import CreatePricingPolicyModal from '../../../components/parking-lot/CreatePricingPolicyModal'
 import UpdateParkingLotModal from '../../../components/parking-lot/UpdateParkingLotModal'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
@@ -110,6 +114,26 @@ const OperatorParkingLot: React.FC = () => {
   const comments = Array.isArray(commentsData)
     ? commentsData
     : (commentsData as any)?.data?.data || []
+
+  const [replyComment, { isLoading: isReplyingComment }] = useReplyCommentMutation()
+
+  const handleReplyComment = async (comment: Comment, replyContent: string) => {
+    if (!parkingLot?._id) return
+
+    try {
+      await replyComment({
+        targetId: comment.targetId,
+        targetType: comment.targetType,
+        parentId: comment._id,
+        content: replyContent,
+        star: 5,
+      }).unwrap()
+      message.success('Phản hồi thành công')
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Phản hồi thất bại')
+      throw error
+    }
+  }
 
   const [createPricingPolicyLink, { isLoading: isCreatePricingLoading }] =
     useCreatePricingPolicyLinkMutation()
@@ -394,7 +418,12 @@ const OperatorParkingLot: React.FC = () => {
             />
 
             {/* Comments */}
-            <CommentList comments={comments} loading={isCommentsLoading} />
+            <CommentList
+              comments={comments}
+              loading={isCommentsLoading}
+              onReply={handleReplyComment}
+              isReplying={isReplyingComment}
+            />
           </>
         )}
       </div>
