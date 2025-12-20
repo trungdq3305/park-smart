@@ -133,6 +133,9 @@ export class ParkingLotRequestRepository
         .find(filter)
         .skip((page - 1) * pageSize)
         .limit(pageSize)
+        .populate({
+          path: 'parkingLotId',
+        })
         .lean()
         .exec(),
       this.parkingLotRequestModel.countDocuments(filter).exec(),
@@ -222,6 +225,20 @@ export class ParkingLotRequestRepository
           'addressInfo.wardId': { wardName: '$wardInfo.wardName' },
         },
       },
+      {
+        $lookup: {
+          from: 'parkinglots',
+          localField: 'parkingLotId',
+          foreignField: '_id',
+          as: 'parkingLotDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$parkingLotDetails',
+          preserveNullAndEmptyArrays: true, // Giữ lại record nếu không tìm thấy bãi xe
+        },
+      },
 
       // --- STAGE 3: PROJECT (Cấu trúc lại dữ liệu) ---
       {
@@ -231,6 +248,7 @@ export class ParkingLotRequestRepository
           status: 1,
           effectiveDate: 1,
           createdAt: 1,
+          parkingLotId: '$parkingLotDetails',
           payload: {
             $mergeObjects: [
               '$payload',
