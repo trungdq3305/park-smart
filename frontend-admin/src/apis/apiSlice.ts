@@ -40,7 +40,8 @@ export const apiSlice = createApi({
     'subscription',
     'faqs',
     'profile',
-    'comment'
+    'comment',
+    'announcements'
   ],
 
   endpoints: () => ({}),
