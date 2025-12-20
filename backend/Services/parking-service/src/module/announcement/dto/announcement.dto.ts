@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
+import { Expose, Transform } from 'class-transformer' // Thêm Expose
 import {
   IsArray,
   IsDateString,
@@ -6,7 +7,6 @@ import {
   IsNotEmpty,
   IsOptional,
 } from 'class-validator'
-
 // --- DTO để tạo mới Announcement (Admin gửi lên) ---
 export class CreateAnnouncementDto {
   @ApiProperty({
@@ -49,26 +49,35 @@ export class CreateAnnouncementDto {
 // --- DTO phản hồi (Dữ liệu gửi về client) ---
 export class AnnouncementResponseDto {
   @ApiProperty()
+  @Expose()
+  @Transform(({ obj }) => obj._id?.toString()) // Chuyển ObjectId thành String nếu cần
   _id: string
 
   @ApiProperty()
+  @Expose()
   title: string
 
   @ApiProperty()
+  @Expose()
   content: string
 
   @ApiProperty()
+  @Expose()
   status: string
 
   @ApiProperty()
+  @Expose()
   scheduleAt: Date
 
   @ApiProperty()
+  @Expose()
   type: string
 
   @ApiProperty()
+  @Expose()
   createdAt: Date
 
-  @ApiProperty({ type: [String], description: 'Danh sách Role nhận thông báo' })
+  @ApiProperty({ type: [String] })
+  @Expose()
   recipientRoles: string[]
 }
