@@ -38,4 +38,3 @@ export const FAQStats: React.FC<FAQStatsProps> = ({ total, admin, operator }) =>
 }
 
 export default FAQStats
-

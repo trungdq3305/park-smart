@@ -62,4 +62,3 @@ export const calculateFAQStats = (faqs: FAQ[]) => {
 
   return { total, admin, operator }
 }
-

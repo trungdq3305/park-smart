@@ -1,9 +1,9 @@
 export interface Result {
- data :[
+  data: [
     {
-        sessionId: string
-        message: string
-        amount : number
-    }
- ]
+      sessionId: string
+      message: string
+      amount: number
+    },
+  ]
 }

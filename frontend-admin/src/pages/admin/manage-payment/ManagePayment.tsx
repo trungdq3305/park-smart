@@ -7,7 +7,13 @@ import './ManagePayment.css'
 type PaymentStatus = 'PENDING' | 'PAID' | 'EXPIRED' | 'FAILED' | 'REFUNDED'
 
 const statusOptions: PaymentStatus[] = ['PENDING', 'PAID', 'EXPIRED', 'FAILED', 'REFUNDED']
-const paymentTypes = ['OperatorCharge', 'PenaltyCharge', 'ParkingLotSession','Subscription','Reservation']
+const paymentTypes = [
+  'OperatorCharge',
+  'PenaltyCharge',
+  'ParkingLotSession',
+  'Subscription',
+  'Reservation',
+]
 
 const ManagePayment: React.FC = () => {
   const [filters, setFilters] = useState({
@@ -65,7 +71,7 @@ const ManagePayment: React.FC = () => {
       toDate: '',
     })
   }
-console.log(accountRes)
+  console.log(accountRes)
   const operatorOptions = useMemo(() => {
     const paged = (accountRes as any)?.data?.pagedAccounts
     const listRaw = paged?.data ?? []
@@ -74,13 +80,16 @@ console.log(accountRes)
       .filter((acc: any) => acc?.operatorDetail?._id)
       .map((acc: any) => {
         const op = acc.operatorDetail || {}
-        const label = op.name || op.displayName || op.parkingLotName || acc.fullName || acc.email || op._id
+        const label =
+          op.name || op.displayName || op.parkingLotName || acc.fullName || acc.email || op._id
         return { id: op._id, label }
       })
   }, [accountRes])
 
   const formatMoney = (val?: number) =>
-    val !== undefined && val !== null ? val.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' }) : '-'
+    val !== undefined && val !== null
+      ? val.toLocaleString('vi-VN', { style: 'currency', currency: 'VND' })
+      : '-'
 
   const formatDate = (val?: string) => (val ? dayjs(val).format('DD/MM/YYYY HH:mm') : '-')
 
@@ -137,8 +146,12 @@ console.log(accountRes)
                 </option>
               ))}
             </select>
-            {isLoadingAccounts && <small className="pay-hint">Đang tải danh sách operator...</small>}
-            {accountError && <small className="pay-hint error">Không tải được danh sách operator</small>}
+            {isLoadingAccounts && (
+              <small className="pay-hint">Đang tải danh sách operator...</small>
+            )}
+            {accountError && (
+              <small className="pay-hint error">Không tải được danh sách operator</small>
+            )}
           </div>
           <div className="pay-input-group">
             <label>Trạng thái</label>
@@ -153,7 +166,10 @@ console.log(accountRes)
           </div>
           <div className="pay-input-group">
             <label>Loại thanh toán</label>
-            <select value={filters.paymentType} onChange={(e) => setFilter('paymentType', e.target.value)}>
+            <select
+              value={filters.paymentType}
+              onChange={(e) => setFilter('paymentType', e.target.value)}
+            >
               <option value="">Tất cả</option>
               {paymentTypes.map((s) => (
                 <option key={s} value={s}>
@@ -172,7 +188,11 @@ console.log(accountRes)
           </div>
           <div className="pay-input-group">
             <label>Đến ngày</label>
-            <input type="date" value={filters.toDate} onChange={(e) => setFilter('toDate', e.target.value)} />
+            <input
+              type="date"
+              value={filters.toDate}
+              onChange={(e) => setFilter('toDate', e.target.value)}
+            />
           </div>
         </div>
       </div>
@@ -186,7 +206,9 @@ console.log(accountRes)
           <div className="pay-status-group">
             {isFetching && <span className="pay-chip info">Đang tải...</span>}
             {notFoundError && <span className="pay-chip info">Không tìm thấy hoá đơn</span>}
-            {error && !notFoundError && <span className="pay-chip danger">Không tìm thấy hoá đơn</span>}
+            {error && !notFoundError && (
+              <span className="pay-chip danger">Không tìm thấy hoá đơn</span>
+            )}
           </div>
         </div>
 
@@ -197,7 +219,9 @@ console.log(accountRes)
           </div>
         ) : notFoundError ? (
           <div className="pay-empty">
-            <p>Không tìm thấy hoá đơn phù hợp. Thử đổi bộ lọc hoặc kiểm tra lại điều kiện tìm kiếm.</p>
+            <p>
+              Không tìm thấy hoá đơn phù hợp. Thử đổi bộ lọc hoặc kiểm tra lại điều kiện tìm kiếm.
+            </p>
             <button className="pay-btn ghost" onClick={handleClear}>
               Xoá bộ lọc
             </button>
@@ -218,7 +242,9 @@ console.log(accountRes)
             {payments.map((p: any) => (
               <div className="pay-card" key={p.id}>
                 <div className="pay-card-top">
-                  <div className={`pay-badge status ${p.status?.toLowerCase() || 'pending'}`}>{p.status || '-'}</div>
+                  <div className={`pay-badge status ${p.status?.toLowerCase() || 'pending'}`}>
+                    {p.status || '-'}
+                  </div>
                   <div className="pay-amount">{formatMoney(p.amount)}</div>
                 </div>
                 <div className="pay-card-meta">
@@ -244,10 +270,18 @@ console.log(accountRes)
                   </div>
                 </div>
                 <div className="pay-card-actions">
-                  <a className="pay-btn ghost" href={p.checkoutUrl} target="_blank" rel="noreferrer">
+                  <a
+                    className="pay-btn ghost"
+                    href={p.checkoutUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Mở checkout
                   </a>
-                  <button className="pay-btn subtle" onClick={() => navigator.clipboard.writeText(p.id)}>
+                  <button
+                    className="pay-btn subtle"
+                    onClick={() => navigator.clipboard.writeText(p.id)}
+                  >
                     Copy ID
                   </button>
                 </div>
@@ -256,7 +290,6 @@ console.log(accountRes)
           </div>
         )}
       </div>
-
     </div>
   )
 }

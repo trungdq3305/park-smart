@@ -128,7 +128,9 @@ const UpdateParkingLotModal: React.FC<UpdateParkingLotModalProps> = ({
         bookableCapacity: formData.bookableCapacity,
         leasedCapacity: formData.leasedCapacity,
         walkInCapacity: formData.walkInCapacity,
-        effectiveDate: formData.effectiveDate ? formData.effectiveDate.format('YYYY-MM-DD') : undefined,
+        effectiveDate: formData.effectiveDate
+          ? formData.effectiveDate.format('YYYY-MM-DD')
+          : undefined,
         parkingLotOperatorId: formData.parkingLotOperatorId,
       }
       await onSubmit(submitValues)

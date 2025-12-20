@@ -44,4 +44,3 @@ export const FAQFilters: React.FC<FAQFiltersProps> = ({
 }
 
 export default FAQFilters
-

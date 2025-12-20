@@ -6,15 +6,11 @@ import '../../../components/subscription-plan/SubscriptionPlanDisplay.css'
 
 const SubscriptionPlanOperator: React.FC = () => {
   const { data, isLoading, error } = useGetDefaultPlanQuery({})
-  const plan = (data as any) as SubscriptionPlan | undefined
+  const plan = data as any as SubscriptionPlan | undefined
 
   if (isLoading) {
     return (
-      <SubscriptionPlanDisplay
-        plan={{} as SubscriptionPlan}
-        isLoading={true}
-        title="Gói Đăng Ký"
-      />
+      <SubscriptionPlanDisplay plan={{} as SubscriptionPlan} isLoading={true} title="Gói Đăng Ký" />
     )
   }
 
@@ -42,13 +38,7 @@ const SubscriptionPlanOperator: React.FC = () => {
     )
   }
 
-  return (
-    <SubscriptionPlanDisplay
-      plan={plan}
-      title="Gói Đăng Ký"
-      showEditButton={false}
-    />
-  )
+  return <SubscriptionPlanDisplay plan={plan} title="Gói Đăng Ký" showEditButton={false} />
 }
 
 export default SubscriptionPlanOperator

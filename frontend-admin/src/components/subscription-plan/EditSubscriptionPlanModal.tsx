@@ -119,11 +119,7 @@ const EditSubscriptionPlanModal: React.FC<EditSubscriptionPlanModalProps> = ({
 
   return (
     <>
-      <CustomModal
-        open={open}
-        onClose={onClose}
-        title="Chỉnh sửa Gói Đăng Ký"
-      >
+      <CustomModal open={open} onClose={onClose} title="Chỉnh sửa Gói Đăng Ký">
         <div className="sub-plan-edit-modal">
           <div className="sub-plan-form-group">
             <label className="sub-plan-form-label">
@@ -280,11 +276,7 @@ const EditSubscriptionPlanModal: React.FC<EditSubscriptionPlanModalProps> = ({
           </div>
 
           <div className="sub-plan-form-actions">
-            <button
-              className="sub-plan-form-btn cancel"
-              onClick={onClose}
-              disabled={isLoading}
-            >
+            <button className="sub-plan-form-btn cancel" onClick={onClose} disabled={isLoading}>
               Hủy
             </button>
             <button
@@ -309,4 +301,3 @@ const EditSubscriptionPlanModal: React.FC<EditSubscriptionPlanModalProps> = ({
 }
 
 export default EditSubscriptionPlanModal
-

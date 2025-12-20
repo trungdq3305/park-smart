@@ -33,4 +33,3 @@ const FAQAnswerDropdown: React.FC<FAQAnswerDropdownProps> = ({ answer }) => {
 }
 
 export default FAQAnswerDropdown
-

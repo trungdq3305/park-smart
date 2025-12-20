@@ -1,14 +1,20 @@
 import React, { useState } from 'react'
-import { useGetDefaultPlanQuery, useUpdateDefaultPlanMutation } from '../../../features/admin/subscriptionAPI'
+import {
+  useGetDefaultPlanQuery,
+  useUpdateDefaultPlanMutation,
+} from '../../../features/admin/subscriptionAPI'
 import type { SubscriptionPlan } from '../../../types/Subscription'
-import { SubscriptionPlanDisplay, EditSubscriptionPlanModal } from '../../../components/subscription-plan'
+import {
+  SubscriptionPlanDisplay,
+  EditSubscriptionPlanModal,
+} from '../../../components/subscription-plan'
 import './SubscriptionPlan.css'
 
 const SubscriptionPlanPage: React.FC = () => {
   const { data, isLoading, error, refetch } = useGetDefaultPlanQuery({})
   const [updatePlan, { isLoading: isUpdating }] = useUpdateDefaultPlanMutation()
 
-  const plan = (data as any) as SubscriptionPlan | undefined
+  const plan = data as any as SubscriptionPlan | undefined
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
 
   const handleUpdatePlan = async (formData: {
@@ -26,12 +32,7 @@ const SubscriptionPlanPage: React.FC = () => {
   }
 
   if (isLoading) {
-    return (
-      <SubscriptionPlanDisplay
-        plan={{} as SubscriptionPlan}
-        isLoading={true}
-      />
-    )
+    return <SubscriptionPlanDisplay plan={{} as SubscriptionPlan} isLoading={true} />
   }
 
   if (error) {

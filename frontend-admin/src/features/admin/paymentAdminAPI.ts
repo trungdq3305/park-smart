@@ -3,7 +3,7 @@ import { apiSlice } from '../../apis/apiSlice'
 export const paymentAdminAPI = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getPayments: builder.query({
-      query: ({params}) => ({
+      query: ({ params }) => ({
         url: '/core/dashboards/admin/payments',
         method: 'GET',
         params,
@@ -14,6 +14,4 @@ export const paymentAdminAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const {
-  useGetPaymentsQuery,  
-} = paymentAdminAPI
+export const { useGetPaymentsQuery } = paymentAdminAPI

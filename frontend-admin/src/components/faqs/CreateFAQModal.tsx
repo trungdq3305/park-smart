@@ -143,4 +143,3 @@ const CreateFAQModal: React.FC<CreateFAQModalProps> = ({ open, onClose }) => {
 }
 
 export default CreateFAQModal
-

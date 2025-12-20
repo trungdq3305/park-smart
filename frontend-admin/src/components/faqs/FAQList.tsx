@@ -34,4 +34,3 @@ export const FAQList: React.FC<FAQListProps> = ({ faqs, filter }) => {
 }
 
 export default FAQList
-

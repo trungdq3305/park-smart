@@ -22,7 +22,4 @@ export const subscriptionAPI = apiSlice.injectEndpoints({
   }),
 })
 
-export const {
-  useGetDefaultPlanQuery,
-  useUpdateDefaultPlanMutation,
-} = subscriptionAPI
+export const { useGetDefaultPlanQuery, useUpdateDefaultPlanMutation } = subscriptionAPI

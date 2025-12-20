@@ -6,4 +6,3 @@ export { default as FAQAnswerDropdown } from './FAQAnswerDropdown'
 export { default as CreateFAQModal } from './CreateFAQModal'
 export * from './faqTypes'
 export * from './faqUtils'
-

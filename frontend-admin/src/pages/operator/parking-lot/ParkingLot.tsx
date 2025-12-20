@@ -80,12 +80,10 @@ const OperatorParkingLot: React.FC = () => {
           }
         : skipToken
     )
-  const {
-    data: parkingLotRequestsData,
-    isLoading: isRequestLoading,
-  } = useGetParkingLotRequestOfOperatorQuery(
-    operatorId? { parkingLotOperatorId: operatorId } : skipToken
-  )
+  const { data: parkingLotRequestsData, isLoading: isRequestLoading } =
+    useGetParkingLotRequestOfOperatorQuery(
+      operatorId ? { parkingLotOperatorId: operatorId } : skipToken
+    )
   const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
   const basis = basisData?.data ?? []
 
@@ -211,11 +209,7 @@ const OperatorParkingLot: React.FC = () => {
     if (Array.isArray(parkingLotRequestsData)) return parkingLotRequestsData
     // support { data: [...] } or { data: { data: [...] } }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return (
-      (parkingLotRequestsData as any).data ||
-      (parkingLotRequestsData as any).data ||
-      []
-    )
+    return (parkingLotRequestsData as any).data || (parkingLotRequestsData as any).data || []
   }, [parkingLotRequestsData])
 
   if (isLoading) {
