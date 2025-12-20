@@ -1,11 +1,21 @@
 import React, { useMemo, useState } from 'react'
+import { PlusOutlined } from '@ant-design/icons'
 import { useGetFAQsQuery } from '../../../features/admin/FAQsAPI'
 import type { FAQ } from '../../../types/FAQs'
-import { FAQStats, FAQFilters, FAQList, filterFAQs, calculateFAQStats, type FAQFilter } from '../../../components/faqs'
+import {
+  FAQStats,
+  FAQFilters,
+  FAQList,
+  CreateFAQModal,
+  filterFAQs,
+  calculateFAQStats,
+  type FAQFilter,
+} from '../../../components/faqs'
 import './ManageFAQsAdmin.css'
 
 const FAQsAdmin: React.FC = () => {
   const [filter, setFilter] = useState<FAQFilter>('all')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   const { data, isLoading, error } = useGetFAQsQuery({ page: 1, pageSize: 100 })
   const faqs: FAQ[] = ((data as any)?.data?.data ?? []) as FAQ[]
@@ -39,9 +49,15 @@ const FAQsAdmin: React.FC = () => {
   return (
     <div className="manage-faqs-admin-page">
       <div className="faq-page-header">
-        <div>
-          <h1>Quản lý FAQs</h1>
-          <p>Xem và theo dõi các câu hỏi thường gặp trong hệ thống Park Smart</p>
+        <div className="faq-header-content">
+          <div>
+            <h1>Quản lý FAQs</h1>
+            <p>Xem và theo dõi các câu hỏi thường gặp trong hệ thống Park Smart</p>
+          </div>
+          <button className="faq-create-btn" onClick={() => setIsCreateModalOpen(true)}>
+            <PlusOutlined />
+            <span>Tạo mới</span>
+          </button>
         </div>
       </div>
 
@@ -59,6 +75,8 @@ const FAQsAdmin: React.FC = () => {
 
         <FAQList faqs={filteredFaqs} filter={filter} />
       </div>
+
+      <CreateFAQModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
     </div>
   )
 }
