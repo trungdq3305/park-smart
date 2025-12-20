@@ -7,6 +7,7 @@ import {
   FAQFilters,
   FAQList,
   CreateFAQModal,
+  UpdateFAQModal,
   filterFAQs,
   calculateFAQStats,
   type FAQFilter,
@@ -16,6 +17,8 @@ import './ManageFAQsAdmin.css'
 const FAQsAdmin: React.FC = () => {
   const [filter, setFilter] = useState<FAQFilter>('all')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
+  const [selectedFAQ, setSelectedFAQ] = useState<FAQ | null>(null)
 
   const { data, isLoading, error } = useGetFAQsQuery({ page: 1, pageSize: 100 })
   const faqs: FAQ[] = ((data as any)?.data?.data ?? []) as FAQ[]
@@ -23,6 +26,16 @@ const FAQsAdmin: React.FC = () => {
   const stats = useMemo(() => calculateFAQStats(faqs), [faqs])
 
   const filteredFaqs = useMemo(() => filterFAQs(faqs, filter), [faqs, filter])
+
+  const handleOpenUpdateModal = (faq: FAQ) => {
+    setSelectedFAQ(faq)
+    setIsUpdateModalOpen(true)
+  }
+
+  const handleCloseUpdateModal = () => {
+    setIsUpdateModalOpen(false)
+    setSelectedFAQ(null)
+  }
 
   if (isLoading) {
     return (
@@ -73,10 +86,15 @@ const FAQsAdmin: React.FC = () => {
           filteredCount={filteredFaqs.length}
         />
 
-        <FAQList faqs={filteredFaqs} filter={filter} />
+        <FAQList faqs={filteredFaqs} filter={filter} onEdit={handleOpenUpdateModal} />
       </div>
 
       <CreateFAQModal open={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
+      <UpdateFAQModal
+        open={isUpdateModalOpen}
+        onClose={handleCloseUpdateModal}
+        faq={selectedFAQ}
+      />
     </div>
   )
 }

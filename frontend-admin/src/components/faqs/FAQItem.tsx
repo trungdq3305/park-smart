@@ -1,13 +1,15 @@
 import React from 'react'
+import { EditOutlined } from '@ant-design/icons'
 import type { FAQ } from '../../types/FAQs'
 import { formatDateTime, getStatusLabel, getStatusClass } from './faqUtils'
 import FAQAnswerDropdown from './FAQAnswerDropdown'
 
 interface FAQItemProps {
   faq: FAQ
+  onEdit?: (faq: FAQ) => void
 }
 
-export const FAQItem: React.FC<FAQItemProps> = ({ faq }) => {
+export const FAQItem: React.FC<FAQItemProps> = ({ faq, onEdit }) => {
   const statusClass = getStatusClass(faq.creatorRole)
   const statusLabel = getStatusLabel(faq.creatorRole)
 
@@ -68,6 +70,18 @@ export const FAQItem: React.FC<FAQItemProps> = ({ faq }) => {
             </div>
           )}
         </div>
+        {onEdit && (
+          <div className="faq-item-actions">
+            <button
+              className="faq-edit-btn"
+              onClick={() => onEdit(faq)}
+              title="Chỉnh sửa FAQ"
+            >
+              <EditOutlined />
+              <span>Chỉnh sửa</span>
+            </button>
+          </div>
+        )}
       </div>
 
       <FAQAnswerDropdown answer={faq.answer} />

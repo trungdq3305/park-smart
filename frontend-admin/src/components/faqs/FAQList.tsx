@@ -7,9 +7,10 @@ import FAQItem from './FAQItem'
 interface FAQListProps {
   faqs: FAQ[]
   filter: FAQFilter
+  onEdit?: (faq: FAQ) => void
 }
 
-export const FAQList: React.FC<FAQListProps> = ({ faqs, filter }) => {
+export const FAQList: React.FC<FAQListProps> = ({ faqs, filter, onEdit }) => {
   if (faqs.length === 0) {
     return (
       <div className="faq-empty-state">
@@ -27,7 +28,7 @@ export const FAQList: React.FC<FAQListProps> = ({ faqs, filter }) => {
   return (
     <div className="faq-list">
       {faqs.map((faq) => (
-        <FAQItem key={faq._id} faq={faq} />
+        <FAQItem key={faq._id} faq={faq} onEdit={onEdit} />
       ))}
     </div>
   )
