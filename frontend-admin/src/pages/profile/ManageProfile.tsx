@@ -39,7 +39,7 @@ const ManageProfile: React.FC = () => {
     fullAddress?: string
     email?: string
   }>(), []) // getUserData() đã có cache, chỉ gọi 1 lần
-
+console.log(userData)
   const isAdmin = useMemo(() => userData?.role === 'Admin', [userData?.role])
   const { navigateToHome } = useNavigateHome()
   const [updateAdminProfile, { isLoading: isUpdatingAdmin }] = useUpdateAdminProfileMutation()
