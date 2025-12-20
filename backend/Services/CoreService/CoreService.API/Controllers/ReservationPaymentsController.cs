@@ -220,7 +220,7 @@ namespace CoreService.API.Controllers
         public async Task<IActionResult> GetRefundsByCr()
         {
 
-            return Ok("ok");
+            return Ok("okla");
         }
     }
 
