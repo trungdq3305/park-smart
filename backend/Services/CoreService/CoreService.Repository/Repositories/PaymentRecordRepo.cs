@@ -1,5 +1,6 @@
 ﻿using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Dotnet.Shared.Mongo;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -283,6 +284,21 @@ namespace CoreService.Repository.Repositories
 
             // Trả về true nếu tồn tại bất kỳ bản ghi nào khớp
             return await _col.Find(filter).AnyAsync();
+        }
+        public async Task<long> UpdateExpiredPaymentsAsync(DateTime threshold, IEnumerable<PaymentType> types)
+        {
+            var filter = Builders<PaymentRecord>.Filter.And(
+                Builders<PaymentRecord>.Filter.In(x => x.PaymentType, types),
+                Builders<PaymentRecord>.Filter.In(x => x.Status, new[] { "CREATED", "PENDING" }),
+                Builders<PaymentRecord>.Filter.Lt(x => x.CreatedAt, threshold) // Nếu CreatedAt + 10p < Hiện tại
+            );
+
+            var update = Builders<PaymentRecord>.Update
+                .Set(x => x.Status, "EXPIRED")
+                .Set(x => x.UpdatedAt, TimeConverter.ToVietnamTime(DateTime.UtcNow));
+
+            var result = await _col.UpdateManyAsync(filter, update);
+            return result.ModifiedCount;
         }
     }
 }

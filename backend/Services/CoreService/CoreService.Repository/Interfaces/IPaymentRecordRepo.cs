@@ -54,5 +54,6 @@ namespace CoreService.Repository.Interfaces
         // 3. Dùng cho Webhook (Kiểm tra Mở Khóa)
         Task<bool> HasUnpaidOverdueInvoices(string operatorId);
         Task<PaymentRecord?> GetMainInvoiceForMonth(string operatorId, DateTime invoiceMonth);
+        Task<long> UpdateExpiredPaymentsAsync(DateTime threshold, IEnumerable<PaymentType> types);
     }
 }
