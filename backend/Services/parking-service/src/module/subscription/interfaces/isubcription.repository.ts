@@ -179,6 +179,11 @@ export interface ISubscriptionRepository {
     modifiedCount: number
     statsByParkingLot: Record<string, number> // Trả về Map: { "parkingLotId": số_lượng }
   }>
+
+  checkActiveOrScheduledByUserAndParkingLot(
+    userId: string,
+    parkingLotId: string,
+  ): Promise<boolean>
 }
 
 export const ISubscriptionRepository = Symbol('ISubscriptionRepository')

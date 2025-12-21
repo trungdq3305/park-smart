@@ -492,6 +492,18 @@ export class SubscriptionService implements ISubscriptionService {
       )
     }
 
+    const isHaveInActiveOrScheduled =
+      await this.subscriptionRepository.checkActiveOrScheduledByUserAndParkingLot(
+        userId,
+        createDto.parkingLotId,
+      )
+
+    if (isHaveInActiveOrScheduled) {
+      throw new ConflictException(
+        'Bạn đã có một gói thuê bao đang hoạt động hoặc chờ kích hoạt tại bãi xe này.',
+      )
+    }
+
     const session = await this.connection.startSession()
     session.startTransaction()
     try {
