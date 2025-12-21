@@ -1,5 +1,6 @@
 ﻿using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Dotnet.Shared.Mongo;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -42,7 +43,7 @@ namespace CoreService.Repository.Repositories
             var entity = await GetByIdAsync(id);
             if (entity != null)
             {
-                entity.DeletedAt = DateTime.UtcNow;
+                entity.DeletedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
                 await UpdateAsync(entity);
             }
         }

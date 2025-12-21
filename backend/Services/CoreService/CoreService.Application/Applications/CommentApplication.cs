@@ -5,6 +5,7 @@ using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -75,7 +76,7 @@ namespace CoreService.Application.Applications
 
             entity.Content = dto.Content?.Trim();
             if (entity.ParentId == null) entity.Star = dto.Star;
-            entity.UpdatedAt = DateTime.UtcNow;
+            entity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             entity.UpdatedBy = accountId;
 
             await _repo.UpdateAsync(entity);

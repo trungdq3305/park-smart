@@ -811,7 +811,7 @@ namespace CoreService.Application.Applications
 
             // ✅ Hash mật khẩu mới trước khi lưu
             account.Password = HashPassword(dto.NewPassword);
-            account.UpdatedAt = DateTime.UtcNow;
+            account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.UpdatedBy = accountId;
 
             await _accountRepo.UpdateAsync(account);
