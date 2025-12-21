@@ -11,6 +11,8 @@ class BookingHistoryScreen extends StatefulWidget {
   State<BookingHistoryScreen> createState() => _BookingHistoryScreenState();
 }
 
+enum PaymentFilter { payments, refunds }
+
 class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   final _currencyFormat = NumberFormat.currency(
     locale: 'vi_VN',
@@ -19,6 +21,7 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
   );
   final _dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
+  PaymentFilter _currentFilter = PaymentFilter.payments;
   bool _isLoading = true;
   bool _isRefreshing = false;
   String? _errorMessage;
@@ -44,7 +47,11 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     });
 
     try {
-      final response = await PaymentService.getMyPayments();
+      // Gọi API dựa trên filter hiện tại
+      final response = _currentFilter == PaymentFilter.payments
+          ? await PaymentService.getMyPayments()
+          : await PaymentService.getMyRefunds();
+
       final data = response['data'];
       List<Map<String, dynamic>> payments = [];
 
@@ -108,10 +115,102 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
         ),
         body: RefreshIndicator(
           onRefresh: () => _loadPayments(isRefresh: true),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: _buildContent(),
+          child: Column(
+            children: [
+              _buildFilterBar(),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _buildContent(),
+                ),
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildFilterChip(
+              label: 'Thanh toán',
+              filter: PaymentFilter.payments,
+              icon: Icons.payment,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildFilterChip(
+              label: 'Hoàn tiền',
+              filter: PaymentFilter.refunds,
+              icon: Icons.undo,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterChip({
+    required String label,
+    required PaymentFilter filter,
+    required IconData icon,
+  }) {
+    final isSelected = _currentFilter == filter;
+    return InkWell(
+      onTap: () {
+        if (_currentFilter != filter) {
+          setState(() {
+            _currentFilter = filter;
+            _currentPage = 1;
+          });
+          _loadPayments();
+        }
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.green : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? Colors.green.shade700 : Colors.transparent,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.white : Colors.grey.shade700,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                color: isSelected ? Colors.white : Colors.grey.shade700,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -125,7 +224,9 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     if (_errorMessage != null) {
       return _buildStateMessage(
         icon: Icons.error_outline,
-        title: 'Không thể tải lịch sử thanh toán',
+        title: _currentFilter == PaymentFilter.payments
+            ? 'Không thể tải lịch sử thanh toán'
+            : 'Không thể tải lịch sử hoàn tiền',
         message: _errorMessage!,
         actionText: 'Thử lại',
         onAction: _loadPayments,
@@ -135,8 +236,12 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
     if (_payments.isEmpty) {
       return _buildStateMessage(
         icon: Icons.receipt_long,
-        title: 'Chưa có giao dịch',
-        message: 'Bạn chưa thực hiện giao dịch nào.',
+        title: _currentFilter == PaymentFilter.payments
+            ? 'Chưa có giao dịch'
+            : 'Chưa có hoàn tiền',
+        message: _currentFilter == PaymentFilter.payments
+            ? 'Bạn chưa thực hiện giao dịch nào.'
+            : 'Bạn chưa có giao dịch hoàn tiền nào.',
         actionText: 'Làm mới',
         onAction: _loadPayments,
       );
@@ -217,26 +322,59 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
 
   Widget _buildPaymentCard(Map<String, dynamic> payment) {
     final status = (payment['status'] ?? 'UNKNOWN').toString().toUpperCase();
-    final type = (payment['type'] ?? 'Thanh toán').toString();
+    // Đối với refunds, type có thể là "Refund" hoặc từ metadata
+    final type = _currentFilter == PaymentFilter.refunds
+        ? (payment['type'] ?? 'Hoàn tiền').toString()
+        : (payment['type'] ?? 'Thanh toán').toString();
     final amountText = _formatAmount(payment['amount']);
     final createdAt = _resolveDate(payment);
     final metadata =
         _ensureMap(payment['metadata']) ??
         _ensureMap(payment['entity']) ??
         _ensureMap(payment['context']);
-    final description =
-        payment['description']?.toString() ??
-        metadata?['description']?.toString();
+
+    // Xử lý description và reason cho refunds
+    String? description;
+    if (_currentFilter == PaymentFilter.refunds) {
+      // Ưu tiên reason cho refunds
+      description =
+          payment['reason']?.toString() ??
+          payment['description']?.toString() ??
+          metadata?['reason']?.toString() ??
+          metadata?['description']?.toString();
+    } else {
+      description =
+          payment['description']?.toString() ??
+          metadata?['description']?.toString();
+    }
+
     final parkingLotName =
         metadata?['parkingLot']?['name']?.toString() ??
-        metadata?['parkingLotName']?.toString();
+        metadata?['parkingLotName']?.toString() ??
+        payment['parkingLot']?['name']?.toString();
     final pricingPolicyName =
         metadata?['pricingPolicyId']?['name']?.toString() ??
         metadata?['pricingPolicyName']?.toString();
-    final referenceId =
-        payment['_id']?.toString() ??
-        payment['id']?.toString() ??
-        payment['paymentId']?.toString();
+
+    // Xử lý referenceId cho refunds (có thể là id, paymentId, hoặc xenditRefundId)
+    final referenceId = _currentFilter == PaymentFilter.refunds
+        ? (payment['id']?.toString() ??
+              payment['_id']?.toString() ??
+              payment['xenditRefundId']?.toString() ??
+              payment['paymentId']?.toString())
+        : (payment['_id']?.toString() ??
+              payment['id']?.toString() ??
+              payment['paymentId']?.toString() ??
+              payment['refundId']?.toString());
+
+    // Xác định loại refund (reservation hay subscription)
+    final refundType = _currentFilter == PaymentFilter.refunds
+        ? (payment['reservationId'] != null
+              ? 'Đặt chỗ'
+              : payment['subscriptionId'] != null
+              ? 'Gói đăng ký'
+              : null)
+        : null;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -258,13 +396,29 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  type,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      type,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    if (refundType != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Loại: $refundType',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               _buildStatusChip(status),
@@ -291,68 +445,88 @@ class _BookingHistoryScreenState extends State<BookingHistoryScreen> {
               ],
             ),
           ],
-          if (description != null && description.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-            ),
-          ],
-          const SizedBox(height: 12),
+          // if (description != null && description.isNotEmpty) ...[
+          //   const SizedBox(height: 8),
+          //   Text(
+          //     description,
+          //     style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+          //   ),
+          // ],
+          // const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        createdAt,
-                        style: TextStyle(
-                          fontSize: 13,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 16,
                           color: Colors.grey.shade600,
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Icon(Icons.tag, size: 16, color: Colors.grey.shade600),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Mã: $referenceId',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            createdAt,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(Icons.tag, size: 16, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            'Mã: $referenceId',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F5E9),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  amountText,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF2E7D32),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _currentFilter == PaymentFilter.refunds
+                        ? const Color(0xFFE3F2FD)
+                        : const Color(0xFFE8F5E9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    _currentFilter == PaymentFilter.refunds
+                        ? '+$amountText' // Thêm dấu + cho hoàn tiền
+                        : amountText,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: _currentFilter == PaymentFilter.refunds
+                          ? const Color(0xFF1976D2)
+                          : const Color(0xFF2E7D32),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ),
