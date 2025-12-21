@@ -394,7 +394,7 @@ export class ParkingLotRepository implements IParkingLotRepository {
                 parkingLotOperatorId: 1,
                 // Trả về cả object status để DTO có thể lấy `status`
                 parkingLotStatus: 1,
-
+                name: 1,
                 // Tái cấu trúc lại field `addressId` thành một object mới
                 // khớp với cấu trúc của AddressDto
                 addressId: {
