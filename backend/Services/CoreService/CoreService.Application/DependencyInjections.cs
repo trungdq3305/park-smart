@@ -52,6 +52,7 @@ namespace CoreService.Application
             services.AddTransient<DataConsistencyApplication>();
             services.AddHostedService<DataCleanupService>();
             services.AddHostedService<PromotionCleanupService>();
+            services.AddHostedService<PaymentExpirationWorker>();
             return services;
         }
     }
