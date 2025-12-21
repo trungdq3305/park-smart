@@ -131,7 +131,7 @@ namespace CoreService.API.Controllers
             }
         }
         [HttpGet("refunds/createdBy/me")] // Endpoint mới
-        [Authorize(Roles = "Operator,Admin")]
+        [Authorize(Roles = "Driver,Operator,Admin")]
         public async Task<IActionResult> GetRefundsByCreatedByMe()
         {
             // Lấy accountId của người dùng hiện tại từ token
@@ -214,6 +214,13 @@ namespace CoreService.API.Controllers
             // 4) (tuỳ chọn) chuyển hướng sang UI cuối cùng, mang theo status
 
             return Ok("Xác nhận thanh toán thành công");
+        }
+
+        [HttpGet("test-deploy")] // Endpoint mới
+        public async Task<IActionResult> GetRefundsByCr()
+        {
+
+            return Ok("okla");
         }
     }
 
