@@ -260,7 +260,7 @@ namespace CoreService.Application.Applications
                         Status = it.TryGetProperty("status", out var st) ? st.GetString() : null,
                         Reference = it.TryGetProperty("reference", out var rf) ? rf.GetString()
                                  : it.TryGetProperty("external_id", out var ex) ? ex.GetString() : null,
-                        Created = it.TryGetProperty("created", out var cr) && cr.TryGetDateTime(out var dt) ? dt : DateTime.UtcNow,
+                        Created = it.TryGetProperty("created", out var cr) && cr.TryGetDateTime(out var dt) ? dt : TimeConverter.ToVietnamTime(DateTime.UtcNow),
                         SettlementStatus = it.TryGetProperty("settlement_status", out var ss) ? ss.GetString() : null
                     });
                 }
@@ -376,7 +376,7 @@ namespace CoreService.Application.Applications
                 Amount = rAmt,
                 Status = status,
                 Reason = reason,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow)
             };
             await _refundRepo.AddAsync(rf);
             return rf;

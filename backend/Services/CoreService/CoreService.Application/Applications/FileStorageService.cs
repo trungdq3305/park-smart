@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Dotnet.Shared.Helpers;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -34,7 +35,7 @@ namespace CoreService.Application.Applications
             if (file.Length > _maxBytes) throw new($"File too large");
             if (!_allowed.Contains(file.ContentType)) throw new($"Mime not allowed: {file.ContentType}");
 
-            var d = DateTime.UtcNow;
+            var d = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             var sub = Path.Combine($"{d:yyyy}", $"{d:MM}", $"{d:dd}");
             var dir = Path.Combine(_root, sub);
             Directory.CreateDirectory(dir);

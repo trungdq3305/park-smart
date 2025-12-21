@@ -3,6 +3,7 @@ using CoreService.Application.DTOs.ApiResponse;
 using CoreService.Application.Interfaces;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -43,14 +44,14 @@ namespace CoreService.Application.Applications
 
             // Update Account
             account.PhoneNumber = dto.PhoneNumber;
-            account.UpdatedAt = DateTime.UtcNow;
+            account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.UpdatedBy = accountId;
 
             // Update Admin
             adminEntity.FullName = dto.FullName;
             adminEntity.Department = dto.Department;
             adminEntity.Position = dto.Position;
-            adminEntity.UpdatedAt = DateTime.UtcNow;
+            adminEntity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             adminEntity.UpdatedBy = accountId;
 
             await _accountRepo.UpdateAsync(account);

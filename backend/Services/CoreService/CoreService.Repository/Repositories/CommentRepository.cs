@@ -1,5 +1,6 @@
 ﻿using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Dotnet.Shared.Mongo;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -38,7 +39,7 @@ namespace CoreService.Repository.Repositories
         public async Task SoftDeleteAsync(string id, string byAccountId)
         {
             var update = Builders<Comment>.Update
-                .Set(x => x.DeletedAt, DateTime.UtcNow)
+                .Set(x => x.DeletedAt, TimeConverter.ToVietnamTime(DateTime.UtcNow))
                 .Set(x => x.DeletedBy, byAccountId);
             await _col.UpdateOneAsync(x => x.Id == id, update);
         }

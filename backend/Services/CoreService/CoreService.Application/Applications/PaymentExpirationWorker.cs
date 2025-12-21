@@ -1,5 +1,6 @@
 ﻿using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -36,7 +37,7 @@ namespace CoreService.Application.Applications
                         var payRepo = scope.ServiceProvider.GetRequiredService<IPaymentRecordRepo>();
 
                         // Mốc thời gian: Những hóa đơn tạo cách đây hơn 10 phút
-                        var threshold = DateTime.UtcNow.AddMinutes(-10);
+                        var threshold = TimeConverter.ToVietnamTime(DateTime.UtcNow).AddMinutes(-10);
 
                         // Các loại cần quét
                         var typesToWatch = new[] {

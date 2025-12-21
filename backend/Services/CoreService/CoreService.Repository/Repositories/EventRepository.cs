@@ -1,5 +1,6 @@
 ﻿using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Dotnet.Shared.Mongo;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -26,7 +27,7 @@ namespace CoreService.Repository.Repositories
         public async Task<IEnumerable<Event>> GetAllAsync() => await _collection.Find(x => x.DeletedAt == null).SortByDescending(x => x.StartDate).ToListAsync();
         public async Task<IEnumerable<Event>> GetByOperatorIdAsync(string operatorId) => await _collection.Find(x => x.OperatorId == operatorId && x.DeletedAt == null).SortByDescending(x => x.StartDate).ToListAsync();
         public async Task<IEnumerable<Event>> GetByCreatedByAsync(string accId) => await _collection.Find(x => x.CreatedBy == accId && x.DeletedAt == null).SortByDescending(x => x.StartDate).ToListAsync();
-        public async Task<IEnumerable<Event>> GetUpcomingEventsAsync() => await _collection.Find(x => x.EndDate >= DateTime.UtcNow && x.DeletedAt == null).SortBy(x => x.StartDate).ToListAsync();
+        public async Task<IEnumerable<Event>> GetUpcomingEventsAsync() => await _collection.Find(x => x.EndDate >= TimeConverter.ToVietnamTime(DateTime.UtcNow) && x.DeletedAt == null).SortBy(x => x.StartDate).ToListAsync();
         public Task AddAsync(Event entity) => _collection.InsertOneAsync(entity);
         public Task UpdateAsync(Event entity) => _collection.ReplaceOneAsync(x => x.Id == entity.Id, entity);
         public Task SoftDeleteAsync(string id, string deletedBy, DateTime deletedAt)
