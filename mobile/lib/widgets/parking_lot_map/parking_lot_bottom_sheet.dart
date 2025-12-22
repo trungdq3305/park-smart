@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../screens/user/chat/message_chat_screen.dart';
 
 class ParkingLotBottomSheet extends StatelessWidget {
   final Map<String, dynamic> parkingLot;
@@ -22,6 +23,7 @@ class ParkingLotBottomSheet extends StatelessWidget {
     final totalSlots = totalCapacityEachLevel * totalLevel;
     final occupancyRate = totalSlots > 0 ? (availableSpots / totalSlots) : 0.0;
     final address = addressId?['fullAddress'] ?? 'Không có địa chỉ';
+    final parkingLotName = parkingLot['name']?.toString() ?? '';
     // final openTime = parkingLot['openTime'] ?? 'N/A';
     // final closeTime = parkingLot['closeTime'] ?? 'N/A';
     // final is24Hours = parkingLot['is24Hours'] ?? false;
@@ -34,7 +36,7 @@ class ParkingLotBottomSheet extends StatelessWidget {
         children: [
           _buildHandleBar(),
           const SizedBox(height: 20),
-          _buildTitle(),
+          _buildTitleWithMessageIcon(context, parkingLotName),
           const SizedBox(height: 8),
           _buildAddress(address),
           const SizedBox(height: 8),
@@ -64,10 +66,68 @@ class ParkingLotBottomSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildTitle() {
-    return const Text(
-      'Bãi đỗ xe',
-      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+  Widget _buildTitleWithMessageIcon(
+    BuildContext context,
+    String parkingLotName,
+  ) {
+    final operatorId =
+        parkingLot['parkingLotOperatorId']?.toString() ??
+        parkingLot['operatorId']?.toString();
+
+    // Sử dụng tên bãi đỗ xe để tạo display name
+    final operatorDisplayName = parkingLotName.isNotEmpty
+        ? 'Quản lý bãi đỗ $parkingLotName'
+        : 'Quản lý bãi đỗ';
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Bãi đỗ xe',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              if (parkingLotName.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  parkingLotName,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey.shade700,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (operatorId != null && operatorId.isNotEmpty)
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: Icon(Icons.message, color: Colors.green.shade700),
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MessageChatScreen(
+                      peerUserId: operatorId,
+                      peerDisplayName: operatorDisplayName,
+                    ),
+                  ),
+                );
+              },
+              tooltip: 'Nhắn tin với quản lý',
+            ),
+          ),
+      ],
     );
   }
 

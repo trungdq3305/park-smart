@@ -424,7 +424,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("Đã có tài khoản?"),
+                const Text("Bạn chưa có tài khoản?"),
                 TextButton(
                   onPressed: () {
                     Navigator.pushNamed(context, '/register');

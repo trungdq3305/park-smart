@@ -433,6 +433,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
       final totalCapacity =
           (parkingLot['totalCapacityEachLevel'] ?? 0) *
           (parkingLot['totalLevel'] ?? 1);
+      final parkingLotName = parkingLot['name']?.toString() ?? '';
 
       // Use actual parking lot ID for marker ID
       final parkingLotId =
@@ -469,7 +470,9 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
             markerId: MarkerId('parking_lot_$parkingLotId'),
             position: LatLng(lat, lng),
             infoWindow: InfoWindow(
-              title: 'Bãi đỗ xe',
+              title: parkingLotName.isNotEmpty
+                  ? 'Bãi đỗ xe: $parkingLotName'
+                  : 'Bãi đỗ xe',
               snippet: '$availableSpots/$totalCapacity chỗ trống',
             ),
             icon: BitmapDescriptor.defaultMarkerWithHue(markerHue),

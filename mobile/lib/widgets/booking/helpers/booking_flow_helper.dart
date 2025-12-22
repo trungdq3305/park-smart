@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../../../services/reservation_service.dart';
 import '../../../../services/subcription_service.dart';
@@ -395,12 +396,12 @@ class BookingFlowHelper {
     } catch (e) {
       print('❌ Error creating reservation/payment: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi đặt chỗ: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        // Parse error message from API response
+        String errorMessage = _extractErrorMessage(e.toString());
+        _showErrorDialog(
+          context: context,
+          title: 'Lỗi đặt chỗ',
+          message: errorMessage,
         );
       }
       return false;
@@ -795,15 +796,158 @@ class BookingFlowHelper {
     } catch (e) {
       print('❌ Error creating subscription/payment: $e');
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: ${e.toString()}'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
+        // Parse error message from API response
+        String errorMessage = _extractErrorMessage(e.toString());
+        _showErrorDialog(
+          context: context,
+          title: 'Lỗi đăng ký gói thuê bao',
+          message: errorMessage,
         );
       }
       return false;
+    }
+  }
+
+  /// Show error dialog with better UI
+  static void _showErrorDialog({
+    required BuildContext context,
+    required String title,
+    required String message,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.error_outline,
+                color: Colors.red.shade700,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red.shade700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(
+            fontSize: 15,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 12,
+              ),
+            ),
+            child: const Text(
+              'Đã hiểu',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Extract user-friendly error message from exception string
+  static String _extractErrorMessage(String errorString) {
+    try {
+      // Try to find JSON in error string (format: "409 - {...}")
+      final jsonMatch = RegExp(r'\{[^}]+\}').firstMatch(errorString);
+      if (jsonMatch != null) {
+        final jsonString = jsonMatch.group(0);
+        if (jsonString != null) {
+          final errorData = jsonDecode(jsonString);
+          if (errorData is Map && errorData['message'] != null) {
+            return errorData['message'].toString();
+          }
+        }
+      }
+      
+      // If no JSON found, try to extract message from common patterns
+      if (errorString.contains('409')) {
+        // Check if it's a conflict error
+        if (errorString.contains('đã có') || 
+            errorString.contains('đang hoạt động') ||
+            errorString.contains('chờ kích hoạt')) {
+          // Try to extract Vietnamese message from JSON
+          final jsonPattern = RegExp(r'\{[^}]+\}');
+          final jsonMatch = jsonPattern.firstMatch(errorString);
+          if (jsonMatch != null) {
+            try {
+              final jsonStr = jsonMatch.group(0);
+              if (jsonStr != null) {
+                final errorData = jsonDecode(jsonStr);
+                if (errorData is Map && errorData['message'] != null) {
+                  return errorData['message'].toString();
+                }
+              }
+            } catch (_) {
+              // Continue to fallback
+            }
+          }
+        }
+      }
+      
+      // Fallback: clean up exception format
+      String cleaned = errorString;
+      if (cleaned.contains('Exception:')) {
+        cleaned = cleaned.replaceFirst('Exception: ', '');
+      }
+      if (cleaned.contains('Failed to create subscription:')) {
+        cleaned = cleaned.replaceFirst('Failed to create subscription: ', '');
+        // Try to extract just the message part
+        final parts = cleaned.split(' - ');
+        if (parts.length > 1) {
+          try {
+            final jsonPart = parts[1];
+            final errorData = jsonDecode(jsonPart);
+            if (errorData is Map && errorData['message'] != null) {
+              return errorData['message'].toString();
+            }
+          } catch (_) {
+            // If parsing fails, return cleaned string
+          }
+        }
+      }
+      
+      return cleaned;
+    } catch (_) {
+      // If all parsing fails, return original error string
+      String cleaned = errorString;
+      if (cleaned.contains('Exception:')) {
+        cleaned = cleaned.replaceFirst('Exception: ', '');
+      }
+      return cleaned;
     }
   }
 }

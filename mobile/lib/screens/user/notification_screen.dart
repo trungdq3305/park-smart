@@ -130,14 +130,8 @@ class _NotificationScreenState extends State<NotificationScreen> {
       // Handle authentication error
       _socket!.on(_authErrorEvent, (error) {
         print('❌ [WS] Lỗi xác thực: $error');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi xác thực WebSocket: $error'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        // Tắt hiển thị thông báo lỗi cho user
+        // Chỉ log và disconnect
         _socket?.disconnect();
       });
 
