@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:mobile/screens/user/home_screen.dart';
 import 'package:mobile/utils/custom_http_overrides.dart';
 import 'screens/auth/login_screen.dart';
@@ -56,7 +57,71 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         // '/details': (context) => const DetailScreen(), // KHÔNG navbar
       },
-      initialRoute: '/login',
+      home: const AuthWrapper(),
     );
+  }
+}
+
+/// Widget kiểm tra token khi khởi động app
+/// Nếu có token -> điều hướng đến /main
+/// Nếu không có token -> điều hướng đến /login
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  bool _isChecking = true;
+  Widget? _initialWidget;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAuthStatus();
+  }
+
+  Future<void> _checkAuthStatus() async {
+    try {
+      // Kiểm tra token trong storage
+      final token = await _storage.read(key: 'accessToken');
+      
+      if (mounted) {
+        setState(() {
+          _isChecking = false;
+          // Nếu có token và token không rỗng -> đã đăng nhập -> điều hướng đến /main
+          // Nếu không có token hoặc token rỗng -> chưa đăng nhập -> điều hướng đến /login
+          _initialWidget = (token != null && token.isNotEmpty) 
+              ? const MainWrapper() 
+              : const LoginScreen();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking auth status: $e');
+      // Nếu có lỗi, mặc định điều hướng đến /login
+      if (mounted) {
+        setState(() {
+          _isChecking = false;
+          _initialWidget = const LoginScreen();
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Hiển thị loading khi đang kiểm tra token
+    if (_isChecking) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Hiển thị widget phù hợp dựa trên kết quả kiểm tra token
+    return _initialWidget ?? const LoginScreen();
   }
 }

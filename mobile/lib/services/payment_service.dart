@@ -249,7 +249,19 @@ class PaymentService {
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         print('✅ Successfully fetched my refunds');
-        return responseData;
+
+        // Xử lý trường hợp API trả về List trực tiếp
+        if (responseData is List) {
+          return {'data': responseData};
+        }
+
+        // Xử lý trường hợp API trả về Map
+        if (responseData is Map<String, dynamic>) {
+          return responseData;
+        }
+
+        // Fallback: wrap trong Map nếu không phải List hoặc Map
+        return {'data': responseData};
       } else {
         final errorBody = response.body;
         print('❌ Error fetching my refunds: $errorBody');
