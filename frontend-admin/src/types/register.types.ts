@@ -28,12 +28,6 @@ export interface ParkingLotRequest {
   walkInCapacity: number
   bookingSlotDurationHours: number
   parkingLotOperatorId?: string | null
-  is24Hours: boolean
-  openTime: string | null
-  closeTime: string | null
-  maxVehicleHeight: number
-  maxVehicleWidth: number
-  electricCarPercentage: number
 }
 
 export interface OperatorFullRegisterRequest {

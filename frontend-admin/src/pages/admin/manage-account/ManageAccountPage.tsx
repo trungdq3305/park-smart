@@ -2,11 +2,7 @@ import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { message, Dropdown, Button } from 'antd'
 import type { MenuProps } from 'antd'
-import {
-  MoreOutlined,
-  EyeOutlined,
-  DeleteOutlined,
-} from '@ant-design/icons'
+import { MoreOutlined, EyeOutlined, DeleteOutlined } from '@ant-design/icons'
 import { AccountDetailsModal, DeleteConfirmModal } from '../../../components/modals'
 import { PaginationLoading } from '../../../components/common'
 import {

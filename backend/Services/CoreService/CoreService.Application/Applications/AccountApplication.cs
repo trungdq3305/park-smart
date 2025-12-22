@@ -5,6 +5,7 @@ using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -395,8 +396,8 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<Account>> CreateAsync(Account account)
         {
             account.Id = null;
-            account.CreatedAt = DateTime.UtcNow;
-            account.UpdatedAt = DateTime.UtcNow;
+            account.CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             await _accountRepo.AddAsync(account);
 
             return new ApiResponse<Account>(account, true, "Tạo account thành công", StatusCodes.Status201Created);
@@ -412,7 +413,7 @@ namespace CoreService.Application.Applications
             account.PhoneNumber = update.PhoneNumber ?? account.PhoneNumber;
             account.RoleId = update.RoleId ?? account.RoleId;
             account.IsActive = update.IsActive;
-            account.UpdatedAt = DateTime.UtcNow;
+            account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
             await _accountRepo.UpdateAsync(account);
             return new ApiResponse<Account>(account, true, "Cập nhật account thành công", StatusCodes.Status200OK);
@@ -631,7 +632,7 @@ namespace CoreService.Application.Applications
         public async Task<ApiResponse<DashboardStatsDto>> GetDashboardStatsAsync()
         {
             // Tính toán mốc 7 ngày trước (cho việc đếm đăng ký mới)
-            var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+            var sevenDaysAgo = TimeConverter.ToVietnamTime(DateTime.UtcNow).AddDays(-7);
 
             // Lấy tất cả dữ liệu cần thiết một cách đồng thời (Tối ưu performance)
             var accountsTask = _accountRepo.GetAllAsync();
@@ -641,7 +642,7 @@ namespace CoreService.Application.Applications
             var bannedAccountsTask = _accountRepo.GetAllBannedAccountsAsync();
             var activeAccountsTask = _accountRepo.CountActiveAccountsAsync();
             var newRegistrationsTask = _accountRepo.CountNewAccountsSinceAsync(sevenDaysAgo);
-            var registrationsByDateTask = _accountRepo.GetRegistrationsByDateRangeAsync(sevenDaysAgo, DateTime.UtcNow);
+            var registrationsByDateTask = _accountRepo.GetRegistrationsByDateRangeAsync(sevenDaysAgo, TimeConverter.ToVietnamTime(DateTime.UtcNow));
 
             await Task.WhenAll(
                 accountsTask,

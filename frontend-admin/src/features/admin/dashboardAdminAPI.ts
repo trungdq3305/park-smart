@@ -11,7 +11,7 @@ export const dashboardAdminAPI = apiSlice.injectEndpoints({
       providesTags: ['dashboardAdmin'],
     }),
     getDashboardNewRegistration: builder.query({
-      query: ({startDate, endDate}) => ({
+      query: ({ startDate, endDate }) => ({
         url: '/core/dashboards/new-registrations',
         method: 'GET',
         params: {

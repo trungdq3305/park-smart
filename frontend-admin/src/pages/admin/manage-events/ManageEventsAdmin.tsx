@@ -251,13 +251,15 @@ const ManageEventsAdmin: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="event-detail-item">
-                        <div className="event-detail-icon">🆔</div>
-                        <div className="event-detail-content">
-                          <span className="event-detail-label">ID sự kiện</span>
-                          <span className="event-detail-value">{event._id.slice(-12)}</span>
+                      {event.parkingLotName && (
+                        <div className="event-detail-item">
+                          <div className="event-detail-icon">🏢</div>
+                          <div className="event-detail-content">
+                            <span className="event-detail-label">Bãi đỗ xe</span>
+                            <span className="event-detail-value">{event.parkingLotName}</span>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
 

@@ -81,6 +81,26 @@ const PromotionItem: React.FC<PromotionItemProps> = ({ promotion, onEdit, onDele
               </span>
             </div>
           </div>
+
+          {promotion.parkingLotName && (
+            <div className="promotion-detail-item">
+              <div className="promotion-detail-icon">🏢</div>
+              <div className="promotion-detail-content">
+                <span className="promotion-detail-label">Bãi đỗ xe</span>
+                <span className="promotion-detail-value">{promotion.parkingLotName}</span>
+              </div>
+            </div>
+          )}
+
+          {promotion.parkingLotFullAddress && (
+            <div className="promotion-detail-item">
+              <div className="promotion-detail-icon">📍</div>
+              <div className="promotion-detail-content">
+                <span className="promotion-detail-label">Địa chỉ</span>
+                <span className="promotion-detail-value">{promotion.parkingLotFullAddress}</span>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="promotion-usage-progress">

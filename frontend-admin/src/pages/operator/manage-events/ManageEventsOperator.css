@@ -265,13 +265,13 @@
 .event-item:hover {
   box-shadow:
     0 2.8vh 7vh rgba(15, 23, 42, 0.22),
-    0 0 0 0.1vh rgba(59, 130, 246, 0.12);
-  border-color: rgba(59, 130, 246, 0.8);
+    0 0 0 0.1vh rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.6);
 }
 
 .event-item-header {
   padding: 2vh 2.4vh;
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border-bottom: 1px dashed #e5e7eb;
   display: flex;
   justify-content: space-between;
@@ -387,9 +387,9 @@
 
 .event-description {
   padding: 1.2vh 1.6vh;
-  background: #f9fafb;
+  background: #f0fdf4;
   border-radius: 12px;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid #22c55e;
 }
 
 .event-description p {
@@ -415,7 +415,7 @@
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   display: flex;
   align-items: center;
   justify-content: center;

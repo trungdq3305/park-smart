@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from 'react'
 import dayjs from 'dayjs'
-import { useGetDashboardAdminQuery, useGetDashboardNewRegistrationQuery } from '../../../features/admin/dashboardAdminAPI'
+import {
+  useGetDashboardAdminQuery,
+  useGetDashboardNewRegistrationQuery,
+} from '../../../features/admin/dashboardAdminAPI'
 import './DashboardAdmin.css'
 import {
   Bar,
@@ -20,7 +23,9 @@ import {
 
 const DashboardAdmin: React.FC = () => {
   const { data, isLoading, error } = useGetDashboardAdminQuery({})
-  const [startDate, setStartDate] = useState<string>(dayjs().subtract(29, 'day').format('YYYY-MM-DD'))
+  const [startDate, setStartDate] = useState<string>(
+    dayjs().subtract(29, 'day').format('YYYY-MM-DD')
+  )
   const [endDate, setEndDate] = useState<string>(dayjs().format('YYYY-MM-DD'))
 
   const {
@@ -128,14 +133,50 @@ const DashboardAdmin: React.FC = () => {
       </div>
 
       <div className="admin-stats-grid">
-        <StatCard title="Tổng người dùng" value={stats.totalUsers} accent="linear-gradient(135deg,#4f46e5,#6366f1)" />
-        <StatCard title="Drivers" value={stats.totalDrivers} accent="linear-gradient(135deg,#10b981,#34d399)" />
-        <StatCard title="Operators" value={stats.totalOperators} accent="linear-gradient(135deg,#0ea5e9,#38bdf8)" />
-        <StatCard title="Admins" value={stats.totalAdmins} accent="linear-gradient(135deg,#a855f7,#c084fc)" />
-        <StatCard title="Đang hoạt động" value={stats.totalActiveUsers} accent="linear-gradient(135deg,#22c55e,#16a34a)" subtext="Active accounts" />
-        <StatCard title="Không hoạt động" value={stats.totalInactiveUsers} accent="linear-gradient(135deg,#f97316,#fb923c)" subtext="Inactive accounts" />
-        <StatCard title="Bị khóa" value={stats.totalBannedUsers} accent="linear-gradient(135deg,#ef4444,#f87171)" subtext="Banned users" />
-        <StatCard title="Đăng ký mới (7 ngày)" value={stats.newRegistrationsLast7Days} accent="linear-gradient(135deg,#06b6d4,#22d3ee)" subtext="Trong 7 ngày gần nhất" />
+        <StatCard
+          title="Tổng người dùng"
+          value={stats.totalUsers}
+          accent="linear-gradient(135deg,#4f46e5,#6366f1)"
+        />
+        <StatCard
+          title="Drivers"
+          value={stats.totalDrivers}
+          accent="linear-gradient(135deg,#10b981,#34d399)"
+        />
+        <StatCard
+          title="Operators"
+          value={stats.totalOperators}
+          accent="linear-gradient(135deg,#0ea5e9,#38bdf8)"
+        />
+        <StatCard
+          title="Admins"
+          value={stats.totalAdmins}
+          accent="linear-gradient(135deg,#a855f7,#c084fc)"
+        />
+        <StatCard
+          title="Đang hoạt động"
+          value={stats.totalActiveUsers}
+          accent="linear-gradient(135deg,#22c55e,#16a34a)"
+          subtext="Active accounts"
+        />
+        <StatCard
+          title="Không hoạt động"
+          value={stats.totalInactiveUsers}
+          accent="linear-gradient(135deg,#f97316,#fb923c)"
+          subtext="Inactive accounts"
+        />
+        <StatCard
+          title="Bị khóa"
+          value={stats.totalBannedUsers}
+          accent="linear-gradient(135deg,#ef4444,#f87171)"
+          subtext="Banned users"
+        />
+        <StatCard
+          title="Đăng ký mới (7 ngày)"
+          value={stats.newRegistrationsLast7Days}
+          accent="linear-gradient(135deg,#06b6d4,#22d3ee)"
+          subtext="Trong 7 ngày gần nhất"
+        />
       </div>
 
       <div className="admin-chart-card">
@@ -200,8 +241,16 @@ const DashboardAdmin: React.FC = () => {
                 margin={{ top: 10, right: 20, left: 10, bottom: 10 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis type="number" tick={{ fontSize: 12, fill: '#6b7280' }} allowDecimals={false} />
-                <YAxis dataKey="role" type="category" tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 700 }} />
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                  allowDecimals={false}
+                />
+                <YAxis
+                  dataKey="role"
+                  type="category"
+                  tick={{ fontSize: 13, fill: '#0f172a', fontWeight: 700 }}
+                />
                 <RechartsTooltip
                   formatter={(val: any) => [`${val}`, 'Số đăng ký']}
                   contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb' }}

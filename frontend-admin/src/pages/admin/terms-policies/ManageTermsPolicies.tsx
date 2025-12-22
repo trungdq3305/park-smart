@@ -6,7 +6,9 @@ import {
   useUpdateTermsPolicyMutation,
 } from '../../../features/admin/termsAPI'
 import type { TermPolicy } from '../../../types/TAPs'
-import TermsPolicyModal, { type TermsPolicyFormValues } from '../../../components/modals/TermsPolicyModal'
+import TermsPolicyModal, {
+  type TermsPolicyFormValues,
+} from '../../../components/modals/TermsPolicyModal'
 import './ManageTermsPolicies.css'
 
 interface TermsPoliciesResponse {
@@ -33,7 +35,9 @@ const ManageTermsPolicies: React.FC = () => {
   const lastUpdated = useMemo(() => {
     if (!termsPoliciesData.length) return null
     const latest = [...termsPoliciesData].sort(
-      (a, b) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime()
+      (a, b) =>
+        new Date(b.updatedAt || b.createdAt || 0).getTime() -
+        new Date(a.updatedAt || a.createdAt || 0).getTime()
     )[0]
     return latest?.updatedAt || latest?.createdAt
   }, [termsPoliciesData])
@@ -101,11 +105,17 @@ const ManageTermsPolicies: React.FC = () => {
           <p className="tp-subtitle">Tạo, cập nhật, xoá và theo dõi các điều khoản của hệ thống</p>
           <div className="tp-hero-badges">
             <span className="tp-badge">Tổng {totalPolicies} mục</span>
-            {lastUpdated && <span className="tp-badge ghost">Cập nhật gần nhất: {formatDate(lastUpdated)}</span>}
+            {lastUpdated && (
+              <span className="tp-badge ghost">Cập nhật gần nhất: {formatDate(lastUpdated)}</span>
+            )}
           </div>
         </div>
         <div className="tp-hero-actions">
-          <button className="tp-btn primary" onClick={openCreate} disabled={isCreating || isUpdating}>
+          <button
+            className="tp-btn primary"
+            onClick={openCreate}
+            disabled={isCreating || isUpdating}
+          >
             + Thêm mới
           </button>
         </div>
@@ -159,7 +169,11 @@ const ManageTermsPolicies: React.FC = () => {
                   </div>
                 </div>
                 <div className="tp-card-actions">
-                  <button className="tp-btn ghost" onClick={() => openEdit(item)} disabled={isUpdating || isCreating}>
+                  <button
+                    className="tp-btn ghost"
+                    onClick={() => openEdit(item)}
+                    disabled={isUpdating || isCreating}
+                  >
                     Sửa
                   </button>
                   <button

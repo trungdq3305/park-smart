@@ -6,12 +6,20 @@ import {
   ThunderboltOutlined,
   UserOutlined,
   EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons'
 import {
   useGetParkingLotsOperatorQuery,
   useUpdateParkingLotRequestMutation,
 } from '../../../features/operator/parkingLotAPI'
-import { useGetParkingLotRequestOfOperatorQuery } from '../../../features/admin/parkinglotAPI'
+import {
+  useGetParkingLotRequestOfOperatorQuery,
+  useDeleteParkingLotRequestMutation,
+} from '../../../features/admin/parkinglotAPI'
+import {
+  useGetCommentByParkingLotQuery,
+  useReplyCommentMutation,
+} from '../../../features/operator/commentAPI'
 import type { ParkingLot } from '../../../types/ParkingLot'
 import './ParkingLot.css'
 import type { Pagination } from '../../../types/Pagination'
@@ -22,6 +30,8 @@ import {
 } from '../../../features/operator/pricingPolicyAPI'
 import ParkingLotDetails from '../../../components/parking-lot/ParkingLotDetails'
 import PricingPolicyList from '../../../components/parking-lot/PricingPolicyList'
+import CommentList from '../../../components/parking-lot/CommentList'
+import type { Comment } from '../../../types/Comment'
 import CreatePricingPolicyModal from '../../../components/parking-lot/CreatePricingPolicyModal'
 import UpdateParkingLotModal from '../../../components/parking-lot/UpdateParkingLotModal'
 import type { PricingPolicyLink } from '../../../types/PricingPolicyLink'
@@ -30,6 +40,7 @@ import { useGetBasisQuery } from '../../../features/operator/basisAPI'
 import { message, Modal } from 'antd'
 import OperatorRequestsModal from '../../../components/parking-lot/OperatorRequestsModal'
 import CreateParkingLotRequestModal from '../../../components/parking-lot/CreateParkingLotRequestModal'
+import DeleteParkingLotRequestModal from '../../../components/parking-lot/DeleteParkingLotRequestModal'
 import Cookies from 'js-cookie'
 import { useOperatorId } from '../../../hooks/useOperatorId'
 
@@ -64,9 +75,12 @@ const OperatorParkingLot: React.FC = () => {
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false)
   const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false)
   const [isCreateRequestModalOpen, setIsCreateRequestModalOpen] = useState(false)
+  const [isDeleteRequestModalOpen, setIsDeleteRequestModalOpen] = useState(false)
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
+  const [deleteParkingLotRequest, { isLoading: isDeleteParkingLotRequestLoading }] =
+    useDeleteParkingLotRequestMutation()
   const parkingLot = data?.data?.[0] ?? null
 
   const { data: pricingPoliciesData, isLoading: isPricingLoading } =
@@ -80,14 +94,46 @@ const OperatorParkingLot: React.FC = () => {
           }
         : skipToken
     )
-  const {
-    data: parkingLotRequestsData,
-    isLoading: isRequestLoading,
-  } = useGetParkingLotRequestOfOperatorQuery(
-    operatorId? { parkingLotOperatorId: operatorId } : skipToken
-  )
+  const { data: parkingLotRequestsData, isLoading: isRequestLoading } =
+    useGetParkingLotRequestOfOperatorQuery(
+      operatorId ? { parkingLotOperatorId: operatorId } : skipToken
+    )
   const { data: basisData } = useGetBasisQuery<BasisListResponse>({})
   const basis = basisData?.data ?? []
+
+  const { data: commentsData, isLoading: isCommentsLoading } = useGetCommentByParkingLotQuery(
+    parkingLot?._id
+      ? {
+          parkingLotId: parkingLot._id,
+          page: 1,
+          pageSize: 10,
+        }
+      : skipToken
+  )
+
+  const comments = Array.isArray(commentsData)
+    ? commentsData
+    : (commentsData as any)?.data?.data || []
+
+  const [replyComment, { isLoading: isReplyingComment }] = useReplyCommentMutation()
+
+  const handleReplyComment = async (comment: Comment, replyContent: string) => {
+    if (!parkingLot?._id) return
+
+    try {
+      await replyComment({
+        targetId: comment.targetId,
+        targetType: comment.targetType,
+        parentId: comment._id,
+        content: replyContent,
+        star: 5,
+      }).unwrap()
+      message.success('Phản hồi thành công')
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Phản hồi thất bại')
+      throw error
+    }
+  }
 
   const [createPricingPolicyLink, { isLoading: isCreatePricingLoading }] =
     useCreatePricingPolicyLinkMutation()
@@ -168,6 +214,22 @@ const OperatorParkingLot: React.FC = () => {
     }
   }
 
+  const handleDeleteParkingLot = async (effectiveDate: string) => {
+    if (!parkingLot?._id) return
+
+    try {
+      await deleteParkingLotRequest({
+        parkingLotId: parkingLot._id,
+        payload: { effectiveDate },
+      }).unwrap()
+      message.success('Gửi yêu cầu xóa bãi đỗ xe thành công!')
+      setIsDeleteRequestModalOpen(false)
+    } catch (error: any) {
+      message.error(error?.data?.message || 'Gửi yêu cầu xóa bãi đỗ xe thất bại')
+      throw error
+    }
+  }
+
   const summary = useMemo(() => {
     if (!parkingLot) {
       return {
@@ -211,11 +273,7 @@ const OperatorParkingLot: React.FC = () => {
     if (Array.isArray(parkingLotRequestsData)) return parkingLotRequestsData
     // support { data: [...] } or { data: { data: [...] } }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-    return (
-      (parkingLotRequestsData as any).data ||
-      (parkingLotRequestsData as any).data ||
-      []
-    )
+    return (parkingLotRequestsData as any).data || (parkingLotRequestsData as any).data || []
   }, [parkingLotRequestsData])
 
   if (isLoading) {
@@ -248,6 +306,13 @@ const OperatorParkingLot: React.FC = () => {
               <button className="parking-lot-update-btn" onClick={() => setIsUpdateModalOpen(true)}>
                 <EditOutlined />
                 <span>Gửi yêu cầu cập nhật</span>
+              </button>
+              <button
+                className="parking-lot-delete-btn"
+                onClick={() => setIsDeleteRequestModalOpen(true)}
+              >
+                <DeleteOutlined />
+                <span>Yêu cầu xóa bãi đỗ xe</span>
               </button>
             </div>
           )}
@@ -351,6 +416,14 @@ const OperatorParkingLot: React.FC = () => {
               onOpenEditModal={handleOpenEditModal}
               onDelete={handleDeletePricingPolicy}
             />
+
+            {/* Comments */}
+            <CommentList
+              comments={comments}
+              loading={isCommentsLoading}
+              onReply={handleReplyComment}
+              isReplying={isReplyingComment}
+            />
           </>
         )}
       </div>
@@ -397,6 +470,12 @@ const OperatorParkingLot: React.FC = () => {
           operatorId={operatorId}
         />
       )}
+      <DeleteParkingLotRequestModal
+        open={isDeleteRequestModalOpen}
+        onClose={() => setIsDeleteRequestModalOpen(false)}
+        onSubmit={handleDeleteParkingLot}
+        loading={isDeleteParkingLotRequestLoading}
+      />
     </div>
   )
 }

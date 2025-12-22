@@ -5,6 +5,7 @@ import './AdminHeader.css'
 import { getUserFullName } from '../../../utils/userData'
 import { useLogout } from '../../../hooks/useLogout'
 import { NotificationDropdown } from '../../common'
+import { useNavigate } from 'react-router-dom'
 const { Header } = Layout
 
 interface AdminHeaderProps {
@@ -13,10 +14,19 @@ interface AdminHeaderProps {
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
+  const navigate = useNavigate()
   const fullName = getUserFullName('Quản trị viên')
   const logout = useLogout()
 
   const userMenuItems = [
+    {
+      key: '1',
+      label: 'Thông tin cá nhân',
+      icon: <UserOutlined />,
+      onClick: () => {
+        navigate('/profile')
+      },
+    },
     {
       key: '3',
       label: 'Đăng xuất',

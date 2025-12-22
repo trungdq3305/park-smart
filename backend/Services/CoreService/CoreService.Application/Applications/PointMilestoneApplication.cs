@@ -4,6 +4,7 @@ using CoreService.Application.DTOs.PointDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -41,7 +42,7 @@ namespace CoreService.Application.Applications
                 ?? throw new ApiException("Mốc điểm không tồn tại", StatusCodes.Status404NotFound);
 
             _mapper.Map(dto, entity);
-            entity.UpdatedAt = DateTime.UtcNow;
+            entity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             entity.UpdatedBy = accountId;
 
             await _repo.UpdateAsync(entity);
@@ -52,7 +53,7 @@ namespace CoreService.Application.Applications
 
         public async Task<ApiResponse<bool>> DeleteAsync(string id, string accountId)
         {
-            await _repo.SoftDeleteAsync(id, accountId, DateTime.UtcNow);
+            await _repo.SoftDeleteAsync(id, accountId, TimeConverter.ToVietnamTime(DateTime.UtcNow));
             return new ApiResponse<bool>(true, true, "Xoá thành công", StatusCodes.Status200OK);
         }
 

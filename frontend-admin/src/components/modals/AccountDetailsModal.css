@@ -166,7 +166,9 @@
   font-size: 14px;
   color: #111827;
   background: #ffffff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .account-textarea:focus {
@@ -188,7 +190,10 @@
   font-weight: 700;
   border: none;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .account-btn:disabled {
@@ -247,4 +252,3 @@
     justify-content: flex-start;
   }
 }
-

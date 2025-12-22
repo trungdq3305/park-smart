@@ -6,9 +6,7 @@ import {
   Typography,
   notification,
   Select,
-  Switch,
   DatePicker,
-  TimePicker,
   InputNumber,
   Row,
   Col,
@@ -22,9 +20,7 @@ import {
   LockOutlined,
   PhoneOutlined,
   EnvironmentOutlined,
-  ClockCircleOutlined,
   CalendarOutlined,
-  ThunderboltOutlined,
   BankOutlined,
 } from '@ant-design/icons'
 import dayjs from 'dayjs'
@@ -48,16 +44,10 @@ interface RegisterFormValues {
   fullName: string
   wardId: string
   fullAddress: string
-  is24Hours: boolean
   isAgreeToP: boolean
-  openTime?: dayjs.Dayjs | null
-  closeTime?: dayjs.Dayjs | null
   effectiveDate: dayjs.Dayjs
-  maxVehicleHeight: number
-  maxVehicleWidth: number
   totalCapacityEachLevel: number
   totalLevel: number
-  electricCarPercentage: number
   bussinessName: string
   parkingLotName: string
   latitude: number
@@ -168,7 +158,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
     setLoading(true)
     const mergedValues = { ...formData, ...values } as RegisterFormValues
     try {
-      const is24Hours = Boolean(mergedValues.is24Hours)
       const registerPayload: OperatorFullRegisterRequest = {
         registerRequest: {
           email: mergedValues.email,
@@ -198,20 +187,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           leasedCapacity: Number(mergedValues.leasedCapacity ?? 0),
           walkInCapacity: Number(mergedValues.walkInCapacity ?? 0),
           bookingSlotDurationHours: Number(mergedValues.bookingSlotDurationHours ?? 1),
-          is24Hours,
-          openTime: is24Hours
-            ? '00:00'
-            : mergedValues.openTime
-              ? mergedValues.openTime.format('HH:mm')
-              : null,
-          closeTime: is24Hours
-            ? '23:59'
-            : mergedValues.closeTime
-              ? mergedValues.closeTime.format('HH:mm')
-              : null,
-          maxVehicleHeight: Number(mergedValues.maxVehicleHeight ?? 0),
-          maxVehicleWidth: Number(mergedValues.maxVehicleWidth ?? 0),
-          electricCarPercentage: Number(mergedValues.electricCarPercentage ?? 0),
         },
       }
 
@@ -319,9 +294,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
           layout="vertical"
           className="login-form"
           initialValues={{
-            is24Hours: true,
-            openTime: dayjs('08:00', 'HH:mm'),
-            closeTime: dayjs('17:00', 'HH:mm'),
             isAgreeToP: false,
           }}
         >
@@ -543,67 +515,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                   </Form.Item>
                 </Col>
                 <Col span={24}>
-                  <Form.Item label="Hoạt động 24/7" name="is24Hours" valuePropName="checked">
-                    <Switch />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                  <Form.Item shouldUpdate noStyle>
-                    {() => (
-                      <Form.Item
-                        label={
-                          <Space>
-                            <ClockCircleOutlined />
-                            <span>Giờ mở cửa</span>
-                          </Space>
-                        }
-                        name="openTime"
-                        rules={
-                          form.getFieldValue('is24Hours')
-                            ? []
-                            : [{ required: true, message: 'Chọn giờ mở cửa' }]
-                        }
-                      >
-                        <TimePicker
-                          format="HH:mm"
-                          className="w-100"
-                          disabled={form.getFieldValue('is24Hours')}
-                          placeholder="Chọn giờ"
-                        />
-                      </Form.Item>
-                    )}
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item shouldUpdate noStyle>
-                    {() => (
-                      <Form.Item
-                        label={
-                          <Space>
-                            <ClockCircleOutlined />
-                            <span>Giờ đóng cửa</span>
-                          </Space>
-                        }
-                        name="closeTime"
-                        rules={
-                          form.getFieldValue('is24Hours')
-                            ? []
-                            : [{ required: true, message: 'Chọn giờ đóng cửa' }]
-                        }
-                      >
-                        <TimePicker
-                          format="HH:mm"
-                          className="w-100"
-                          disabled={form.getFieldValue('is24Hours')}
-                          placeholder="Chọn giờ"
-                        />
-                      </Form.Item>
-                    )}
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
                   <Form.Item
                     label={
                       <Space>
@@ -639,29 +550,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                 </Col>
               </Row>
 
-              <Typography.Title level={5} style={{ marginBottom: 12 }}>
-                Quy mô & kích thước
-              </Typography.Title>
-
               <Row gutter={[16, 16]}>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Chiều cao xe tối đa (m)"
-                    name="maxVehicleHeight"
-                    rules={[{ required: true, message: 'Nhập chiều cao tối đa' }]}
-                  >
-                    <InputNumber min={0} step={0.1} className="w-100" placeholder="VD: 2.5" />
-                  </Form.Item>
-                </Col>
-                <Col xs={24} md={12}>
-                  <Form.Item
-                    label="Chiều rộng xe tối đa (m)"
-                    name="maxVehicleWidth"
-                    rules={[{ required: true, message: 'Nhập chiều rộng tối đa' }]}
-                  >
-                    <InputNumber min={0} step={0.1} className="w-100" placeholder="VD: 2" />
-                  </Form.Item>
-                </Col>
                 <Col xs={24} md={12}>
                   <Form.Item
                     label="Sức chứa mỗi tầng"
@@ -678,26 +567,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
                     rules={[{ required: true, message: 'Nhập số tầng' }]}
                   >
                     <InputNumber min={1} className="w-100" placeholder="VD: 5" />
-                  </Form.Item>
-                </Col>
-                <Col span={24}>
-                  <Form.Item
-                    label={
-                      <Space>
-                        <ThunderboltOutlined />
-                        <span>% chỗ cho xe điện</span>
-                      </Space>
-                    }
-                    name="electricCarPercentage"
-                    rules={[{ required: true, message: 'Nhập phần trăm' }]}
-                  >
-                    <InputNumber
-                      min={0}
-                      max={100}
-                      step={1}
-                      className="w-100"
-                      placeholder="VD: 20"
-                    />
                   </Form.Item>
                 </Col>
               </Row>

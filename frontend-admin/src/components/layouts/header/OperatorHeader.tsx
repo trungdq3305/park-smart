@@ -5,6 +5,7 @@ import './AdminHeader.css'
 import { getUserFullName } from '../../../utils/userData'
 import { useLogout } from '../../../hooks/useLogout'
 import { NotificationDropdown } from '../../common'
+import { useNavigate } from 'react-router-dom'
 const { Header } = Layout
 
 interface OperatorHeaderProps {
@@ -15,7 +16,16 @@ interface OperatorHeaderProps {
 const OperatorHeader: React.FC<OperatorHeaderProps> = ({ onMobileMenuToggle, isMobile }) => {
   const fullName = getUserFullName('Chủ bãi xe')
   const logout = useLogout()
+  const navigate = useNavigate()
   const userMenuItems = [
+    {
+      key: '1',
+      label: 'Thông tin cá nhân',
+      icon: <UserOutlined />,
+      onClick: () => {
+        navigate('/profile')
+      },
+    },
     {
       key: '3',
       label: 'Đăng xuất',

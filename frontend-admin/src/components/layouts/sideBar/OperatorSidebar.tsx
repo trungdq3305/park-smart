@@ -74,6 +74,11 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       label: 'Dịch vụ bãi xe hàng tháng',
     },
     {
+      key: '/operator/manage-faqs',
+      icon: <AppstoreOutlined />,
+      label: 'Quản lý FAQs',
+    },
+    {
       key: '/operator/payment',
       icon: <WalletOutlined />,
       label: 'Thanh toán',

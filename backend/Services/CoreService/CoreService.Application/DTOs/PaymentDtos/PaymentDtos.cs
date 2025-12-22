@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Dotnet.Shared.Helpers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,7 +16,7 @@ namespace CoreService.Application.DTOs.PaymentDtos
             public long Available { get; set; }           // số dư hiện dùng được
             public long? Pending { get; set; }            // (nếu API trả)
             public string AccountType { get; set; } = "CASH";
-            public DateTime FetchedAt { get; set; } = DateTime.UtcNow;
+            public DateTime FetchedAt { get; set; } = TimeConverter.ToVietnamTime(DateTime.UtcNow);
         }
 
         public class TransactionItemDto

@@ -91,9 +91,7 @@ const SubscriptionPlanDisplay: React.FC<SubscriptionPlanDisplayProps> = ({
               <div className="sub-plan-info-icon">⏱️</div>
               <div className="sub-plan-info-content">
                 <div className="sub-plan-info-label">Thời gian gia hạn</div>
-                <div className="sub-plan-info-value">
-                  {plan.gracePeriodDays} ngày
-                </div>
+                <div className="sub-plan-info-value">{plan.gracePeriodDays} ngày</div>
               </div>
             </div>
             <div className="sub-plan-info-item">
@@ -118,36 +116,28 @@ const SubscriptionPlanDisplay: React.FC<SubscriptionPlanDisplayProps> = ({
               <div className="sub-plan-info-icon">🔑</div>
               <div className="sub-plan-info-content">
                 <div className="sub-plan-info-label">ID</div>
-                <div className="sub-plan-info-value muted mono">
-                  {plan.id}
-                </div>
+                <div className="sub-plan-info-value muted mono">{plan.id}</div>
               </div>
             </div>
             <div className="sub-plan-info-item">
               <div className="sub-plan-info-icon">📅</div>
               <div className="sub-plan-info-content">
                 <div className="sub-plan-info-label">Ngày thanh toán</div>
-                <div className="sub-plan-info-value">
-                  Ngày {plan.billingDayOfMonth}
-                </div>
+                <div className="sub-plan-info-value">Ngày {plan.billingDayOfMonth}</div>
               </div>
             </div>
             <div className="sub-plan-info-item">
               <div className="sub-plan-info-icon">📆</div>
               <div className="sub-plan-info-content">
                 <div className="sub-plan-info-label">Ngày tạo</div>
-                <div className="sub-plan-info-value muted">
-                  {formatDate(plan.createdAt)}
-                </div>
+                <div className="sub-plan-info-value muted">{formatDate(plan.createdAt)}</div>
               </div>
             </div>
             <div className="sub-plan-info-item">
               <div className="sub-plan-info-icon">🔄</div>
               <div className="sub-plan-info-content">
                 <div className="sub-plan-info-label">Ngày cập nhật</div>
-                <div className="sub-plan-info-value muted">
-                  {formatDate(plan.updatedAt)}
-                </div>
+                <div className="sub-plan-info-value muted">{formatDate(plan.updatedAt)}</div>
               </div>
             </div>
           </div>
@@ -158,4 +148,3 @@ const SubscriptionPlanDisplay: React.FC<SubscriptionPlanDisplayProps> = ({
 }
 
 export default SubscriptionPlanDisplay
-

@@ -14,6 +14,25 @@ export class SubscriptionRepository implements ISubscriptionRepository {
     private readonly subscriptionModel: Model<Subscription>,
   ) {}
 
+  async checkActiveOrScheduledByUserAndParkingLot(
+    userId: string,
+    parkingLotId: string,
+  ): Promise<boolean> {
+    return this.subscriptionModel
+      .exists({
+        createdBy: userId,
+        parkingLotId: parkingLotId,
+        status: {
+          $in: [
+            SubscriptionStatusEnum.ACTIVE,
+            SubscriptionStatusEnum.SCHEDULED,
+          ],
+        },
+        deletedAt: null,
+      })
+      .then((result) => !!result)
+  }
+
   async setScheduledToActiveSubscriptions(): Promise<{
     modifiedCount: number
     statsByParkingLot: Record<string, number> // Trả về Map: { "parkingLotId": số_lượng }

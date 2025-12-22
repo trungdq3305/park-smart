@@ -66,7 +66,8 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
   operatorId,
 }) => {
   const [createAddress, { isLoading: isCreatingAddress }] = useCreateAddressMutation()
-  const [createParkingLotRequest, { isLoading: isCreatingRequest }] = useCreateParkingLotRequestMutation()
+  const [createParkingLotRequest, { isLoading: isCreatingRequest }] =
+    useCreateParkingLotRequestMutation()
   const { data: wards, isLoading: isLoadingWards } = useGetWardQuery({})
   const wardData = (wards?.data?.[0] as Ward[]) || []
 
@@ -124,9 +125,7 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
       return wardData
     }
     const searchLower = wardSearch.toLowerCase().trim()
-    return wardData.filter((ward: Ward) =>
-      ward.wardName.toLowerCase().includes(searchLower)
-    )
+    return wardData.filter((ward: Ward) => ward.wardName.toLowerCase().includes(searchLower))
   }, [wardSearch, wardData])
 
   const openLocationPicker = () => {
@@ -281,12 +280,7 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
 
   return (
     <>
-      <CustomModal
-        open={open}
-        onClose={onClose}
-        title="Tạo yêu cầu bãi đỗ xe mới"
-        width={800}
-      >
+      <CustomModal open={open} onClose={onClose} title="Tạo yêu cầu bãi đỗ xe mới" width={800}>
         <div className="create-promotion-form">
           {/* Address Section */}
           <div className="create-promotion-form-section">
@@ -348,7 +342,10 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
                             </div>
                           ))
                         ) : (
-                          <div className="create-promotion-option" style={{ cursor: 'default', color: '#9ca3af' }}>
+                          <div
+                            className="create-promotion-option"
+                            style={{ cursor: 'default', color: '#9ca3af' }}
+                          >
                             Không tìm thấy phường nào
                           </div>
                         )}
@@ -404,9 +401,7 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
                   <span style={{ color: '#ff4d4f' }}>✗ Chưa chọn vị trí</span>
                 </div>
               )}
-              {errors.latitude && (
-                <span className="promotion-form-error">{errors.latitude}</span>
-              )}
+              {errors.latitude && <span className="promotion-form-error">{errors.latitude}</span>}
             </div>
           </div>
 
@@ -502,9 +497,7 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
 
             <div className="promotion-form-row">
               <div className="promotion-form-group">
-                <label className="promotion-form-label">
-                  Sức chứa booking (chỗ)
-                </label>
+                <label className="promotion-form-label">Sức chứa booking (chỗ)</label>
                 <input
                   type="number"
                   className={`promotion-form-input ${errors.bookableCapacity ? 'error' : ''}`}
@@ -524,9 +517,7 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
               </div>
 
               <div className="promotion-form-group">
-                <label className="promotion-form-label">
-                  Sức chứa thuê dài hạn (chỗ)
-                </label>
+                <label className="promotion-form-label">Sức chứa thuê dài hạn (chỗ)</label>
                 <input
                   type="number"
                   className={`promotion-form-input ${errors.leasedCapacity ? 'error' : ''}`}
@@ -548,9 +539,7 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
 
             <div className="promotion-form-row">
               <div className="promotion-form-group">
-                <label className="promotion-form-label">
-                  Sức chứa khách vãng lai (chỗ)
-                </label>
+                <label className="promotion-form-label">Sức chứa khách vãng lai (chỗ)</label>
                 <input
                   type="number"
                   className={`promotion-form-input ${errors.walkInCapacity ? 'error' : ''}`}
@@ -626,8 +615,8 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
         >
           <div style={{ padding: '8px 0' }}>
             <p style={{ marginBottom: 12, color: '#666', fontSize: '14px' }}>
-              Nhấp vào vị trí trên bản đồ để đặt điểm đánh dấu. Bạn có thể thu phóng hoặc kéo bản
-              đồ để chọn chính xác vị trí bãi đỗ xe.
+              Nhấp vào vị trí trên bản đồ để đặt điểm đánh dấu. Bạn có thể thu phóng hoặc kéo bản đồ
+              để chọn chính xác vị trí bãi đỗ xe.
             </p>
             <LocationPickerMap
               value={mapLocation}
@@ -665,4 +654,3 @@ const CreateParkingLotRequestModal: React.FC<CreateParkingLotRequestModalProps> 
 }
 
 export default CreateParkingLotRequestModal
-

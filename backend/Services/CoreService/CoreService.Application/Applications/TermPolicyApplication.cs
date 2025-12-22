@@ -3,6 +3,7 @@ using CoreService.Application.DTOs.TermPolicyDtos;
 using CoreService.Application.Interfaces;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -48,7 +49,7 @@ namespace CoreService.Application.Applications
             entity.Title = dto.Title ?? entity.Title;
             entity.Content = dto.Content ?? entity.Content;
             entity.Description = dto.Description ?? entity.Description;
-            entity.UpdatedAt = DateTime.UtcNow;
+            entity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             entity.UpdatedBy = actorAccountId;
 
             await _repo.UpdateAsync(entity);
@@ -92,7 +93,7 @@ namespace CoreService.Application.Applications
             var entity = await _repo.GetByIdAsync(id)
                 ?? throw new ApiException("Term/Policy không tồn tại", StatusCodes.Status404NotFound);
 
-            await _repo.SoftDeleteAsync(id, actorAccountId, DateTime.UtcNow);
+            await _repo.SoftDeleteAsync(id, actorAccountId, TimeConverter.ToVietnamTime(DateTime.UtcNow));
             return new ApiResponse<object>(null, true, "Đã xoá (soft delete)", StatusCodes.Status200OK);
         }
 

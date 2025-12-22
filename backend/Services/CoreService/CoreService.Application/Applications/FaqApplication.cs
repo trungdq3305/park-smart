@@ -6,6 +6,7 @@ using CoreService.Application.Interfaces;
 using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using MongoDB.Bson;
 using System;
@@ -61,7 +62,7 @@ namespace CoreService.Application.Applications
             entity.Question = dto.Question?.Trim();
             entity.Answer = dto.Answer?.Trim();
             entity.FaqStatusId = pendingStatus.Id;
-            entity.UpdatedAt = DateTime.UtcNow;
+            entity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             entity.UpdatedBy = accountId;
 
             await _repo.UpdateAsync(entity);
@@ -97,6 +98,7 @@ namespace CoreService.Application.Applications
                 dtos[i].CreatorName = name;
                 dtos[i].CreatorRole = role;
             }
+             
 
             var paged = PaginationDto<FaqResponseDto>.Create(dtos, page, pageSize);
             return new ApiResponse<PaginationDto<FaqResponseDto>>(paged, true, "OK", StatusCodes.Status200OK);
@@ -122,7 +124,7 @@ namespace CoreService.Application.Applications
             var approvedStatus = await _statusRepo.GetByNameAsync("Approved");
 
             faq.FaqStatusId = approvedStatus.Id;
-            faq.UpdatedAt = DateTime.UtcNow;
+            faq.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             faq.UpdatedBy = adminId;
 
             await _repo.UpdateAsync(faq);
@@ -137,7 +139,7 @@ namespace CoreService.Application.Applications
             var rejectedStatus = await _statusRepo.GetByNameAsync("Rejected");
             faq.RejectReason = dto.RejectReason?.Trim();
             faq.FaqStatusId = rejectedStatus.Id;
-            faq.UpdatedAt = DateTime.UtcNow;
+            faq.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             faq.UpdatedBy = adminId;
 
             await _repo.UpdateAsync(faq);

@@ -12,6 +12,7 @@ import {
   WalletOutlined,
   CalendarOutlined,
   GiftOutlined,
+  NotificationOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -69,6 +70,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       label: 'Điều khoản & Chính sách',
     },
     {
+      key: '/admin/faqs',
+      icon: <AppstoreOutlined />,
+      label: 'FAQs',
+    },
+    {
       key: '/admin/payments',
       icon: <WalletOutlined />,
       label: 'Thanh toán',
@@ -87,6 +93,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
       key: '/admin/promotions',
       icon: <GiftOutlined />,
       label: 'Khuyến mãi',
+    },
+    {
+      key: '/admin/announcements',
+      icon: <NotificationOutlined />,
+      label: 'Thông báo',
     },
   ]
 
