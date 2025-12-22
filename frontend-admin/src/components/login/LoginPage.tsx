@@ -5,6 +5,8 @@ import LoginForm from './LoginForm'
 import RegisterForm from './RegisterForm'
 import { useNavigate } from 'react-router-dom'
 import { getUserData } from '../../utils/userData'
+import logoImg from '../../assets/logo.jpg'
+import loginBg from '../../assets/login.jpg'
 
 const { Title, Text } = Typography
 
@@ -29,22 +31,21 @@ const Login: React.FC = () => {
   return (
     <div className="login-container">
       {/* Left Promotional Section */}
-      <div className="promotional-section">
+      <div
+        className="promotional-section"
+        style={{
+          backgroundImage: `linear-gradient(135deg, rgba(22,163,74,0.9), rgba(5,150,105,0.85)), url(${loginBg})`,
+        }}
+      >
         <div className="promotional-content">
-          <div className="star-icon">⭐</div>
+          <img src={logoImg} alt="ParkSmart logo" className="promotional-logo" />
           <Title level={1} className="promotional-title">
-            Hello ParkSmart! 👋
+            ParkSmart
           </Title>
           <Text className="promotional-description">
-            Skip repetitive and manual parking management tasks. Get highly productive through
-            automation and save tons of time!
+            Nền tảng quản lý bãi đỗ xe thông minh dành cho Operator.
           </Text>
           <Text className="copyright">© 2024 ParkSmart. All rights reserved.</Text>
-        </div>
-        <div className="geometric-patterns">
-          <div className="pattern pattern-1"></div>
-          <div className="pattern pattern-2"></div>
-          <div className="pattern pattern-3"></div>
         </div>
       </div>
 
