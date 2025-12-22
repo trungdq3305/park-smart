@@ -21,6 +21,7 @@
     "antd": "^5.27.4",
     "axios": "^1.13.2",
     "dayjs": "^1.11.18",
+    "firebase": "^12.7.0",
     "js-cookie": "^3.0.5",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",

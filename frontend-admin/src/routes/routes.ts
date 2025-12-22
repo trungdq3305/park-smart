@@ -1,6 +1,5 @@
 import { lazy } from 'react'
 import type { LayoutRoute } from '../types/Route'
-import ManageRequest from '../pages/admin/manage-request/ManageRequest'
 
 // Các layout này được export dưới dạng export default
 const MainLayout = lazy(() => import('../components/layouts/layout/MainLayout'))
@@ -42,6 +41,8 @@ const FAQsAdmin = lazy(() => import('../pages/admin/manage-faqs/FAQsAdmin'))
 const ManageFAQsOperator = lazy(() => import('../pages/operator/manage-faqs/ManageFAQsOperator'))
 const ManageProfile = lazy(() => import('../pages/profile/ManageProfile'))
 const ManageAnnouncement = lazy(() => import('../pages/admin/manage-annoucement/ManageAnnoucement'))
+const ManageRequest = lazy(() => import('../pages/admin/manage-request/ManageRequest'))
+const OperatorChat = lazy(() => import('../pages/operator/chat-with-driver/OperatorChat'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -201,6 +202,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/subscription-plan',
         component: SubscriptionPlanOperator,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/chat-with-driver',
+        component: OperatorChat,
         role: ['Operator'],
       },
     ],
