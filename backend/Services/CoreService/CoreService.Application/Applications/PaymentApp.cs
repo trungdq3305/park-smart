@@ -260,7 +260,7 @@ namespace CoreService.Application.Applications
                         Status = it.TryGetProperty("status", out var st) ? st.GetString() : null,
                         Reference = it.TryGetProperty("reference", out var rf) ? rf.GetString()
                                  : it.TryGetProperty("external_id", out var ex) ? ex.GetString() : null,
-                        Created = it.TryGetProperty("created", out var cr) && cr.TryGetDateTime(out var dt) ? dt : DateTime.UtcNow,
+                        Created = it.TryGetProperty("created", out var cr) && cr.TryGetDateTime(out var dt) ? dt : TimeConverter.ToVietnamTime(DateTime.UtcNow),
                         SettlementStatus = it.TryGetProperty("settlement_status", out var ss) ? ss.GetString() : null
                     });
                 }
@@ -320,7 +320,7 @@ namespace CoreService.Application.Applications
             var root = doc.RootElement;
 
             var refundId = root.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-            var rStatus = root.TryGetProperty("status", out var stEl) ? stEl.GetString() : null;
+            //var rStatus = root.TryGetProperty("status", out var stEl) ? stEl.GetString() : null;
             var rAmount = root.TryGetProperty("amount", out var amEl) ? amEl.GetInt64() : amount;
 
             if (string.IsNullOrEmpty(refundId))
@@ -337,7 +337,7 @@ namespace CoreService.Application.Applications
 
                 XenditRefundId = refundId,
                 Amount = rAmount,
-                Status = rStatus,
+                Status = "SUCCEEDED",
                 Reason = reason,
                 CreatedBy = accountId,
                 CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow) // Sử dụng TimeConverter
@@ -365,7 +365,7 @@ namespace CoreService.Application.Applications
 
             using var doc = System.Text.Json.JsonDocument.Parse(json);
             var rid = doc.RootElement.GetProperty("id").GetString();
-            var status = doc.RootElement.GetProperty("status").GetString();
+            //var status = doc.RootElement.GetProperty("status").GetString();
             var rAmt = doc.RootElement.TryGetProperty("amount", out var am) ? am.GetInt64() : amount;
 
             var rf = new RefundRecord
@@ -374,9 +374,9 @@ namespace CoreService.Application.Applications
                 ReservationId = pr.ReservationId,
                 XenditRefundId = rid,
                 Amount = rAmt,
-                Status = status,
+                Status = "SUCCEEDED",
                 Reason = reason,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow)
             };
             await _refundRepo.AddAsync(rf);
             return rf;

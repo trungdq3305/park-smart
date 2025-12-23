@@ -5,6 +5,7 @@ using CoreService.Common.Helpers;
 using CoreService.Repository.Interfaces;
 using CoreService.Repository.Models;
 using Dotnet.Shared.DTOs;
+using Dotnet.Shared.Helpers;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -47,13 +48,13 @@ namespace CoreService.Application.Applications
 
             // Update Account
             account.PhoneNumber = dto.PhoneNumber;
-            account.UpdatedAt = DateTime.UtcNow;
+            account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.UpdatedBy = accountId;
 
             // Update Operator
             operatorEntity.FullName = dto.FullName;
             //operatorEntity.TaxCode = dto.TaxCode;
-            operatorEntity.UpdatedAt = DateTime.UtcNow;
+            operatorEntity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             operatorEntity.UpdatedBy = accountId;
 
 

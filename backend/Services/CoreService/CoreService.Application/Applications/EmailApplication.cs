@@ -79,7 +79,7 @@ namespace CoreService.Application.Applications
             await SendEmailAsync(email, subject, body);
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string body)
+        public async Task SendEmailAsync(string toEmail, string subject, string htmlContent)
         {
             try
             {
@@ -93,18 +93,53 @@ namespace CoreService.Application.Applications
                 {
                     From = new MailAddress(_emailSettings.FromEmail, _emailSettings.FromName),
                     Subject = subject,
-                    Body = body,
                     IsBodyHtml = true
                 };
-
                 mailMessage.To.Add(toEmail);
 
+                // --- PHẦN XỬ LÝ LOGO TRỰC TIẾP ---
+                // Lấy đường dẫn file logo từ project
+                string logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "logo-parksmart.png");
+
+                // Tạo LinkedResource để nhúng ảnh vào HTML
+                LinkedResource logoRes = new LinkedResource(logoPath, "image/png");
+                logoRes.ContentId = "logo_id"; // ID này dùng để gọi trong thẻ <img src='cid:logo_id'>
+
+                // Tạo nội dung HTML hoàn chỉnh
+                string finalHtml = $@"
+        <div style='background-color: #f0f4f1; padding: 20px; font-family: Arial, sans-serif;'>
+            <table align='center' width='600' style='background: white; border-radius: 15px; overflow: hidden; border: 1px solid #d1e7dd;'>
+                <tr style='background-color: #ffffff; text-align: center;'>
+                    <td style='padding: 20px;'>
+                        <img src='cid:logo_id' width='100' alt='ParkSmart Logo' />
+                        <h2 style='color: #2e7d32; margin: 10px 0;'>ParkSmart</h2>
+                    </td>
+                </tr>
+                <tr>
+                    <td style='padding: 30px; color: #333;'>
+                        {htmlContent}
+                    </td>
+                </tr>
+                <tr style='background-color: #f9fbf9; text-align: center; font-size: 12px; color: #777;'>
+                    <td style='padding: 20px;'>
+                        <p>© 2025 ParkSmart - Giải pháp đỗ xe thông minh</p>
+                        <p>Màu sắc chủ đạo: Xanh lá nhạt (ParkSmart Green)</p>
+                    </td>
+                </tr>
+            </table>
+        </div>";
+
+                AlternateView alternateView = AlternateView.CreateAlternateViewFromString(finalHtml, null, "text/html");
+                alternateView.LinkedResources.Add(logoRes);
+                mailMessage.AlternateViews.Add(alternateView);
+                // ---------------------------------
+
                 await client.SendMailAsync(mailMessage);
-                _logger.LogInformation($"Email sent successfully to {toEmail}");
+                _logger.LogInformation($"Email sent to {toEmail}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to send email to {toEmail}");
+                _logger.LogError(ex, "Failed to send email");
                 throw;
             }
         }

@@ -271,7 +271,7 @@ namespace CoreService.Repository.Repositories
         public async Task<bool> HasUnpaidOverdueInvoices(string operatorId)
         {
             var unpaidStatuses = new[] { "CREATED", "PENDING", "EXPIRED" };
-            var now = DateTime.UtcNow; // Hoặc dùng TimeConverter.ToVietnamTime(DateTime.UtcNow);
+            var now = TimeConverter.ToVietnamTime(DateTime.UtcNow); // Hoặc dùng TimeConverter.ToVietnamTime(DateTime.UtcNow);
 
             var filter = Builders<PaymentRecord>.Filter.And(
                 Builders<PaymentRecord>.Filter.Eq(p => p.OperatorId, operatorId),

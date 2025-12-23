@@ -585,14 +585,24 @@ namespace CoreService.Application.Applications
 
             account.IsActive = true;
             var subject = "Tài khoản ParkSmart – Tài khoản Parking Lot Operator";
-            var body = $@"
-        <h2>Chào mừng bạn đến với ParkSmart</h2>
-        <p>Tài khoản của bạn đã được tạo Admin phê duyệt.</p>
-        <p>Bạn có thể đăng nhập theo cách thông thường (email & mật khẩu), 
-        qua đường dận đến trang quản lý chính thức dánh cho Operator</p>
-        <p>Vui lòng kiểm tra Email {operatorEntity.PaymentEmail} bạn đã đăng ký tài khoản nhận tiền trước đó để xác nhận và sử dụng </p>
-        <p>Trân trọng,<br/>ParkSmart</p>";
-            await _emailApplication.SendEmailAsync(account.Email, subject, body);
+            var content = $@"
+        <h3 style='color: #2e7d32; border-bottom: 2px solid #a5d6a7; pb: 10px;'>XÁC NHẬN ĐỐI TÁC THÀNH CÔNG</h3>
+        <p>Chào bạn,</p>
+        <p>Tài khoản <b>Parking Lot Operator</b> của bạn đã được Admin phê duyệt.</p>
+        <div style='background-color: #e8f5e9; padding: 15px; border-radius: 8px; margin: 20px 0;'>
+            <p style='margin: 5px 0;'><strong>Tài khoản:</strong> {account.Email}</p>
+            <p style='margin: 5px 0;'><strong>Email nhận tiền:</strong> {operatorEntity.PaymentEmail}</p>
+        </div>
+        <p>Vui lòng đăng nhập vào trang quản lý để bắt đầu vận hành bãi xe:</p>
+        <div style='text-align: center;'>
+            <a href='https://operator.parksmart.vn' 
+               style='background-color: #4caf50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;'>
+               Đăng nhập ngay
+            </a>
+        </div>
+        <p style='margin-top: 20px; font-style: italic; color: #666;'>Trân trọng, Đội ngũ ParkSmart.</p>";
+
+            await _emailApplication.SendEmailAsync(account.Email, subject, content);
             account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             operatorEntity.RegistrationDate = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             operatorEntity.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
@@ -811,7 +821,7 @@ namespace CoreService.Application.Applications
 
             // ✅ Hash mật khẩu mới trước khi lưu
             account.Password = HashPassword(dto.NewPassword);
-            account.UpdatedAt = DateTime.UtcNow;
+            account.UpdatedAt = TimeConverter.ToVietnamTime(DateTime.UtcNow);
             account.UpdatedBy = accountId;
 
             await _accountRepo.UpdateAsync(account);
