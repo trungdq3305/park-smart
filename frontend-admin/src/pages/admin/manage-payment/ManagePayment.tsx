@@ -250,7 +250,13 @@ const ManagePayment: React.FC = () => {
                 <div className="pay-card-meta">
                   <div className="pay-row">
                     <span className="pay-label">Loại</span>
-                    <span className="pay-value">{p.paymentType || '-'}</span>
+                    <span
+                      className={`pay-value pay-type ${
+                        p.paymentType === 'OperatorCharge' ? 'green' : 'yellow'
+                      }`}
+                    >
+                      {p.paymentType || '-'}
+                    </span>
                   </div>
                   <div className="pay-row">
                     <span className="pay-label">Operator</span>
