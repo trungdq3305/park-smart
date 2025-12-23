@@ -17,6 +17,13 @@ interface SessionDetailModalProps {
   onCalculateFee: () => void
   isCalculatingFee: boolean
   calculateFeeResult: any
+  onCheckout: (data: {
+    pricingPolicyId: string
+    amountPayAfterCheckOut: number
+    file?: File | null
+    note?: string
+  }) => Promise<void>
+  isSubmittingCheckout: boolean
 }
 
 const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
@@ -31,6 +38,8 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
   onCalculateFee,
   isCalculatingFee,
   calculateFeeResult,
+  onCheckout,
+  isSubmittingCheckout,
 }) => {
   return (
     <CustomModal
@@ -55,6 +64,8 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
               onCalculateFee={onCalculateFee}
               isCalculatingFee={isCalculatingFee}
               calculateFeeResult={calculateFeeResult}
+              onCheckout={onCheckout}
+              isSubmittingCheckout={isSubmittingCheckout}
             />
           )}
           {sessionImages.length === 0 ? (
