@@ -13,6 +13,12 @@ export class ReservationRepository implements IReservationRepository {
     private reservationModel: Model<Reservation>,
   ) {}
 
+  findByConditionForNotification(
+    condition: FilterQuery<ReservationDocument>,
+  ): Promise<Reservation[]> {
+    return this.reservationModel.find(condition).exec()
+  }
+
   findIncomingExpiringReservations(cutoffTime: Date): Promise<Reservation[]> {
     return this.reservationModel
       .find({
@@ -86,8 +92,6 @@ export class ReservationRepository implements IReservationRepository {
       $set: {
         status: ReservationStatusEnum.EXPIRED,
         updatedAt: new Date(),
-        // Có thể thêm log ghi chú
-        cancelReason: 'System Auto-expire (No-show)',
       },
     }
 
