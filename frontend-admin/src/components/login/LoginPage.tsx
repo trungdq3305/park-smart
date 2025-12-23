@@ -43,9 +43,9 @@ const Login: React.FC = () => {
             ParkSmart
           </Title>
           <Text className="promotional-description">
-            Nền tảng quản lý bãi đỗ xe thông minh dành cho Operator.
+            Nền tảng quản lý bãi đỗ xe thông minh dành cho chủ bãi đỗ xe.
           </Text>
-          <Text className="copyright">© 2024 ParkSmart. All rights reserved.</Text>
+          <Text className="copyright">© 2025 ParkSmart. All rights reserved.</Text>
         </div>
       </div>
 
