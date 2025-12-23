@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose'
 
 import { BookingInventoryModule } from '../bookingInventory/bookingInventory.module'
 import { ClientModule } from '../client/client.module'
+import { NotificationModule } from '../notification/notification.module'
 import { ParkingLotModule } from '../parkingLot/parkingLot.module'
 import { ParkingTransactionModule } from '../parkingTransaction/parkingTransaction.module'
 import { PricingPolicyModule } from '../pricingPolicy/pricingPolicy.module'
@@ -23,6 +24,7 @@ import { Reservation, ReservationSchema } from './schemas/reservation.schema'
     PricingPolicyModule,
     ClientModule,
     ParkingTransactionModule,
+    NotificationModule,
   ],
   controllers: [ReservationController],
   providers: [

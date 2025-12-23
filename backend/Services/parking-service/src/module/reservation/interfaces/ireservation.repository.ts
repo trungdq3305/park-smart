@@ -172,6 +172,8 @@ export interface IReservationRepository {
     reservationId: string,
     session: ClientSession,
   ): Promise<string | null>
+
+  findIncomingExpiringReservations(cutoffTime: Date): Promise<Reservation[]>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')

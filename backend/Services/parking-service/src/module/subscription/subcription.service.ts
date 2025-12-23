@@ -374,7 +374,13 @@ export class SubscriptionService implements ISubscriptionService {
       )
 
       await session.commitTransaction()
-
+      await this.notificationService.createAndSendNotification({
+        recipientId: userId,
+        recipientRole: NotificationRole.DRIVER,
+        type: NotificationType.SUBSCRIPTION_PURCHASED,
+        title: 'Mua gói thuê bao thành công',
+        body: `Gói thuê bao của bạn đã được kích hoạt thành công.`,
+      })
       // Trả về DTO
       return this.returnToDto(updatedSubscription)
     } catch (error) {
@@ -758,6 +764,15 @@ export class SubscriptionService implements ISubscriptionService {
       }
 
       await session.commitTransaction()
+
+      await this.notificationService.createAndSendNotification({
+        recipientId: userId,
+        recipientRole: NotificationRole.DRIVER,
+        type: NotificationType.SUBSCRIPTION_CANCELLED,
+        title: 'Hủy gói thuê bao thành công',
+        body: `Gói thuê bao của bạn đã được hủy thành công.`,
+      })
+
       return true
     } catch (error) {
       await session.abortTransaction()
@@ -898,7 +913,13 @@ export class SubscriptionService implements ISubscriptionService {
 
       // Commit
       await session.commitTransaction()
-
+      await this.notificationService.createAndSendNotification({
+        recipientId: userId,
+        recipientRole: NotificationRole.DRIVER,
+        type: NotificationType.SUBSCRIPTION_EXTENDED_SUCCESS,
+        title: 'Gia hạn gói thuê bao thành công',
+        body: `Gói thuê bao của bạn đã được gia hạn thành công.`,
+      })
       // (Lấy updatedSubscription đã populate để trả về)
       const populatedSub =
         await this.subscriptionRepository.findSubscriptionById(id.id, userId)
