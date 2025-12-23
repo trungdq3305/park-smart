@@ -46,9 +46,9 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     'PAYMENT_FAILED',
   ];
 
-  String? _selectedStatusFilter;
+  String? _selectedStatusFilter = 'CONFIRMED';
   // Trạng thái mặc định cho filter "Tất cả" (hiển thị các vé đang sử dụng)
-  static const String _defaultStatus = 'CHECKED_IN';
+  static const String _defaultStatus = 'CONFIRMED';
 
   @override
   void initState() {
