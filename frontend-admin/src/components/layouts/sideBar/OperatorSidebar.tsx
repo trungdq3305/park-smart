@@ -12,6 +12,7 @@ import {
   SafetyOutlined,
   CalendarOutlined,
   GiftOutlined,
+  MessageOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './AdminSidebar.css'
@@ -52,6 +53,11 @@ const OperatorSidebar: React.FC<OperatorSidebarProps> = ({
       key: '/operator/control-panel',
       icon: <DashboardOutlined />,
       label: 'Bảng điều khiển',
+    },
+    {
+      key: '/operator/chat-with-driver',
+      icon: <MessageOutlined />,
+      label: 'Chat với tài xế',
     },
     {
       key: '/operator/parking-lot-session-history',

@@ -12,11 +12,11 @@ import {
   increment,
 } from 'firebase/firestore'
 import { db } from '../../../firebase'
-import { getUserData } from '../../../utils/userData'
 import './OperatorChat.css'
+import { useOperatorId } from '../../../hooks/useOperatorId'
 
 type Room = {
-  id: string // = peerId (giữ nguyên để hiển thị)
+  id: string //=peerId
   peerId: string
   peerName: string
   lastMessage: string
@@ -33,9 +33,9 @@ type Message = {
 }
 
 const OperatorChat: React.FC = () => {
-  const user = getUserData<{ id?: string; fullName?: string; role: string }>()
-  const currentUserId = user?.id || ''
-  const currentUserName = user?.fullName || 'Operator'
+  const user = useOperatorId()
+  const currentUserId = user
+  const currentUserName = 'Operator'
 
   const [rooms, setRooms] = useState<Room[]>([])
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
@@ -43,73 +43,54 @@ const OperatorChat: React.FC = () => {
   const [search, setSearch] = useState('')
   const [messageInput, setMessageInput] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const [isLoadingRooms, setIsLoadingRooms] = useState(true)
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const messagesEndRef = useRef<HTMLDivElement | null>(null)
 
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  const getRoomId = (uid1: string, uid2: string) => {
-    return uid1 < uid2 ? `${uid1}_${uid2}` : `${uid2}_${uid1}`
-  }
-
-  // Lấy danh sách phòng chat
+  // Lấy danh sách phòng chat từ Firestore theo user hiện tại
   useEffect(() => {
     if (!currentUserId) return
 
-    setIsLoadingRooms(true)
     const q = query(
       collection(db, 'chatRooms', currentUserId, 'rooms'),
       orderBy('updatedAt', 'desc')
     )
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const list: Room[] = snap.docs.map((d) => {
-          const data: any = d.data()
-          return {
-            id: d.id, // id vẫn là peerId (giữ nguyên để hiển thị)
-            peerId: data.peerId || '',
-            peerName: data.peerName || 'Driver',
-            lastMessage: data.lastMessage || '',
-            updatedAt: data.updatedAt?.toDate?.() ?? null,
-            unreadCount: data.unreadCount ?? 0,
-          }
-        })
-        setRooms(list)
-        setIsLoadingRooms(false)
-
-        if (!activeRoomId && list.length > 0) {
-          setActiveRoomId(list[0].id)
+    const unsub = onSnapshot(q, (snap) => {
+      const list: Room[] = snap.docs.map((d) => {
+        const data: any = d.data()
+        return {
+          id: d.id, //  roomId = peerId
+          peerId: data.peerId || '',
+          peerName: data.peerName || 'Driver',
+          lastMessage: data.lastMessage || '',
+          updatedAt: data.updatedAt?.toDate?.() ?? null,
+          unreadCount: data.unreadCount ?? 0,
         }
-      },
-      (err) => {
-        console.error('Error fetching rooms:', err)
-        setIsLoadingRooms(false)
+      })
+
+      setRooms(list)
+      if (!activeRoomId && list.length > 0) {
+        setActiveRoomId(list[0].id)
       }
-    )
+    })
 
     return () => unsub()
   }, [currentUserId])
 
-  // Lấy tin nhắn cho phòng đang chọn
+  // Lấy danh sách tin nhắn cho phòng đang chọn
   useEffect(() => {
     if (!activeRoomId) {
       setMessages([])
       return
     }
 
-    setIsLoadingMessages(true)
-    const roomId = getRoomId(currentUserId, activeRoomId)
     const q = query(
-      collection(db, 'messages', roomId, 'items'),
+      collection(db, 'messages', activeRoomId, 'items'), // ✅ ĐÚNG như Flutter
       orderBy('timestamp', 'asc')
     )
 
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const msgs: Message[] = snap.docs.map((d) => {
+    const unsub = onSnapshot(q, (snap) => {
+      setMessages(
+        snap.docs.map((d) => {
           const data: any = d.data()
           return {
             id: d.id,
@@ -119,27 +100,22 @@ const OperatorChat: React.FC = () => {
             timestamp: data.timestamp?.toDate?.() ?? null,
           }
         })
-        setMessages(msgs)
-        setIsLoadingMessages(false)
-      },
-      (err) => {
-        console.error('Error fetching messages:', err)
-        setIsLoadingMessages(false)
-      }
-    )
+      )
+    })
 
-    // Reset unread count
-    updateDoc(doc(db, 'chatRooms', currentUserId, 'rooms', activeRoomId), {
-      unreadCount: 0,
-    }).catch((e) => console.error('Failed to reset unread count:', e))
+    // reset unread
+    updateDoc(
+      doc(db, 'chatRooms', currentUserId, 'rooms', activeRoomId),
+      { unreadCount: 0 }
+    ).catch(() => {})
 
     return () => unsub()
   }, [activeRoomId, currentUserId])
 
-  // Scroll xuống cuối
+  // Scroll xuống cuối khi có tin nhắn mới hoặc đổi phòng
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, activeRoomId])
 
   const filteredRooms = useMemo(() => {
     const keyword = search.trim().toLowerCase()
@@ -165,10 +141,9 @@ const OperatorChat: React.FC = () => {
     setIsSending(true)
     try {
       const now = serverTimestamp()
-      const roomId = getRoomId(currentUserId, activeRoom.peerId)
 
-      // Gửi tin nhắn
-      await addDoc(collection(db, 'messages', roomId, 'items'), {
+      // ghi message vào collection chung
+      await addDoc(collection(db, 'messages', activeRoom.id, 'items'), {
         text,
         senderId: currentUserId,
         receiverId: activeRoom.peerId,
@@ -176,7 +151,7 @@ const OperatorChat: React.FC = () => {
         seen: false,
       })
 
-      // Cập nhật room cho operator
+      // cập nhật room cho operator
       await setDoc(
         doc(db, 'chatRooms', currentUserId, 'rooms', activeRoom.id),
         {
@@ -187,10 +162,10 @@ const OperatorChat: React.FC = () => {
         { merge: true }
       )
 
-      // Cập nhật room cho driver
+      // cập nhật room cho driver (tăng unreadCount)
       if (activeRoom.peerId) {
         await setDoc(
-          doc(db, 'chatRooms', activeRoom.peerId, 'rooms', roomId), // ← SỬA Ở ĐÂY
+          doc(db, 'chatRooms', activeRoom.peerId, 'rooms', activeRoom.id),
           {
             peerId: currentUserId,
             peerName: currentUserName,
@@ -204,6 +179,7 @@ const OperatorChat: React.FC = () => {
 
       setMessageInput('')
     } catch (e) {
+      // eslint-disable-next-line no-console
       console.error('Error sending message:', e)
     } finally {
       setIsSending(false)
@@ -240,22 +216,20 @@ const OperatorChat: React.FC = () => {
         </header>
 
         <div className="op-chat-body">
-          {/* Sidebar */}
+          {/* Sidebar: danh sách phòng */}
           <aside className="op-chat-sidebar">
             <div className="op-chat-search">
               <input
                 type="text"
                 className="op-chat-search-input"
-                placeholder="Tìm theo tên tài xế hoặc ID..."
+                placeholder="Tìm theo tên tài xế..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
 
             <div className="op-chat-list">
-              {isLoadingRooms ? (
-                <div className="op-chat-loading">Đang tải danh sách phòng...</div>
-              ) : filteredRooms.length === 0 ? (
+              {filteredRooms.length === 0 ? (
                 <div className="op-chat-empty">Chưa có cuộc trò chuyện nào.</div>
               ) : (
                 filteredRooms.map((room) => (
@@ -301,9 +275,7 @@ const OperatorChat: React.FC = () => {
                 </div>
 
                 <div className="op-chat-messages">
-                  {isLoadingMessages ? (
-                    <div className="op-chat-window-empty">Đang tải tin nhắn...</div>
-                  ) : messages.length === 0 ? (
+                  {messages.length === 0 ? (
                     <div className="op-chat-window-empty">Hãy bắt đầu cuộc trò chuyện...</div>
                   ) : (
                     messages.map((m) => {
@@ -332,12 +304,11 @@ const OperatorChat: React.FC = () => {
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey && !isSending) {
+                      if (e.key === 'Enter') {
                         e.preventDefault()
                         handleSend()
                       }
                     }}
-                    disabled={isSending}
                   />
                   <button
                     type="button"
@@ -351,9 +322,7 @@ const OperatorChat: React.FC = () => {
               </>
             ) : (
               <div className="op-chat-window-empty">
-                {isLoadingRooms
-                  ? 'Đang tải...'
-                  : 'Chọn một cuộc trò chuyện ở bên trái để bắt đầu nhắn tin.'}
+                Chọn một cuộc trò chuyện ở bên trái để bắt đầu nhắn tin với tài xế.
               </div>
             )}
           </section>
@@ -362,5 +331,4 @@ const OperatorChat: React.FC = () => {
     </div>
   )
 }
-
 export default OperatorChat
