@@ -11,9 +11,10 @@ import '../../pages/operator/parking-lot/ParkingLot.css'
 
 interface ParkingLotDetailsProps {
   lot: ParkingLot
+  onOpenUpdateDuration?: () => void
 }
 
-const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
+const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot, onOpenUpdateDuration }) => {
   const [isSecretVisible, setIsSecretVisible] = useState(false)
   const totalCapacity = lot.totalCapacityEachLevel * lot.totalLevel
   const occupied = totalCapacity - lot.availableSpots
@@ -41,6 +42,13 @@ const ParkingLotDetails: React.FC<ParkingLotDetailsProps> = ({ lot }) => {
             <div className="parking-lot-details-slot-duration">
               <ClockCircleOutlined />
               <span>{lot.bookingSlotDurationHours}h / slot</span>
+              <button
+                type="button"
+                className="parking-lot-slot-edit-btn"
+                onClick={onOpenUpdateDuration}
+              >
+                Cập nhật
+              </button>
             </div>
           </div>
 
