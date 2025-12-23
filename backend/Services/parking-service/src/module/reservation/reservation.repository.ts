@@ -86,8 +86,6 @@ export class ReservationRepository implements IReservationRepository {
       $set: {
         status: ReservationStatusEnum.EXPIRED,
         updatedAt: new Date(),
-        // Có thể thêm log ghi chú
-        cancelReason: 'System Auto-expire (No-show)',
       },
     }
 

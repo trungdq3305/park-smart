@@ -970,8 +970,10 @@ export class ReservationService implements IReservationService {
     this.logger.log(
       '[CronJob] Bắt đầu dọn dẹp các đơn đặt chỗ PENDING_PAYMENT quá hạn...',
     )
-    const TEN_MINUTES_AGO_MS = 10 * 60 * 1000
-    const cutoffTime = new Date(Date.now() - TEN_MINUTES_AGO_MS)
+    const now = new Date()
+    const TIME_ZONE_OFFSET = 7 * 60 * 60 * 1000
+
+    const cutoffTime = new Date(now.getTime() + TIME_ZONE_OFFSET)
 
     try {
       const result =
