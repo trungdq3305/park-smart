@@ -16,6 +16,10 @@ import { InjectConnection } from '@nestjs/mongoose'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import * as dayjs from 'dayjs'
+import * as isoWeek from 'dayjs/plugin/isoWeek'
+import * as quarterOfYear from 'dayjs/plugin/quarterOfYear'
+import * as timezone from 'dayjs/plugin/timezone'
+import * as utc from 'dayjs/plugin/utc'
 import { Connection } from 'mongoose'
 import {
   NotificationRole,
@@ -47,6 +51,12 @@ import { IReservationRepository } from './interfaces/ireservation.repository'
 import { IReservationService } from './interfaces/ireservation.service'
 import { Reservation } from './schemas/reservation.schema'
 
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.extend(isoWeek)
+dayjs.extend(quarterOfYear)
+dayjs.locale('vi')
+dayjs.tz.setDefault('Asia/Ho_Chi_Minh')
 @Injectable()
 export class ReservationService implements IReservationService {
   constructor(
@@ -82,12 +92,22 @@ export class ReservationService implements IReservationService {
     minutesRemaining: number
   } {
     // 1. Dùng dayjs để xử lý thời gian an toàn hơn
-    const now = dayjs()
-    const startTime = dayjs(reservation.userExpectedTime)
+    const VN_TIMEZONE = 'Asia/Ho_Chi_Minh'
+
+    // 1. Lấy thời gian hiện tại theo giờ VN
+    const now = dayjs().tz(VN_TIMEZONE)
+
+    const timeWithoutZ = reservation.userExpectedTime
+      .toString()
+      .replace('Z', '')
+
+    // Lúc này dayjs nhận vào "2025...17:37:00" -> Nó hiểu là giờ local
+    // Sau đó .tz(VN, true) để khẳng định "Đây là giờ VN"
+    const startTime = dayjs.tz(timeWithoutZ, VN_TIMEZONE)
 
     // 2. Tính số phút còn lại
+    // Lưu ý: diff trả về số nguyên, nếu muốn chính xác hơn có thể dùng tham số thứ 3 là true (float)
     const minutesRemaining = startTime.diff(now, 'minute')
-
     const CUTOFF_MINUTES = 60
 
     // 3. Logic hoàn tiền đã sửa
