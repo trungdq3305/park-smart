@@ -46,30 +46,37 @@ class _CommentsSectionState extends State<CommentsSection> {
     super.dispose();
   }
 
-  // --- Logic Xử lý Dữ liệu ---
+  // --- LOGIC XỬ LÝ DỮ LIỆU ---
 
   Future<void> _loadCurrentAccountId() async {
     try {
       final userProfile = await UserService.getUserProfile();
-      if (userProfile['data'] != null) {
+      if (userProfile['data'] != null && userProfile['data']['_id'] != null) {
         setState(
-          () => _currentAccountId = userProfile['data']['_id']?.toString(),
+          () => _currentAccountId = userProfile['data']['_id'].toString(),
         );
       }
     } catch (e) {
-      print('⚠️ Error loading account ID: $e');
+      debugPrint('⚠️ Error loading account ID: $e');
     }
   }
 
   Future<void> _loadComments({bool refresh = false}) async {
-    if (widget.parkingLotId.isEmpty || _isLoading) return;
+    if (widget.parkingLotId.isEmpty) return;
+
+    if (refresh) {
+      setState(() {
+        _currentPage = 1;
+        _comments = [];
+        _hasMore = true;
+      });
+    }
+
+    if (_isLoading) return;
 
     setState(() {
       _isLoading = true;
-      if (refresh) {
-        _currentPage = 1;
-        _comments = [];
-      }
+      _errorMessage = null;
     });
 
     try {
@@ -80,23 +87,25 @@ class _CommentsSectionState extends State<CommentsSection> {
       );
 
       final dynamic commentsData = response['data'];
-      List<Map<String, dynamic>> fetchedComments = [];
+      List<Map<String, dynamic>> newComments = [];
       int totalPages = 1;
 
       if (commentsData is Map && commentsData.containsKey('data')) {
-        fetchedComments = List<Map<String, dynamic>>.from(commentsData['data']);
+        newComments = List<Map<String, dynamic>>.from(commentsData['data']);
         totalPages = commentsData['totalPages'] ?? 1;
       }
 
       setState(() {
-        _comments.addAll(fetchedComments);
+        _comments.addAll(newComments);
         _hasMore = _currentPage < totalPages;
         _isLoading = false;
       });
       _checkUserHasCommented();
     } catch (e) {
-      setState(() => _isLoading = false);
-      _showSnackBar('Lỗi tải bình luận: $e', Colors.red);
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
     }
   }
 
@@ -111,7 +120,7 @@ class _CommentsSectionState extends State<CommentsSection> {
     });
   }
 
-  // --- UI Components ---
+  // --- UI COMPONENTS ---
 
   Widget _buildCommentItem(
     Map<String, dynamic> comment, {
@@ -122,131 +131,157 @@ class _CommentsSectionState extends State<CommentsSection> {
     final String createdAt = comment['createdAt'] ?? '';
     final String? role = comment['creatorRole'];
     final int? star = comment['star'];
-    final String commentId = comment['_id'] ?? '';
+    final String commentId = comment['_id'] ?? comment['id'] ?? '';
     final List replies = comment['replies'] ?? [];
-
     bool isMyComment =
-        _currentAccountId != null && comment['accountId'] == _currentAccountId;
+        _currentAccountId != null &&
+        comment['accountId']?.toString() == _currentAccountId;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          margin: EdgeInsets.only(bottom: 8, left: isReply ? 40 : 0),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isReply ? Colors.grey.shade50 : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: isReply
-                        ? Colors.blue.shade100
-                        : Colors.green.shade100,
-                    child: Text(
-                      creatorName[0].toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.green.shade800,
-                      ),
+        Padding(
+          padding: EdgeInsets.only(left: isReply ? 20 : 0, top: 12),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isReply)
+                  Container(
+                    width: 2,
+                    margin: const EdgeInsets.only(
+                      right: 12,
+                      bottom: 10,
+                      top: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              creatorName,
-                              style: const TextStyle(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: isReply ? 14 : 18,
+                            backgroundColor: Colors.green.shade50,
+                            child: Text(
+                              creatorName.isNotEmpty
+                                  ? creatorName[0].toUpperCase()
+                                  : 'U',
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 14,
                               ),
                             ),
-                            if (role == 'Operator') ...[
-                              const SizedBox(width: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                  vertical: 1,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      creatorName,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: isReply ? 13 : 14,
+                                      ),
+                                    ),
+                                    if (role == 'Operator') ...[
+                                      const SizedBox(width: 6),
+                                      _buildRoleBadge(),
+                                    ],
+                                  ],
                                 ),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue.shade600,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: const Text(
-                                  'Chủ bãi',
+                                Text(
+                                  _formatDate(createdAt),
                                   style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
+                                    fontSize: 11,
+                                    color: Colors.grey.shade500,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ],
+                              ],
+                            ),
+                          ),
+                          if (star != null && !isReply) _buildMiniStars(star),
+                        ],
+                      ),
+                      Container(
+                        margin: const EdgeInsets.only(top: 6, left: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                        Text(
-                          _formatDate(createdAt),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade500,
+                        decoration: BoxDecoration(
+                          color: isReply
+                              ? Colors.transparent
+                              : Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          content,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black87,
+                            height: 1.4,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      Row(
+                        children: [
+                          const SizedBox(width: 8),
+                          _smallActionText(
+                            'Trả lời',
+                            () => _startReply(comment),
+                          ),
+                          if (isMyComment) ...[
+                            _smallActionText('Sửa', () => _startEdit(comment)),
+                            _smallActionText(
+                              'Xóa',
+                              () => _deleteComment(commentId),
+                              color: Colors.red.shade400,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
-                  if (star != null && !isReply) _buildMiniStars(star),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 8, left: 42),
-                child: Text(
-                  content,
-                  style: const TextStyle(fontSize: 14, height: 1.4),
                 ),
-              ),
-              // Action Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (!isReply)
-                    _smallTextButton(
-                      'Trả lời',
-                      Icons.reply,
-                      () => _startReply(comment),
-                    ),
-                  if (isMyComment) ...[
-                    _smallTextButton(
-                      'Sửa',
-                      Icons.edit,
-                      () => _startEdit(comment),
-                    ),
-                    _smallTextButton(
-                      'Xóa',
-                      Icons.delete,
-                      () => _deleteComment(commentId),
-                      color: Colors.red,
-                    ),
-                  ],
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-        // Render REPLIES recursively
         if (replies.isNotEmpty)
           ...replies
               .map((reply) => _buildCommentItem(reply, isReply: true))
               .toList(),
+        if (!isReply) const Divider(height: 24, thickness: 0.5),
       ],
+    );
+  }
+
+  Widget _buildRoleBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.blue.shade200, width: 0.5),
+      ),
+      child: Text(
+        'Chủ bãi',
+        style: TextStyle(
+          color: Colors.blue.shade700,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
@@ -263,21 +298,19 @@ class _CommentsSectionState extends State<CommentsSection> {
     );
   }
 
-  Widget _smallTextButton(
-    String label,
-    IconData icon,
-    VoidCallback onTap, {
-    Color? color,
-  }) {
-    return TextButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 14, color: color ?? Colors.grey.shade700),
-      label: Text(
-        label,
-        style: TextStyle(fontSize: 12, color: color ?? Colors.grey.shade700),
-      ),
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+  Widget _smallActionText(String label, VoidCallback onTap, {Color? color}) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color ?? Colors.grey.shade600,
+          ),
+        ),
       ),
     );
   }
@@ -285,7 +318,19 @@ class _CommentsSectionState extends State<CommentsSection> {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: const EdgeInsets.only(top: 24),
       padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -309,9 +354,11 @@ class _CommentsSectionState extends State<CommentsSection> {
               _replyingToId != null)
             _buildCommentForm(),
 
-          const Divider(height: 32),
+          const SizedBox(height: 16),
           _isLoading && _comments.isEmpty
               ? const Center(child: CircularProgressIndicator())
+              : _comments.isEmpty
+              ? _buildEmptyState()
               : Column(
                   children: _comments.map((c) => _buildCommentItem(c)).toList(),
                 ),
@@ -319,8 +366,8 @@ class _CommentsSectionState extends State<CommentsSection> {
           if (_hasMore && _comments.isNotEmpty)
             Center(
               child: TextButton(
-                onPressed: () => _loadMoreComments(),
-                child: const Text('Xem thêm'),
+                onPressed: () => _loadComments(),
+                child: const Text('Xem thêm bình luận'),
               ),
             ),
         ],
@@ -328,49 +375,22 @@ class _CommentsSectionState extends State<CommentsSection> {
     );
   }
 
-  // --- Hỗ trợ khác ---
-
   Widget _buildHeader() {
     return Row(
       children: [
-        const Icon(Icons.rate_review_outlined, color: Colors.green),
+        Icon(Icons.chat_bubble_outline, color: Colors.green.shade600),
         const SizedBox(width: 8),
-        Text(
-          'Đánh giá & Bình luận (${_comments.length})',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        const Text(
+          'Bình luận',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
+        const Spacer(),
+        if (_comments.isNotEmpty)
+          Text(
+            '${_comments.length} bình luận',
+            style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+          ),
       ],
-    );
-  }
-
-  Widget _buildStatusIndicator(
-    String text,
-    Color color,
-    VoidCallback onCancel,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.info_outline, size: 16, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(color: color, fontWeight: FontWeight.w500),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 16),
-            onPressed: onCancel,
-          ),
-        ],
-      ),
     );
   }
 
@@ -383,25 +403,27 @@ class _CommentsSectionState extends State<CommentsSection> {
           if (_replyingToId == null) ...[
             const Text(
               'Đánh giá của bạn',
-              style: TextStyle(fontWeight: FontWeight.w500),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
             ),
+            const SizedBox(height: 4),
             _buildStarPicker(),
-            const SizedBox(height: 8),
           ],
+          const SizedBox(height: 12),
           TextFormField(
             controller: _commentController,
             maxLines: 3,
             decoration: InputDecoration(
-              hintText: 'Chia sẻ trải nghiệm của bạn...',
-              fillColor: Colors.grey.shade50,
+              hintText: 'Nhập nội dung...',
               filled: true,
+              fillColor: Colors.grey.shade50,
+              contentPadding: const EdgeInsets.all(12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -409,8 +431,18 @@ class _CommentsSectionState extends State<CommentsSection> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: Text(_isSubmitting ? 'Đang gửi...' : 'Gửi bình luận'),
+              child: Text(
+                _isSubmitting
+                    ? 'Đang gửi...'
+                    : (_editingCommentId != null
+                          ? 'Cập nhật'
+                          : 'Gửi bình luận'),
+              ),
             ),
           ),
         ],
@@ -422,42 +454,99 @@ class _CommentsSectionState extends State<CommentsSection> {
     return Row(
       children: List.generate(
         5,
-        (index) => IconButton(
-          icon: Icon(
-            index < (_selectedStar ?? 0) ? Icons.star : Icons.star_border,
-            color: Colors.amber,
-            size: 30,
+        (index) => GestureDetector(
+          onTap: () => setState(() => _selectedStar = index + 1),
+          child: Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Icon(
+              index < (_selectedStar ?? 0) ? Icons.star : Icons.star_border,
+              color: Colors.amber,
+              size: 28,
+            ),
           ),
-          onPressed: () => setState(() => _selectedStar = index + 1),
         ),
       ),
     );
   }
 
-  // --- Helpers ---
-  void _showSnackBar(String message, Color color) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
+  Widget _buildStatusIndicator(
+    String text,
+    Color color,
+    VoidCallback onCancel,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: onCancel,
+            child: Icon(Icons.close, size: 16, color: color),
+          ),
+        ],
+      ),
+    );
   }
 
-  String _formatDate(String dateStr) {
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          children: [
+            Icon(
+              Icons.speaker_notes_off_outlined,
+              size: 48,
+              color: Colors.grey.shade300,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Chưa có bình luận nào',
+              style: TextStyle(color: Colors.grey.shade500),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- LOGIC HELPERS ---
+
+  String _formatDate(String? dateStr) {
+    if (dateStr == null) return '';
     try {
       final date = DateTime.parse(dateStr).toLocal();
       final now = DateTime.now();
       final diff = now.difference(date);
+      if (diff.inSeconds < 60) return 'Vừa xong';
       if (diff.inMinutes < 60) return '${diff.inMinutes} phút trước';
       if (diff.inHours < 24) return '${diff.inHours} giờ trước';
-      return '${date.day}/${date.month}/${date.year}';
+      if (diff.inDays == 1) return 'Hôm qua';
+      return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
     } catch (_) {
       return dateStr;
     }
   }
 
-  // Các hàm logic khác (giữ nguyên hoặc tối ưu nhẹ từ code cũ của bạn)
   void _startReply(Map<String, dynamic> comment) {
     setState(() {
-      _replyingToId = comment['_id'];
+      _replyingToId = comment['_id'] ?? comment['id'];
       _replyingToUserName = comment['creatorName'];
       _editingCommentId = null;
       _commentController.clear();
@@ -471,27 +560,21 @@ class _CommentsSectionState extends State<CommentsSection> {
   void _cancelEdit() => setState(() {
     _editingCommentId = null;
     _commentController.clear();
+    _selectedStar = null;
   });
 
   void _startEdit(Map<String, dynamic> comment) {
     setState(() {
-      _editingCommentId = comment['_id'];
+      _editingCommentId = comment['_id'] ?? comment['id'];
       _commentController.text = comment['content'] ?? '';
       _selectedStar = comment['star'];
       _replyingToId = null;
+      _replyingToUserName = null;
     });
   }
 
-  Future<void> _loadMoreComments() async {
-    if (_hasMore && !_isLoading) {
-      _currentPage++;
-      await _loadComments();
-    }
-  }
-
-  // Submit Logic... (Tương tự code của bạn nhưng gọi refresh: true sau khi xong)
   Future<void> _submitComment() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_commentController.text.trim().isEmpty) return;
     setState(() => _isSubmitting = true);
     try {
       if (_editingCommentId != null) {
@@ -514,23 +597,40 @@ class _CommentsSectionState extends State<CommentsSection> {
         _selectedStar = null;
         _replyingToId = null;
         _editingCommentId = null;
+        _replyingToUserName = null;
       });
       await _loadComments(refresh: true);
-      _showSnackBar('Thành công', Colors.green);
     } catch (e) {
-      _showSnackBar('Lỗi: $e', Colors.red);
+      debugPrint('Error: $e');
     } finally {
       setState(() => _isSubmitting = false);
     }
   }
 
   Future<void> _deleteComment(String id) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Xác nhận'),
+        content: const Text('Bạn có muốn xóa bình luận này?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
     try {
       await CommentService.deleteComment(id: id);
       await _loadComments(refresh: true);
-      _showSnackBar('Đã xóa', Colors.green);
     } catch (e) {
-      _showSnackBar('Lỗi xóa', Colors.red);
+      debugPrint('Error deleting: $e');
     }
   }
 }
