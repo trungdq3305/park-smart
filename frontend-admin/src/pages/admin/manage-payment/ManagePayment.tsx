@@ -3,7 +3,7 @@ import { skipToken } from '@reduxjs/toolkit/query'
 import dayjs from 'dayjs'
 import { useGetPaymentsQuery } from '../../../features/admin/paymentAdminAPI'
 import { useGetAccountQuery, useGetOperatorDetailsQuery } from '../../../features/admin/accountAPI'
-import CustomModal from '../../../components/common/CustomModal'
+import OperatorDetailsModal from '../../../components/modals/OperatorDetailsModal'
 import './ManagePayment.css'
 
 type PaymentStatus = 'PENDING' | 'PAID' | 'EXPIRED' | 'FAILED' | 'REFUNDED'
@@ -311,67 +311,13 @@ const ManagePayment: React.FC = () => {
         )}
       </div>
 
-      <CustomModal
+      <OperatorDetailsModal
         open={operatorModalOpen}
         onClose={() => setOperatorModalOpen(false)}
-        title="Thông tin operator"
-        width="520px"
-      >
-        {isFetchingOperator ? (
-          <div className="pay-operator-loading">Đang tải thông tin operator...</div>
-        ) : operatorDetailError ? (
-          <div className="pay-operator-error">Không tải được thông tin operator.</div>
-        ) : !operatorDetailRes?.data ? (
-          <div className="pay-operator-empty">Chưa có dữ liệu operator.</div>
-        ) : (
-          <div className="pay-operator-info">
-            <div className="pay-operator-row">
-              <span className="label">Tên</span>
-              <span className="value">
-                {operatorDetailRes.data?.operatorDetail?.fullName ||
-                  operatorDetailRes.data?.fullName ||
-                  '-'}
-              </span>
-            </div>
-            <div className="pay-operator-row">
-              <span className="label">Email</span>
-              <span className="value">{operatorDetailRes.data?.email || '-'}</span>
-            </div>
-            <div className="pay-operator-row">
-              <span className="label">SĐT</span>
-              <span className="value">{operatorDetailRes.data?.phoneNumber || '-'}</span>
-            </div>
-            <div className="pay-operator-row">
-              <span className="label">Operator ID</span>
-              <span className="value mono">
-                {operatorDetailRes.data?.operatorDetail?._id || operatorDetailId || '-'}
-              </span>
-            </div>
-            <div className="pay-operator-row">
-              <span className="label">Trạng thái</span>
-              <span className="value">{operatorDetailRes.data?.isActive ? 'Active' : 'Inactive'}</span>
-            </div>
-            <div className="pay-operator-row">
-              <span className="label">Doanh nghiệp</span>
-              <span className="value">
-                {operatorDetailRes.data?.operatorDetail?.bussinessName || '-'}
-              </span>
-            </div>
-            <div className="pay-operator-row">
-              <span className="label">Payment email</span>
-              <span className="value">{operatorDetailRes.data?.operatorDetail?.paymentEmail || '-'}</span>
-            </div>
-            <div className="pay-operator-row">
-              <span className="label">Last login</span>
-              <span className="value">
-                {operatorDetailRes.data?.lastLoginAt
-                  ? dayjs(operatorDetailRes.data.lastLoginAt).format('DD/MM/YYYY HH:mm')
-                  : '-'}
-              </span>
-            </div>
-          </div>
-        )}
-      </CustomModal>
+        operatorData={operatorDetailRes}
+        loading={isFetchingOperator}
+        error={!!operatorDetailError}
+      />
     </div>
   )
 }
