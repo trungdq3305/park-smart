@@ -123,7 +123,6 @@ namespace CoreService.Application.Applications
                 <tr style='background-color: #f9fbf9; text-align: center; font-size: 12px; color: #777;'>
                     <td style='padding: 20px;'>
                         <p>© 2025 ParkSmart - Giải pháp đỗ xe thông minh</p>
-                        <p>Màu sắc chủ đạo: Xanh lá nhạt (ParkSmart Green)</p>
                     </td>
                 </tr>
             </table>
