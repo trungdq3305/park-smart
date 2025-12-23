@@ -595,7 +595,7 @@ namespace CoreService.Application.Applications
         </div>
         <p>Vui lòng đăng nhập vào trang quản lý để bắt đầu vận hành bãi xe:</p>
         <div style='text-align: center;'>
-            <a href='https://operator.parksmart.vn' 
+            <a href='https://park-smart-two.vercel.app' 
                style='background-color: #4caf50; color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: bold; display: inline-block;'>
                Đăng nhập ngay
             </a>
