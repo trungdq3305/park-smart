@@ -472,10 +472,4 @@ export class ReservationController {
       success: true,
     }
   }
-
-  @Post('check-expired-pending')
-  async checkAndUpdateExpiredPendingReservations(): Promise<void> {
-    // Giả sử thời gian cắt là hiện tại
-    await this.reservationService.cleanupExpiredPendingReservations()
-  }
 }
