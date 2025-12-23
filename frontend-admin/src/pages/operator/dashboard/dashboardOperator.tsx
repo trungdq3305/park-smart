@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   DollarOutlined,
   ReloadOutlined,
@@ -91,8 +91,13 @@ const getErrorMessage = (err: FetchBaseQueryError | SerializedError | undefined)
 
 const DashboardOperator: React.FC = () => {
   const parkingLotId = Cookies.get('parkingLotId') || ''
-  const [timeRange, setTimeRange] = useState<TimeRange>('WEEK')
+  const [timeRange, setTimeRange] = useState<TimeRange>('DAY') // mặc định theo ngày
   const [targetDate, setTargetDate] = useState<Dayjs>(dayjs())
+
+  // Reset ngày về hôm nay mỗi khi đổi loại khoảng thời gian
+  useEffect(() => {
+    setTargetDate(dayjs())
+  }, [timeRange])
 
   const targetDateString = useMemo(
     () => getFormattedTargetDate(targetDate, timeRange),
