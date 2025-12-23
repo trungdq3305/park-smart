@@ -1,8 +1,11 @@
-import type { ClientSession } from 'mongoose'
+import type { ClientSession, FilterQuery } from 'mongoose'
 
 // Import DTO (Nếu dùng) hoặc Schema
 import type { ReservationStatusEnum } from '../enums/reservation.enum'
-import type { Reservation } from '../schemas/reservation.schema' // <-- Đường dẫn Schema
+import type {
+  Reservation,
+  ReservationDocument,
+} from '../schemas/reservation.schema' // <-- Đường dẫn Schema
 
 export interface IReservationRepository {
   /**
@@ -174,6 +177,10 @@ export interface IReservationRepository {
   ): Promise<string | null>
 
   findIncomingExpiringReservations(cutoffTime: Date): Promise<Reservation[]>
+
+  findByConditionForNotification(
+    condition: FilterQuery<ReservationDocument>,
+  ): Promise<Reservation[]>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')

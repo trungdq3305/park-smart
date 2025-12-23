@@ -1004,7 +1004,7 @@ export class SubscriptionService implements ISubscriptionService {
 
           type: NotificationType.SUBSCRIPTION_ALERT, // Cần định nghĩa thêm loại này
           title: 'Gói Thuê Bao Sắp Hết Hạn! 🔔',
-          body: `Gói thuê bao của bạn (ID: ${sub._id.slice(-4)}) sẽ hết hạn vào ngày ${expiryDate}. Vui lòng gia hạn để tiếp tục sử dụng.`,
+          body: `Gói thuê bao của bạn sẽ hết hạn vào ngày ${expiryDate}. Vui lòng gia hạn để tiếp tục sử dụng.`,
           data: {
             subscriptionId: sub._id,
             expiryDate: sub.endDate.toISOString(),

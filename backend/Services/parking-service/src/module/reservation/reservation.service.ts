@@ -78,6 +78,71 @@ export class ReservationService implements IReservationService {
     private readonly notificationService: INotificationService,
   ) {}
 
+  @Cron(CronExpression.EVERY_MINUTE)
+  async notifyApproachingExpirations() {
+    this.logger.log('[CronJob] Bắt đầu kiểm tra các reservation sắp hết hạn...')
+
+    const now = new Date()
+    // Các mốc thời gian muốn thông báo: 15 phút, 10 phút, 5 phút
+    const milestones = [15, 10, 5]
+    const TIME_ZONE_OFFSET = 7 * 60 * 60 * 1000
+    // Tạo điều kiện Query với $or
+    const timeConditions = milestones.map((minutes) => {
+      // Tìm vé hết hạn trong khoảng [X-1 phút, X phút]
+      // Ví dụ: Mốc 5 phút -> Tìm vé hết hạn từ phút thứ 4 đến phút thứ 5 tính từ bây giờ
+      const minTime = new Date(
+        now.getTime() + (minutes - 1) * 60 * 1000 + TIME_ZONE_OFFSET,
+      )
+      const maxTime = new Date(
+        now.getTime() + minutes * 60 * 1000 + TIME_ZONE_OFFSET,
+      )
+      return {
+        estimatedEndTime: { $gt: minTime, $lte: maxTime },
+      }
+    })
+
+    try {
+      // 1. Tìm các reservation thỏa mãn điều kiện
+      const reservations =
+        await this.reservationRepository.findByConditionForNotification({
+          status: {
+            $in: [
+              ReservationStatusEnum.CONFIRMED,
+              ReservationStatusEnum.CHECKED_IN,
+            ],
+          }, // Chỉ lấy vé đang hoạt động
+          $or: timeConditions,
+        })
+
+      if (reservations.length === 0) {
+        this.logger.log('Không có reservation nào sắp hết hạn để thông báo.')
+        return
+      }
+
+      this.logger.log(`Found ${reservations.length} reservations to notify.`)
+      const nowVN = new Date(new Date().getTime() + TIME_ZONE_OFFSET)
+      // 2. Gửi thông báo (Chạy song song)
+      await Promise.all(
+        reservations.map(async (res) => {
+          // Tính lại số phút còn lại để hiển thị cho đẹp
+          const msRemaining = res.estimatedEndTime.getTime() - nowVN.getTime()
+          const minutesRemaining = Math.ceil(msRemaining / 60000) // Làm tròn lên
+
+          // Gọi sang Notification Service
+          await this.notificationService.createAndSendNotification({
+            recipientId: res.createdBy?.toString() ?? '', // ID người dùng
+            recipientRole: NotificationRole.DRIVER, // Enum
+            type: NotificationType.RESERVATION_REMINDER, // Enum
+            title: 'Sắp hết giờ đỗ xe',
+            body: `Gói đỗ xe của bạn chỉ còn khoảng ${minutesRemaining} phút nữa. Vui lòng kiểm tra để tránh phí phạt.`,
+          })
+        }),
+      )
+    } catch (error) {
+      this.logger.error('Error executing expiration notification cron', error)
+    }
+  }
+
   private readonly logger: Logger = new Logger(ReservationService.name)
 
   private returnToDto(reservation: Reservation): ReservationDetailResponseDto {

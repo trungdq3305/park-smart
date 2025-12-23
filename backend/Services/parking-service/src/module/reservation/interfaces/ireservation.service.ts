@@ -160,6 +160,8 @@ export interface IReservationService {
   ): Promise<ReservationCancellationPreviewResponseDto>
 
   cleanupExpiredPendingReservations(): Promise<void>
+
+  notifyApproachingExpirations()
 }
 
 export const IReservationService = Symbol('IReservationService')

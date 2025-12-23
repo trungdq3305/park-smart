@@ -472,4 +472,9 @@ export class ReservationController {
       success: true,
     }
   }
+
+  @Post('test-expire-pending')
+  async notifyApproachingExpirations() {
+    await this.reservationService.notifyApproachingExpirations()
+  }
 }
