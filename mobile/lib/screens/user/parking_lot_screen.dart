@@ -733,7 +733,7 @@ class _ParkingLotScreenState extends State<ParkingLotScreen> {
                 ),
 
                 // Debug indicator
-                MapDebugIndicator(mapLoaded: _mapLoaded),
+                // MapDebugIndicator(mapLoaded: _mapLoaded),
 
                 // Socket status indicator
 

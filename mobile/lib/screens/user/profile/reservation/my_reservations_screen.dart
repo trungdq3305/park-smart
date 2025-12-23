@@ -1090,6 +1090,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
     final parkingLot = reservation['parkingLotId'];
     final pricingPolicy = reservation['pricingPolicyId'];
     final userExpectedTime = reservation['userExpectedTime'];
+    final estimatedEndTime = reservation['estimatedEndTime'];
     final prepaidAmount = reservation['prepaidAmount'] as int?;
 
     // Extract parking lot name and address
@@ -1122,6 +1123,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
         parkingLot?['_id']?.toString() ?? parkingLot?['id']?.toString() ?? '';
 
     final userExpectedTimeText = _formatDateTime(userExpectedTime);
+    final estimatedEndTimeText = _formatDateTime(estimatedEndTime);
     final prepaidAmountText = prepaidAmount != null
         ? '${_formatPrice(prepaidAmount)} đ'
         : null;
@@ -1135,6 +1137,7 @@ class _MyReservationsScreenState extends State<MyReservationsScreen> {
       parkingLotName: parkingLotName,
       addressText: addressText,
       userExpectedTimeText: userExpectedTimeText,
+      estimatedEndTimeText: estimatedEndTimeText,
       prepaidAmountText: prepaidAmountText,
       parkingLotId: parkingLotIdStr,
       onTapQr: canViewQr ? () => _showQRCodeDialog(reservation) : null,

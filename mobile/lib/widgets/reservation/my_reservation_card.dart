@@ -11,6 +11,7 @@ class MyReservationCard extends StatelessWidget {
     required this.parkingLotName,
     required this.addressText,
     required this.userExpectedTimeText,
+    required this.estimatedEndTimeText,
     required this.prepaidAmountText,
     this.parkingLotId,
     this.onTapQr,
@@ -29,6 +30,7 @@ class MyReservationCard extends StatelessWidget {
   final String parkingLotName;
   final String? addressText;
   final String userExpectedTimeText;
+  final String estimatedEndTimeText;
   final String? prepaidAmountText;
   final String? parkingLotId;
 
@@ -280,6 +282,30 @@ class MyReservationCard extends StatelessWidget {
               ],
             ),
           ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Thời gian ra',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  estimatedEndTimeText,
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey.shade900,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -300,9 +326,7 @@ class MyReservationCard extends StatelessWidget {
         icon: const Icon(Icons.flag_outlined, size: 18),
         label: const Text(
           'Báo cáo',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
     );
