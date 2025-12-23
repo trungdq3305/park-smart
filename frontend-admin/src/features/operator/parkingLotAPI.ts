@@ -28,6 +28,15 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
       transformResponse: (res) => res,
       providesTags: ['parkingLot'],
     }),
+    updateBookingSlotDurationHours: builder.mutation({
+      query: ({ id, bookingSlotDurationHours }) => ({
+        url: `/parking/parking-lots/update-booking-slot-duration/${id}`,
+        method: 'PATCH',
+        body: { bookingSlotDurationHours },
+      }),
+      transformResponse: (res) => res,
+      invalidatesTags: ['parkingLot'],
+    }),
   }),
 })
 
@@ -35,4 +44,5 @@ export const {
   useCreateParkingLotMutation,
   useGetParkingLotsOperatorQuery,
   useUpdateParkingLotRequestMutation,
+  useUpdateBookingSlotDurationHoursMutation,
 } = parkingLotAPI

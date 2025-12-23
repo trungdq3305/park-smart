@@ -28,6 +28,7 @@ import {
   useGetPricingPoliciesOperatorQuery,
   useDeletePricingPolicyLinkMutation,
 } from '../../../features/operator/pricingPolicyAPI'
+import { useUpdateBookingSlotDurationHoursMutation } from '../../../features/operator/parkingLotAPI'
 import ParkingLotDetails from '../../../components/parking-lot/ParkingLotDetails'
 import PricingPolicyList from '../../../components/parking-lot/PricingPolicyList'
 import CommentList from '../../../components/parking-lot/CommentList'
@@ -43,6 +44,7 @@ import CreateParkingLotRequestModal from '../../../components/parking-lot/Create
 import DeleteParkingLotRequestModal from '../../../components/parking-lot/DeleteParkingLotRequestModal'
 import Cookies from 'js-cookie'
 import { useOperatorId } from '../../../hooks/useOperatorId'
+import CustomModal from '../../../components/common/CustomModal'
 
 interface ParkingLotsListResponse {
   data: {
@@ -76,6 +78,8 @@ const OperatorParkingLot: React.FC = () => {
   const [isRequestsModalOpen, setIsRequestsModalOpen] = useState(false)
   const [isCreateRequestModalOpen, setIsCreateRequestModalOpen] = useState(false)
   const [isDeleteRequestModalOpen, setIsDeleteRequestModalOpen] = useState(false)
+  const [isUpdateDurationModalOpen, setIsUpdateDurationModalOpen] = useState(false)
+  const [bookingDurationInput, setBookingDurationInput] = useState<number>(0)
   const { data, isLoading } = useGetParkingLotsOperatorQuery<ParkingLotsListResponse>({})
   const [updateParkingLotRequest, { isLoading: isUpdateParkingLotRequestLoading }] =
     useUpdateParkingLotRequestMutation()
@@ -139,6 +143,8 @@ const OperatorParkingLot: React.FC = () => {
     useCreatePricingPolicyLinkMutation()
   const [deletePricingPolicyLink, { isLoading: isDeletePricingLoading }] =
     useDeletePricingPolicyLinkMutation()
+  const [updateBookingSlotDuration, { isLoading: isUpdatingDuration }] =
+    useUpdateBookingSlotDurationHoursMutation()
 
   const pricingPolicies = pricingPoliciesData?.data ?? []
 
@@ -261,6 +267,12 @@ const OperatorParkingLot: React.FC = () => {
       bookingSlotDurationHours,
     }
   }, [parkingLot])
+
+  useEffect(() => {
+    if (parkingLot?.bookingSlotDurationHours !== undefined) {
+      setBookingDurationInput(parkingLot.bookingSlotDurationHours)
+    }
+  }, [parkingLot?.bookingSlotDurationHours])
 
   useEffect(() => {
     if (!Cookies.get('parkingLotId') && parkingLot?._id) {
@@ -404,7 +416,13 @@ const OperatorParkingLot: React.FC = () => {
             </div>
 
             {/* Parking Lot Details */}
-            <ParkingLotDetails lot={parkingLot} />
+            <ParkingLotDetails
+              lot={parkingLot}
+              onOpenUpdateDuration={() => {
+                setBookingDurationInput(parkingLot.bookingSlotDurationHours || 0)
+                setIsUpdateDurationModalOpen(true)
+              }}
+            />
 
             {/* Pricing Policies */}
             <PricingPolicyList
@@ -476,6 +494,51 @@ const OperatorParkingLot: React.FC = () => {
         onSubmit={handleDeleteParkingLot}
         loading={isDeleteParkingLotRequestLoading}
       />
+      <CustomModal
+        open={isUpdateDurationModalOpen}
+        onClose={() => setIsUpdateDurationModalOpen(false)}
+        title="Cập nhật thời gian giữ slot"
+        width="420px"
+      >
+        <div className="booking-duration-modal">
+          <label>Thời gian giữ slot (giờ)</label>
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            value={bookingDurationInput}
+            onChange={(e) => setBookingDurationInput(Number(e.target.value))}
+          />
+          <div className="booking-duration-actions">
+            <button
+              className="booking-duration-cancel"
+              onClick={() => setIsUpdateDurationModalOpen(false)}
+              disabled={isUpdatingDuration}
+            >
+              Hủy
+            </button>
+            <button
+              className="booking-duration-save"
+              disabled={isUpdatingDuration || !parkingLot?._id}
+              onClick={async () => {
+                if (!parkingLot?._id) return
+                try {
+                  await updateBookingSlotDuration({
+                    id: parkingLot._id,
+                    bookingSlotDurationHours: Number(bookingDurationInput) || 0,
+                  }).unwrap()
+                  message.success('Cập nhật thời gian đặt chỗ thành công')
+                  setIsUpdateDurationModalOpen(false)
+                } catch (err: any) {
+                  message.error(err?.data?.message || 'Cập nhật thất bại')
+                }
+              }}
+            >
+              {isUpdatingDuration ? 'Đang lưu...' : 'Lưu'}
+            </button>
+          </div>
+        </div>
+      </CustomModal>
     </div>
   )
 }

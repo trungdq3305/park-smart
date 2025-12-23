@@ -1,0 +1,43 @@
+.pay-operator-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pay-operator-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.pay-operator-row .label {
+  color: #475467;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pay-operator-row .value {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pay-operator-row .value.mono {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+}
+
+.pay-operator-loading,
+.pay-operator-empty,
+.pay-operator-error {
+  padding: 14px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  color: #475467;
+}
+
+

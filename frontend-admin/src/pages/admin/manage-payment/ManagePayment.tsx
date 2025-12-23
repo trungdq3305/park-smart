@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react'
+import { skipToken } from '@reduxjs/toolkit/query'
 import dayjs from 'dayjs'
 import { useGetPaymentsQuery } from '../../../features/admin/paymentAdminAPI'
-import { useGetAccountQuery } from '../../../features/admin/accountAPI'
+import { useGetAccountQuery, useGetOperatorDetailsQuery } from '../../../features/admin/accountAPI'
+import OperatorDetailsModal from '../../../components/modals/OperatorDetailsModal'
 import './ManagePayment.css'
 
 type PaymentStatus = 'PENDING' | 'PAID' | 'EXPIRED' | 'FAILED' | 'REFUNDED'
@@ -23,6 +25,8 @@ const ManagePayment: React.FC = () => {
     fromDate: '',
     toDate: '',
   })
+  const [operatorModalOpen, setOperatorModalOpen] = useState(false)
+  const [operatorDetailId, setOperatorDetailId] = useState<string | null>(null)
 
   const {
     data: accountRes,
@@ -41,6 +45,12 @@ const ManagePayment: React.FC = () => {
   }, [filters])
 
   const { data, isLoading, error, refetch, isFetching } = useGetPaymentsQuery({ params })
+
+  const {
+    data: operatorDetailRes,
+    isFetching: isFetchingOperator,
+    error: operatorDetailError,
+  } = useGetOperatorDetailsQuery(operatorDetailId || skipToken)
 
   const payments = (data as any)?.data ?? (data as any) ?? []
   const notFoundError =
@@ -250,7 +260,13 @@ const ManagePayment: React.FC = () => {
                 <div className="pay-card-meta">
                   <div className="pay-row">
                     <span className="pay-label">Loại</span>
-                    <span className="pay-value">{p.paymentType || '-'}</span>
+                    <span
+                      className={`pay-value pay-type ${
+                        p.paymentType === 'OperatorCharge' ? 'green' : 'yellow'
+                      }`}
+                    >
+                      {p.paymentType || '-'}
+                    </span>
                   </div>
                   <div className="pay-row">
                     <span className="pay-label">Operator</span>
@@ -280,9 +296,13 @@ const ManagePayment: React.FC = () => {
                   </a>
                   <button
                     className="pay-btn subtle"
-                    onClick={() => navigator.clipboard.writeText(p.id)}
+                    onClick={() => {
+                      setOperatorDetailId(p.operatorId || null)
+                      setOperatorModalOpen(true)
+                    }}
+                    disabled={!p.operatorId}
                   >
-                    Copy ID
+                    Xem operator
                   </button>
                 </div>
               </div>
@@ -290,6 +310,14 @@ const ManagePayment: React.FC = () => {
           </div>
         )}
       </div>
+
+      <OperatorDetailsModal
+        open={operatorModalOpen}
+        onClose={() => setOperatorModalOpen(false)}
+        operatorData={operatorDetailRes}
+        loading={isFetchingOperator}
+        error={!!operatorDetailError}
+      />
     </div>
   )
 }
