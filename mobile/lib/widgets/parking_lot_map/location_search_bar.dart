@@ -40,10 +40,7 @@ class LocationSearchBar extends StatelessWidget {
               children: [
                 Text(
                   'Vị trí hiện tại',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 Text(
                   currentAddress,
@@ -57,14 +54,11 @@ class LocationSearchBar extends StatelessWidget {
               ],
             ),
           ),
-          IconButton(
-            onPressed: onToggleView,
-            icon: Icon(showMapFallback ? Icons.map : Icons.list),
-          ),
-          IconButton(
-            onPressed: onRefresh,
-            icon: const Icon(Icons.refresh),
-          ),
+          // IconButton(
+          //   onPressed: onToggleView,
+          //   icon: Icon(showMapFallback ? Icons.map : Icons.list),
+          // ),
+          IconButton(onPressed: onRefresh, icon: const Icon(Icons.refresh)),
         ],
       ),
     );
