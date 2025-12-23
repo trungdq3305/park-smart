@@ -17,12 +17,17 @@ import { Cron, CronExpression } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import * as dayjs from 'dayjs'
 import { Connection } from 'mongoose'
+import {
+  NotificationRole,
+  NotificationType,
+} from 'src/common/constants/notification.constant'
 import { PaginationDto } from 'src/common/dto/paginatedResponse.dto'
 import { PaginationQueryDto } from 'src/common/dto/paginationQuery.dto'
 import { IdDto } from 'src/common/dto/params.dto'
 
 import { IBookingInventoryRepository } from '../bookingInventory/interfaces/ibookingInventory.repository'
 import { IAccountServiceClient } from '../client/interfaces/iaccount-service-client'
+import { INotificationService } from '../notification/interfaces/inotification.service'
 import { IParkingLotRepository } from '../parkingLot/interfaces/iparkinglot.repository'
 import { TransactionTypeEnum } from '../parkingTransaction/enum/parkingTransaction.enum'
 import { IParkingTransactionRepository } from '../parkingTransaction/interfaces/iparkingTransaction.repository'
@@ -59,6 +64,8 @@ export class ReservationService implements IReservationService {
     private readonly accountServiceClient: IAccountServiceClient,
     @Inject(IParkingTransactionRepository)
     private readonly parkingTransactionRepository: IParkingTransactionRepository,
+    @Inject(INotificationService)
+    private readonly notificationService: INotificationService,
   ) {}
 
   private readonly logger: Logger = new Logger(ReservationService.name)
@@ -349,6 +356,15 @@ export class ReservationService implements IReservationService {
       )
 
       await session.commitTransaction()
+
+      await this.notificationService.createAndSendNotification({
+        recipientId: userId,
+        recipientRole: NotificationRole.DRIVER,
+        type: NotificationType.RESERVATION_EXTENDED,
+        title: 'Gia hạn đặt chỗ thành công',
+        body: `Đơn đặt chỗ của bạn đã được gia hạn đến ${eligibility.newEndTime.toLocaleString()}.`,
+      })
+
       return this.returnToDto(updatedReservation)
     } catch (error) {
       await session.abortTransaction()
@@ -561,6 +577,15 @@ export class ReservationService implements IReservationService {
       )
 
       await session.commitTransaction()
+
+      await this.notificationService.createAndSendNotification({
+        recipientId: userId,
+        recipientRole: NotificationRole.DRIVER,
+        type: NotificationType.RESERVATION_PURCHASED,
+        title: 'Đặt chỗ thành công',
+        body: `Đơn đặt chỗ của bạn đã được thanh toán thành công.`,
+      })
+
       return updatedReservation
     } catch (error) {
       await session.abortTransaction()
@@ -764,6 +789,14 @@ export class ReservationService implements IReservationService {
           session,
         )
       }
+
+      await this.notificationService.createAndSendNotification({
+        recipientId: userId,
+        recipientRole: NotificationRole.DRIVER,
+        type: NotificationType.RESERVATION_CANCELLED,
+        title: 'Hủy đặt chỗ thành công',
+        body: `Đơn đặt chỗ của bạn đã được hủy thành công.`,
+      })
 
       await session.commitTransaction()
       return true

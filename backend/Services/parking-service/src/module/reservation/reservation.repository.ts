@@ -13,6 +13,15 @@ export class ReservationRepository implements IReservationRepository {
     private reservationModel: Model<Reservation>,
   ) {}
 
+  findIncomingExpiringReservations(cutoffTime: Date): Promise<Reservation[]> {
+    return this.reservationModel
+      .find({
+        status: ReservationStatusEnum.CONFIRMED,
+        estimatedEndTime: { $lt: cutoffTime },
+      })
+      .exec()
+  }
+
   async getParkingLotIdByReservationId(
     reservationId: string,
     session: ClientSession,
