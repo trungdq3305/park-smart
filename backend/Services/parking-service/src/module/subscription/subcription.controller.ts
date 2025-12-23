@@ -542,4 +542,9 @@ export class SubscriptionController {
       success: true,
     }
   }
+
+  @Post('test-notify-expiry')
+  async testNotifyExpiry() {
+    await this.subscriptionService.sendExpiringSubscriptionNotificationsJob()
+  }
 }

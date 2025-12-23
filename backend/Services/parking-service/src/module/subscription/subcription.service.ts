@@ -378,7 +378,7 @@ export class SubscriptionService implements ISubscriptionService {
         recipientId: userId,
         recipientRole: NotificationRole.DRIVER,
         type: NotificationType.SUBSCRIPTION_PURCHASED,
-        title: 'Mua gói thuê bao thành công',
+        title: 'Sẵn Sàng Đỗ Xe Ngay! 🚗',
         body: `Gói thuê bao của bạn đã được kích hoạt thành công.`,
       })
       // Trả về DTO
@@ -769,7 +769,7 @@ export class SubscriptionService implements ISubscriptionService {
         recipientId: userId,
         recipientRole: NotificationRole.DRIVER,
         type: NotificationType.SUBSCRIPTION_CANCELLED,
-        title: 'Hủy gói thuê bao thành công',
+        title: 'Hủy Gói Thuê Bao Thành Công! ✅',
         body: `Gói thuê bao của bạn đã được hủy thành công.`,
       })
 
@@ -917,7 +917,7 @@ export class SubscriptionService implements ISubscriptionService {
         recipientId: userId,
         recipientRole: NotificationRole.DRIVER,
         type: NotificationType.SUBSCRIPTION_EXTENDED_SUCCESS,
-        title: 'Gia hạn gói thuê bao thành công',
+        title: 'Gia Hạn Thành Công! ✅',
         body: `Gói thuê bao của bạn đã được gia hạn thành công.`,
       })
       // (Lấy updatedSubscription đã populate để trả về)
