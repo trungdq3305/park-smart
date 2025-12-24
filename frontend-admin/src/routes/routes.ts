@@ -43,6 +43,7 @@ const ManageProfile = lazy(() => import('../pages/profile/ManageProfile'))
 const ManageAnnouncement = lazy(() => import('../pages/admin/manage-annoucement/ManageAnnoucement'))
 const ManageRequest = lazy(() => import('../pages/admin/manage-request/ManageRequest'))
 const OperatorChat = lazy(() => import('../pages/operator/chat-with-driver/OperatorChat'))
+const CheckInManually = lazy(() => import('../pages/operator/parking-lot-operate/CheckInManually'))
 const routes: LayoutRoute[] = [
   {
     layout: MainLayout,
@@ -207,6 +208,11 @@ const routes: LayoutRoute[] = [
       {
         path: '/operator/chat-with-driver',
         component: OperatorChat,
+        role: ['Operator'],
+      },
+      {
+        path: '/operator/check-in-manually',
+        component: CheckInManually,
         role: ['Operator'],
       },
     ],
