@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Card,
   Button,
@@ -66,6 +67,7 @@ interface ScanData {
 }
 
 const KioskPage: React.FC = () => {
+  const navigate = useNavigate()
   const { gatewayUrl, saveGatewayUrl } = useLocalGateway()
   const LIVE_STREAM_URL = `${gatewayUrl}/video_feed`
 
@@ -782,6 +784,15 @@ const KioskPage: React.FC = () => {
                   className="kiosk-open-barrier-button"
                 >
                   MỞ CỔNG BARRIER THỦ CÔNG
+                </Button>
+                <Button
+                  block
+                  size="large"
+                  icon={<LoginOutlined className="kiosk-main-button-icon" />}
+                  className="kiosk-manual-checkin-button"
+                  onClick={() => navigate('/operator/check-in-manually')}
+                >
+                  Check In Thủ Công
                 </Button>
               </div>
             </Card>
