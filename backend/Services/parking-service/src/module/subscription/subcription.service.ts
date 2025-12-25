@@ -494,7 +494,7 @@ export class SubscriptionService implements ISubscriptionService {
     if (pendingCount >= 1) {
       // Giới hạn chỉ cho phép 1 đơn chờ
       throw new ConflictException(
-        'Bạn đang có một giao dịch chưa thanh toán. Vui lòng hoàn tất hoặc hủy nó trước khi mua gói mới.',
+        'Bạn đang có một giao dịch chưa thanh toán. Vui lòng thử lại sau.',
       )
     }
 
