@@ -20,7 +20,7 @@ class ErrorMessage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.red.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.shade200),
+        border: Border.all(color: Colors.yellow.shade700),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -42,17 +42,17 @@ class ErrorMessage extends StatelessWidget {
   Widget _buildErrorMessage() {
     return Row(
       children: [
-        Icon(Icons.error_outline, color: Colors.red.shade600),
+        Icon(Icons.error_outline, color: Colors.yellow.shade700),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             errorMessage,
-            style: TextStyle(color: Colors.red.shade700),
+            style: TextStyle(color: Colors.yellow.shade700),
           ),
         ),
         IconButton(
           onPressed: onDismiss,
-          icon: Icon(Icons.close, color: Colors.red.shade600),
+          icon: Icon(Icons.close, color: Colors.yellow.shade700),
         ),
       ],
     );

@@ -18,19 +18,29 @@ class _MainWrapperState extends State<MainWrapper> {
   int _currentIndex = 0;
   int? _unreadNotificationCount;
 
-  final List<Widget> _pages = [
-    const HomeScreen(),
-    const MessageListScreen(),
-    const ParkingLotScreen(),
-    const NotificationScreen(),
-    const ProfileScreen(),
-  ];
+  // 1. Khai báo danh sách nhưng không khởi tạo giá trị ngay
+  late List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+
+    // 2. Khởi tạo danh sách tại đây
+    _pages = [
+      HomeScreen(
+        onNavigateToTab: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
+      const MessageListScreen(),
+      const ParkingLotScreen(),
+      const NotificationScreen(),
+      const ProfileScreen(),
+    ];
+
     _loadUnreadCount();
-    // Refresh unread count periodically
     _startPeriodicRefresh();
   }
 
