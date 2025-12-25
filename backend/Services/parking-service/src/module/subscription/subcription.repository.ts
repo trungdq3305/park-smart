@@ -325,6 +325,8 @@ export class SubscriptionRepository implements ISubscriptionRepository {
           ],
         },
         deletedAt: null,
+        startDate: { $lte: requestedDate },
+        endDate: { $gte: requestedDate },
         _id: { $ne: subscriptionIdToExclude ?? null },
       })
       .session(session ?? null)
