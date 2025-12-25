@@ -35,12 +35,13 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
   const { data: accountDetails } = useAccountDetailsQuery(account?._id || '')
   const operatorId = accountDetails?.data?.operatorDetail?._id || ''
 
-  // Sync localIsActive when modal opens with a new/different account
+  // Sync localIsActive when modal opens or account changes
+  // Only sync if account._id changes (different account) or modal just opened
   useEffect(() => {
     if (open && account?.isActive !== undefined) {
       setLocalIsActive(account.isActive)
     }
-  }, [open, account?._id, account?.isActive])
+  }, [open, account?._id]) // Removed account?.isActive to avoid overwriting after mutation
 
   const { data: parkingLotDetails } = useParkingLotDetailsQuery<ParkingLotRequestReponse>({
     parkingLotOperatorId: operatorId,
