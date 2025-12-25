@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { message } from 'antd'
 import type { Account } from '../../types/Account'
 import { useAccountDetailsQuery, useConfirmOperatorMutation } from '../../features/admin/accountAPI'
@@ -31,8 +31,16 @@ interface AddressResponse {
 const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose, account }) => {
   const [confirmOperator, { isLoading: isConfirmingOperator }] = useConfirmOperatorMutation()
   const [rejectionReason, setRejectionReason] = useState('')
+  const [localIsActive, setLocalIsActive] = useState(account?.isActive ?? false)
   const { data: accountDetails } = useAccountDetailsQuery(account?._id || '')
   const operatorId = accountDetails?.data?.operatorDetail?._id || ''
+
+  // Sync localIsActive when modal opens with a new/different account
+  useEffect(() => {
+    if (open && account?.isActive !== undefined) {
+      setLocalIsActive(account.isActive)
+    }
+  }, [open, account?._id, account?.isActive])
 
   const { data: parkingLotDetails } = useParkingLotDetailsQuery<ParkingLotRequestReponse>({
     parkingLotOperatorId: operatorId,
@@ -64,7 +72,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
     }
   }, [account?.roleName])
 
-  const statusBadgeClass = account?.isActive ? 'account-status active' : 'account-status inactive'
+  const statusBadgeClass = localIsActive ? 'account-status active' : 'account-status inactive'
 
   const formatDateTime = (value?: string | null) => {
     if (!value) return 'Chưa đăng nhập'
@@ -84,6 +92,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
     if (!account?._id) return
     try {
       await confirmOperator(account._id).unwrap()
+      setLocalIsActive(true) // Update local state immediately
       message.success('Xác nhận tài khoản operator thành công')
     } catch (error) {
       const backendMessage = extractBackendMessage(error)
@@ -150,7 +159,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                 <span className={roleBadgeClass}>{account.roleName}</span>
                 <span className={statusBadgeClass}>
                   <span className="status-dot" />
-                  {account.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                  {localIsActive ? 'Hoạt động' : 'Không hoạt động'}
                 </span>
               </div>
             </div>
@@ -223,7 +232,7 @@ const AccountDetailsModal: React.FC<AccountDetailsModalProps> = ({ open, onClose
                   <button
                     className="account-btn account-btn-primary"
                     onClick={handleConfirmOperator}
-                    disabled={isConfirmingOperator || account.isActive}
+                    disabled={isConfirmingOperator || localIsActive}
                   >
                     {isConfirmingOperator ? 'Đang duyệt...' : 'Duyệt'}
                   </button>
