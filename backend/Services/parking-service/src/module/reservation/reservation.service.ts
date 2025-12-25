@@ -505,6 +505,15 @@ export class ReservationService implements IReservationService {
         'Thời gian bắt đầu ước tính phải trong tương lai.',
       )
     }
+
+    const pendingCount =
+      await this.reservationRepository.countPendingPaymentsByUser(userId)
+
+    if (pendingCount >= 1) {
+      throw new ConflictException(
+        'Bạn có đơn đặt chỗ đang chờ thanh toán. Vui lòng thử lại sau.',
+      )
+    }
     try {
       // --- BƯỚC 1: LẤY QUY TẮC (RULES) ---
       // 1a. Lấy quy tắc của Bãi xe (Khóa bãi xe)
