@@ -66,6 +66,7 @@ const SessionDetailModal: React.FC<SessionDetailModalProps> = ({
               calculateFeeResult={calculateFeeResult}
               onCheckout={onCheckout}
               isSubmittingCheckout={isSubmittingCheckout}
+              selectedSession={selectedSession}
             />
           )}
           {sessionImages.length === 0 ? (

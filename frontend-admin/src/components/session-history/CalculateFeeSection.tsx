@@ -3,6 +3,8 @@ import { CalculatorOutlined } from '@ant-design/icons'
 import { Input, Upload, message } from 'antd'
 import type { UploadFile } from 'antd/es/upload/interface'
 import type { PricingPolicyLink } from '../../types/PricingPolicyLink'
+import type { ParkingLotSession } from '../../types/ParkingLotSession'
+import { useUpdateGuestCardStatusMutation } from '../../features/operator/guestCardAPI'
 import PricingPolicySelector from './PricingPolicySelector'
 import CalculateFeeResult from './CalculateFeeResult'
 import './CalculateFeeSection.css'
@@ -21,6 +23,7 @@ interface CalculateFeeSectionProps {
     note?: string
   }) => Promise<void>
   isSubmittingCheckout: boolean
+  selectedSession: ParkingLotSession | null
 }
 
 const CalculateFeeSection: React.FC<CalculateFeeSectionProps> = ({
@@ -32,10 +35,12 @@ const CalculateFeeSection: React.FC<CalculateFeeSectionProps> = ({
   calculateFeeResult,
   onCheckout,
   isSubmittingCheckout,
+  selectedSession,
 }) => {
   const [note, setNote] = useState('')
   const [fileList, setFileList] = useState<UploadFile[]>([])
   const [lostCard, setLostCard] = useState(false)
+  const [updateGuestCardStatus] = useUpdateGuestCardStatusMutation()
 
   const calculatedAmount = calculateFeeResult?.data?.[0]?.amount || 0
   const totalAmount = calculatedAmount + (lostCard ? 500000 : 0)
@@ -56,7 +61,34 @@ const CalculateFeeSection: React.FC<CalculateFeeSectionProps> = ({
       return
     }
     const file = fileList.length > 0 ? (fileList[0].originFileObj as File) : null
+    
     try {
+      // If lost card checkbox is ticked and session has guestCardId, deactivate the card
+      if (lostCard && selectedSession?.guestCardId) {
+        const guestCardId =
+          typeof selectedSession.guestCardId === 'object'
+            ? selectedSession.guestCardId._id
+            : selectedSession.guestCardId
+
+        if (guestCardId) {
+          try {
+            await updateGuestCardStatus({
+              id: guestCardId,
+              status: 'INACTIVE',
+            }).unwrap()
+            message.success('Đã vô hiệu hóa thẻ khách')
+          } catch (error: any) {
+            console.error('Error deactivating guest card:', error)
+            message.warning(
+              error?.data?.message ||
+                error?.message ||
+                'Không thể vô hiệu hóa thẻ khách. Vui lòng thử lại.'
+            )
+            // Continue with checkout even if deactivation fails
+          }
+        }
+      }
+
       await onCheckout({
         pricingPolicyId: selectedPricingPolicyId,
         amountPayAfterCheckOut: totalAmount,

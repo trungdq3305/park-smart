@@ -29,6 +29,13 @@ interface ParkingLotMapProps {
 const DEFAULT_CENTER: [number, number] = [106.700806, 10.776889] // Ho Chi Minh City [lng, lat]
 const DEFAULT_ZOOM = 12
 
+// TP.HCM bounds - restrict map to Ho Chi Minh City area only
+// MapLibre uses [lng, lat] format for bounds
+const HO_CHI_MINH_BOUNDS: [[number, number], [number, number]] = [
+  [106.3, 10.35], // Southwest corner [lng, lat]
+  [107.2, 11.25], // Northeast corner [lng, lat]
+]
+
 const ParkingLotMap: React.FC<ParkingLotMapProps> = ({ className = '' }) => {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
@@ -42,6 +49,7 @@ const ParkingLotMap: React.FC<ParkingLotMapProps> = ({ className = '' }) => {
   const [mapLoaded, setMapLoaded] = useState(false)
 
   // Fetch parking lots based on map bounds (only when bounds are set)
+  // Default to TP.HCM bounds if map not loaded yet
   const { data: parkingLotsData, isLoading, error } = useFindParkingLotQuery(
     bounds
       ? {
@@ -50,10 +58,11 @@ const ParkingLotMap: React.FC<ParkingLotMapProps> = ({ className = '' }) => {
           pageSize: 100,
         }
       : {
-          bottomLeftLng: 106.3,
-          bottomLeftLat: 10.35,
-          topRightLng: 107.2,
-          topRightLat: 11.25,
+          // TP.HCM default bounds
+          bottomLeftLng: HO_CHI_MINH_BOUNDS[0][0], // 106.3
+          bottomLeftLat: HO_CHI_MINH_BOUNDS[0][1], // 10.35
+          topRightLng: HO_CHI_MINH_BOUNDS[1][0], // 107.2
+          topRightLat: HO_CHI_MINH_BOUNDS[1][1], // 11.25
           page: 1,
           pageSize: 100,
         }
@@ -131,6 +140,10 @@ const ParkingLotMap: React.FC<ParkingLotMapProps> = ({ className = '' }) => {
       },
       center: DEFAULT_CENTER,
       zoom: DEFAULT_ZOOM,
+      // Restrict map to TP.HCM area only
+      maxBounds: HO_CHI_MINH_BOUNDS,
+      maxZoom: 18, // Limit max zoom level
+      minZoom: 10, // Limit min zoom level to keep TP.HCM in view
     })
 
     map.current.addControl(new maplibregl.NavigationControl(), 'top-right')

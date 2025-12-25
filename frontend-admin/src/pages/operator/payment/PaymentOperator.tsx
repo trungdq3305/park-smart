@@ -223,7 +223,11 @@ const PaymentOperator: React.FC = () => {
                         <div className="invoice-detail-icon">💳</div>
                         <div className="invoice-detail-content">
                           <span className="invoice-detail-label">Phương thức</span>
-                          <span className="invoice-detail-value">
+                          <span
+                            className={`invoice-detail-value pay-type ${
+                              invoice.paymentType === 'OperatorCharge' ? 'green' : 'yellow'
+                            }`}
+                          >
                             {invoice.paymentType || 'N/A'}
                           </span>
                         </div>
