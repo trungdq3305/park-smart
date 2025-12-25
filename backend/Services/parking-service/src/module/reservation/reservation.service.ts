@@ -511,7 +511,7 @@ export class ReservationService implements IReservationService {
 
     if (pendingCount >= 1) {
       throw new ConflictException(
-        'Bạn có đơn đặt chỗ đang chờ thanh toán. Vui lòng thử lại sau.',
+        'Bạn có đơn đặt chỗ đang chờ thanh toán. Vui lòng chờ hệ thống xử lý giao dịch cũ.',
       )
     }
     try {
