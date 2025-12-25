@@ -603,3 +603,31 @@
     font-size: 20px;
   }
 }
+
+/* Payment Type Highlight Styles */
+.pay-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid transparent;
+}
+
+.pay-type.green {
+  background: #ecfdf3;
+  color: #166534;
+  border-color: #bbf7d0;
+  box-shadow: 0 10px 22px rgba(22, 101, 52, 0.08);
+}
+
+.pay-type.yellow {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fcd34d;
+  box-shadow: 0 10px 22px rgba(146, 64, 14, 0.08);
+}

@@ -352,7 +352,7 @@
 .session-plate-badge {
   padding: 0.6vh 1.2vh;
   border-radius: 8px;
-  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+  background: black;
   color: white;
   font-size: 16px;
   font-weight: 700;
