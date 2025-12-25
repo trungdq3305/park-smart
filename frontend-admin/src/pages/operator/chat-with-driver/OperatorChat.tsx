@@ -36,7 +36,7 @@ const OperatorChat: React.FC = () => {
   const user = useOperatorId()
   const currentUserId = user
   const currentUserName = 'Operator'
-
+console.log(currentUserId)
   const [rooms, setRooms] = useState<Room[]>([])
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
