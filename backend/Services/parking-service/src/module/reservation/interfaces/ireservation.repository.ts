@@ -181,6 +181,8 @@ export interface IReservationRepository {
   findByConditionForNotification(
     condition: FilterQuery<ReservationDocument>,
   ): Promise<Reservation[]>
+
+  countPendingPaymentsByUser(userId: string): Promise<number>
 }
 
 export const IReservationRepository = Symbol('IReservationRepository')

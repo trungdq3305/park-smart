@@ -13,6 +13,16 @@ export class ReservationRepository implements IReservationRepository {
     private reservationModel: Model<Reservation>,
   ) {}
 
+  countPendingPaymentsByUser(userId: string): Promise<number> {
+    return this.reservationModel
+      .countDocuments({
+        createdBy: userId,
+        status: ReservationStatusEnum.PENDING_PAYMENT,
+        deletedAt: null,
+      })
+      .exec()
+  }
+
   findByConditionForNotification(
     condition: FilterQuery<ReservationDocument>,
   ): Promise<Reservation[]> {
