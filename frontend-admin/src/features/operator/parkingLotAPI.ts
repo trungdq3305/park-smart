@@ -18,7 +18,7 @@ export const parkingLotAPI = apiSlice.injectEndpoints({
         body: updateRequestDto,
       }),
       transformResponse: (res) => res,
-      invalidatesTags: ['parkingLot'],
+      invalidatesTags: ['parkingLot', 'parkingLotRequest'],
     }),
     getParkingLotsOperator: builder.query({
       query: () => ({
