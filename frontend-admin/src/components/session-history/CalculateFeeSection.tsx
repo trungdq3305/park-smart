@@ -63,7 +63,15 @@ const CalculateFeeSection: React.FC<CalculateFeeSectionProps> = ({
     const file = fileList.length > 0 ? (fileList[0].originFileObj as File) : null
     
     try {
-      // If lost card checkbox is ticked and session has guestCardId, deactivate the card
+      // Checkout first
+      await onCheckout({
+        pricingPolicyId: selectedPricingPolicyId,
+        amountPayAfterCheckOut: totalAmount,
+        file,
+        note: note || undefined,
+      })
+
+      // After successful checkout, if lost card checkbox is ticked and session has guestCardId, deactivate the card
       if (lostCard && selectedSession?.guestCardId) {
         const guestCardId =
           typeof selectedSession.guestCardId === 'object'
@@ -84,17 +92,11 @@ const CalculateFeeSection: React.FC<CalculateFeeSectionProps> = ({
                 error?.message ||
                 'Không thể vô hiệu hóa thẻ khách. Vui lòng thử lại.'
             )
-            // Continue with checkout even if deactivation fails
+            // Checkout already succeeded, so we just warn about deactivation failure
           }
         }
       }
 
-      await onCheckout({
-        pricingPolicyId: selectedPricingPolicyId,
-        amountPayAfterCheckOut: totalAmount,
-        file,
-        note: note || undefined,
-      })
       setNote('')
       setFileList([])
       setLostCard(false)
