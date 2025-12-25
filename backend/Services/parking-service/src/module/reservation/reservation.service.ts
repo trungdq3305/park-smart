@@ -479,7 +479,32 @@ export class ReservationService implements IReservationService {
   ): Promise<ReservationDetailResponseDto> {
     const session = await this.connection.startSession()
     session.startTransaction()
+    const VN_TIMEZONE = 'Asia/Ho_Chi_Minh'
+    const now = dayjs().tz(VN_TIMEZONE)
 
+    // QUAN TRỌNG: Parse input và ép kiểu về VN (bỏ qua chữ Z nếu có)
+    // Sử dụng .tz(..., true) để giữ nguyên số 20:25 nhưng gán mác là giờ VN
+    const userInputTime = createDto.userExpectedTime.toString().replace('Z', '')
+    const estimatedEndInputTime = createDto.estimatedEndTime
+      .toString()
+      .replace('Z', '')
+    const expectedTime = dayjs(userInputTime).tz(VN_TIMEZONE, true)
+    const endTime = dayjs(estimatedEndInputTime).tz(VN_TIMEZONE, true)
+
+    // So sánh
+    if (endTime.isBefore(now)) {
+      // Tương đương <=
+      throw new BadRequestException(
+        'Thời gian kết thúc ước tính phải trong tương lai.',
+      )
+    }
+
+    if (expectedTime.isBefore(now)) {
+      // Tương đương <=
+      throw new BadRequestException(
+        'Thời gian bắt đầu ước tính phải trong tương lai.',
+      )
+    }
     try {
       // --- BƯỚC 1: LẤY QUY TẮC (RULES) ---
       // 1a. Lấy quy tắc của Bãi xe (Khóa bãi xe)
