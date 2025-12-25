@@ -1,13 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Button,
-  DatePicker,
-  Form,
-  Input,
-  Row,
-  Col,
-  Select,
-  TimePicker,
   Card,
   Avatar,
   Tag,
@@ -26,10 +19,8 @@ import {
   FacebookFilled,
   LinkedinFilled,
 } from '@ant-design/icons'
-import dayjs from 'dayjs'
+import ParkingLotMap from './ParkingLotMap'
 import './HomePage.css'
-
-const { Option } = Select
 
 // Custom hook for scroll animations
 interface ScrollAnimationOptions {
@@ -167,7 +158,7 @@ const benefitCards = [
   },
   {
     title: 'Ứng dụng đa nền tảng',
-    description: 'Đặt chỗ, gia hạn và thanh toán dễ dàng trên web, iOS và Android.',
+    description: 'Đặt chỗ, gia hạn và thanh toán dễ dàng trên web và Android.',
   },
 ]
 
@@ -195,12 +186,6 @@ const testimonials = [
   },
 ]
 
-const stats = [
-  { label: 'Bãi đỗ đối tác', value: '320+' },
-  { label: 'Lượt đặt mỗi ngày', value: '12.4K' },
-  { label: 'Tỉ lệ hài lòng', value: '98%' },
-  { label: 'Thời gian giữ chỗ', value: '< 60s' },
-]
 
 const HomePage: React.FC = () => {
   const [heroRef, heroVisible] = useScrollAnimation({ threshold: 0.2 })
@@ -238,10 +223,11 @@ const HomePage: React.FC = () => {
             <a href="#testimonials">Khách hàng</a>
           </nav>
           <div className="nav-actions">
-            <Button size="large" type="default">
-              Đăng nhập
-            </Button>
-            <Button size="large" type="primary">
+            <Button
+              size="large"
+              type="primary"
+              onClick={() => window.open('https://park-smart-two.vercel.app/', '_blank')}
+            >
               Trở thành đối tác
             </Button>
           </div>
@@ -257,105 +243,14 @@ const HomePage: React.FC = () => {
             </h1>
             <p>
               Tối ưu doanh thu cho chủ bãi, mang đến trải nghiệm đỗ xe nhanh chóng và minh bạch cho
-              người dùng. Hơn 320+ bãi đỗ tại các thành phố lớn đang sử dụng ParkSmart mỗi ngày.
+              người dùng
             </p>
-            <div className="hero-stats">
-              {stats.map((item) => (
-                <div key={item.label} className="hero-stat-item">
-                  <span className="stat-value">{item.value}</span>
-                  <span className="stat-label">{item.label}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
-          <Card id="booking" className="hero-form-card" bordered={false}>
-            <h3>Đặt chỗ bãi đỗ ngay hôm nay</h3>
-            <p className="form-subtitle">Giữ chỗ miễn phí, hủy linh hoạt, hỗ trợ 24/7</p>
-            <Form layout="vertical" initialValues={{ dropOffTime: dayjs(), pickUpTime: dayjs() }}>
-              <Row gutter={12}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Thành phố"
-                    name="city"
-                    rules={[{ required: true, message: 'Vui lòng chọn thành phố' }]}
-                  >
-                    <Select placeholder="Chọn thành phố">
-                      <Option value="hcm">TP. Hồ Chí Minh</Option>
-                      <Option value="hn">Hà Nội</Option>
-                      <Option value="dn">Đà Nẵng</Option>
-                      <Option value="ct">Cần Thơ</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Bãi đỗ"
-                    name="lot"
-                    rules={[{ required: true, message: 'Vui lòng chọn bãi đỗ' }]}
-                  >
-                    <Select placeholder="Chọn bãi đỗ">
-                      <Option value="airport">Sân bay Tân Sơn Nhất</Option>
-                      <Option value="benThanh">Bãi đỗ Bến Thành</Option>
-                      <Option value="vincom">Vincom Đồng Khởi</Option>
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={12}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Ngày đến"
-                    name="dropOffDate"
-                    rules={[{ required: true, message: 'Vui lòng chọn ngày đến' }]}
-                  >
-                    <DatePicker className="full-width-input" format="DD/MM/YYYY" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Giờ đến"
-                    name="dropOffTime"
-                    rules={[{ required: true, message: 'Vui lòng chọn giờ đến' }]}
-                  >
-                    <TimePicker className="full-width-input" format="HH:mm" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={12}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Ngày rời"
-                    name="pickUpDate"
-                    rules={[{ required: true, message: 'Vui lòng chọn ngày rời' }]}
-                  >
-                    <DatePicker className="full-width-input" format="DD/MM/YYYY" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Giờ rời"
-                    name="pickUpTime"
-                    rules={[{ required: true, message: 'Vui lòng chọn giờ rời' }]}
-                  >
-                    <TimePicker className="full-width-input" format="HH:mm" />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item label="Số điện thoại" name="phone">
-                <Input
-                  prefix={<PhoneOutlined />}
-                  placeholder="Nhập số điện thoại để nhận xác nhận"
-                />
-              </Form.Item>
-
-              <Button type="primary" size="large" block>
-                Tìm bãi đỗ phù hợp
-              </Button>
-            </Form>
+          <Card id="booking" className="hero-form-card">
+            <h3>Tìm bãi đỗ xe gần bạn</h3>
+            <p className="form-subtitle">Xem các bãi đỗ xe có sẵn trên bản đồ, di chuyển để khám phá thêm</p>
+            <ParkingLotMap />
             <div className="form-meta">
               <ClockCircleOutlined /> Giữ chỗ miễn phí trong 45 phút • <SmileOutlined /> Hỗ trợ
               khách hàng 24/7
