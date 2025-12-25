@@ -96,7 +96,7 @@ export class SubscriptionRepository implements ISubscriptionRepository {
   async countPendingByUser(userId: string): Promise<number> {
     return this.subscriptionModel
       .countDocuments({
-        userId: userId,
+        createdBy: userId,
         status: SubscriptionStatusEnum.PENDING_PAYMENT,
         deletedAt: null,
       })
